@@ -10,12 +10,12 @@ import json
 import codecs
 
 df_schemes = pd.read_csv('df.csv', encoding='cp1252')#Needed to map the scheme names back to
-dictionary = gensim.corpora.Dictionary.load('weights_generation/dictionary') #Needed to construct mappings from BOW of the query term to the dictionary which is already preloaded
+dictionary = gensim.corpora.Dictionary.load('schemesv2_backend/weights_generation/dictionary') #Needed to construct mappings from BOW of the query term to the dictionary which is already preloaded
 
-schemes_tfidf_model = gensim.models.TfidfModel.load("weights_generation/tfidf.model") #Needed to feed into the LSI model
+schemes_tfidf_model = gensim.models.TfidfModel.load("schemesv2_backend/weights_generation/tfidf.model") #Needed to feed into the LSI model
 
-schemes_lsi_model = gensim.models.LsiModel.load("weights_generation/lsi.model") #Final model
-schemes_lsi_corpus = gensim.corpora.MmCorpus('weights_generation/schemes_lsi_model_mm') #Needed to create the matrix similarity index
+schemes_lsi_model = gensim.models.LsiModel.load("schemesv2_backend/weights_generation/lsi.model") #Final model
+schemes_lsi_corpus = gensim.corpora.MmCorpus('schemesv2_backend/weights_generation/schemes_lsi_model_mm') #Needed to create the matrix similarity index
 
 spacy_nlp = spacy.load('en_core_web_sm')
 
@@ -26,8 +26,8 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 nltk.download('punkt')
 
-tvec_optimised = pickle.load(open('weights_generation/tvec', 'rb'))
-mhmodel = pickle.load(open('weights_generation/mentalhealth', 'rb'))
+tvec_optimised = pickle.load(open('schemesv2_backend/weights_generation/tvec', 'rb'))
+mhmodel = pickle.load(open('schemesv2_backend/weights_generation/mentalhealth', 'rb'))
 
 #create list of punctuations and stopwords
 punctuations = string.punctuation
