@@ -1,0 +1,9 @@
+backend/.env
+backend/ml_logic/schemesv2-torch-allmpp-model/config.json
+backend/ml_logic/schemesv2-torch-allmpp-model/model.safetensors
+backend/ml_logic/schemesv2-torch-allmpp-tokenizer/special_tokens_map.json
+backend/ml_logic/schemesv2-torch-allmpp-tokenizer/tokenizer_config.json
+backend/ml_logic/schemesv2-torch-allmpp-tokenizer/tokenizer.json
+backend/ml_logic/schemesv2-torch-allmpp-tokenizer/vocab.txt
+backend/ml_logic/schemesv2-your_embeddings.npy
+backend/ml_logic/schemesv2-your_index.faiss

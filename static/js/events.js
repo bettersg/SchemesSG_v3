@@ -7,7 +7,8 @@ function handle__schemespal() {
     var segment = $("#filler");
     segment.html("");
     $("#filler").hide().append('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>').fadeIn(1000);
-    var url = "https://schemes.sg/schemespredict";
+    // var url = "https://schemes.sg/schemespredict";
+    var url = 'http://127.0.0.1:8000/schemespredict'
 
     // The data we are going to send in our request
     let data_package = {

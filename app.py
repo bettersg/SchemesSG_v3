@@ -4,12 +4,18 @@ import os
 import schemes_model as schemes_model
 import flask.json as json
 from flask_cors import CORS, cross_origin
+from config import config
 
 
 app = Flask(__name__)
 
-cors = CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+# Load configuration based on environment variable
+env = os.getenv('FLASK_ENV', 'development')
+app.config.from_object(config[env])
+
 @cross_origin()
 
 @app.route('/')
@@ -64,17 +70,17 @@ def gapfinder():
 def test():
 	return render_template('testing.html')
 
-@app.route('/schemespredict', methods=['get','post'])
-def schemes_predict():
-	result = 'nil'
-	try:
-		input = request.get_json()
-		query = input['query']
-		relevance = int(input['relevance'])
-		result = schemes_model.search_similar_schemes(query, relevance)
-	except Exception as e:
-		print('Error: ',e)
-	return result
+# @app.route('/schemespredict', methods=['get','post'])
+# def schemes_predict():
+# 	result = 'nil'
+# 	try:
+# 		input = request.get_json()
+# 		query = input['query']
+# 		relevance = int(input['relevance'])
+# 		result = schemes_model.search_similar_schemes(query, relevance)
+# 	except Exception as e:
+# 		print('Error: ',e)
+# 	return result
 
 if __name__ == '__main__':
 	port = int(os.getenv("PORT",9099))

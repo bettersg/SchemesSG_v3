@@ -14,7 +14,8 @@ if (window.location.search.indexOf('query') == 1) {
     segment.html("");
     $("#filler").hide().append('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>').fadeIn(1000);
 
-    var url = "https://schemes.sg/schemespredict";
+    // var url = "https://schemes.sg/schemespredict";
+    var url = 'http://127.0.0.1:8000/schemespredict'
 
 
     // Create our request constructor with all the parameters we need
@@ -48,7 +49,7 @@ if (window.location.search.indexOf('query') == 1) {
                 codeblock = '<div class="col-lg-12"><div class="card text-center hover-translate-y-n10 hover-shadow-lg"><div class="px-3 pb-5 pt-5"><div class="py-4"><div class="icon text-warning icon-sm mx-auto"><img height="100" width="100" src="' + image + '"></div></div><h5 class="">' + scheme + '</h5><h6 class=" mt-2 mb-0">' + agency + '</h6><p class=" mt-2 mb-0">Relevance Score: ' + relevance + '</p><p class=" mt-2 mb-0">' + description + '</p><div class="mt-4"><div class="mt-4"><a href="' + link + '" target="_blank" class="link-underline-warning"> Visit Site </a></div></div></div></div>'
                 $("#filler").hide().append(codeblock).fadeIn(1000);
             }}
-            
+
             if(resp.mh >= 0.55){
                 codeblockstart='<div class="text-center mr-2 ml-2"><p>Hey there, we know that things can be stressful for you or your client. Aside from physical needs, do remember to take care of your mental and emotional health too. <br><br> We\'ve slightly pushed up schemes offering mental and emotional support. If you need help, you can visit <u><b><a href="https://schemes.sg/schemespal.html?query=counselling,%20mental%20health,%20emotional%20care&relevance=16" target="_blank">here</a></b></u> for more resources.</p></div><br><br>'
                 $("#filler").hide().append(codeblockstart).fadeIn(1000);

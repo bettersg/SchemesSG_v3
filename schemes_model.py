@@ -9,7 +9,7 @@ import string
 import json
 import codecs
 
-df_schemes = pd.read_csv('df.csv', encoding='cp1252')#Needed to map the scheme names back to 
+df_schemes = pd.read_csv('df.csv', encoding='cp1252')#Needed to map the scheme names back to
 dictionary = gensim.corpora.Dictionary.load('weights_generation/dictionary') #Needed to construct mappings from BOW of the query term to the dictionary which is already preloaded
 
 schemes_tfidf_model = gensim.models.TfidfModel.load("weights_generation/tfidf.model") #Needed to feed into the LSI model
@@ -101,13 +101,13 @@ def search_similar_schemes(search_term, x):
         )
         if j == (schemes_index.num_best-1):
             break
-  
+
     output = pd.DataFrame(schemes_names, columns=['Relevance','Scheme','Description', 'Agency', 'Image', 'Link', 'What it gives', 'Scheme Type'])
 
     mhprob = mhmodel.predict_proba(tvec_optimised.transform([str(stemSentence(search_term))]).todense())[0][1]
 
     output['Relevance'] = output.apply(lambda y: (y['Relevance'] * 1.05 ) if ((('mental health' or 'counselling' or 'emotional care' or 'casework' in y['Scheme Type'].lower()) or
-                                                                              ('mental health' or 'counselling' or 'emotional care' or 'casework' in y['What it gives'].lower())) and 
+                                                                              ('mental health' or 'counselling' or 'emotional care' or 'casework' in y['What it gives'].lower())) and
                                                                               (mhprob > 0.55)) else y['Relevance'], axis=1)
     output = output.sort_values(by=['Relevance'], ascending= False)
     output = output[output['Relevance']>x]
