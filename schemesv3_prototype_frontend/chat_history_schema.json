@@ -1,0 +1,17 @@
+[
+  {
+    "mode":"NULLABLE",
+    "name":"query_uuid",
+    "type":"STRING"
+  },
+  {
+    "mode":"NULLABLE",
+    "name":"chat_text",
+    "type":"STRING"
+  },
+  {
+    "mode":"NULLABLE",
+    "name":"chat_timestamp",
+    "type":"TIMESTAMP"
+  }
+]
