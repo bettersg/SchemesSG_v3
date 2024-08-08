@@ -7,21 +7,41 @@ The technical journey to realize this vision has been nothing short of transform
 For data processing, we employed **NLP (Natural Language Processing)** techniques, using tools like **spacy** and **re** for preprocessing and lemmatization. The **sentence-transformers all-mpnet-base-v2** model then helped us generate embeddings that truly captured the nuances of each scheme's purpose. We used **FAISS** to create a powerful indexing system, enabling users to search and retrieve scheme information efficiently.
 
 
+## Getting started
+### Prerequisites
 
-### What's here:
+Ensure you have the following installed on your machine:
 
-* [Flask](https://docs.streamlit.io/) on the frontend
-* [FastAPI](https://fastapi.tiangolo.com/) on the backend
-* Backend and frontend can be deployed with Docker
+- **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
+- **Docker Compose**: Docker Compose is included with Docker Desktop
+- **Download model files**: Download the model files from Google Drive or build yourself using model-creation-transformer-laiss.ipynb 
 
-> From inside the `backend` folder:
-Download the model files from Google Drive or build yourself using model-creation-transformer-laiss.ipynb
-Run export KMP_DUPLICATE_LIB_OK=TRUE if you facing issue
-You can serve the API with `uvicorn fast_api.api:app --reload` (default port is `8000`)
+### Developing in local environment
+```bash
+# Install dependencies
+pip install -r frontend/requirements.txt
 
-> From inside the `root` folder:
-<!-- Create .env file and make sure you have BigQuery setup  -->
-You can serve the frontend with `python app.py`
+# Launch frontend
+cd frontend
+python app.py
 
-### Docker
-Refer to Readme files in backend folder
+# In a new terminal, deploy backend locally
+cd ../backend
+uvicorn fast_api.api:app --host 0.0.0.0 --port 8000
+
+# Access the frontend service:
+# Open your browser and navigate to http://localhost:9099.
+```
+
+### Developing in local docker
+```bash
+# Build the image and run the containers
+docker compose up --build
+
+# Access the frontend service:
+# Open your browser and navigate to http://localhost:9099.
+```
+
+# Notes
+- Ensure your Docker Desktop is running before executing any Docker commands.
+- If you encounter any issues, check the Docker logs for more information.
