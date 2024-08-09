@@ -17,7 +17,7 @@ gcr_new_ar:
   gcloud artifacts repositories create $(GAR_IMAGE) --repository-format=docker --location=$(GCP_REGION) --description="Repository for storing $(GAR_IMAGE) images"
 
 build_gcr_image:
-	docker build --platform linux/amd64 -t  $(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT)/$(GAR_IMAGE)/$(GAR_IMAGE):prod .
+	docker build --platform linux/amd64 -t $(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT)/$(GAR_IMAGE)/$(GAR_IMAGE):prod .
 
 push_gcr_image:
 	docker push $(GCP_REGION)-docker.pkg.dev/$(GCP_PROJECT)/$(GAR_IMAGE)/$(GAR_IMAGE):prod
