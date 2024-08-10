@@ -84,7 +84,7 @@ def test():
 
 # TODO: incorrectly retains state across multiple clients. Look into RunnableWithMessageHistory
 @app.route('/chatbot', methods=['POST'])
-def get_data():
+def chatbot():
 	input = request.get_json().get('data')
 
 	llm = AzureChatOpenAI(deployment_name=deployment_name, azure_endpoint=openai_endpoint, openai_api_version=openai_api_version, openai_api_key=openai_api_key, openai_api_type=openai_api_type, model_name=model_name)
@@ -93,7 +93,6 @@ def get_data():
 	try:
 		conversation = ConversationChain(llm=llm, memory=memory, verbose=True)
 		output = conversation.predict(input=input)
-		memory.save_context({"input": input}, {"output": output})
 		return jsonify({"response":True, "message":output})
 	except Exception as e:
 		print(e)
