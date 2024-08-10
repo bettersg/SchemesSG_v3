@@ -7,3 +7,5 @@ backend/ml_logic/schemesv2-torch-allmpp-tokenizer/tokenizer.json
 backend/ml_logic/schemesv2-torch-allmpp-tokenizer/vocab.txt
 backend/ml_logic/schemesv2-your_embeddings.npy
 backend/ml_logic/schemesv2-your_index.faiss
+__pycache__/
+.env
