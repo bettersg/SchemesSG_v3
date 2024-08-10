@@ -211,7 +211,7 @@
                                                 <div class="form-row align-items-center">
                                                     <div class="col">
                                                         <input type="text" class="form-control" name="chatmessage"
-                                                            placeholder="I want to know more about..." id="userinput"
+                                                            placeholder="I want to know more about schemes..." id="userinput"
                                                             required></input>
                                                     </div>
                                                     <div>
@@ -273,6 +273,7 @@
 
                             });
                             let json = await response.json();
+                            document.getElementById('userinput').placeholder = "I want to know more about schemes..."
                             if (json.response) {
                                 let message = json.message
                                 message = message.toString()
