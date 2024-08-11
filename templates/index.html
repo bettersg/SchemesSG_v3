@@ -264,7 +264,7 @@
                             document.getElementById('userinput').value = ""
                             document.getElementById('userinput').placeholder = "Loading..."
 
-                            const response = await fetch("/chatbot", {
+                            const response = await fetch("http://127.0.0.1:8000/chatbot", {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',

@@ -1,4 +1,11 @@
+import os
+from dotenv import dotenv_values
 from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.responses import JSONResponse
+from langchain_openai import AzureChatOpenAI
+from langchain.chains.conversation.base import ConversationChain
+from langchain.memory import ConversationSummaryBufferMemory
+from dotenv.main import load_dotenv, find_dotenv
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +19,18 @@ from ml_logic.preprocessing import split_query_into_needs
 
 ml_models = {}
 
+class OpenAIConfig:
+    def __init__(self):
+        load_dotenv()
+
+        for key, value in dotenv_values().items():
+            setattr(self, key, value)
+
+    def __getattr__(self, item):
+        attr = os.getenv(item.upper())
+        if attr:
+            setattr(self, item.lower(), attr)
+        return attr
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -95,3 +114,35 @@ async def predict(params: PredictParams = Depends(get_predict_params)):
     }
     # results_json = final_results.to_dict(orient='records')
     return results_json
+
+
+# TODO: incorrectly retains state across multiple clients. Look into RunnableWithMessageHistory
+@app.post('/chatbot')
+async def chatbot(request: Request):
+    config = OpenAIConfig()
+
+    try:
+        data = await request.json()
+        input_text = data.get('data')
+        if not input_text:
+            raise HTTPException(status_code=400, detail="No input data provided")
+        
+        llm = AzureChatOpenAI(
+            deployment_name=config.deployment, 
+            azure_endpoint=config.endpoint, 
+            openai_api_version=config.version, 
+            openai_api_key=config.apikey, 
+            openai_api_type=config.type, 
+            model_name=config.model,
+            temperature=0
+        )
+        
+        memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
+        conversation = ConversationChain(llm=llm, memory=memory, verbose=True)
+        output = conversation.predict(input=input_text)
+        return JSONResponse(content={"response": True, "message": output})
+    
+    except Exception as e:
+        print(e)
+        error_message = f'Error: {str(e)}'
+        return JSONResponse(content={"response": False, "message": error_message})

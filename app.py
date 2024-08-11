@@ -4,10 +4,6 @@ import schemes_model as schemes_model
 import flask.json as json
 from flask_cors import CORS, cross_origin
 from config import config
-from dotenv.main import load_dotenv, find_dotenv
-from langchain_openai import AzureChatOpenAI
-from langchain.chains.conversation.base import ConversationChain
-from langchain.memory import ConversationSummaryBufferMemory
 
 app = Flask(__name__)
 
@@ -15,17 +11,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Load configuration based on environment variable
-load_dotenv()
 env = os.getenv('FLASK_ENV', 'development')
-
-# TODO: to be moved to database
-openai_api_key = os.getenv('OPENAI-API-KEY')
-openai_api_type = os.getenv('OPENAI-API-TYPE')
-openai_api_version = os.getenv('OPENAI-API-VERSION')
-openai_endpoint = os.getenv('OPENAI-ENDPOINT')
-deployment_name = os.getenv('DEPLOYMENT-NAME')
-model_name = os.getenv('MODEL-NAME')
-
 app.config.from_object(config[env])
 
 @cross_origin()
@@ -81,23 +67,6 @@ def gapfinder():
 @app.route('/testing.html')
 def test():
 	return render_template('testing.html')
-
-# TODO: incorrectly retains state across multiple clients. Look into RunnableWithMessageHistory
-@app.route('/chatbot', methods=['POST'])
-def chatbot():
-	input = request.get_json().get('data')
-
-	llm = AzureChatOpenAI(deployment_name=deployment_name, azure_endpoint=openai_endpoint, openai_api_version=openai_api_version, openai_api_key=openai_api_key, openai_api_type=openai_api_type, model_name=model_name)
-	memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100) 
-
-	try:
-		conversation = ConversationChain(llm=llm, memory=memory, verbose=True)
-		output = conversation.predict(input=input)
-		return jsonify({"response":True, "message":output})
-	except Exception as e:
-		print(e)
-		error_message = f'Error: {str(e)}'
-		return jsonify({"response": False, "message": error_message})
 
 # @app.route('/schemespredict', methods=['get','post'])
 # def schemes_predict():
