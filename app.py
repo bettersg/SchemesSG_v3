@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, render_template
 import os
 import schemes_model as schemes_model
 import flask.json as json
 from flask_cors import CORS, cross_origin
 from config import config
+
 
 app = Flask(__name__)
 
