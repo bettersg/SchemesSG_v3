@@ -92,6 +92,7 @@
 
         gtag('config', 'UA-195207938-1');
     </script>
+    <script type="text/javascript" src="static/js/chatbot.js"></script>
 </head>
 
 <body>
@@ -232,87 +233,73 @@
                     </div>
 
                     <script>
-                        // for scrolling messages
-                        function scrollToBottom() {
-                            var div = document.getElementById("chatwindow");
-                            div.scrollTop = div.scrollHeight;
-                        }
-                        scrollToBottom()
+                        scrollToBottom();
 
                         document.getElementById("userinputform").addEventListener("submit", function (event) {
                             event.preventDefault();
-                            formsubmitted();
+                            submitQuery();
                         });
 
-                        // sending request to python server
-                        const formsubmitted = async () => {
-                            let userinput = document.getElementById('userinput').value
-                            let sendbtn = document.getElementById('sendbtn')
-                            let userinputarea = document.getElementById('userinput')
-                            let upperdiv = document.getElementById('upperid')
+                        const submitQuery = async () => {
+                            let userInputArea = document.getElementById('userinput');
+                            let userInput = document.getElementById('userinput').value;
+                            let sendBtn = document.getElementById('sendbtn');
+                            let upperDiv = document.getElementById('upperid');
 
-                            upperdiv.innerHTML = upperdiv.innerHTML + `<div class="message">
+                            upperDiv.innerHTML = upperDiv.innerHTML + `<div class="message">
                                 <div class="d-flex justify-content-end flex-wrap ml-6">
                                     <div class="p-3 bg-primary text-white" style="border-radius: 20px;">
-                                            ${userinput}
+                                            ${userInput}
                                         </div>
                                 </div>
                             </div>`
-                            sendbtn.disabled = true
-                            userinputarea.disabled = true
-                            scrollToBottom()
-                            document.getElementById('userinput').value = ""
-                            document.getElementById('userinput').placeholder = "Loading..."
+                            sendBtn.disabled = true;
+                            userInputArea.disabled = true;
+                            scrollToBottom();
+                            document.getElementById('userinput').value = "";
+                            document.getElementById('userinput').placeholder = "Loading...";
 
-                            const response = await fetch("http://127.0.0.1:8000/chatbot", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({ data: userinput })
-
-                            });
-                            let json = await response.json();
+                            let chatResponse = await getChatResponse(userInput);
+                            
                             document.getElementById('userinput').placeholder = "I want to know more about schemes..."
-                            if (json.response) {
-                                let message = json.message
-                                message = message.toString()
+                            if (chatResponse.response) {
+                                let message = chatResponse.message.toString();
 
-                                upperdiv.innerHTML = upperdiv.innerHTML + `<div class="message">
+                                upperDiv.innerHTML += `<div class="message">
                                     <div class="d-flex justify-content-start flex-wrap mr-6">
                                         <div class="p-3 bg-gray-200 text-dark" style="border-radius: 20px;" id="temp">
                                         </div>
                                     </div>
                                 </div>`
-                                let temp = document.getElementById('temp')
-                                let index = 0
+                                let temp = document.getElementById('temp');
+                                let index = 0;
                                 function displayNextLetter() {
                                     scrollToBottom()
                                     if (index < message.length) {
-                                        temp.innerHTML = temp.innerHTML + message[index];
+                                        temp.innerHTML += message[index];
                                         index++;
                                         setTimeout(displayNextLetter, 30);
                                     } else {
-                                        temp.removeAttribute('id')
-                                        sendbtn.disabled = false
-                                        userinputarea.disabled = false
+                                        temp.removeAttribute('id');
+                                        sendBtn.disabled = false;
+                                        userInputArea.disabled = false;
                                     }
                                 }
-                                displayNextLetter()
-                                scrollToBottom()
+                                displayNextLetter();
+                                scrollToBottom();
                             } else {
-                                upperdiv.innerHTML = upperdiv.innerHTML +
+                                upperDiv.innerHTML +=
                                     `<div class="message">
                                         <div class="d-flex justify-content-start flex-wrap mr-6">
                                             <div class="p-3 bg-gray-200 text-dark" style="border-radius: 20px; border: 1px solid red;">
-                                                ${json.message}
+                                                ${chatResponse.message}
                                             </div>
                                         </div>
                                     </div>`
-                                sendbtn.disabled = false
-                                userinputarea.disabled = false
+                                sendBtn.disabled = false;
+                                userInputArea.disabled = false;
                             }
-                            scrollToBottom()
+                            scrollToBottom();
                         } 
                     </script>
 

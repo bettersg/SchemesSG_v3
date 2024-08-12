@@ -65,6 +65,7 @@ async def lifespan(app: FastAPI):
     yield
     # Clean up the ML models and release the resources
     ml_models.clear()
+    chat_history.clear()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -171,3 +172,4 @@ async def chatbot(request: Request):
         print(e)
         error_message = f'Error: {str(e)}'
         return JSONResponse(content={"response": False, "message": error_message})
+    
