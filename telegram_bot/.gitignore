@@ -1,0 +1,8 @@
+#Environment Files
+.env
+
+#Virtual Environment
+/venv
+
+#Testing
+*.http
