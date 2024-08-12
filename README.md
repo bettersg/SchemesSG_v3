@@ -14,26 +14,38 @@ Ensure you have the following installed on your machine:
 
 - **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
 - **Docker Compose**: Docker Compose is included with Docker Desktop
-- **Download model files**: Download the model files from Google Drive or build yourself using model-creation-transformer-laiss.ipynb 
+- **Poetry 1.8.3**: [Install Poetry](https://python-poetry.org/docs/#installation)
+- **Python 3.9 above**: [Install Python](https://www.python.org/downloads/)
+- **Download model files**: Download the model files from Google Drive or build yourself using model-creation-transformer-faiss.ipynb 
 
 ### Developing in local environment
+
+We use Poetry as the dependency manager because it provides a consistent and straightforward way to manage dependencies and virtual environments across both Windows and Mac systems.
+
 ```bash
-# Install dependencies
-pip install -r frontend/requirements.txt
-
-# Launch frontend
+# Install dependencies for frontend and deploy flask app w/ vanilla js
 cd frontend
-python app.py
+poetry install
+poetry run python app.py
 
-# In a new terminal, deploy backend locally
+# In a new terminal, install dependencies for backend and deploy locally
 cd ../backend
-uvicorn fast_api.api:app --host 0.0.0.0 --port 8000
+poetry install
+poetry run uvicorn fast_api.api:app --host 0.0.0.0 --port 8000
+
+# If the virtual environment fails to build due to an invalid poetry.lock file:
+## Regenerate poetry.lock file and re-install
+poetry lock --no-update
+poetry install
 
 # Access the frontend service:
 # Open your browser and navigate to http://localhost:9099.
 ```
 
 ### Developing in local docker
+
+We develop in a local Docker environment to closely replicate our production environments. This ensures that the application behaves consistently from development to deployment, minimizing issues that might arise due to differences in individual developer setups.
+
 ```bash
 # Build the image and run the containers
 docker compose up --build
@@ -42,6 +54,57 @@ docker compose up --build
 # Open your browser and navigate to http://localhost:9099.
 ```
 
+### Adding Development Dependencies
+
+To add dependencies specifically for development (e.g., testing frameworks, linters, etc.), you can use Poetry's `add` command with the `--group dev` option. This ensures that these dependencies are only installed in development environments and not in production.
+
+<details>
+  <summary>Poetry useful commands</summary>
+
+    ```bash
+    # Activate the Poetry environment
+    poetry shell
+
+    # Install all dependencies (including development dependencies if needed)
+    poetry install
+
+    # Add a production dependency
+    poetry add <dependency_name>
+    # e.g. poetry add pandas
+    # e.g. poetry add pandas@^2.2.2
+
+    # Add a development dependency
+    poetry add --group dev <dependency_name>
+
+    # Remove a dependency
+    poetry remove <dependency_name>
+
+    # Regenerate the poetry.lock file without updating dependencies
+    poetry lock --no-update
+
+    # List all installed dependencies
+    poetry show --all
+
+    # List only production dependencies
+    poetry show --only main
+
+    # List only development dependencies
+    poetry show --only dev
+
+    # Check the status of dependencies (e.g., if they are outdated)
+    poetry show --outdated
+
+    # Run a script or command within the Poetry environment
+    poetry run <command>
+    # e.g. poetry run python app.py 
+
+    # Check the project's environment and configuration
+    poetry check
+    ```
+</details>
+
+---
+
 # Notes
 - Ensure your Docker Desktop is running before executing any Docker commands.
-- If you encounter any issues, check the Docker logs for more information.
+- If you encounter any issues, you can pm Traci on slack or whatsapp.
