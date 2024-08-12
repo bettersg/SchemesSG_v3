@@ -4,25 +4,28 @@ version = "0.1.0"
 description = ""
 authors = ["Schemes Team <>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pandas = "^2.2.2"
-numpy = "~1.26.0"
-faiss-cpu = "^1.8.0.post1"
-torch = "^2.4.0"
-spacy = "^3.7.5"
-transformers = "^4.44.0"
-fastapi = "^0.112.0"
-uvicorn = "^0.30.5"
-python-multipart = "^0.0.9"
 contextlib2 = "^21.6.0"
+en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl"}
+faiss-cpu = "^1.8.0.post1"
+fastapi = "^0.112.0"
+numpy = "~1.26.0"
+pandas = "^2.2.2"
+python = "^3.9"
+python-multipart = "^0.0.9"
+spacy = "^3.7.5"
+torch = "^2.4.0"
+transformers = "^4.44.0"
+uvicorn = "^0.30.5"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
 ruff = "^0.5.7"
 pytest = "^8.3.2"
 pytest-cov = "^5.0.0"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
