@@ -3,9 +3,10 @@ from dotenv import dotenv_values
 from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 from langchain_openai import AzureChatOpenAI
-from langchain.chains.conversation.base import ConversationChain
-from langchain.memory import ConversationSummaryBufferMemory
-from dotenv.main import load_dotenv, find_dotenv
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from dotenv.main import load_dotenv
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,8 +19,10 @@ from ml_logic.model import combine_and_aggregate_results
 from ml_logic.preprocessing import split_query_into_needs
 
 ml_models = {}
+llm = None
+chat_history = {}
 
-class OpenAIConfig:
+class Config:
     def __init__(self):
         load_dotenv()
 
@@ -32,8 +35,23 @@ class OpenAIConfig:
             setattr(self, item.lower(), attr)
         return attr
 
+def init_chatbot():
+    config = Config()
+    return AzureChatOpenAI(
+                deployment_name=config.deployment, 
+                azure_endpoint=config.endpoint, 
+                openai_api_version=config.version, 
+                openai_api_key=config.apikey, 
+                openai_api_type=config.type, 
+                model_name=config.model,
+                temperature=0.3
+            )
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global llm 
+    llm = init_chatbot()
+    print('got chatbot llm')
     # Load the ML model
     model_path = 'ml_logic/schemesv2-torch-allmpp-model'
     tokenizer_path = 'ml_logic/schemesv2-torch-allmpp-tokenizer'
@@ -116,32 +134,39 @@ async def predict(params: PredictParams = Depends(get_predict_params)):
     return results_json
 
 
-# TODO: incorrectly retains state across multiple clients. Look into RunnableWithMessageHistory
+def get_session_history(session_id: str):
+    global chat_history
+    if session_id not in chat_history:
+        chat_history[session_id] = ChatMessageHistory()
+    return chat_history[session_id]
+
 @app.post('/chatbot')
 async def chatbot(request: Request):
-    config = OpenAIConfig()
-
+    global chat_history
     try:
         data = await request.json()
-        input_text = data.get('data')
-        if not input_text:
-            raise HTTPException(status_code=400, detail="No input data provided")
-        
-        llm = AzureChatOpenAI(
-            deployment_name=config.deployment, 
-            azure_endpoint=config.endpoint, 
-            openai_api_version=config.version, 
-            openai_api_key=config.apikey, 
-            openai_api_type=config.type, 
-            model_name=config.model,
-            temperature=0
+        input_text = data.get('message')
+        sessionID = data.get('sessionID')
+
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ('system', "You are a helpful assistant who wants to inform people about schemes in Singapore"),
+                MessagesPlaceholder(variable_name='history'),
+                ('human', '{query}'),
+            ]
         )
+        chain = prompt_template | llm
+        chain_with_history = RunnableWithMessageHistory(
+                chain,
+                get_session_history,
+                input_messages_key="query",
+                history_messages_key="history"
+            )
         
-        memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=100)
-        conversation = ConversationChain(llm=llm, memory=memory, verbose=True)
-        output = conversation.predict(input=input_text)
-        return JSONResponse(content={"response": True, "message": output})
-    
+        config = {'configurable': {'session_id': sessionID}}
+        message = chain_with_history.invoke({"query": input_text}, config=config)
+        return JSONResponse(content={"response": True, "message": message.content})
+
     except Exception as e:
         print(e)
         error_message = f'Error: {str(e)}'
