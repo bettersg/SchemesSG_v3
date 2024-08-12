@@ -77,9 +77,11 @@ poetry install
 # Open your browser and navigate to http://localhost:9099.
 ```
 
-### Developing in local docker
+### Deployment in local docker
 
-We develop in a local Docker environment to closely replicate our production environments. This ensures that the application behaves consistently from development to deployment, minimizing issues that might arise due to differences in individual developer setups.
+Any core logic changes have to follow with this step. Local Docker environment is designed to closely replicate our production environments. This ensures that the application behaves consistently from development to deployment, minimizing issues that might arise due to differences in individual developer setups.
+
+For example, if you make changes to core logic in `backend/` directory, you have to deploy the both frontend and backend via docker and perform functionality tests manaully.
 
 ```bash
 # Build the image and run the containers
