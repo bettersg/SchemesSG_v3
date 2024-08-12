@@ -22,14 +22,49 @@ Ensure you have the following installed on your machine:
 
 We use Poetry as the dependency manager because it provides a consistent and straightforward way to manage dependencies and virtual environments across both Windows and Mac systems.
 
+#### Poetry config set up (Must Run)
+```bash
+# ensure all poetry environments are installed in the directory
+poetry config virtualenvs.in-project true
+```
+
+#### Developing in jupyter notebooks
+
+You may launch jupyter notebook via poetry or use visual studio code's native jupyter extension.
+
+1. Launch jupyter notebook via poetry
+  ```bash
+  # Change directory to backend or frontend because the pyproject.toml file is in those directories
+  cd backend
+
+  # deactivate any existing virtual environment, i.e. anaconda
+  deactivate
+
+  # Create new python virtual env and install dependencies using poetry
+  poetry install 
+  # notice that a .venv/ directory will be installed in the directory
+
+  # Initialize python virtual env
+  poetry shell
+
+  # launch jupyter notebook
+  jupyter notebook
+  ```
+
+2. Launch visual studio code and open jupyter notebook (preferred method)
+
+#### Deploy frontend and backend locally 
+
 ```bash
 # Install dependencies for frontend and deploy flask app w/ vanilla js
 cd frontend
+deactivate
 poetry install
 poetry run python app.py
 
 # In a new terminal, install dependencies for backend and deploy locally
 cd ../backend
+deactivate
 poetry install
 poetry run uvicorn fast_api.api:app --host 0.0.0.0 --port 8000
 
