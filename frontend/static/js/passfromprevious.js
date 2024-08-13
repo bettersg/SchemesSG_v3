@@ -15,7 +15,7 @@ if (window.location.search.indexOf('query') == 1) {
     $("#filler").hide().append('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>').fadeIn(1000);
 
     // var url = "https://schemes.sg/schemespredict";
-    var url = 'http://127.0.0.1:8000/schemespredict'
+    var url = 'http://0.0.0.0:8000/schemespredict'
 
 
     // Create our request constructor with all the parameters we need
