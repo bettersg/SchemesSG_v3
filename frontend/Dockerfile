@@ -5,8 +5,7 @@ FROM python:3.9-slim-buster
 ENV PYTHONUNBUFFERED=1 \
     POETRY_VERSION=1.8.3 \
     POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_NO_INTERACTION=1 \
-    KMP_DUPLICATE_LIB_OK=TRUE
+    POETRY_NO_INTERACTION=1
 
 # Install Poetry and create a non-root user
 RUN apt-get update && apt-get install --no-install-recommends -y curl \
@@ -28,14 +27,11 @@ RUN poetry install --only main --no-root
 # Copy the rest of the application code and set ownership to the non-root user
 COPY --chown=appuser:appuser . /app
 
-# Download the spaCy model
-RUN python -m spacy download en_core_web_sm
-
 # Switch to non-root user
 USER appuser
 
-# Expose the port (optional: you can set the port via an environment variable)
-EXPOSE $PORT
+# Expose port 9099
+EXPOSE 9099
 
-# Run the application with Uvicorn using shell form to expand environment variables
-CMD uvicorn fast_api.api:app --host 0.0.0.0 --port ${PORT:-8000}
+# Run the application
+CMD ["python", "app.py"]
