@@ -6,3 +6,6 @@
 
 #Testing
 *.http
+
+#Chat data
+/data
