@@ -8,7 +8,7 @@ function handle__schemespal() {
     segment.html("");
     $("#filler").hide().append('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>').fadeIn(1000);
     // var url = "https://schemes.sg/schemespredict";
-    var url = 'http://127.0.0.1:8000/schemespredict'
+    var url = 'http://0.0.0.0:8000/schemespredict'
 
     // The data we are going to send in our request
     let data_package = {
@@ -36,7 +36,9 @@ function handle__schemespal() {
             console.log(resp);
             var segment = $("#filler");
             segment.html("");
-            if(resp.mh < 0.55){
+            var pic = document.getElementById('schemespalpic');
+            pic.style.display = 'none';
+            if (resp.mh < 0.55){
             for (var i = 0; i < resp.data.length; i++) {
                 scheme = resp.data[i].Scheme;
                 agency = resp.data[i].Agency;

@@ -77,7 +77,7 @@ def test():
 def send_message():
 	data = request.get_json()
 	input_text = data.get('data')
-	response = requests.post('http://127.0.0.1:8000/chatbot', json={'message': input_text, 'sessionID': session['session_id']})
+	response = requests.post('http://0.0.0.0:8000/chatbot', json={'message': input_text, 'sessionID': session['session_id']})
 
 	return jsonify(response.json())
 
