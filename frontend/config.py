@@ -6,7 +6,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    API_URL = 'http://0.0.0.0:8000/schemespredict'  # Local API URL for development
+    API_URL = '/schemespredict'  # Local API URL for development
 
 class ProductionConfig(Config):
     DEBUG = False

@@ -8,13 +8,15 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from dotenv.main import load_dotenv
+import pandas as pd
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 from contextlib import asynccontextmanager
+from .cleantext import clean_scraped_text
+from collections import defaultdict
 
 from transformers import AutoModel, AutoTokenizer
 import faiss
@@ -27,7 +29,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 ml_models = {}
 llm = None
 chat_history = {}
-
+top_schemes = defaultdict(lambda: {})
 
 class Config:
     def __init__(self):
@@ -74,6 +76,7 @@ async def lifespan(app: FastAPI):
     # Clean up the ML models and release the resources
     ml_models.clear()
     chat_history.clear()
+    top_schemes.clear()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -93,31 +96,25 @@ class PredictParams(BaseModel):
     query: str
     top_k: Optional[int] = 20
     similarity_threshold: Optional[int] = 0
+    session_id: str
 
 
 async def get_predict_params(request: Request):
-    # Attempt to parse the parameters from the query string
-    query_params = request.query_params
-    query = query_params.get("query")
-    top_k = query_params.get("top_k", 20)
-    similarity_threshold = query_params.get("similarity_threshold", 0)
-
-    # If the query is not present in the query string, parse from the JSON body
-    if query is None:
-        try:
-            body = await request.json()
-            query = body.get("query")
-            top_k = body.get("top_k", 20)
-            similarity_threshold = body.get("similarity_threshold", 0)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid request body")
+    try:
+        body = await request.json()
+        session_id = body.get("sessionID")
+        query = body.get("query")
+        top_k = body.get("top_k", 20)
+        similarity_threshold = body.get("similarity_threshold", 0)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid request body")
 
     # Ensure query is present
     if query is None:
         raise HTTPException(status_code=400, detail="Query parameter is required")
 
     return PredictParams(
-        query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold)
+        query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold), session_id=str(session_id)
     )
 
 
@@ -132,6 +129,7 @@ async def predict(params: PredictParams = Depends(get_predict_params)):
     query = params.query
     top_k = params.top_k
     similarity_threshold = params.similarity_threshold
+    session_id = params.session_id
 
     print(query)  # query text provided by the user
     print(top_k)  # how many top schemes to search based on the query
@@ -146,6 +144,7 @@ async def predict(params: PredictParams = Depends(get_predict_params)):
     # result = search_similar_items(query, ml_models)
     results_json = {"data": final_results.to_dict(orient="records"), "mh": 0.7}
     # results_json = final_results.to_dict(orient='records')
+    top_schemes[session_id] = results_json
     return results_json
 
 
@@ -163,6 +162,18 @@ def get_session_history(session_id: str):
 
     return chat_history[session_id]
 
+def dataframe_to_text(df):
+    # Example function to convert first 5 rows of a DataFrame into a text summary
+    text_summary = ''
+    for index, row in df.iterrows():
+        row = row.data
+        cleanScrape = row['Scraped Text']
+        sentence = clean_scraped_text(cleanScrape)
+
+        text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
+    return text_summary
+
+
 @app.post('/chatbot')
 async def chatbot(request: Request):
     global chat_history
@@ -170,6 +181,11 @@ async def chatbot(request: Request):
         data = await request.json()
         input_text = data.get('message')
         session_id = data.get('sessionID')
+        top_schemes_text = ""
+
+        df = pd.DataFrame(top_schemes[session_id])
+        if df is not None:
+            top_schemes_text = dataframe_to_text(df)
 
         template_text = """
         As a virtual assistant, I'm dedicated to helping user navigate through the available schemes. User has done initial search based on their needs and system has provided top schemes relevant to the search. Now, my job is to advise on the follow up user queries based on the schemes data available by analyzing user query and extracting relevant answers from the top scheme data. Top Schemes Information includes scheme name, agency, Link to website, and may include text directly scraped from scheme website.
@@ -185,13 +201,15 @@ async def chatbot(request: Request):
         4. **Safety and Respect**: Maintaining a safe, respectful interaction is paramount. I will not entertain or generate harmful, disrespectful, or irrelevant content. Should any query diverge from the discussion on schemes, I will gently redirect the focus back to how I can assist with scheme-related inquiries.
 
         5. **Avoidance of Fabrication**: My responses will solely rely on the information from the scheme details provided, avoiding any speculative or unfounded content. I will not alter or presume any specifics not clearly indicated in the scheme descriptions.
-        """
+
+        **Top Schemes Information:**
+        """ + top_schemes_text
 
         prompt_template = ChatPromptTemplate.from_messages(
             [
-                SystemMessagePromptTemplate.from_template(template_text),
-                MessagesPlaceholder(variable_name='history'),
-                HumanMessagePromptTemplate.from_template("{query}"),
+                ("system", template_text),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{query}"),
             ]
         )
 

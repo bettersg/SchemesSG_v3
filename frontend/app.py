@@ -81,17 +81,15 @@ def send_message():
 
 	return jsonify(response.json())
 
-# @app.route('/schemespredict', methods=['get','post'])
-# def schemes_predict():
-# 	result = 'nil'
-# 	try:
-# 		input = request.get_json()
-# 		query = input['query']
-# 		relevance = int(input['relevance'])
-# 		result = schemes_model.search_similar_schemes(query, relevance)
-# 	except Exception as e:
-# 		print('Error: ',e)
-# 	return result
+@app.route('/schemespredict', methods=['get','post'])
+def schemes_predict():
+	data = request.get_json()
+	query = data.get('query')
+	relevance = data.get('relevance')
+	response = requests.post('http://0.0.0.0:8000/schemespredict', json={'query': query, 'relevance': relevance, 'sessionID': session['session_id']})
+
+	return jsonify(response.json())
+
 
 if __name__ == '__main__':
 	app.secret_key = 'super secret key'
