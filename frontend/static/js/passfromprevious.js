@@ -38,6 +38,8 @@ if (window.location.search.indexOf('query') == 1) {
             console.log(resp);
             var segment = $("#filler");
             segment.html("");
+            var pic = document.getElementById('schemespalpic');
+            pic.style.display = 'none';
             if(resp.mh < 0.55){
             for (var i = 0; i < resp.data.length; i++) {
                 scheme = resp.data[i].Scheme;

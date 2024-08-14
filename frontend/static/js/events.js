@@ -28,6 +28,7 @@ function handle__schemespal() {
         headers: headers
     });
 
+    // TODO: Abstract out duplicated logic in event.js
     // Call the fetch function passing the url of the API as a parameter
     fetch(request)
         .then((resp) => resp.json()) // Transform the data into json
