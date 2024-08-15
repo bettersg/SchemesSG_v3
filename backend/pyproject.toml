@@ -19,6 +19,12 @@ spacy = "^3.7.5"
 torch = "^2.4.0"
 transformers = "^4.44.0"
 uvicorn = "^0.30.5"
+python-dotenv = "^1.0.1"
+langchain-openai = "^0.1.21"
+langchain-community = "^0.2.12"
+langchain-core = "^0.2.30"
+langchain-google-genai = "^1.0.8"
+flask = {extras = ["async"], version = "^3.0.3"}
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"

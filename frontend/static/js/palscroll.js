@@ -1,7 +1,7 @@
 if (window.location.search.indexOf('query') == 1) {
     $(document).ready(setTimeout(function () {
         $('html, body').animate({
-            scrollTop: $("#filler").offset().top
+            scrollTop: $("#scrollhere").offset().top
         }, 400);
     },800)
     );

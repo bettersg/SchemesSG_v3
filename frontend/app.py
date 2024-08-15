@@ -1,11 +1,11 @@
-from flask import Flask, request, render_template
-import sys
+import uuid
+from flask import Flask, jsonify, render_template, request, session
 import os
+import requests
 import schemes_model as schemes_model
 import flask.json as json
 from flask_cors import CORS, cross_origin
 from config import config
-
 
 app = Flask(__name__)
 
@@ -20,6 +20,9 @@ app.config.from_object(config[env])
 
 @app.route('/')
 def root():
+	if 'session_id' not in session:
+		session['session_id'] = str(uuid.uuid4())
+
 	return render_template('index.html')
 
 @app.route('/index.html')
@@ -70,18 +73,25 @@ def gapfinder():
 def test():
 	return render_template('testing.html')
 
-# @app.route('/schemespredict', methods=['get','post'])
-# def schemes_predict():
-# 	result = 'nil'
-# 	try:
-# 		input = request.get_json()
-# 		query = input['query']
-# 		relevance = int(input['relevance'])
-# 		result = schemes_model.search_similar_schemes(query, relevance)
-# 	except Exception as e:
-# 		print('Error: ',e)
-# 	return result
+@app.route('/chatbot', methods=['POST'])
+def send_message():
+	data = request.get_json()
+	input_text = data.get('data')
+	response = requests.post('http://0.0.0.0:8000/chatbot', json={'message': input_text, 'sessionID': session['session_id']})
+
+	return jsonify(response.json())
+
+@app.route('/schemespredict', methods=['get','post'])
+def schemes_predict():
+	data = request.get_json()
+	query = data.get('query')
+	relevance = data.get('relevance')
+	response = requests.post('http://0.0.0.0:8000/schemespredict', json={'query': query, 'relevance': relevance, 'sessionID': session['session_id']})
+
+	return jsonify(response.json())
+
 
 if __name__ == '__main__':
+	app.secret_key = 'super secret key'
 	port = int(os.getenv("PORT",9099))
 	app.run(host='0.0.0.0',port=port,debug=True)

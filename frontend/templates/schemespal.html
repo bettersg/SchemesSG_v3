@@ -49,6 +49,23 @@
         body.loaded>div.preloader {
             animation: hidePreloader .5s linear .5s forwards;
         }
+
+        .bottom {
+            padding-bottom: 5%;
+            width: min(95%, 800px);
+        }
+
+        .message {
+            margin: 20px;
+        }
+
+        .message p {
+            margin: 0;
+        }
+
+        #sendbtn:disabled {
+            opacity: 0.6;
+        }
     </style>
     <script>
         window.addEventListener("load", function () {
@@ -75,6 +92,7 @@
 
         gtag('config', 'UA-195207938-1');
     </script>
+    <script type="text/javascript" src="static/js/chatbot.js"></script>
 </head>
 
 <body>
@@ -173,7 +191,8 @@
                                         <strong>DO NOT</strong> give identifiable info like NRIC or name. <a
                                             href="javascript:void(0)" data-container="body" data-toggle="popover"
                                             data-content="We record the query text to train the AI model and improve its accuracy to serve you better. Rest assured that we are unable to identify the individuals who entered the query or whom it refers to. You can help us ensure an even greater level of security by not providing names or identifiable detail.">Important:
-                                            please read this.</a></p>
+                                            please read this.</a>
+                                    </p>
                                 </div>
                             </div>
                         </li>
@@ -248,8 +267,141 @@
         </div>
     </section>
 
-    <section class="slice slice-lg">
-        <div class="container" id="filler">
+    <section class="slice slice-lg" id="scrollhere">
+        <div class="container">
+            <div class="row row-grid align-baseline justify-content-center">
+                <div class="col-8 col-md-push-5 col-lg-6 order-md-2">
+                    <div class="bottom" style="min-width: 400px">
+                        <form id="userinputform">
+                            <div class="flex items-center rounded-lg bg-gray-50 dark:bg-gray-70">
+                                <div class="overflow-auto" style="max-height: 500px;" id="chatwindow">
+                                    <div class="message">
+                                        <div class="d-flex justify-content-start flex-wrap mr-6">
+                                            <div class="p-3 bg-gray-200 text-dark" style="border-radius: 20px;">
+                                                <p>Welcome to Schemes Support Chat 🌟 Feel free to ask me questions
+                                                    like:
+                                                </p>
+                                                <ul>
+                                                    <li>"Can you tell me more about Scheme X"?</li>
+                                                    <li>"How can I apply for support from Scheme X"?</li>
+                                                </ul>
+                                                <p>To get started, just type your question below. I'm here to explore
+                                                    schemes results 🚀</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="upperid"></div>
+                                </div>
+
+                                <div class="container">
+                                    <div class="row justify-content-center">
+                                        <div class="col-md">
+                                            <div class="card p-3">
+                                                <div class="form-row align-items-center">
+                                                    <div class="col">
+                                                        <input type="text" class="form-control" name="chatmessage"
+                                                            placeholder="I want to know more about schemes..."
+                                                            id="userinput" required></input>
+                                                    </div>
+                                                    <div>
+                                                        <button
+                                                            class="btn btn-sm btn-primary d-lg-inline-block ml-2"
+                                                            id="sendbtn">
+                                                            ➤
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+                <div class="col-8 col-md-6 col-md-pull-5 col-lg-6 order-md-2">
+                    <figure class="w-100 responsive-picture-hide" id="schemespalpic">
+                        <img alt="Image placeholder"
+                            src="static/img/svg/illustrations/banner1.png"
+                            class="img-fluid">
+                    </figure>
+                    <div class="container" id="filler"></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            scrollToBottom();
+
+            document.getElementById("userinputform").addEventListener("submit", function (event) {
+                event.preventDefault();
+                submitQuery();
+            });
+
+            const submitQuery = async () => {
+                let userInputArea = document.getElementById('userinput');
+                let userInput = document.getElementById('userinput').value;
+                let sendBtn = document.getElementById('sendbtn');
+                let upperDiv = document.getElementById('upperid');
+
+                upperDiv.innerHTML = upperDiv.innerHTML + `<div class="message">
+                    <div class="d-flex justify-content-end flex-wrap ml-6">
+                        <div class="p-3 bg-primary text-white" style="border-radius: 20px;">
+                                ${userInput}
+                            </div>
+                    </div>
+                </div>`
+                sendBtn.disabled = true;
+                userInputArea.disabled = true;
+                scrollToBottom();
+                document.getElementById('userinput').value = "";
+                document.getElementById('userinput').placeholder = "Loading...";
+
+                let chatResponse = await getChatResponse(userInput);
+
+                document.getElementById('userinput').placeholder = "I want to know more about schemes..."
+                if (chatResponse.response) {
+                    let message = chatResponse.message.toString();
+
+                    upperDiv.innerHTML += `<div class="message">
+                        <div class="d-flex justify-content-start flex-wrap mr-6">
+                            <div class="p-3 bg-gray-200 text-dark" style="border-radius: 20px;" id="temp">
+                            </div>
+                        </div>
+                    </div>`
+                    let temp = document.getElementById('temp');
+                    let index = 0;
+                    function displayNextLetter() {
+                        scrollToBottom()
+                        if (index < message.length) {
+                            temp.innerHTML += message[index];
+                            index++;
+                            setTimeout(displayNextLetter, 30);
+                        } else {
+                            temp.removeAttribute('id');
+                            sendBtn.disabled = false;
+                            userInputArea.disabled = false;
+                        }
+                    }
+                    displayNextLetter();
+                    scrollToBottom();
+                } else {
+                    upperDiv.innerHTML +=
+                        `<div class="message">
+                            <div class="d-flex justify-content-start flex-wrap mr-6">
+                                <div class="p-3 bg-gray-200 text-dark" style="border-radius: 20px; border: 1px solid red;">
+                                    ${chatResponse.message}
+                                </div>
+                            </div>
+                        </div>`
+                    sendBtn.disabled = false;
+                    userInputArea.disabled = false;
+                }
+                scrollToBottom();
+            } 
+        </script>
 
         </div>
     </section>
@@ -329,6 +481,7 @@
             </div>
         </div>
     </footer>
+
     <!-- Core JS  -->
 
     <script src="static/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

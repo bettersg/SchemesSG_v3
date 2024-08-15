@@ -75,6 +75,7 @@
 
         gtag('config', 'UA-195207938-1');
     </script>
+    <script type="text/javascript" src="static/js/chatbot.js"></script>
 </head>
 
 <body>
@@ -128,12 +129,12 @@
             </div>
         </div>
     </nav>
-    
+
 
     <!-- Main content -->
     <section class="slice py-4   bg-section-secondary">
         <div class="container">
-            
+
 
 
             <div class="row row-grid align-items-center justify-content-center">
@@ -157,6 +158,14 @@
                     </p>
 
                     <!-- Form -->
+                    <!-- <form id="indexpal">
+                    <div class="form-group">
+                        <textarea id="indexpal-text" class="form-control form-control-lg" name="Query"
+                            placeholder="E.g. I am a dialysis patient in need of financial assistance and food support after being retrenched due to COVID 19"
+                            rows="3" required></textarea>
+                </form> -->
+
+                    <!-- Form -->
                     <form id="indexpal">
                         <div class="form-group">
                             <textarea id="indexpal-text" class="form-control form-control-lg" name="Query"
@@ -164,10 +173,8 @@
                                 rows="3" required></textarea>
                         </div>
 
-
-
                         <div class="text-center">
-                            <!-- <div class="g-recaptcha" data-sitekey="6Lfs5ScUAAAAANAJwGrdfvWLFRRiVbKRE2vfoaFj"></div> -->
+                            <div class="g-recaptcha" data-sitekey="6Lfs5ScUAAAAANAJwGrdfvWLFRRiVbKRE2vfoaFj"></div>
                             <button id="indexpal-submit" type="button" class="btn btn-sm btn-primary mt-4 mb-4"
                                 onclick="handle_indexpal()">Search</button>
                         </div>
