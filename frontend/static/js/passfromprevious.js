@@ -15,7 +15,7 @@ if (window.location.search.indexOf('query') == 1) {
     $("#filler").hide().append('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>').fadeIn(1000);
 
     // var url = "https://schemes.sg/schemespredict";
-    var url = 'http://127.0.0.1:8000/schemespredict'
+    var url = '/schemespredict'
 
 
     // Create our request constructor with all the parameters we need
@@ -38,6 +38,8 @@ if (window.location.search.indexOf('query') == 1) {
             console.log(resp);
             var segment = $("#filler");
             segment.html("");
+            var pic = document.getElementById('schemespalpic');
+            pic.style.display = 'none';
             if(resp.mh < 0.55){
             for (var i = 0; i < resp.data.length; i++) {
                 scheme = resp.data[i].Scheme;

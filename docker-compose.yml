@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   backend:
+    platform: linux/amd64
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -15,6 +16,7 @@ services:
       - app-network
 
   frontend:
+    platform: linux/amd64
     build:
       context: ./frontend
       dockerfile: Dockerfile
