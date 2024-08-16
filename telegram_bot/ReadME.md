@@ -1,6 +1,6 @@
 # Telegram Bot
 
-To install and deploy, create a file called `.env` and place it in the `telegram_bot` folder.
+To install and deploy, create a file called `.env` and place it in the `telegram_bot` folder, as seen in `.env.sample`.
 
 ```env
 API_KEY=your-telegram-api-key
@@ -11,10 +11,10 @@ Enter the following commands (from `telegram_bot` folder)
 
 ```bash
 # Installation
-py -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+deactivate
+poetry install
+poetry run python app.py
 
 # Deployment
-py app.py
+python app.py
 ```
