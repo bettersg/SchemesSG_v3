@@ -371,16 +371,19 @@
                     }
 
                     const newOpeningTag = htmlMessage.slice(0, idx+1)
-                    temp.innerHTML =  frontHTML + newOpeningTag + newClosingTag + closingTags
-                    displayNextLetterHTML(htmlMessage.slice(idx+1),newClosingTag + closingTags)
+
+                    //dealing with self-closing tags
+                    closingTags = !['br', 'hr'].includes(newOpeningTag.slice(1,-1)) ? newClosingTag + closingTags : closingTags
+                    temp.innerHTML =  frontHTML + newOpeningTag + closingTags
+                    displayNextLetterHTML(htmlMessage.slice(idx+1), closingTags)
                     return;
                 } 
 
                 //dealing with special characters
-                const renderedChar = htmlMessage.charAt(0) === '&' ? htmlMessage.slice(0, htmlMessage.indexOf(';')+1): htmlMessage.charAt(0)
+                const renderedChar = (htmlMessage.charAt(0) === '&' && htmlMessage.charAt(1) !== ' ') ? htmlMessage.slice(0, htmlMessage.indexOf(';')+1): htmlMessage.charAt(0)
 
                 temp.innerHTML = frontHTML + renderedChar + closingTags
-                setTimeout(displayNextLetterHTML, 5, htmlMessage.slice(renderedChar.length), closingTags);
+                setTimeout(displayNextLetterHTML, 1, htmlMessage.slice(renderedChar.length), closingTags);
             }
  
             const submitQuery = async () => {
@@ -419,9 +422,8 @@
                     let temp = document.getElementById('temp');
 
                     //Replace all headers with <strong>
-                    htmlMessage = htmlMessage.replace(/<h[1-6]>/g, '<strong>');
-                    htmlMessage = htmlMessage.replace(/<\/h[1-6]>/g, '</strong>');
-
+                    htmlMessage = htmlMessage.replace(/<h[1-4]>/g, '<h5>');
+                    htmlMessage = htmlMessage.replace(/<\/h[1-4]>/g, '</h5>');
                     displayNextLetterHTML(htmlMessage, '')
                 } else {
                     upperDiv.innerHTML +=
