@@ -80,6 +80,7 @@
     <!-- Quick CSS -->
     <link rel="stylesheet" href="static/css/quick-website.css" id="stylesheet">
     <script src="static/libs/jquery/dist/jquery.min.js"></script>
+    <script src="static/libs/marked/marked.js"></script>
     <script type="text/javascript" src="static/js/palscroll.js"></script>
     <script type="text/javascript" src="static/js/passfromprevious.js"></script>
     <script type="text/javascript" src="static/js/events.js"></script>
@@ -340,6 +341,48 @@
                 submitQuery();
             });
 
+            const displayNextLetterHTML = (htmlMessage, closingTags) => {
+                scrollToBottom()
+                let temp = document.getElementById('temp');
+
+                if (htmlMessage.length === 0) {
+                    let sendBtn = document.getElementById('sendbtn');
+                    let userInputArea = document.getElementById('userinput');
+                    sendBtn.disabled = false
+                    userInputArea.disabled = false
+                    temp.removeAttribute('id')
+                    return;
+                }
+
+                const frontHTML =  closingTags.length > 0 ? temp.innerHTML.slice(0, -1*closingTags.length) : temp.innerHTML
+
+                if (htmlMessage.charAt(0) === '<') {
+                    //Handling html tags
+                    let idx = 1
+                    const endTags = ['>', ' ']
+                    while (!endTags.includes(htmlMessage.charAt(idx))) idx++
+                    const newClosingTag = `</${htmlMessage.slice(1,idx)}>`
+
+                    while (htmlMessage.charAt(idx) !== '>') idx++
+                    if (htmlMessage.slice(0,2) === '</') {
+                        // Handling closing tags
+                        displayNextLetterHTML(htmlMessage.slice(idx+1), closingTags.slice(idx+1))
+                        return;
+                    }
+
+                    const newOpeningTag = htmlMessage.slice(0, idx+1)
+                    temp.innerHTML =  frontHTML + newOpeningTag + newClosingTag + closingTags
+                    displayNextLetterHTML(htmlMessage.slice(idx+1),newClosingTag + closingTags)
+                    return;
+                } 
+
+                //dealing with special characters
+                const renderedChar = htmlMessage.charAt(0) === '&' ? htmlMessage.slice(0, htmlMessage.indexOf(';')+1): htmlMessage.charAt(0)
+
+                temp.innerHTML = frontHTML + renderedChar + closingTags
+                setTimeout(displayNextLetterHTML, 5, htmlMessage.slice(renderedChar.length), closingTags);
+            }
+ 
             const submitQuery = async () => {
                 let userInputArea = document.getElementById('userinput');
                 let userInput = document.getElementById('userinput').value;
@@ -364,6 +407,7 @@
                 document.getElementById('userinput').placeholder = "I want to know more about schemes..."
                 if (chatResponse.response) {
                     let message = chatResponse.message.toString();
+                    htmlMessage = marked.parse(chatResponse.message)
 
                     upperDiv.innerHTML += `<div class="message">
                         <div class="d-flex justify-content-start flex-wrap mr-6">
@@ -371,22 +415,14 @@
                             </div>
                         </div>
                     </div>`
+
                     let temp = document.getElementById('temp');
-                    let index = 0;
-                    function displayNextLetter() {
-                        scrollToBottom()
-                        if (index < message.length) {
-                            temp.innerHTML += message[index];
-                            index++;
-                            setTimeout(displayNextLetter, 30);
-                        } else {
-                            temp.removeAttribute('id');
-                            sendBtn.disabled = false;
-                            userInputArea.disabled = false;
-                        }
-                    }
-                    displayNextLetter();
-                    scrollToBottom();
+
+                    //Replace all headers with <strong>
+                    htmlMessage = htmlMessage.replace(/<h[1-6]>/g, '<strong>');
+                    htmlMessage = htmlMessage.replace(/<\/h[1-6]>/g, '</strong>');
+
+                    displayNextLetterHTML(htmlMessage, '')
                 } else {
                     upperDiv.innerHTML +=
                         `<div class="message">

@@ -183,7 +183,7 @@ async def chatbot(request: Request):
         session_id = data.get('sessionID')
         top_schemes_text = ""
 
-        df = pd.DataFrame(top_schemes[session_id])
+        df = pd.DataFrame(top_schemes[str(session_id)])
         if df is not None:
             top_schemes_text = dataframe_to_text(df)
 
