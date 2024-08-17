@@ -36,7 +36,7 @@ class Config:
         load_dotenv()
 
         for key, value in dotenv_values().items():
-            setattr(self, key, value)
+            setattr(self, key.lower(), value)
 
     def __getattr__(self, item):
         attr = os.getenv(item.upper())

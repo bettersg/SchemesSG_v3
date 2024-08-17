@@ -22,6 +22,17 @@ Ensure you have the following installed on your machine:
 
 We use Poetry as the dependency manager because it provides a consistent and straightforward way to manage dependencies and virtual environments across both Windows and Mac systems.
 
+### Set environment variables
+`.env`:
+```shell
+APIKEY= # Azure OpenAI key
+TYPE= # Azure OpenAI type, e.g. "xxxx-Preview"
+VERSION= # Azure OpenAI version, e.g. "2022-02-16-preview"
+ENDPOINT= # Azure endpoint, including the resource. e.g. "https://example-resource.azure.openai.com/"
+DEPLOYMENT= # Azure OpenAI model deployment
+MODEL= # Azure OpenAI model name, e.g. "gpt-4o"
+```
+
 #### Poetry config set up (Must Run)
 ```bash
 # ensure all poetry environments are installed in the directory
