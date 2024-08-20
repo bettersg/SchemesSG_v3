@@ -14,7 +14,7 @@ function handle__schemespal() {
     )
     .fadeIn(1000);
   // var url = "https://schemes.sg/schemespredict";
-  var url = "http://127.0.0.1:8000/schemespredict";
+  var url = "/schemespredict";
 
   // The data we are going to send in our request
   let data_package = {
