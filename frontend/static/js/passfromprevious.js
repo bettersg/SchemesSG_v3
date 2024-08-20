@@ -20,7 +20,7 @@ if (window.location.search.indexOf("query") == 1) {
     .fadeIn(1000);
 
   // var url = "https://schemes.sg/schemespredict";
-  var url = "http://127.0.0.1:8000/schemespredict";
+  var url = "/schemespredict";
 
   // Create our request constructor with all the parameters we need
   var headers = new Headers({
