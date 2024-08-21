@@ -18,15 +18,17 @@ async function getChatResponse(userInput) {
 
 let temp = document.getElementById('temp');
 let index = 0;
-function displayNextLetter() {
-    scrollToBottom()
-    if (index < message.length) {
-        temp.innerHTML = temp.innerHTML + message[index];
-        index++;
-        setTimeout(displayNextLetter, 30);
-    } else {
-        temp.removeAttribute('id');
-        sendBtn.disabled = false;
-        userInputArea.disabled = false;
-    }
-}
+
+// Deprecated(?)
+// function displayNextLetter() {
+//   scrollToBottom();
+//   if (index < message.length) {
+//     temp.innerHTML = temp.innerHTML + message[index];
+//     index++;
+//     setTimeout(displayNextLetter, 30);
+//   } else {
+//     temp.removeAttribute("id");
+//     sendBtn.disabled = false;
+//     userInputArea.disabled = false;
+//   }
+// }
