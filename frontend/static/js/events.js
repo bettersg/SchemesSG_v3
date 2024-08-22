@@ -1,4 +1,10 @@
 function handle__schemespal() {
+    const input = document.getElementById("text-input")
+    if (!input.checkValidity()) {
+        input.reportValidity();
+        return;
+    }
+
     //Google
     const scriptURLpalquery = 'https://script.google.com/macros/s/AKfycbwgKnPhUBHnlGJ3YudlSeaMfjUe9mPaI-N3Sbz9uar52oDDFf0/exec'
     const schemespalform = document.getElementById("schemespal")

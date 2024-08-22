@@ -1,4 +1,9 @@
 function handle_indexpal() {
+    const input = document.getElementById("indexpal-text")
+    if (!input.checkValidity()) {
+        input.reportValidity();
+        return;
+    }
 
     const scriptURLindexpal = 'https://script.google.com/macros/s/AKfycbwgKnPhUBHnlGJ3YudlSeaMfjUe9mPaI-N3Sbz9uar52oDDFf0/exec'
     const indexpalform = document.getElementById("indexpal")
