@@ -1,22 +1,22 @@
 function scrollToBottom() {
-  var div = document.getElementById("chatwindow");
-  div.scrollTop = div.scrollHeight;
+    var div = document.getElementById("chatwindow");
+    div.scrollTop = div.scrollHeight;
 }
 
 async function getChatResponse(userInput) {
-  const response = await fetch("/chatbot", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ data: userInput }),
-  });
+    const response = await fetch("/chatbot", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data: userInput })
+    });
 
-  const result = await response.json();
-  return result;
+    const result = await response.json();
+    return result;
 }
 
-let temp = document.getElementById("temp");
+let temp = document.getElementById('temp');
 let index = 0;
 
 // Deprecated(?)
