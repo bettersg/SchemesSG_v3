@@ -18,3 +18,9 @@ poetry run python app.py
 # Deployment
 python app.py
 ```
+
+### Progress
+
+[x] Implement schemes recommendation
+[x] Implement chatbot integration
+[ ] Better data storage (with SQLite/MongoDB/Other databases; currently stored in json files)
