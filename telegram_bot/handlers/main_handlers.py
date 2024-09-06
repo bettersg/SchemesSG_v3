@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import BotConfig, bot
-from utils.api import search_schemes
+from utils.api import search_schemes, send_chat_message
 from utils.data import read_query_records, update_query_records
 
 
@@ -90,14 +90,21 @@ async def chat_handler(message: types.Message, config: BotConfig, state: FSMCont
     """
     Search Handler will make a query to the FASTAPI backend to search for most relevant scheme.
     """
-    data = await state.get_data()
-    query_id = data["search"]
-    print(query_id)  # Use query ID to fetch search results and feed into chatbot
 
     if not message.text:
         message.answer("Please phrase your request in text.")
 
-    raise NotImplementedError
+
+    data = await state.get_data()
+    query_id = data["search"]
+    #print(query_id)  # Use query ID to fetch search results and feed into chatbot
+
+    chat_response, err_message = send_chat_message(message.text, query_id)
+    if err_message:
+            await message.answer(err_message)
+            return
+
+    await message.answer(chat_response, parse_mode="Markdown")
 
 
 @main_router.message()
@@ -145,7 +152,7 @@ async def search_callback_handler(
     mode = callback_data.mode
 
     if mode == "chat":  # If "Let's Chat!" button is pressed
-        chat_init_msg = "Welcoome to Schemes Support Chat! What would you like to know about the schemes listed here?"
+        chat_init_msg = "Welcome to Schemes Support Chat! What would you like to know about the schemes listed here?"
         await state.update_data(search=query_id)
         await state.set_state(Form.chat)
         await bot.send_message(
