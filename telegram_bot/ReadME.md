@@ -23,4 +23,4 @@ python app.py
 
 - [x] Implement schemes recommendation
 - [x] Implement chatbot integration
-- [ ] Better data storage (with SQLite/MongoDB/Other databases; currently stored in json files)
+- [x] Better storage of query records with SQLite (for pagination); previously stored in json files

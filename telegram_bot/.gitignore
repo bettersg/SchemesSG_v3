@@ -1,11 +1,11 @@
-#Environment Files
+# Environment Files
 .env
 
-#Virtual Environment
+# Virtual Environment
 /venv
 
-#Testing
+# Testing
 *.http
 
-#Chat data
+# Chat data
 /data

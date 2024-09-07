@@ -6,6 +6,7 @@ from aiogram import Dispatcher, html
 
 from bot import BotConfig, bot
 from handlers import main_handlers
+from utils.data import init_db
 
 
 def register_routers(dp: Dispatcher) -> None:
@@ -25,6 +26,9 @@ async def main() -> None:
     dp = Dispatcher()
     dp["config"] = config
     register_routers(dp)
+
+    # Initialise database
+    init_db()
 
     # And the run events dispatching
     await dp.start_polling(bot)
