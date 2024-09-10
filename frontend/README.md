@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 SchemesSG V3 Frontend
 
-## Getting Started
+Welcome to the Next.js frontend for SchemesSG V3! Let's build something awesome together.
 
-First, run the development server:
+## 📚 Quick Navigation
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Key Scripts](#key-scripts)
+- [Workflow & Contributing](#workflow--contributing)
+- [Deployment](#deployment)
+- [Environment](#environment)
+- [URLs](#urls)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Prerequisites
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Before we dive in, make sure you've got:
+- 💻 Node.js (v14 or later)
+- 📦 npm (v6 or later)
+- 🐙 Git
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quick Start
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Setup (Let's get this party started!)**
+   ```bash
+   cd frontend
+   npm install
+   ```
 
-## Learn More
+2. **Development (Where the magic happens)**
+   ```bash
+   npm run dev
+   ```
+   🌐 Access your creation at `http://localhost:3000`
 
-To learn more about Next.js, take a look at the following resources:
+3. **Build & Test (Time to shine)**
+   Staging:
+   ```bash
+   npm run build:staging
+   npm run test-build:staging
+   ```
+   Production:
+   ```bash
+   npm run build:prod
+   npm run test-build:prod
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 🔥 `npm run dev`: Fire up the development server (APP_ENV=development)
+- 🏗️ `npm run build:staging`: Construct for staging (APP_ENV=staging)
+- 🚀 `npm run build:prod`: Launch-ready for production (APP_ENV=production)
+- 🧪 `npm run test-build:staging/prod`: Build and serve locally
 
-## Deploy on Vercel
+## Workflow & Contributing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. 🌿 Branch out from `stg`
+2. ✏️ Make your changes, focusing on `src/app/page.tsx` for main content
+3. 🧪 Test locally with `npm run dev`
+4. 💾 Commit and push to your branch
+5. 🙋 Create a Pull Request to the `stg` branch
+6. 👀 After review and approval, your changes will join the party!
+7. 🚀 For production, create a PR from `stg` to `main`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+- 🚦 **Staging**: Auto-deploys from `stg` branch
+- 🚀 **Production**: Not set up yet
+
+🤖 GitHub Actions is currently configured to automatically deploy changes from the `stg` branch to the staging environment. No manual intervention required for staging deployment!
+
+To prepare for future production deployment:
+1. 🕵️ Thoroughly investigate on staging
+2. 📝 Create a PR from `stg` to `main`
+3. 🎉 Once production is set up, merging to `main` will trigger deployment
+
+Note: Production deployment will be configured in the future. Stay tuned for updates!
+
+## Environment
+
+- 🌍 `APP_ENV`: Set to `development`, `staging`, or `production`
+- ⚙️ Configure in `next.config.mjs` and set in npm scripts
+
+## URLs
+
+- 🧪 Staging: [https://schemessg-v3-dev.web.app/](https://schemessg-v3-dev.web.app/)
+- 🚀 Production: Not available yet
+
+For more details on the upcoming production setup, reach out to the team lead. Happy coding! 🎉
