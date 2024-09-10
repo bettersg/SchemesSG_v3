@@ -1,15 +1,12 @@
 {
   "hosting": {
-    "target": "schemessg-v3-dev",
-    "public": "out",
+    "target": "staging",
+    "public": "frontend/out",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "frameworksBackend": {
-      "region": "asia-east1"
-    },
     "rewrites": [
       {
         "source": "**",

@@ -1,5 +1,16 @@
 {
   "projects": {
     "default": "schemessg-v3-dev"
-  }
+  },
+  "targets": {
+    "schemessg-v3-dev": {
+      "hosting": {
+        "staging": [
+          "schemessg-v3-dev"
+        ]
+      }
+    }
+  },
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
 }
