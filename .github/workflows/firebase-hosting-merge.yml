@@ -41,4 +41,4 @@ jobs:
           channelId: live
           projectId: schemessg-v3-dev
           target: staging
-          entryPoint: .
+          entryPoint: ./frontend
