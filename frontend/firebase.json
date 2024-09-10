@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "target": "staging",
+    "target": "schemessg-v3-dev",
     "public": "out",
     "ignore": [
       "firebase.json",
