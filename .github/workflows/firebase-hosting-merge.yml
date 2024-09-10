@@ -26,3 +26,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}
           channelId: live
           projectId: schemessg-v3-dev
+          entryPoint: ./frontend  # Specify the directory containing firebase.json
