@@ -152,7 +152,7 @@ async def search_callback_handler(
     mode = callback_data.mode
 
     if mode == "chat":  # If "Let's Chat!" button is pressed
-        chat_init_msg = "Welcome to Schemes Support Chat! What would you like to know about the schemes listed here?"
+        chat_init_msg = "Welcome to Schemes Support Chat! What would you like to know about the schemes listed here?\n\nUse the command /exit to exit Schemes Support Chat"
         await state.update_data(search=query_id)
         await state.set_state(Form.chat)
         await bot.send_message(
