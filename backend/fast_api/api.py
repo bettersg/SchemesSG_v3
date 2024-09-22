@@ -31,7 +31,6 @@ llm = None
 chat_history = {}
 top_schemes = defaultdict(lambda: {})
 
-
 class Config:
     def __init__(self):
         load_dotenv()
@@ -45,25 +44,24 @@ class Config:
             setattr(self, item.lower(), attr)
         return attr
 
-
 def init_chatbot():
     config = Config()
     return AzureChatOpenAI(
-        deployment_name=config.deployment,
-        azure_endpoint=config.endpoint,
-        openai_api_version=config.version,
-        openai_api_key=config.apikey,
-        openai_api_type=config.type,
-        model_name=config.model,
-        temperature=0.3,
-    )
+                deployment_name=config.deployment, 
+                azure_endpoint=config.endpoint, 
+                openai_api_version=config.version, 
+                openai_api_key=config.apikey, 
+                openai_api_type=config.type, 
+                model_name=config.model,
+                temperature=0.3
+            )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global llm
+    global llm 
     llm = init_chatbot()
-    print("got chatbot llm")
+    print('got chatbot llm')
     # Load the ML model
     model_path = "ml_logic/schemesv2-torch-allmpp-model"
     tokenizer_path = "ml_logic/schemesv2-torch-allmpp-tokenizer"
@@ -135,10 +133,14 @@ async def predict(params: PredictParams = Depends(get_predict_params)):
 
     print(query)  # query text provided by the user
     print(top_k)  # how many top schemes to search based on the query
-    print(similarity_threshold)  # indicate the schemes similarity threshold from 0 to 4. 5 levels.
+    print(
+        similarity_threshold
+    )  # indicate the schemes similarity threshold from 0 to 4. 5 levels.
 
     split_needs = split_query_into_needs(query)
-    final_results = combine_and_aggregate_results(split_needs, ml_models, query, top_k, similarity_threshold)
+    final_results = combine_and_aggregate_results(
+        split_needs, ml_models, query, top_k, similarity_threshold
+    )
     # result = search_similar_items(query, ml_models)
     results_json = {"data": final_results.to_dict(orient="records"), "mh": 0.7}
     # results_json = final_results.to_dict(orient='records')
@@ -160,34 +162,32 @@ def get_session_history(session_id: str):
 
     return chat_history[session_id]
 
-
 def dataframe_to_text(df):
     # Example function to convert first 5 rows of a DataFrame into a text summary
-    text_summary = ""
+    text_summary = ''
     for index, row in df.iterrows():
         row = row.data
-        cleanScrape = row["Scraped Text"]
+        cleanScrape = row['Scraped Text']
         sentence = clean_scraped_text(cleanScrape)
 
         text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
     return text_summary
 
 
-@app.post("/chatbot")
+@app.post('/chatbot')
 async def chatbot(request: Request):
     global chat_history
     try:
         data = await request.json()
-        input_text = data.get("message")
-        session_id = data.get("sessionID")
+        input_text = data.get('message')
+        session_id = data.get('sessionID')
         top_schemes_text = ""
 
         df = pd.DataFrame(top_schemes[session_id])
         if df is not None:
             top_schemes_text = dataframe_to_text(df)
 
-        template_text = (
-            """
+        template_text = """
         As a virtual assistant, I'm dedicated to helping user navigate through the available schemes. User has done initial search based on their needs and system has provided top schemes relevant to the search. Now, my job is to advise on the follow up user queries based on the schemes data available by analyzing user query and extracting relevant answers from the top scheme data. Top Schemes Information includes scheme name, agency, Link to website, and may include text directly scraped from scheme website.
 
         In responding to user queries, I will adhere to the following principles:
@@ -203,9 +203,7 @@ async def chatbot(request: Request):
         5. **Avoidance of Fabrication**: My responses will solely rely on the information from the scheme details provided, avoiding any speculative or unfounded content. I will not alter or presume any specifics not clearly indicated in the scheme descriptions.
 
         **Top Schemes Information:**
-        """
-            + top_schemes_text
-        )
+        """ + top_schemes_text
 
         prompt_template = ChatPromptTemplate.from_messages(
             [
@@ -217,14 +215,18 @@ async def chatbot(request: Request):
 
         chain = prompt_template | llm
         chain_with_history = RunnableWithMessageHistory(
-            chain, get_session_history, input_messages_key="query", history_messages_key="history"
-        )
-
-        config = {"configurable": {"session_id": session_id}}
+                chain,
+                get_session_history,
+                input_messages_key="query",
+                history_messages_key="history"
+            )
+        
+        config = {'configurable': {'session_id': session_id}}
         message = chain_with_history.invoke({"query": input_text}, config=config)
         return JSONResponse(content={"response": True, "message": message.content})
 
     except Exception as e:
         print(e)
-        error_message = f"Error: {str(e)}"
+        error_message = f'Error: {str(e)}'
         return JSONResponse(content={"response": False, "message": error_message})
+    
