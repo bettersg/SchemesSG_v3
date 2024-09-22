@@ -10,9 +10,10 @@
 This backend is built using Firebase Functions and serves as the API for the SchemesSG V3 application. It currently includes two services: `/v1/chat` and `/v1/search`, which are coming soon. The boilerplates for the functions are already set up, with endpoints available for local testing:
 - Chat Service: `/v1/chat` (coming soon)
 - Search Service: `/v1/search` (coming soon)
-- Test Endpoints: 
-  - [Bar Service](http://127.0.0.1:5001/schemessg-v3-dev/us-central1/bar)
-  - [Foo Service](http://127.0.0.1:5001/schemessg-v3-dev/us-central1/foo)
+- Boilerplate Services (as a guide): 
+   - Bar Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar)
+   - Foo Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo)
+   - Main Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main)
 
 ## Getting Started
 
@@ -44,13 +45,21 @@ This backend is built using Firebase Functions and serves as the API for the Sch
 3. **Run the Cloud Functions Emulator**
    Start the emulator to test your functions locally:
    ```bash
-   firebase emulators:start
+   firebase emulators:start --only functions
    ```
 
 4. **Access the endpoints**
-   Once the emulator is running, you can issue HTTP requests to the endpoints:
-   - Bar Service: [http://127.0.0.1:5001/schemessg-v3-dev/us-central1/bar](http://127.0.0.1:5001/schemessg-v3-dev/us-central1/bar)
-   - Foo Service: [http://127.0.0.1:5001/schemessg-v3-dev/us-central1/foo](http://127.0.0.1:5001/schemessg-v3-dev/us-central1/foo)
+   
+   Local Mode 
+   - Once the emulator is running, you can issue HTTP requests to the endpoints:
+      - Bar Service: [http://127.0.0.1:5001/schemessg-v3-dev/us-central1/bar](http://127.0.0.1:5001/schemessg-v3-dev/us-central1/bar)
+      - Foo Service: [http://127.0.0.1:5001/schemessg-v3-dev/us-central1/foo](http://127.0.0.1:5001/schemessg-v3-dev/us-central1/foo)
+   
+   Staging
+   - These endpoints were deployed manually via `firebase deploy --only functions` in the schemessg-v3-dev project. All public users are able to access these endpoints temporarily. 
+      - Bar Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar)
+      - Foo Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo)
+      - Main Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main)
 
 ## Future Work
 
