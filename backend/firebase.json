@@ -1,0 +1,29 @@
+{
+  "functions": [
+    {
+      "runtime": "python310",
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "venv",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+       "region": "asia-southeast1"
+    }
+  ],
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "firestore": {
+      "port": 8080
+    }
+  }
+}
