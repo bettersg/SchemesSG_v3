@@ -28,6 +28,19 @@ This backend is built using Firebase Functions and serves as the API for the Sch
    npm install -g firebase-tools
    ```
 
+3. **Set up virtual environment**
+   Make sure you have python 3.10 installed.
+   ```bash
+   # Create a new virtual environment with Python 3.10
+   python3.10 -m venv functions/venv
+
+   # Activate the new virtual environment
+   source functions/venv/bin/activate
+
+   # Install the required packages
+   python -m pip install -r functions/requirements.txt
+   ```
+
 3. **Run the Cloud Functions Emulator**
    Start the emulator to test your functions locally:
    ```bash
