@@ -1,3 +1,5 @@
+from enum import Enum
+
 from aiogram import Router, html, types
 from aiogram.filters import Command, callback_data
 from aiogram.fsm.context import FSMContext
@@ -14,10 +16,15 @@ main_router = Router()
 NUM_SCHEME_PER_PAGE = 5
 
 
+class Mode(Enum):
+    VIEW = "view"
+    CHAT = "chat"
+
+
 class SearchResultsCallback(callback_data.CallbackData, prefix="respg"):
     page_num: int
     query_id: str
-    mode: str = "view"
+    mode: Mode = Mode.VIEW
 
 
 class Form(StatesGroup):
@@ -59,7 +66,7 @@ def paginator(page: int, query_id: str, last: bool = False) -> types.InlineKeybo
         )
 
     keyboard_builder.button(
-        text="Let's Chat!", callback_data=SearchResultsCallback(page_num=page, query_id=query_id, mode="chat").pack()
+        text="Let's Chat!", callback_data=SearchResultsCallback(page_num=page, query_id=query_id, mode=Mode.CHAT).pack()
     )
 
     keyboard_builder.adjust(num_buttons)
@@ -151,7 +158,7 @@ async def search_callback_handler(
     query_id = callback_data.query_id
     mode = callback_data.mode
 
-    if mode == "chat":  # If "Let's Chat!" button is pressed
+    if mode == Mode.CHAT:  # If "Let's Chat!" button is pressed
         chat_init_msg = "Welcome to Schemes Support Chat! What would you like to know about the schemes listed here?\n\nUse the command /exit to exit Schemes Support Chat"
         await state.update_data(search=query_id)
         await state.set_state(Form.chat)
