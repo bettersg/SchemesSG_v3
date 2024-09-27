@@ -29,7 +29,7 @@ def search_schemes(text: str, similarity_threshold: int) -> tuple[str, list | No
 
     schemes = res.json()["data"]
 
-    if len(schemes) == 0:  # No suitable schemes found
+    if not schemes:  # No suitable schemes found
         err_message = "Sorry, I am unable to find a suitable assistance scheme to address your needs."
         return (query_id, None, err_message)
 
