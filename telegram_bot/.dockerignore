@@ -1,0 +1,8 @@
+# Version Control Files
+.gitignore
+
+#Testing
+*.http
+
+#Chat data
+/data
