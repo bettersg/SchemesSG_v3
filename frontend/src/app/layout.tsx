@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import classes from "../components/main-layout/main-layout.module.css"
+import classes from "../components/main-layout/main-layout.module.css";
+import MainHeader from '@/components/main-header/main-header';
+import { NextUIProvider } from '@nextui-org/system';
+import React from 'react';
+import MainFooter from "@/components/main-footer/main-footer";
 
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
@@ -14,10 +18,6 @@ export const metadata: Metadata = {
   description: "One stop directory and AI-enabled search to help make sense of assistance schemes in Singapore.",
 };
 
-import MainHeader from '@/components/main-header/main-header';
-import { NextUIProvider } from '@nextui-org/system';
-import React from 'react';
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang='en'>
@@ -27,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className={classes.contentWrapper}>
             {children}
           </div>
+          <MainFooter />
         </NextUIProvider>
       </body>
     </html>

@@ -1,0 +1,42 @@
+.footer {
+    margin-top: 120rem;
+    padding: 2em 6em;
+    color: white;
+    background-color: rgba(23, 19, 71, 1);
+}
+
+.inner {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2em;
+}
+
+.groups {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.wrapper {
+    width: rem(160px);
+    display: flex;
+    flex-direction: column;
+    margin-right: 2em;
+}
+
+.link {
+    display: block;
+    color: #A1A1AA;
+    padding-top: rem(4px);
+    padding-bottom: rem(4px);
+    font-size: small;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.title {
+    font-weight: 800;
+    color: #FFFFFF;
+    margin-bottom: rem(6px)
+}

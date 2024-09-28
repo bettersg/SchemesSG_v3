@@ -32,7 +32,7 @@ export default function MainHeader() {
                     {navbarItems.map((item, idx) => {
                         return (
                             <NavbarItem key={idx} isActive={pathname === item.href ? true : undefined}>
-                                <Link color="foreground" href={item.href}>
+                                <Link href={item.href}>
                                     {item.label}
                                 </Link>
                             </NavbarItem>
