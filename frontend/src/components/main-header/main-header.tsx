@@ -22,7 +22,19 @@ export default function MainHeader() {
 
     return (
         <>
-            <Navbar className={classes.header}>
+            <Navbar
+                classNames={{
+                    item: [
+                    "flex",
+                    "relative",
+                    "h-full",
+                    "items-center",
+                    "data-[active=true]:after:bg-primary",
+                    "data-[active=true]:after:text-blue-600",
+                    "data-[active=true]:after:font-extrabold",
+                    ],
+                }}
+            >
                 <NavbarBrand>
                     <Link className={classes.logo} href="/">
                         <Image src={logoImg} alt="Schemes SG logo" width={120} height={30} priority/>
@@ -31,10 +43,8 @@ export default function MainHeader() {
                 <NavbarContent className="hidden sm:flex gap-4" justify="end">
                     {navbarItems.map((item, idx) => {
                         return (
-                            <NavbarItem key={idx} isActive={pathname === item.href ? true : undefined}>
-                                <Link href={item.href}>
-                                    {item.label}
-                                </Link>
+                            <NavbarItem className={classes.navbarItem} key={idx} isActive={pathname === item.href ? true : undefined}>
+                                <Link href={item.href}>{item.label}</Link>
                             </NavbarItem>
                         )
                     })}

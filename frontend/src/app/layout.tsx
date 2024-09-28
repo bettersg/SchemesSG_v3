@@ -10,7 +10,7 @@ import MainFooter from "@/components/main-footer/main-footer";
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
   variable: "--font-geist-sans",
-  weight: "100 300 500 900",
+  weight: "100 200 300 400 500 600 700 800 900",
 });
 
 export const metadata: Metadata = {
