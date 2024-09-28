@@ -1,0 +1,16 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 1rem;
+    color: #71717a;
+}
+
+.logo {
+    display: flex
+}
+
+.logo img {
+    width: 8em;
+    height: auto;
+}
