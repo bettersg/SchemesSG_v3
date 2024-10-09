@@ -1,0 +1,17 @@
+.navbarItem {
+    color: #A1A1AA;
+    font-weight: 500;
+
+    &:hover {
+        font-weight: 600;
+    }
+}
+
+.logo {
+    display: flex
+}
+
+.logo img {
+    width: 8em;
+    height: auto;
+}
