@@ -1,5 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700&display=swap");
 
+.mainlayout {
+  max-width: 100%; /* Ensure the main layout does not exceed the viewport width */
+  overflow-x: hidden;
+}
 .header {
   font-size: 40px;
   font-weight: 600;
@@ -31,17 +35,32 @@
   margin-left: 150px;
   margin-right: 150px;
   font-family: "Nunito Sans", sans-serif;
+  font-weight: 600;
+  margin-bottom: 150px;
 
   .para {
     margin: 24px;
     font-weight: 600;
-    color: #171347;
+    color: rgb(21, 44, 91);
     line-height: 36px;
     font-size: 20px;
   }
 
-  .chip {
+  .chipTitle {
     margin: 64px 24px 0px 24px;
-    font-weight: 600;
+    font-weight: 600 !important;
+  }
+
+  .accordianTitle {
+    color: rgb(21, 44, 91) !important;
+  }
+
+  .accordianContent p {
+    color: rgb(113, 128, 150);
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+  .accordianContent a {
+    color: rgb(0, 138, 255);
   }
 }
