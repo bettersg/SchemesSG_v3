@@ -12,6 +12,7 @@ from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
 from firebase_admin import initialize_app
 from firebase_functions import https_fn
+from search.search import schemespredict  # noqa: F401
 
 
 # Initialize the Firebase Admin SDK
