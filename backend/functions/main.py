@@ -8,6 +8,8 @@ To run the functions locally, run `firebase emulators:start`.
 Do not deploy the functions using firebase deploy, deployment will be handled automatically via Github Actions.
 """
 
+import json
+
 from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
 from firebase_admin import initialize_app
@@ -23,3 +25,12 @@ initialize_app()
 @https_fn.on_request(region="asia-southeast1")
 def main(req: https_fn.Request) -> https_fn.Response:
     return https_fn.Response("Hello from Firebase!")
+
+
+@https_fn.on_request(region="asia-southeast1")
+def health(req: https_fn.Request) -> https_fn.Response:
+    return https_fn.Response(
+        response = json.dumps({"status": "ok"}),
+        status = 200,
+        mimetype = "application/json"
+    )
