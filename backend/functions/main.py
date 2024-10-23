@@ -8,17 +8,26 @@ To run the functions locally, run `firebase emulators:start`.
 Do not deploy the functions using firebase deploy, deployment will be handled automatically via Github Actions.
 """
 
-import json
+import json  # noqa: I001
 
 from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
-from firebase_admin import initialize_app
+from firebase_admin import initialize_app, credentials, firestore
 from firebase_functions import https_fn
 from search.search import schemespredict  # noqa: F401
 
+from ml_logic.modelManager import SearchModel
+
 
 # Initialize the Firebase Admin SDK
-initialize_app()
+cred = credentials.Certificate('creds.json')
+initialize_app(cred)
+
+# Initialise connection to firestore
+db = firestore.client()
+
+# Initialise Search Model
+SearchModel.initialise(db)
 
 
 # Dummy endpoint

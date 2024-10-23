@@ -9,6 +9,7 @@ import pandas as pd
 import spacy
 import torch
 import torch.nn.functional as F
+from firebase_admin import firestore
 from pydantic import BaseModel
 
 from transformers import AutoModel, AutoTokenizer
@@ -96,19 +97,38 @@ class SearchPreprocessor():
 
 
 class SearchModel():
-    def __init__(self):
-        self.preprocessor = SearchPreprocessor()
+    preprocessor = None
+    schemes_df = None
 
-        self.schemes_df = pd.read_csv("ml_logic/schemes-updated-with-text.csv")
+    model = None
+    tokenizer = None
+    embeddings = None
+    index = None
 
-        self.model =  AutoModel.from_pretrained("ml_logic/schemesv2-torch-allmpp-model")
-        self.tokenizer = AutoTokenizer.from_pretrained("ml_logic/schemesv2-torch-allmpp-tokenizer")
-        self.embeddings = np.load("ml_logic/schemesv2-your_embeddings.npy")
-        self.index = faiss.read_index("ml_logic/schemesv2-your_index.faiss")
+    top_schemes = defaultdict(lambda: {})
+    initialised = False
+
+    @classmethod
+    def initialise(cls, db: firestore.firestore.Client):
+        if cls.initialised:
+            return
+
+        schemes = db.collection('schemes').stream()
+
+        cls.preprocessor = SearchPreprocessor()
+        cls.schemes_df = pd.DataFrame([scheme.to_dict() for scheme in schemes])
+        # pd.read_csv("ml_logic/schemes-updated-with-text.csv")
+
+        cls.model =  AutoModel.from_pretrained("ml_logic/schemesv2-torch-allmpp-model")
+        cls.tokenizer = AutoTokenizer.from_pretrained("ml_logic/schemesv2-torch-allmpp-tokenizer")
+        cls.embeddings = np.load("ml_logic/schemesv2-your_embeddings.npy")
+        cls.index = faiss.read_index("ml_logic/schemesv2-your_index.faiss")
+        cls.initialised = True
 
         print("Search Model initialised!")
+        pass
 
-        self.top_schemes = defaultdict(lambda: {}) #replace with firestore eventually
+    def __init__(self):
         pass
 
     @staticmethod
@@ -127,10 +147,10 @@ class SearchModel():
 
         preproc = query_text
         # Tokenize text
-        encoded_input = self.tokenizer([preproc], padding=True, truncation=True, return_tensors='pt')
+        encoded_input = self.__class__.tokenizer([preproc], padding=True, truncation=True, return_tensors='pt')
         # Compute token embeddings
         with torch.no_grad():
-            model_output = self.model(**encoded_input)
+            model_output = self.__class__.model(**encoded_input)
         # Perform pooling
         query_embedding = SearchModel.mean_pooling(model_output, encoded_input['attention_mask'])
         print(type(query_embedding))
@@ -141,11 +161,11 @@ class SearchModel():
         query_embedding = np.array(query_embedding).astype('float32')
 
         # Perform the search
-        distances, indices = self.index.search(query_embedding, top_k)
+        distances, indices = self.__class__.index.search(query_embedding, top_k)
         similarity_scores =  np.exp(-distances)
         # similar_items = pd.DataFrame([df.iloc[indices[0]], distances[0], similarity_scores[0]])
         # Retrieve the most similar items
-        similar_items = self.schemes_df.iloc[indices[0]][['Scheme', 'Agency', 'Description', 'Image', 'Link', 'Scraped Text', 'What it gives', 'Scheme Type']]
+        similar_items = self.__class__.schemes_df.iloc[indices[0]][['Scheme', 'Agency', 'Description', 'Image', 'Link', 'Scraped Text', 'What it gives', 'Scheme Type']]
 
         results = pd.concat([similar_items.reset_index(drop=True), pd.DataFrame(similarity_scores[0]).reset_index(drop=True)], axis=1)
         results = results.set_axis(['Scheme', 'Agency', 'Description', 'Image', 'Link', 'Scraped Text', 'What it gives', 'Scheme Type', 'Similarity'], axis=1)
@@ -188,12 +208,12 @@ class SearchModel():
         return sorted_results
 
     def predict(self, params: PredictParams) -> dict[str, any]:
-        split_needs = self.preprocessor.split_query_into_needs(params.query)
+        split_needs = self.__class__.preprocessor.split_query_into_needs(params.query)
         final_results = self.combine_and_aggregate_results(split_needs, params.query, params.top_k, params.similarity_threshold)
 
         # result = search_similar_items(query, ml_models)
         results_json = {"data": final_results.to_dict(orient="records"), "mh": 0.7}
         # results_json = final_results.to_dict(orient='records')
-        self.top_schemes[params.session_id] = results_json
+        self.__class__.top_schemes[params.session_id] = results_json
 
         return results_json

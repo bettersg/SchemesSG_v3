@@ -4,35 +4,15 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemespredict
 """
 
 import json
-import threading
 
 from firebase_functions import https_fn
 
 from ml_logic.modelManager import PredictParams, SearchModel
 
 
-searchModel = None
-
-def initSearchModel():
-    global searchModel
-    searchModel = SearchModel()
-
-
-initSearchModel()
-
-
 @https_fn.on_request(region="asia-southeast1")
 def schemespredict(req: https_fn.Request) -> https_fn.Response:
-    global searchModel
-
-    if not searchModel:
-        initThread = threading.Thread(target=initSearchModel)
-        initThread.start()
-        return https_fn.Response(
-                response = json.dumps({"status": "initialising search models..."}),
-                status = 200,
-                mimetype = "application/json"
-            )
+    searchModel = SearchModel()
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(
