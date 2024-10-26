@@ -153,7 +153,7 @@ class SearchModel():
             model_output = self.__class__.model(**encoded_input)
         # Perform pooling
         query_embedding = SearchModel.mean_pooling(model_output, encoded_input['attention_mask'])
-        print(type(query_embedding))
+        # print(type(query_embedding))
 
         # Normalize embeddings
         query_embedding = F.normalize(query_embedding, p=2, dim=1)
