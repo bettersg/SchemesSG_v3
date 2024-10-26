@@ -5,6 +5,7 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemespredict
 
 import json
 
+from firebase_admin import firestore
 from firebase_functions import https_fn
 
 from ml_logic.modelManager import PredictParams, SearchModel
@@ -12,6 +13,10 @@ from ml_logic.modelManager import PredictParams, SearchModel
 
 @https_fn.on_request(region="asia-southeast1")
 def schemespredict(req: https_fn.Request) -> https_fn.Response:
+    if not SearchModel.initialised:
+        db = firestore.client()
+        SearchModel.initialise(db)
+
     searchModel = SearchModel()
 
     if not (req.method == "POST" or req.method == "GET"):
