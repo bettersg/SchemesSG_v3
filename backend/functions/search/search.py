@@ -5,7 +5,7 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemespredict
 
 import json
 
-from firebase_admin import firestore
+from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
 
 from ml_logic.modelManager import PredictParams, SearchModel
@@ -19,8 +19,8 @@ def schemespredict(req: https_fn.Request) -> https_fn.Response:
     global search_model
 
     if not search_model:
-        db = firestore.client()
-        search_model = SearchModel(db)
+        firestore_client = FirebaseManager()
+        search_model = SearchModel(firestore_client)
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(

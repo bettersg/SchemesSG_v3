@@ -8,26 +8,22 @@ To run the functions locally, run `firebase emulators:start`.
 Do not deploy the functions using firebase deploy, deployment will be handled automatically via Github Actions.
 """
 
-import json  # noqa: I001
+import json
 
 from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
-from firebase_admin import initialize_app, credentials, firestore
+from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
 from search.search import schemespredict  # noqa: F401
 
 from ml_logic.modelManager import SearchModel
 
 
-# Initialize the Firebase Admin SDK
-cred = credentials.Certificate('creds.json')
-initialize_app(cred)
-
-# Initialise connection to firestore
-db = firestore.client()
+# Initialise the Firebase Admin SDK and Connection to firestore
+firebase_manager = FirebaseManager()
 
 # Initialise Search Model
-SearchModel.initialise(db)
+SearchModel(firebase_manager)
 
 
 # Dummy endpoint
@@ -38,8 +34,4 @@ def main(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request(region="asia-southeast1")
 def health(req: https_fn.Request) -> https_fn.Response:
-    return https_fn.Response(
-        response = json.dumps({"status": "ok"}),
-        status = 200,
-        mimetype = "application/json"
-    )
+    return https_fn.Response(response=json.dumps({"status": "ok"}), status=200, mimetype="application/json")
