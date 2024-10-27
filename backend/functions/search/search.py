@@ -11,13 +11,16 @@ from firebase_functions import https_fn
 from ml_logic.modelManager import PredictParams, SearchModel
 
 
+search_model = None
+
+
 @https_fn.on_request(region="asia-southeast1")
 def schemespredict(req: https_fn.Request) -> https_fn.Response:
-    if not SearchModel.initialised:
-        db = firestore.client()
-        SearchModel.initialise(db)
+    global search_model
 
-    searchModel = SearchModel()
+    if not search_model:
+        db = firestore.client()
+        search_model = SearchModel(db)
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(
@@ -52,7 +55,7 @@ def schemespredict(req: https_fn.Request) -> https_fn.Response:
     )
 
     try:
-        results = searchModel.predict(params)
+        results = search_model.predict(params)
     except Exception:
         return https_fn.Response(
             response = json.dumps({'error': 'Internal server error'}),

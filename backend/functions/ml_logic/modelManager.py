@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 from collections import defaultdict
 from typing import Optional
 
@@ -97,6 +98,9 @@ class SearchPreprocessor():
 
 
 class SearchModel():
+    _instance = None
+    _lock = threading.Lock()
+
     preprocessor = None
     schemes_df = None
 
@@ -128,8 +132,16 @@ class SearchModel():
         print("Search Model initialised!")
         pass
 
-    def __init__(self):
-        pass
+    def __new__(cls, db: firestore.firestore.Client):
+        if cls._instance is None:
+            cls._instance = super(SearchModel, cls).__new__(cls)
+            # Initialize the instance (e.g., load models)
+            cls._instance.initialise(db)
+        return cls._instance
+
+    def __init__(self, db: firestore.firestore.Client):
+        if not self.__class__.initialised:
+            self.__class__.initialise(db)
 
     @staticmethod
     #Mean Pooling - Take attention mask into account for correct averaging
@@ -146,6 +158,7 @@ class SearchModel():
         # index = ml_models["index"]
 
         preproc = query_text
+
         # Tokenize text
         encoded_input = self.__class__.tokenizer([preproc], padding=True, truncation=True, return_tensors='pt')
         # Compute token embeddings
@@ -162,8 +175,10 @@ class SearchModel():
 
         # Perform the search
         distances, indices = self.__class__.index.search(query_embedding, top_k)
+
         similarity_scores =  np.exp(-distances)
         # similar_items = pd.DataFrame([df.iloc[indices[0]], distances[0], similarity_scores[0]])
+
         # Retrieve the most similar items
         similar_items = self.__class__.schemes_df.iloc[indices[0]][['Scheme', 'Agency', 'Description', 'Image', 'Link', 'Scraped Text', 'What it gives', 'Scheme Type']]
 
@@ -209,11 +224,14 @@ class SearchModel():
 
     def predict(self, params: PredictParams) -> dict[str, any]:
         split_needs = self.__class__.preprocessor.split_query_into_needs(params.query)
+
         final_results = self.combine_and_aggregate_results(split_needs, params.query, params.top_k, params.similarity_threshold)
 
         # result = search_similar_items(query, ml_models)
         results_json = {"data": final_results.to_dict(orient="records"), "mh": 0.7}
-        # results_json = final_results.to_dict(orient='records')
-        self.__class__.top_schemes[params.session_id] = results_json
+
+        with self._lock:
+            # results_json = final_results.to_dict(orient='records')
+            self.__class__.top_schemes[params.session_id] = results_json
 
         return results_json
