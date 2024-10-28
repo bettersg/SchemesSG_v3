@@ -14,6 +14,7 @@ from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
+from schemes.schemes import schemes  # noqa: F401
 from search.search import schemespredict  # noqa: F401
 
 from ml_logic.modelManager import SearchModel
