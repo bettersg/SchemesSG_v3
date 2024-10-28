@@ -1,8 +1,8 @@
 import os
 import re
-import threading
-from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Optional
+from uuid import uuid1
 
 import faiss
 import numpy as np
@@ -14,6 +14,7 @@ from fb_manager.firebaseManager import FirebaseManager
 from pydantic import BaseModel
 
 from transformers import AutoModel, AutoTokenizer
+from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -25,7 +26,6 @@ class PredictParams(BaseModel):
     query: str
     top_k: Optional[int] = 20
     similarity_threshold: Optional[int] = 0
-    session_id: str
 
 
 class SearchPreprocessor:
@@ -109,7 +109,6 @@ class SearchModel:
     """Singleton-patterned class for schemes search model"""
 
     _instance = None
-    _lock = threading.Lock()
 
     preprocessor = None
     schemes_df = None
@@ -121,7 +120,6 @@ class SearchModel:
 
     firebase_manager = None
 
-    top_schemes = defaultdict(lambda: {})
     initialised = False
 
     @classmethod
@@ -163,9 +161,8 @@ class SearchModel:
             self.__class__.initialise()
 
     @staticmethod
-    def mean_pooling(model_output, attention_mask) -> torch.Tensor:
-        """ Mean Pooling - Take attention mask into account for correct averaging"""
-        #TODO may need help in typing model_output and attention_mask
+    def mean_pooling(model_output: BaseModelOutputWithPooling, attention_mask: torch.Tensor) -> torch.Tensor:
+        """Mean Pooling - Take attention mask into account for correct averaging"""
 
         token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
@@ -179,12 +176,13 @@ class SearchModel:
 
         # Tokenize text
         encoded_input = self.__class__.tokenizer([preproc], padding=True, truncation=True, return_tensors="pt")
+
         # Compute token embeddings
         with torch.no_grad():
             model_output = self.__class__.model(**encoded_input)
+
         # Perform pooling
         query_embedding = SearchModel.mean_pooling(model_output, encoded_input["attention_mask"])
-        # print(type(query_embedding))
 
         # Normalize embeddings
         query_embedding = F.normalize(query_embedding, p=2, dim=1)
@@ -291,6 +289,18 @@ class SearchModel:
 
         return sorted_results
 
+    def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
+        user_query = {
+            "query_text": query,
+            "query_timestamp": datetime.now(tz=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT'),
+            "schemes_response": schemes_response,
+            "session_id": session_id
+        }
+
+        # Add to 'userQuery' collection in firestore
+        self.__class__.firebase_manager.firestore_client.collection('userQuery').add(user_query)
+
+
     def predict(self, params: PredictParams) -> dict[str, any]:
         """Main method to be called by endpoint handler"""
 
@@ -302,11 +312,16 @@ class SearchModel:
             split_needs, params.query, params.top_k, params.similarity_threshold
         )
 
-        # result = search_similar_items(query, ml_models)
-        results_json = {"data": final_results.to_dict(orient="records"), "mh": 0.7}
+        session_id_uuid = uuid1()
+        session_id = str(session_id_uuid)
+        results_dict = final_results.to_dict(orient="records")
 
-        with self._lock:
-            # results_json = final_results.to_dict(orient='records')
-            self.__class__.top_schemes[params.session_id] = results_json
+        self.save_user_query(params.query, session_id, results_dict)
+
+        results_json = {
+            "sessionId": session_id,
+            "data": results_dict,
+            "mh": 0.7
+        }
 
         return results_json

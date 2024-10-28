@@ -11,16 +11,13 @@ from firebase_functions import https_fn
 from ml_logic.modelManager import PredictParams, SearchModel
 
 
-search_model = None
+firestore_client = FirebaseManager()
+search_model = SearchModel(firestore_client)
 
 
 @https_fn.on_request(region="asia-southeast1")
 def schemespredict(req: https_fn.Request) -> https_fn.Response:
     global search_model
-
-    if not search_model:
-        firestore_client = FirebaseManager()
-        search_model = SearchModel(firestore_client)
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(
@@ -31,11 +28,10 @@ def schemespredict(req: https_fn.Request) -> https_fn.Response:
 
     try:
         body = req.get_json(silent=True)
-        session_id = body.get("sessionID", None)
         query = body.get("query", None)
         top_k = body.get("top_k", 20)
         similarity_threshold = body.get("similarity_threshold", 0)
-        #print(session_id, query, top_k, similarity_threshold)
+        #print(query, top_k, similarity_threshold)
     except Exception:
         return https_fn.Response(
             response = json.dumps({'error': 'Invalid request body'}),
@@ -51,7 +47,7 @@ def schemespredict(req: https_fn.Request) -> https_fn.Response:
         )
 
     params = PredictParams(
-        query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold), session_id=str(session_id)
+        query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold)
     )
 
     try:
