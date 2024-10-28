@@ -17,14 +17,12 @@ from firebase_functions import https_fn
 from schemes.schemes import schemes  # noqa: F401
 from search.search import schemespredict  # noqa: F401
 
-from ml_logic.modelManager import SearchModel
+
+#from ml_logic.modelManager import SearchModel
 
 
 # Initialise the Firebase Admin SDK and Connection to firestore
 firebase_manager = FirebaseManager()
-
-# Initialise Search Model
-SearchModel(firebase_manager)
 
 
 # Dummy endpoint

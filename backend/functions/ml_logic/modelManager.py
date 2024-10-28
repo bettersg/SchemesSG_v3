@@ -290,6 +290,8 @@ class SearchModel:
         return sorted_results
 
     def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
+        """Save user query to firestore"""
+
         user_query = {
             "query_text": query,
             "query_timestamp": datetime.now(tz=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT'),
