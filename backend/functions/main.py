@@ -33,4 +33,14 @@ def main(req: https_fn.Request) -> https_fn.Response:
 
 @https_fn.on_request(region="asia-southeast1")
 def health(req: https_fn.Request) -> https_fn.Response:
+    """
+    Handler for health check endpoint
+
+    Args:
+        req (https_fn.Request): request sent from client
+
+    Returns:
+        https_fn.Response: response sent to client
+    """
+
     return https_fn.Response(response=json.dumps({"status": "ok"}), status=200, mimetype="application/json")

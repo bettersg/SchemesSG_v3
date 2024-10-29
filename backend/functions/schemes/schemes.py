@@ -14,6 +14,16 @@ firebase_manager = FirebaseManager()
 
 @https_fn.on_request(region="asia-southeast1")
 def schemes(req: https_fn.Request) -> https_fn.Response:
+    """
+    Handler for single schemes page endpoint
+
+    Args:
+        req (https_fn.Request): request sent from client
+
+    Returns:
+        https_fn.Response: response sent to client
+    """
+
     global firebase_manager
 
     if not req.method == "GET":

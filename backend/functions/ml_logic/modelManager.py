@@ -37,7 +37,15 @@ class SearchPreprocessor:
         pass
 
     def preprocess(self, sentence: str) -> str:
-        """Preprocesses text for schemes search model"""
+        """
+        Preprocesses text for schemes search model
+
+        Args:
+            sentence (str): sentence (need) to be preprocessed
+
+        Returns:
+            str: preprocessed text
+        """
 
         sentence = re.sub("'", "", sentence)  # Remove distracting single quotes
         sentence = re.sub(" +", " ", sentence)  # Replace extra spaces
@@ -66,7 +74,15 @@ class SearchPreprocessor:
         return processed_text
 
     def extract_needs_based_on_conjunctions(self, sentence: str) -> list[str]:
-        """Extract distinct needs based on coordinating conjunctions."""
+        """
+        Extract distinct needs based on coordinating conjunctions.
+
+        Args:
+            sentence (str): a sentence from the query
+
+        Returns:
+            list[str]: a list of phrases each corresponding to a need present in the query
+        """
 
         doc = self.nlp_spacy(sentence)
         needs = []
@@ -89,13 +105,30 @@ class SearchPreprocessor:
         return needs
 
     def split_into_sentences(self, text: str) -> list[str]:
-        """Helper function to split the query into sentences"""
+        """
+        Helper function to split the query into sentences
+
+        Args:
+            text (str): full query
+
+        Returns:
+            list[str]: full query split into a list of sentences
+        """
 
         doc = self.nlp_spacy(text)
         return [sent.text.strip() for sent in doc.sents]
 
     def split_query_into_needs(self, query: str) -> list[str]:
-        """Split the query into sentences and then extract needs focusing on conjunctions."""
+        """
+        Split the query into sentences and then extract needs focusing on conjunctions.
+
+        Args:
+            query (str): full user query
+
+        Returns:
+            list[str]: list of user needs found in the query
+        """
+
         sentences = self.split_into_sentences(query)
         all_needs = []
         for sentence in sentences:
@@ -162,7 +195,16 @@ class SearchModel:
 
     @staticmethod
     def mean_pooling(model_output: BaseModelOutputWithPooling, attention_mask: torch.Tensor) -> torch.Tensor:
-        """Mean Pooling - Take attention mask into account for correct averaging"""
+        """
+        Mean Pooling - Take attention mask into account for correct averaging
+
+        Args:
+            model_output (BaseModelOutputWithPooling): embeddings of the query
+            attention_mask (Tensor): attention mask used for mean pooling
+
+        Returns:
+            Tensor: mean-pooled tensor
+        """
 
         token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
@@ -170,7 +212,17 @@ class SearchModel:
 
     # Now, you can use `index` for similarity searches with new user queries
     def search_similar_items(self, query_text: str, full_query: str, top_k: int) -> pd.DataFrame:
-        """Searches database for schemes matching search query"""
+        """
+        Searches database for schemes matching search query
+
+        Args:
+            query_text (str): specific need of user
+            full_query (str): original query of user
+            top_k (int): number of schemes returned
+
+        Returns:
+            pd.DataFrame: most suitable schemes for the query
+        """
 
         preproc = query_text
 
@@ -226,7 +278,18 @@ class SearchModel:
     def combine_and_aggregate_results(
         self, needs: list[str], full_query: str, top_k: int, similarity_threshold: int
     ) -> pd.DataFrame:
-        """Search for the appropriate scheme based on each of the user requirements (derived from their search query) and aggregate them into a pandas dataframe"""
+        """
+        Search for the appropriate scheme based on each of the user requirements (derived from their search query) and aggregate them into a pandas dataframe
+
+        Args:
+            needs (list[str]): preprocessed list of needs in user query
+            full_query (str): original query text entered by user
+            top_k (int): number of schemes returned
+            similarity_threshold (int): minimum level of similarity a scheme needs to have to be returned
+
+        Returns:
+            pd.DataFrame: most suitable schemes for the query
+        """
 
         # DataFrame to store combined results
         combined_results = pd.DataFrame(
@@ -290,7 +353,14 @@ class SearchModel:
         return sorted_results
 
     def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
-        """Save user query to firestore"""
+        """
+        Save user query to firestore
+
+        Args
+            query (str): original query text send by user
+            session_id (str): UUID for the query that is converted to string
+            schemes_response (list[dict[str, str | int]]): schemes response converted to list of dictionaries
+        """
 
         user_query = {
             "query_text": query,
@@ -304,7 +374,15 @@ class SearchModel:
 
 
     def predict(self, params: PredictParams) -> dict[str, any]:
-        """Main method to be called by endpoint handler"""
+        """
+        Main method to be called by endpoint handler
+
+        Args:
+            params (PredictParams): parameters given by user
+
+        Returns:
+            dict[str, any]: response containing session ID and schemes results based on query and other parameters
+        """
 
         # Split search query into different requirements by the user
         split_needs = self.__class__.preprocessor.split_query_into_needs(params.query)

@@ -15,6 +15,8 @@ search_model = None
 
 
 def init_model():
+    """Initialises SearchModel class"""
+
     global search_model
 
     firebase_manager = FirebaseManager()
@@ -23,6 +25,16 @@ def init_model():
 
 @https_fn.on_request(region="asia-southeast1")
 def schemespredict(req: https_fn.Request) -> https_fn.Response:
+    """
+    Handler for schemes search endpoint
+
+    Args:
+        req (https_fn.Request): request sent from client
+
+    Returns:
+        https_fn.Response: response sent to client
+    """
+
     global search_model
 
     if not search_model:
