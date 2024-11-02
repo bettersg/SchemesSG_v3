@@ -10,7 +10,7 @@ Do not deploy the functions using firebase deploy, deployment will be handled au
 
 import json
 
-from chat.chat import message  # noqa: F401
+from chat.chat import chatbot  # noqa: F401
 from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager

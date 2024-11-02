@@ -35,9 +35,9 @@ def dataframe_to_text(df):
         text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
     return text_summary
 
-
-@https_fn.on_request(region="asia-southeast1")
-def message(req: https_fn.Request) -> https_fn.Response:
+# change endpoint later
+@https_fn.on_request(region="asia-southeast1", route="/chatbot")
+def chatbot(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for chat message endpoint
 
