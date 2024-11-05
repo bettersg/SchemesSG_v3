@@ -166,8 +166,7 @@ class SearchModel:
         schemes = db.collection("schemes").stream()
 
         cls.preprocessor = SearchPreprocessor()
-        cls.schemes_df = pd.DataFrame([scheme.to_dict() for scheme in schemes])
-        # pd.read_csv("ml_logic/schemes-updated-with-text.csv")
+        cls.schemes_df = pd.DataFrame([{**scheme.to_dict(), "scheme_id": scheme.id} for scheme in schemes])
 
         cls.model = AutoModel.from_pretrained("ml_logic/schemesv2-torch-allmpp-model")
         cls.tokenizer = AutoTokenizer.from_pretrained("ml_logic/schemesv2-torch-allmpp-tokenizer")
@@ -250,7 +249,7 @@ class SearchModel:
 
         # Retrieve the most similar items
         similar_items = self.__class__.schemes_df.iloc[indices[0]][
-            ["Scheme", "Agency", "Description", "Image", "Link", "Scraped Text", "What it gives", "Scheme Type"]
+            ["scheme_id", "Scheme", "Agency", "Description", "Image", "Link", "Scraped Text", "What it gives", "Scheme Type"]
         ]
 
         results = pd.concat(
@@ -258,6 +257,7 @@ class SearchModel:
         )
         results = results.set_axis(
             [
+                "scheme_id",
                 "Scheme",
                 "Agency",
                 "Description",
@@ -295,6 +295,7 @@ class SearchModel:
         # DataFrame to store combined results
         combined_results = pd.DataFrame(
             columns=[
+                "scheme_id",
                 "Scheme",
                 "Agency",
                 "Description",
@@ -318,6 +319,7 @@ class SearchModel:
         # Handle duplicates: Aggregate similarity for duplicates and drop duplicates
         aggregated_results = combined_results.groupby(
             [
+                "scheme_id",
                 "Scheme",
                 "Agency",
                 "Description",
