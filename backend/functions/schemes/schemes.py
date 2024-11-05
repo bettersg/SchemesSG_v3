@@ -13,7 +13,7 @@ firebase_manager = FirebaseManager()
 
 
 @https_fn.on_request(region="asia-southeast1")
-def schemes(req: https_fn.Request) -> https_fn.Response:
+def v1_schemes(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for single schemes page endpoint
 
@@ -43,8 +43,15 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
             mimetype = 'application/json'
         )
 
-    ref = firebase_manager.firestore_client.collection('schemes').document(schemes_id)
-    doc = ref.get()
+    try:
+        ref = firebase_manager.firestore_client.collection('schemes').document(schemes_id)
+        doc = ref.get()
+    except Exception as e:
+        return https_fn.Response(
+            response = json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
+            status = 500,
+            mimetype = 'application/json'
+        )
 
     if not doc.exists:
         return https_fn.Response(
