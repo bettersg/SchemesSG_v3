@@ -1,6 +1,6 @@
 """
 url for local testing:
-http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search
+http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/search
 """
 
 import json
@@ -8,7 +8,7 @@ import json
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
 
-from ml_logic.searchModelManager import PredictParams, SearchModel
+from ml_logic import PredictParams, SearchModel
 
 
 search_model = None
@@ -24,7 +24,7 @@ def init_model():
 
 
 @https_fn.on_request(region="asia-southeast1")
-def schemes_search(req: https_fn.Request) -> https_fn.Response:
+def search(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for schemes search endpoint
 

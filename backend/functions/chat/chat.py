@@ -9,7 +9,7 @@ import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
 
-from ml_logic.chatbotManager import Chatbot, dataframe_to_text
+from ml_logic import Chatbot, dataframe_to_text
 
 
 firebase_manager = FirebaseManager()
