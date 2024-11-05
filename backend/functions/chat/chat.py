@@ -1,6 +1,6 @@
 """
 url for local testing:
-http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chatbot
+http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message
 """
 
 import json
@@ -9,35 +9,25 @@ import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
 
-from fast_api.cleantext import clean_scraped_text
-from ml_logic.modelManager import SearchModel
+from ml_logic.chatbotManager import Chatbot, dataframe_to_text
 
 
 firebase_manager = FirebaseManager()
-search_model = None
+chatbot = None
 
 
-def init_model():
-    """Initialises SearchModel class"""
+def init_chatbot():
+    """Initialises Chatbot class"""
 
-    global search_model
+    global chatbot
 
     firebase_manager = FirebaseManager()
-    search_model = SearchModel(firebase_manager)
+    chatbot = Chatbot(firebase_manager)
 
-def dataframe_to_text(df):
-    text_summary = ''
-    for _, row in df.iterrows():
-        row = row.data
-        cleanScrape = row['Scraped Text']
-        sentence = clean_scraped_text(cleanScrape)
-
-        text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
-    return text_summary
 
 # change endpoint later
-@https_fn.on_request(region="asia-southeast1", route="/chatbot")
-def chatbot(req: https_fn.Request) -> https_fn.Response:
+@https_fn.on_request(region="asia-southeast1")
+def chat_message(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for chat message endpoint
 
@@ -49,52 +39,54 @@ def chatbot(req: https_fn.Request) -> https_fn.Response:
     """
 
     global firebase_manager
-    global search_model
+    global chatbot
 
-    if not search_model:
-        init_model()
+    if not chatbot:
+        init_chatbot()
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(
-            response = json.dumps({'error': 'Invalid request method; only POST or GET is supported'}),
-            status = 405,
-            mimetype = 'application/json')
+            response=json.dumps({"error": "Invalid request method; only POST or GET is supported"}),
+            status=405,
+            mimetype="application/json",
+        )
 
     try:
         data = req.get_json(silent=True)
-        input_text = data.get('message')
-        session_id = data.get('sessionID')
+        input_text = data.get("message")
+        session_id = data.get("sessionID")
         top_schemes_text = ""
     except Exception:
         return https_fn.Response(
-            response = json.dumps({'error': 'Invalid request body'}),
-            status = 400,
-            mimetype = 'application/json'
+            response=json.dumps({"error": "Invalid request body"}), status=400, mimetype="application/json"
         )
-
-    doc = firebase_manager.firestore_client.collection('userQuery').document(session_id)
-    if not doc.exists:
-        return https_fn.Response(
-            response = json.dumps({"error": "Search query with sessionID does not exist"}),
-            status = 404,
-            mimetype = 'application/json'
-        )
-
-    df = pd.DataFrame(doc.to_dict())
-    if df:
-        top_schemes_text = dataframe_to_text(df)
 
     try:
-        results = search_model.chatbot(top_schemes_text=top_schemes_text, input_text=input_text, session_id=session_id)
-    except Exception:
+        ref = firebase_manager.firestore_client.collection("userQuery").document(session_id)
+        doc = ref.get()
+    except Exception as e:
         return https_fn.Response(
-            response = json.dumps({'error': 'Internal server error'}),
-            status = 500,
-            mimetype = 'application/json'
+            response=json.dumps({"error": "Internal server error, unable to fetch user query from firestore"}),
+            status=500,
+            mimetype="application/json",
         )
 
-    return https_fn.Response(
-            response = json.dumps(results),
-            status = 200,
-            mimetype = 'application/json'
+    if not doc.exists:
+        return https_fn.Response(
+            response=json.dumps({"error": "Search query with sessionID does not exist"}),
+            status=404,
+            mimetype="application/json",
         )
+
+
+    df = pd.DataFrame(doc.to_dict()['schemes_response'])
+    top_schemes_text = dataframe_to_text(df)
+
+    try:
+        results = chatbot.chatbot(top_schemes_text=top_schemes_text, input_text=input_text, session_id=session_id)
+    except Exception:
+        return https_fn.Response(
+            response=json.dumps({"error": "Internal server error"}), status=500, mimetype="application/json"
+        )
+
+    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json")
