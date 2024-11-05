@@ -13,7 +13,7 @@ firebase_manager = FirebaseManager()
 
 
 @https_fn.on_request(region="asia-southeast1")
-def v1_schemes(req: https_fn.Request) -> https_fn.Response:
+def schemes(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for single schemes page endpoint
 
@@ -28,46 +28,37 @@ def v1_schemes(req: https_fn.Request) -> https_fn.Response:
 
     if not req.method == "GET":
         return https_fn.Response(
-            response = json.dumps({'error': 'Invalid request method; only GET is supported'}),
-            status = 405,
-            mimetype = 'application/json'
+            response=json.dumps({"error": "Invalid request method; only GET is supported"}),
+            status=405,
+            mimetype="application/json",
         )
 
-    splitted_path = req.path.split('/')
+    splitted_path = req.path.split("/")
     schemes_id = splitted_path[1] if len(splitted_path) == 2 else None
 
     if not schemes_id:
         return https_fn.Response(
-            response = json.dumps({'error': 'Invalid path parameters, please provide schemes id'}),
-            status = 400,
-            mimetype = 'application/json'
+            response=json.dumps({"error": "Invalid path parameters, please provide schemes id"}),
+            status=400,
+            mimetype="application/json",
         )
 
     try:
-        ref = firebase_manager.firestore_client.collection('schemes').document(schemes_id)
+        ref = firebase_manager.firestore_client.collection("schemes").document(schemes_id)
         doc = ref.get()
     except Exception as e:
         return https_fn.Response(
-            response = json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
-            status = 500,
-            mimetype = 'application/json'
+            response=json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
+            status=500,
+            mimetype="application/json",
         )
 
     if not doc.exists:
         return https_fn.Response(
-            response = json.dumps({"error": "Scheme with provided id does not exist"}),
-            status = 404,
-            mimetype = 'application/json'
+            response=json.dumps({"error": "Scheme with provided id does not exist"}),
+            status=404,
+            mimetype="application/json",
         )
 
-    results = {
-        "data": doc.to_dict(),
-        "mh": 0.7
-    }
-    return https_fn.Response(
-        response = json.dumps(results),
-        status = 200,
-        mimetype = 'application/json'
-    )
-
-
+    results = {"data": doc.to_dict(), "mh": 0.7}
+    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json")
