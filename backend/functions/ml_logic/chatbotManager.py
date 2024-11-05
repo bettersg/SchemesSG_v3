@@ -13,20 +13,39 @@ from langchain_openai import AzureChatOpenAI
 
 
 def clean_scraped_text(text: str) -> str:
-    sentence = re.sub('\'', '', text)  # Remove distracting single quotes
-    sentence = re.sub(' +', ' ', sentence)  # Replace extra spaces
-    sentence = re.sub(r'\n: \'\'.*', '', sentence)  # Remove specific unwanted lines
-    sentence = re.sub(r'\n!.*', '', sentence)
-    sentence = re.sub(r'^:\'\'.*', '', sentence)
-    sentence = re.sub(r'\n', ' ', sentence)  # Replace non-breaking new lines with space
-    sentence = re.sub('[^A-Za-z0-9 @]+', '', sentence)
+    """
+    Helper function to clean scraped text
+
+    Args:
+        text (str): scraped text
+
+    Returns
+        str: cleaned text
+    """
+
+    sentence = re.sub("'", "", text)  # Remove distracting single quotes
+    sentence = re.sub(" +", " ", sentence)  # Replace extra spaces
+    sentence = re.sub(r"\n: \'\'.*", "", sentence)  # Remove specific unwanted lines
+    sentence = re.sub(r"\n!.*", "", sentence)
+    sentence = re.sub(r"^:\'\'.*", "", sentence)
+    sentence = re.sub(r"\n", " ", sentence)  # Replace non-breaking new lines with space
+    sentence = re.sub("[^A-Za-z0-9 @]+", "", sentence)
     return sentence
 
 
 def dataframe_to_text(df: pd.DataFrame) -> str:
-    text_summary = ''
+    """
+    Function to convert pandas dataframe (of scheme results) to cleaned text
+
+    Args:
+        df (pd.DataFrame): schemes in the user query for pandas dataframe
+
+    Returns:
+        str: cleaned text of information for each scheme
+    """
+    text_summary = ""
     for _, row in df.iterrows():
-        cleanScrape = row['Scraped Text']
+        cleanScrape = row["Scraped Text"]
         sentence = clean_scraped_text(cleanScrape)
 
         text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
@@ -35,6 +54,8 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
 
 # TODO: get config from firebase
 class Config:
+    """Config class for loading .env file with chatbot API information"""
+
     def __init__(self):
         load_dotenv()
 
@@ -49,6 +70,8 @@ class Config:
 
 
 class Chatbot:
+    """Singleton-patterned class for managing chatbot API"""
+
     _instance = None
 
     llm = None
@@ -71,17 +94,17 @@ class Chatbot:
 
         try:
             cls.llm = AzureChatOpenAI(
-                    deployment_name=config.deployment,
-                    azure_endpoint=config.endpoint,
-                    openai_api_version=config.version,
-                    openai_api_key=config.apikey,
-                    openai_api_type=config.type,
-                    model_name=config.model,
-                    temperature=0.3
-                )
+                deployment_name=config.deployment,
+                azure_endpoint=config.endpoint,
+                openai_api_version=config.version,
+                openai_api_key=config.apikey,
+                openai_api_type=config.type,
+                model_name=config.model,
+                temperature=0.3,
+            )
             print("Chatbot initialised")
-        except Exception as e: #TODO: logger
-            print('LLM not initialized')
+        except Exception as e:  # TODO: logger
+            print("LLM not initialized")
 
     def __new__(cls, firebase_manager: FirebaseManager):
         """Implementation of singleton pattern (returns initialised instance)"""
@@ -97,7 +120,17 @@ class Chatbot:
             self.__class__.firebase_manager = firebase_manager
             self.__class__.initialise()
 
-    def get_session_history(self, session_id: str):
+    def get_session_history(self, session_id: str) -> ChatMessageHistory:
+        """
+        Method to get session history of a conversation
+
+        Args:
+            session_id (str): session ID of conversation (same session id as original schemes search query)
+
+        Returns
+            ChatMessageHistory: history of conversation
+        """
+
         ai_message = """
         🌟 Welcome to Scheme Support Chat! 🌟 Feel free to ask me questions like:
         - "Can you tell me more about Scheme X?"
@@ -112,9 +145,21 @@ class Chatbot:
 
             return self.__class__.chat_history[session_id]
 
+    def chatbot(self, top_schemes_text: str, input_text: str, session_id: str) -> dict[str, bool | str]:
+        """
+        Method called when sending message to chatbot
 
-    def chatbot(self, top_schemes_text: pd.DataFrame, input_text: str, session_id: str):
-        template_text = """
+        Args:
+            top_schemes_text (str): cleaned text containing information of top schemes for original user query
+            input_text (str): message sent by user to chatbot
+            session_id (str): session ID for conversation (matches session ID of schemes search query)
+
+        Returns:
+            dict[str, bool | str]: a dictionary with 2 key-value pairs, first indicates the presence of a response from the chatbot, second contains the response (if any)
+        """
+
+        template_text = (
+            """
         As a virtual assistant, I'm dedicated to helping user navigate through the available schemes. User has done initial search based on their needs and system has provided top schemes relevant to the search. Now, my job is to advise on the follow up user queries based on the schemes data available by analyzing user query and extracting relevant answers from the top scheme data. Top Schemes Information includes scheme name, agency, Link to website, and may include text directly scraped from scheme website.
 
         In responding to user queries, I will adhere to the following principles:
@@ -130,7 +175,9 @@ class Chatbot:
         5. **Avoidance of Fabrication**: My responses will solely rely on the information from the scheme details provided, avoiding any speculative or unfounded content. I will not alter or presume any specifics not clearly indicated in the scheme descriptions.
 
         **Top Schemes Information:**
-        """ + top_schemes_text
+        """
+            + top_schemes_text
+        )
 
         prompt_template = ChatPromptTemplate.from_messages(
             [
@@ -142,23 +189,14 @@ class Chatbot:
 
         chain = prompt_template | self.__class__.llm
         chain_with_history = RunnableWithMessageHistory(
-                chain,
-                self.get_session_history,
-                input_messages_key="query",
-                history_messages_key="history"
-            )
+            chain, self.get_session_history, input_messages_key="query", history_messages_key="history"
+        )
 
-        config = {'configurable': {'session_id': session_id}}
+        config = {"configurable": {"session_id": session_id}}
         message = chain_with_history.invoke({"query": input_text}, config=config)
         if message and message.content:
-            results_json = {
-                "response": True,
-                "message": message.content
-            }
+            results_json = {"response": True, "message": message.content}
         else:
-            results_json = {
-                "response": False,
-                "message": "No response from the chatbot."
-            }
+            results_json = {"response": False, "message": "No response from the chatbot."}
 
         return results_json
