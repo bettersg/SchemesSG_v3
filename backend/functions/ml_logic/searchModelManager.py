@@ -11,6 +11,7 @@ import spacy
 import torch
 import torch.nn.functional as F
 from fb_manager.firebaseManager import FirebaseManager
+from loguru import logger
 from pydantic import BaseModel
 
 from transformers import AutoModel, AutoTokenizer
@@ -33,7 +34,7 @@ class SearchPreprocessor:
 
     def __init__(self):
         self.nlp_spacy = spacy.load("en_core_web_sm")
-        print("Search Preprocessor initialised!")
+        logger.info("Search Preprocessor initialised!")
         pass
 
     def preprocess(self, sentence: str) -> str:
@@ -174,7 +175,7 @@ class SearchModel:
         cls.index = faiss.read_index("ml_logic/schemesv2-your_index.faiss")
         cls.initialised = True
 
-        print("Search Model initialised!")
+        logger.info("Search Model initialised!")
 
         pass
 

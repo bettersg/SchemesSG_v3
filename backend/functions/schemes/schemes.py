@@ -7,6 +7,7 @@ import json
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
+from loguru import logger
 
 
 firebase_manager = FirebaseManager()
@@ -47,6 +48,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
         ref = firebase_manager.firestore_client.collection("schemes").document(schemes_id)
         doc = ref.get()
     except Exception as e:
+        logger.exception("Unable to fetch scheme from firestore", e)
         return https_fn.Response(
             response=json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
             status=500,

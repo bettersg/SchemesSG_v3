@@ -9,15 +9,26 @@ Do not deploy the functions using firebase deploy, deployment will be handled au
 """
 
 import json
+import sys
 
 from chat.chat import chat_message  # noqa: F401
 from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
+from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import search  # noqa: F401
 
+
+# Initialise logger
+logger.remove()
+logger.add(sys.stdout,
+           level="INFO",
+           format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
+           colorize=True,
+           backtrace=True)
+logger.info("Logger initialised")
 
 # Initialise the Firebase Admin SDK and Connection to firestore
 firebase_manager = FirebaseManager()

@@ -7,6 +7,7 @@ import json
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
+from loguru import logger
 
 from ml_logic import PredictParams, SearchModel
 
@@ -69,7 +70,8 @@ def search(req: https_fn.Request) -> https_fn.Response:
 
     try:
         results = search_model.predict(params)
-    except Exception:
+    except Exception as e:
+        logger.exception("Error searching schemes", e)
         return https_fn.Response(
             response=json.dumps({"error": "Internal server error"}), status=500, mimetype="application/json"
         )

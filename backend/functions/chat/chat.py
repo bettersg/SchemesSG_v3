@@ -8,6 +8,7 @@ import json
 import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
+from loguru import logger
 
 from ml_logic import Chatbot, dataframe_to_text
 
@@ -65,6 +66,7 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
         ref = firebase_manager.firestore_client.collection("userQuery").document(session_id)
         doc = ref.get()
     except Exception as e:
+        logger.exception("Unable to fetch user query from firestore", e)
         return https_fn.Response(
             response=json.dumps({"error": "Internal server error, unable to fetch user query from firestore"}),
             status=500,
@@ -79,12 +81,12 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
         )
 
 
-    df = pd.DataFrame(doc.to_dict()['schemes_response'])
-    top_schemes_text = dataframe_to_text(df)
-
     try:
+        df = pd.DataFrame(doc.to_dict()['schemes_response'])
+        top_schemes_text = dataframe_to_text(df)
         results = chatbot.chatbot(top_schemes_text=top_schemes_text, input_text=input_text, session_id=session_id)
-    except Exception:
+    except Exception as e:
+        logger.exception("Error with chatbot", e)
         return https_fn.Response(
             response=json.dumps({"error": "Internal server error"}), status=500, mimetype="application/json"
         )

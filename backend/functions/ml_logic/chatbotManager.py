@@ -10,6 +10,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import AzureChatOpenAI
+from loguru import logger
 
 
 def clean_scraped_text(text: str) -> str:
@@ -102,9 +103,9 @@ class Chatbot:
                 model_name=config.model,
                 temperature=0.3,
             )
-            print("Chatbot initialised")
+            logger.info("Chatbot initialised")
         except Exception as e:  # TODO: logger
-            print("LLM not initialized")
+            logger.exception("LLM not initialized", e)
 
     def __new__(cls, firebase_manager: FirebaseManager):
         """Implementation of singleton pattern (returns initialised instance)"""
