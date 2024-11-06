@@ -107,6 +107,8 @@ class Chatbot:
         except Exception as e:  # TODO: logger
             logger.exception("LLM not initialized", e)
 
+        cls.initialised = True
+
     def __new__(cls, firebase_manager: FirebaseManager):
         """Implementation of singleton pattern (returns initialised instance)"""
 
