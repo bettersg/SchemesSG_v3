@@ -1,4 +1,4 @@
-import { Button, Textarea } from "@nextui-org/react";
+import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from './search-icon';
 import classes from './search-bar.module.css';
 
@@ -6,13 +6,16 @@ interface SearchBarProps {
     userInput: string;
     setUserInput: React.Dispatch<React.SetStateAction<string>>;
     handleUserInput: (message: string) => void;
+    simulateBotResponse: (userMessage: string) => void;
+    isBotResponseGenerating: boolean
 }
 
-export default function SearchBar({ userInput, setUserInput, handleUserInput }: SearchBarProps) {
+export default function SearchBar({ userInput, setUserInput, handleUserInput, simulateBotResponse, isBotResponseGenerating }: SearchBarProps) {
 
     const handleSend = () => {
         if (userInput.trim()) {
           handleUserInput(userInput);
+          simulateBotResponse(userInput);
         }
     };
 
@@ -30,7 +33,9 @@ export default function SearchBar({ userInput, setUserInput, handleUserInput }: 
                 labelPlacement="outside"
                 placeholder="I am a dialysis patient in need of financial assistance and food support after being retrenched due to Covid-19."
                 endContent={
-                    <Button className={classes.searchButton} isIconOnly size="sm" radius="full" onClick={handleSend}>
+                    isBotResponseGenerating
+                    ? <Spinner className={classes.endContent} size="sm" />
+                    : <Button className={classes.endContent} isIconOnly size="sm" radius="full" onClick={handleSend}>
                         <SearchIcon />
                     </Button>
                 }

@@ -16,6 +16,7 @@ export default function MainChat() {
     ]);
     const [userInput, setUserInput] = useState("");
     const [botResponse, setBotResponse] = useState("");
+    const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
 
     const handleUserInput = (input: string) => {
         setMessages((prevMessages) => [
@@ -33,6 +34,16 @@ export default function MainChat() {
         setBotResponse("");
     };
 
+    //TODO: Change bot response simulation to backend API
+    const simulateBotResponse = (userMessage: string) => {
+      setIsBotResponseGenerating(true);
+      setTimeout(() => {
+        const botReply = `Bot response to: ${userMessage}`;
+        handleBotResponse(botReply);
+        setIsBotResponseGenerating(false);
+      }, 1000);
+    };
+
     return (
         <>
             <ChatList messages={messages} />
@@ -41,6 +52,8 @@ export default function MainChat() {
                 userInput={userInput}
                 setUserInput={setUserInput}
                 handleUserInput={handleUserInput}
+                simulateBotResponse={simulateBotResponse}
+                isBotResponseGenerating={isBotResponseGenerating}
             />
         </>
     )
