@@ -3,6 +3,7 @@ import { Link } from "@nextui-org/react";
 
 export default function SchemesList() {
 
+    // TODO: Update with array from backend API
     const schemes = [
         { id: 1, name: "Scheme 1", agency: "Agency 1", description: "Description 1", route: "scheme-1" },
         { id: 2, name: "Scheme 2", agency: "Agency 2", description: "Description 2", route: "scheme-2" },
@@ -19,7 +20,7 @@ export default function SchemesList() {
 
             <Spacer y={3} />
 
-            <div className="gap-2 grid grid-cols-2 sm:grid-cols-3">
+            <div className="gap-2 grid grid-cols-1 sm:grid-cols-3">
                 {schemes.map((scheme) => (
                     <Link key={scheme.id} href={`/schemes/${scheme.route}`} className="w-full">
                         <Card shadow="sm" className="w-full" isHoverable>

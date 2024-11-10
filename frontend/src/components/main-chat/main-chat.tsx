@@ -4,6 +4,7 @@ import { useState } from "react";
 import ChatList from "@/components/chat-list/chat-list";
 import SearchBar from "@/components/search-bar/search-bar";
 import { Spacer } from "@nextui-org/react";
+import classes from "./main-chat.module.css"
 
 export type Message = {
     type: "user" | "bot",
@@ -45,7 +46,7 @@ export default function MainChat() {
     };
 
     return (
-        <>
+        <div className={classes.mainChat}>
             <ChatList messages={messages} />
             <Spacer y={4} />
             <SearchBar
@@ -55,6 +56,6 @@ export default function MainChat() {
                 simulateBotResponse={simulateBotResponse}
                 isBotResponseGenerating={isBotResponseGenerating}
             />
-        </>
+        </div>
     )
 }
