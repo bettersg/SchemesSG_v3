@@ -1,9 +1,9 @@
-import SearchBar from "@/components/search-bar/search-bar";
+import MainChat from "@/components/main-chat/main-chat";
 
 export default function Home() {
     return (
         <main>
-            <SearchBar />
+            <MainChat />
         </main>
     )
 }

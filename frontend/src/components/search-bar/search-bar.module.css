@@ -1,3 +1,8 @@
+.searchBar textarea::placeholder{
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.2);
+}
+
 .searchButton {
     margin-top: auto
 }
