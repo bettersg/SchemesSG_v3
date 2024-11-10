@@ -22,7 +22,7 @@ export default function SchemesList() {
 
             <div className="gap-2 grid grid-cols-1 sm:grid-cols-3">
                 {schemes.map((scheme) => (
-                    <Link key={scheme.id} href={`/schemes/${scheme.route}`} className="w-full">
+                    <Link key={scheme.id} href={`/schemes/${scheme.route}`} className="w-full" target="_blank">
                         <Card shadow="sm" className="w-full" isHoverable>
                                 <CardHeader className="flex gap-3">
                                     <Image
