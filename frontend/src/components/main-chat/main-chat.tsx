@@ -4,13 +4,18 @@ import { useState } from "react";
 import ChatList from "@/components/chat-list/chat-list";
 import SearchBar from "@/components/search-bar/search-bar";
 import { Spacer } from "@nextui-org/react";
+import classes from "./main-chat.module.css"
 
 export type Message = {
     type: "user" | "bot",
     text: string
 }
 
-export default function MainChat() {
+interface MainChatInterface {
+    setIsSchemeListShown: (val: boolean) => void;
+}
+
+export default function MainChat({ setIsSchemeListShown }: MainChatInterface) {
     const [messages, setMessages] = useState<Message[]>([
         { type: "bot", text: "Hello! How can I help you today?" }
     ]);
@@ -41,11 +46,12 @@ export default function MainChat() {
         const botReply = `Bot response to: ${userMessage}`;
         handleBotResponse(botReply);
         setIsBotResponseGenerating(false);
+        setIsSchemeListShown(true);
       }, 1000);
     };
 
     return (
-        <>
+        <div className={classes.mainChat}>
             <ChatList messages={messages} />
             <Spacer y={4} />
             <SearchBar
@@ -55,6 +61,6 @@ export default function MainChat() {
                 simulateBotResponse={simulateBotResponse}
                 isBotResponseGenerating={isBotResponseGenerating}
             />
-        </>
+        </div>
     )
 }

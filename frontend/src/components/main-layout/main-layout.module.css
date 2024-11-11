@@ -1,6 +1,9 @@
 .contentWrapper {
     padding: 2em 5em;
     margin: 0 auto;
-    max-width: 800px;
+    max-width: 1000px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
