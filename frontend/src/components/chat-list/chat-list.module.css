@@ -1,0 +1,47 @@
+.chatList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+}
+
+.messageContainer {
+    display: flex;
+    align-items: flex-start; 
+}
+
+.botContainer {
+    justify-content: flex-start;
+}
+
+.userContainer {
+    justify-content: flex-end;
+}
+
+.avatar {
+    margin-right: 8px;
+}
+
+.card {
+    max-width: 80%;
+    padding: 3px;
+    border-radius: 16px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    word-wrap: break-word;
+}
+
+.cardBody {
+    padding: 4px 8px;
+}
+
+.bot {
+    background-color: #f1f5f9;
+    align-self: flex-start;
+}
+
+.user {
+    background-color: #e6f1fe;
+    color: #006FEE;
+    align-self: flex-end;
+}
