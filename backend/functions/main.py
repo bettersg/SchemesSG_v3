@@ -18,7 +18,7 @@ from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
 from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
-from schemes.search import search  # noqa: F401
+from schemes.search import schemes_search  # noqa: F401
 
 
 # Initialise logger

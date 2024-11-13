@@ -1,6 +1,6 @@
 """
 url for local testing:
-http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/search
+http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search
 """
 
 import json
@@ -25,7 +25,7 @@ def init_model():
 
 
 @https_fn.on_request(region="asia-southeast1")
-def search(req: https_fn.Request) -> https_fn.Response:
+def schemes_search(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for schemes search endpoint
 
