@@ -1,7 +1,11 @@
 import threading
+from pathlib import Path
 
 import firebase_admin
 from firebase_admin import credentials, firestore, initialize_app
+
+
+creds_path = Path(__file__).parent.parent / "creds.json"
 
 
 class FirebaseManager:
@@ -22,7 +26,7 @@ class FirebaseManager:
         """Initialize Firebase App only once"""
 
         if not firebase_admin._apps:
-            cred = credentials.Certificate("creds.json")
+            cred = credentials.Certificate(creds_path)
             initialize_app(cred)
 
         self.firestore_client = firestore.client()

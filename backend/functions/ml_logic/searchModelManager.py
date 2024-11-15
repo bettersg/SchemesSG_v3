@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 from uuid import uuid1
 
@@ -19,6 +20,12 @@ from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+
+parent_dir = Path(__file__).parent
+model_path = parent_dir / "schemesv2-torch-allmpp-model"
+tokenizer_path = parent_dir / "schemesv2-torch-allmpp-tokenizer"
+embeddings_path = parent_dir / "schemesv2-your_embeddings.npy"
+index_path = parent_dir / "schemesv2-your_index.faiss"
 
 
 class PredictParams(BaseModel):
@@ -169,10 +176,10 @@ class SearchModel:
         cls.preprocessor = SearchPreprocessor()
         cls.schemes_df = pd.DataFrame([{**scheme.to_dict(), "scheme_id": scheme.id} for scheme in schemes])
 
-        cls.model = AutoModel.from_pretrained("ml_logic/schemesv2-torch-allmpp-model")
-        cls.tokenizer = AutoTokenizer.from_pretrained("ml_logic/schemesv2-torch-allmpp-tokenizer")
-        cls.embeddings = np.load("ml_logic/schemesv2-your_embeddings.npy")
-        cls.index = faiss.read_index("ml_logic/schemesv2-your_index.faiss")
+        cls.model = AutoModel.from_pretrained(model_path)
+        cls.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        cls.embeddings = np.load(embeddings_path)
+        cls.index = faiss.read_index(str(index_path)) # Seems that faiss does not support pathlib
         cls.initialised = True
 
         logger.info("Search Model initialised!")
