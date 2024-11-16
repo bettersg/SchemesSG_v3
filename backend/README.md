@@ -45,6 +45,8 @@ This backend is built using Firebase Functions and serves as the API for the Sch
 3. **Run the Cloud Functions Emulator**
    Start the emulator to test your functions locally:
    ```bash
+   export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+   export no_proxy=*
    firebase emulators:start --only functions
    ```
 
