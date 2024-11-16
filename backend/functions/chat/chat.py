@@ -13,20 +13,12 @@ from loguru import logger
 from ml_logic import Chatbot, dataframe_to_text
 
 
-firebase_manager = FirebaseManager()
-chatbot = None
-
-
-def init_chatbot():
-    """Initialises Chatbot class"""
-
-    global chatbot
-
+def create_chatbot():
+    """Factory function to create a Chatbot instance."""
     firebase_manager = FirebaseManager()
-    chatbot = Chatbot(firebase_manager)
+    return Chatbot(firebase_manager)
 
 
-# change endpoint later
 @https_fn.on_request(region="asia-southeast1")
 def chat_message(req: https_fn.Request) -> https_fn.Response:
     """
@@ -38,12 +30,7 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-
-    global firebase_manager
-    global chatbot
-
-    if not chatbot:
-        init_chatbot()
+    chatbot = create_chatbot()
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(
@@ -63,7 +50,7 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
         )
 
     try:
-        ref = firebase_manager.firestore_client.collection("userQuery").document(session_id)
+        ref = chatbot.firebase_manager.firestore_client.collection("userQuery").document(session_id)
         doc = ref.get()
     except Exception as e:
         logger.exception("Unable to fetch user query from firestore", e)
@@ -80,9 +67,8 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
             mimetype="application/json",
         )
 
-
     try:
-        df = pd.DataFrame(doc.to_dict()['schemes_response'])
+        df = pd.DataFrame(doc.to_dict()["schemes_response"])
         top_schemes_text = dataframe_to_text(df)
         results = chatbot.chatbot(top_schemes_text=top_schemes_text, input_text=input_text, session_id=session_id)
     except Exception as e:
