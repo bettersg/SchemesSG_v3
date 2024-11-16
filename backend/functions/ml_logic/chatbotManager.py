@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+from datetime import datetime, timezone
 
 import pandas as pd
 from dotenv import dotenv_values, load_dotenv
@@ -143,16 +144,17 @@ class Chatbot:
         To get started, just type your question below. I'm here to help explore schemes results 🚀
         """
 
-        ref = self.__class__.db.collection("chatHistory").document(session_id)
+        db = self.__class__.firebase_manager.firestore_client
+        ref = db.collection("chatHistory").document(session_id)
 
         with self.__class__._lock:
             try:
-                # fetch history from Firestore
                 doc = ref.get()
                 if doc.exists:
-                    raw_messages = doc.to_dict().get("messages", [])
-                    messages = []
+                    raw_data = doc.to_dict()
+                    raw_messages = raw_data.get("messages", [])
 
+                    messages = []
                     for msg in raw_messages:
                         if isinstance(msg, dict) and "role" in msg and "content" in msg:
                             if msg["role"] == "user":
@@ -166,10 +168,12 @@ class Chatbot:
 
                 else:
                     initial_history = ChatMessageHistory(messages=[AIMessage(ai_message)])
+                    current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
                     ref.set({
                         "messages": [
                             {"role": "assistant", "content": ai_message}
-                        ]
+                        ],
+                        "last_updated": current_timestamp + " UTC"
                     })
                     return initial_history
 
@@ -222,18 +226,25 @@ class Chatbot:
                 ref = db.collection("chatHistory").document(session_id)
                 doc = ref.get()
 
+                current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
                 if doc.exists:
                     chat_history = doc.to_dict().get("messages", [])
                     chat_history.append({"role": "user", "content": input_text})
                     chat_history.append({"role": "assistant", "content": message.content})
+                    ref.set({
+                        "messages": chat_history,
+                        "last_updated": current_timestamp + " UTC"
+                    })
                 else:
                     chat_history = [
                         {"role": "user", "content": input_text},
                         {"role": "assistant", "content": message.content},
                     ]
-
-                # Update Firestore
-                ref.set({"messages": chat_history})
+                    ref.set({
+                        "messages": chat_history,
+                        "last_updated": current_timestamp
+                    })
             except Exception as e:
                 logger.exception("Error updating chat history in Firestore", e)
 
