@@ -6,7 +6,7 @@ import pandas as pd
 from dotenv import dotenv_values, load_dotenv
 from fb_manager.firebaseManager import FirebaseManager
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import AzureChatOpenAI
@@ -78,7 +78,6 @@ class Chatbot:
     llm = None
 
     _lock = threading.Lock()
-    chat_history = {}
 
     firebase_manager = None
 
@@ -90,6 +89,8 @@ class Chatbot:
 
         if cls.initialised:
             return
+
+        cls.db = cls.firebase_manager.firestore_client
 
         config = Config()
 
@@ -125,12 +126,12 @@ class Chatbot:
 
     def get_session_history(self, session_id: str) -> ChatMessageHistory:
         """
-        Method to get session history of a conversation
+        Method to get session history of a conversation from Firestore.
 
         Args:
             session_id (str): session ID of conversation (same session id as original schemes search query)
 
-        Returns
+        Returns:
             ChatMessageHistory: history of conversation
         """
 
@@ -142,11 +143,40 @@ class Chatbot:
         To get started, just type your question below. I'm here to help explore schemes results 🚀
         """
 
-        with self.__class__._lock:
-            if session_id not in self.__class__.chat_history:
-                self.__class__.chat_history[session_id] = ChatMessageHistory(messages=[AIMessage(ai_message)])
+        ref = self.__class__.db.collection("chatHistory").document(session_id)
 
-            return self.__class__.chat_history[session_id]
+        with self.__class__._lock:
+            try:
+                # fetch history from Firestore
+                doc = ref.get()
+                if doc.exists:
+                    raw_messages = doc.to_dict().get("messages", [])
+                    messages = []
+
+                    for msg in raw_messages:
+                        if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                            if msg["role"] == "user":
+                                messages.append(HumanMessage(content=msg["content"]))
+                            elif msg["role"] == "assistant":
+                                messages.append(AIMessage(content=msg["content"]))
+                        elif isinstance(msg, str):
+                            messages.append(AIMessage(content=msg))
+
+                    return ChatMessageHistory(messages=messages)
+
+                else:
+                    initial_history = ChatMessageHistory(messages=[AIMessage(ai_message)])
+                    ref.set({
+                        "messages": [
+                            {"role": "assistant", "content": ai_message}
+                        ]
+                    })
+                    return initial_history
+
+            except Exception as e:
+                logger.exception("Error fetching chat history from Firestore", e)
+                return ChatMessageHistory(messages=[AIMessage(ai_message)])
+
 
     def chatbot(self, top_schemes_text: str, input_text: str, session_id: str) -> dict[str, bool | str]:
         """
@@ -163,22 +193,8 @@ class Chatbot:
 
         template_text = (
             """
-        As a virtual assistant, I'm dedicated to helping user navigate through the available schemes. User has done initial search based on their needs and system has provided top schemes relevant to the search. Now, my job is to advise on the follow up user queries based on the schemes data available by analyzing user query and extracting relevant answers from the top scheme data. Top Schemes Information includes scheme name, agency, Link to website, and may include text directly scraped from scheme website.
-
-        In responding to user queries, I will adhere to the following principles:
-
-        1. **Continuity in Conversation**: Each new question may build on the ongoing conversation. I'll consider the chat history to ensure a coherent and contextual dialogue.
-
-        2. **Role Clarity**: My purpose is to guide user by leveraging the scheme information provided. My responses aim to advise based on this data, without undertaking any actions outside these confines.
-
-        3. **Language Simplicity**: I commit to using simple, accessible English, ensuring my responses are understandable to all users, without losing the essence or accuracy of the scheme information.
-
-        4. **Safety and Respect**: Maintaining a safe, respectful interaction is paramount. I will not entertain or generate harmful, disrespectful, or irrelevant content. Should any query diverge from the discussion on schemes, I will gently redirect the focus back to how I can assist with scheme-related inquiries.
-
-        5. **Avoidance of Fabrication**: My responses will solely rely on the information from the scheme details provided, avoiding any speculative or unfounded content. I will not alter or presume any specifics not clearly indicated in the scheme descriptions.
-
-        **Top Schemes Information:**
-        """
+            As a virtual assistant, I'm dedicated to helping user navigate through the available schemes...
+            """
             + top_schemes_text
         )
 
@@ -197,8 +213,30 @@ class Chatbot:
 
         config = {"configurable": {"session_id": session_id}}
         message = chain_with_history.invoke({"query": input_text}, config=config)
+
         if message and message.content:
             results_json = {"response": True, "message": message.content}
+
+            try:
+                db = self.__class__.firebase_manager.firestore_client
+                ref = db.collection("chatHistory").document(session_id)
+                doc = ref.get()
+
+                if doc.exists:
+                    chat_history = doc.to_dict().get("messages", [])
+                    chat_history.append({"role": "user", "content": input_text})
+                    chat_history.append({"role": "assistant", "content": message.content})
+                else:
+                    chat_history = [
+                        {"role": "user", "content": input_text},
+                        {"role": "assistant", "content": message.content},
+                    ]
+
+                # Update Firestore
+                ref.set({"messages": chat_history})
+            except Exception as e:
+                logger.exception("Error updating chat history in Firestore", e)
+
         else:
             results_json = {"response": False, "message": "No response from the chatbot."}
 
