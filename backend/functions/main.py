@@ -22,5 +22,3 @@ initialize_app()
 @https_fn.on_request(region="asia-southeast1")
 def main(req: https_fn.Request) -> https_fn.Response:
     return https_fn.Response("Hello from Firebase!")
-
-from feedback.feedback import feedback
