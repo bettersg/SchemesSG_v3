@@ -12,16 +12,11 @@ from loguru import logger
 from ml_logic import PredictParams, SearchModel
 
 
-search_model = None
-
-
-def init_model():
-    """Initialises SearchModel class"""
-
-    global search_model
+def create_search_model() -> SearchModel:
+    """Factory function to create a SearchModel instance."""
 
     firebase_manager = FirebaseManager()
-    search_model = SearchModel(firebase_manager)
+    return SearchModel(firebase_manager)
 
 
 @https_fn.on_request(region="asia-southeast1")
@@ -36,10 +31,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: response sent to client
     """
 
-    global search_model
-
-    if not search_model:
-        init_model()
+    search_model = create_search_model()
 
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(

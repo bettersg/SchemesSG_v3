@@ -10,7 +10,10 @@ from firebase_functions import https_fn
 from loguru import logger
 
 
-firebase_manager = FirebaseManager()
+def create_firebase_manager() -> FirebaseManager:
+    """Factory function to create a FirebaseManager instance."""
+
+    return FirebaseManager()
 
 
 @https_fn.on_request(region="asia-southeast1")
@@ -25,7 +28,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: response sent to client
     """
 
-    global firebase_manager
+    firebase_manager = create_firebase_manager()
 
     if not req.method == "GET":
         return https_fn.Response(
