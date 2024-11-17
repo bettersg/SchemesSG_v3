@@ -1,1 +1,10 @@
 *.local
+
+# Search Function ML Stuff
+ml_logic/schemesv2-torch-allmpp-model/
+ml_logic/schemesv2-torch-allmpp-tokenizer/
+ml_logic/*.npy
+ml_logic/*.faiss
+
+# Firestore Credentials
+creds.json
