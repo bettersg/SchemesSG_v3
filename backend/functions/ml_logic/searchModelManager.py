@@ -408,7 +408,7 @@ class SearchModel:
         self.save_user_query(params.query, session_id, results_dict)
 
         results_json = {
-            "sessionId": session_id,
+            "sessionID": session_id,
             "data": results_dict,
             "mh": 0.7
         }
