@@ -22,18 +22,21 @@ Boilerplate Services (as a guide):
 ## Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd backend
    ```
 
 2. **Install Firebase CLI**
+
    Make sure you have Node.js installed, then install Firebase CLI globally:
    ```bash
    npm install -g firebase-tools
    ```
 
 3. **Set up virtual environment**
+
    Make sure you have python 3.10 installed.
    
    > Note: These instructions are for Windows systems. For macOS/Linux users, you'll be using Docker instead (see next section).
@@ -49,6 +52,7 @@ Boilerplate Services (as a guide):
    ```
 
 3. **Run the Cloud Functions Emulator**
+
    Due to compatibility issues between Firebase Tools and macOS, we use Docker to provide a clean Linux environment for running the emulator.
    
    The setup uses Docker volume mounting to sync your local `functions/` directory with the container. This means any changes you make to your functions will automatically trigger a reload of the emulator.
