@@ -19,6 +19,7 @@ from firebase_functions import https_fn
 from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401
+from feedback.feedback import feedback
 
 
 # Initialise logger
