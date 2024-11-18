@@ -10,8 +10,7 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
-      ],
-       "region": "asia-southeast1"
+      ]
     }
   ],
   "emulators": {

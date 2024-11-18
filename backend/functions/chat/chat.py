@@ -7,7 +7,7 @@ import json
 
 import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from loguru import logger
 
 from ml_logic import Chatbot, dataframe_to_text
@@ -19,7 +19,10 @@ def create_chatbot():
     return Chatbot(firebase_manager)
 
 
-@https_fn.on_request(region="asia-southeast1")
+@https_fn.on_request(
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,  # Increases memory to 1GB
+)
 def chat_message(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for chat message endpoint
