@@ -18,14 +18,14 @@ services:
   frontend:
     platform: linux/amd64
     build:
-      context: ./frontend
+      context: ./frontend_old
       dockerfile: Dockerfile
     ports:
       - "9099:9099"
     environment:
       - PORT=9099
     volumes:
-      - ./frontend:/app
+      - ./frontend_old:/app
     networks:
       - app-network
 

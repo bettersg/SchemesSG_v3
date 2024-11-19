@@ -212,3 +212,7 @@ yarn-error.log*
 # Temporary files
 *.tmp
 *.swp
+
+#dataset_workflow
+node_modules/
+creds.json
