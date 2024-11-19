@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile.firebase
+    image: schemessg-backend
+    volumes:
+      - ./functions:/app/functions
+      - ./start.sh:/start.sh
+      - ./functions/.env:/app/functions/.env
+      - ./firebase.json:/app/firebase.json
+      - ./.firebaserc:/app/.firebaserc
+      # Firebase credentials - cross-platform compatible
+      - ./functions/creds.json:/root/.config/firebase/creds.json
+      # exclude from mounting
+      - /app/functions/venv
+      - /app/functions/__pycache__
+      - /app/functions/.pytest_cache
+    environment:
+      - OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+      - no_proxy=*
+      - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/firebase/creds.json
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    # network_mode: host
+    ports:
+      - "5001:5001"
+      - "4000:4000"
+      - "4400:4400"

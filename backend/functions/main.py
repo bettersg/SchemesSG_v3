@@ -8,17 +8,58 @@ To run the functions locally, run `firebase emulators:start`.
 Do not deploy the functions using firebase deploy, deployment will be handled automatically via Github Actions.
 """
 
+import json
+import sys
+
+from chat.chat import chat_message  # noqa: F401
 from dummy.bar import bar  # noqa: F401
 from dummy.foo import foo  # noqa: F401
-from firebase_admin import initialize_app
-from firebase_functions import https_fn
+from fb_manager.firebaseManager import FirebaseManager
+from firebase_functions import https_fn, options
+from loguru import logger
+from schemes.schemes import schemes  # noqa: F401
+from schemes.search import schemes_search  # noqa: F401
 
 
-# Initialize the Firebase Admin SDK
-initialize_app()
+# Initialise logger
+logger.remove()
+logger.add(
+    sys.stdout,
+    level="INFO",
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
+    colorize=True,
+    backtrace=True,
+)
+logger.info("Logger initialised")
+
+# Initialise the Firebase Admin SDK and Connection to firestore
+firebase_manager = FirebaseManager()
 
 
 # Dummy endpoint
-@https_fn.on_request(region="asia-southeast1")
+
+
+@https_fn.on_request(
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,  # Increases memory to 1GB
+)
 def main(req: https_fn.Request) -> https_fn.Response:
     return https_fn.Response("Hello from Firebase!")
+
+
+@https_fn.on_request(
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,  # Increases memory to 1GB
+)
+def health(req: https_fn.Request) -> https_fn.Response:
+    """
+    Handler for health check endpoint
+
+    Args:
+        req (https_fn.Request): request sent from client
+
+    Returns:
+        https_fn.Response: response sent to client
+    """
+
+    return https_fn.Response(response=json.dumps({"status": "ok"}), status=200, mimetype="application/json")

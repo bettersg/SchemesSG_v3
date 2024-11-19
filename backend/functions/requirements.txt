@@ -1,1 +1,16 @@
 firebase_functions~=0.1.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
+faiss-cpu==1.9.0
+flask==3.0.3
+flask-cors==5.0.0
+langchain-community==0.3.5
+langchain-core==0.3.15
+langchain-openai==0.2.5
+loguru==0.7.2
+numpy==1.26.0
+pandas==2.2.2
+pydantic==2.9.2
+python-dotenv==1.0.1
+spacy==3.7.5
+torch==2.4.0
+transformers==4.44.0
