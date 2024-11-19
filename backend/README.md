@@ -55,6 +55,17 @@ Boilerplate Services (as a guide):
 
    Due to compatibility issues between Firebase Tools and macOS, we use Docker to provide a clean Linux environment for running the emulator.
    
+   Before starting the emulator, ensure you have the following credential files:
+   ```bash
+   # Acquire the environment variables file and save it in
+   backend/functions/.env
+
+   # ACquire the Firebase credentials file and save it in 
+   backend/functions/creds.json
+   ```
+
+   > Note: Contact the project maintainers to obtain the contents of these credential files.
+   
    The setup uses Docker volume mounting to sync your local `functions/` directory with the container. This means any changes you make to your functions will automatically trigger a reload of the emulator.
    
    Start the emulator using Docker (make sure you're in the `backend/` directory):
@@ -68,11 +79,27 @@ Boilerplate Services (as a guide):
    # To attach to the running container's shell
    docker exec -it backend-backend-1 /bin/bash
    ```
+    > Tip: Alternatively, you can attach to the running shell in VSCode by:
+       1. Press `Ctrl + Shift + P` (Windows/Linux) or `Cmd + Shift + P` (macOS)
+       2. Search for "Docker: Attach Shell"
+       3. Select the running container
 
-   > Tip: Alternatively, you can attach to the running shell in VSCode by:
-   > 1. Press `Ctrl + Shift + P` (Windows/Linux) or `Cmd + Shift + P` (macOS)
-   > 2. Search for "Docker: Attach Shell"
-   > 3. Select the running container
+
+4. **Deploy to Staging Environment**
+
+   To deploy functions to the staging environment (schemessg-v3-dev), use the following commands:
+   Please do not deploy if you are not the project maintainers.
+   ```bash
+   # Navigate to backend directory
+   cd backend
+
+   # Deploy individual functions
+   firebase deploy --only functions:health --debug
+   firebase deploy --only functions:chat_message --debug
+   firebase deploy --only functions:schemes_search --debug
+   firebase deploy --only functions:schemes_search --debug
+   ```
+   > Note: Make sure you have the necessary permissions and are logged in to the correct Firebase project before deploying.
 
 4. **Access the endpoints**
    
@@ -88,6 +115,10 @@ Boilerplate Services (as a guide):
       - Bar Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar)
       - Foo Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo)
       - Main Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main)
+      - Health Check: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/health](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/health)
+      - Schemes by ID: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes/{id}](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes/{id})
+      - Schemes Search: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes_search](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes_search)
+      - Chat Message: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/chat_message](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/chat_message)
 
 ## Future Work
 
