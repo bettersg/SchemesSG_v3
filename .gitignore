@@ -180,6 +180,8 @@ backend/ml_logic/schemesv2-torch-allmpp-tokenizer/tokenizer_config.json
 backend/ml_logic/schemesv2-torch-allmpp-tokenizer/vocab.txt
 backend/ml_logic/schemesv2-your_embeddings.npy
 backend/ml_logic/schemesv2-your_index.faiss
+backend/functions/ml_logic/index_to_scheme_id.json
+
 __pycache__/
 .env
 
