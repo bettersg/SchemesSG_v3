@@ -257,7 +257,7 @@ class SearchModel:
 
         # Retrieve the most similar items
         similar_items = self.__class__.schemes_df.iloc[indices[0]][
-            ["scheme_id", "Scheme", "Agency", "Description", "Image", "Link", "Scraped Text", "What it gives", "Scheme Type"]
+            ["scheme_id", "Scheme", "Agency", "Description", "Image", "Link", "scraped_text", "What it gives", "Scheme Type"]
         ]
 
         results = pd.concat(
@@ -271,7 +271,7 @@ class SearchModel:
                 "Description",
                 "Image",
                 "Link",
-                "Scraped Text",
+                "scraped_text",
                 "What it gives",
                 "Scheme Type",
                 "Similarity",
@@ -309,7 +309,7 @@ class SearchModel:
                 "Description",
                 "Image",
                 "Link",
-                "Scraped Text",
+                "scraped_text",
                 "What it gives",
                 "Scheme Type",
                 "Similarity",
@@ -333,7 +333,7 @@ class SearchModel:
                 "Description",
                 "Image",
                 "Link",
-                "Scraped Text",
+                "scraped_text",
                 "What it gives",
                 "Scheme Type",
                 "query",

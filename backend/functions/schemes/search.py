@@ -6,7 +6,7 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search
 import json
 
 from fb_manager.firebaseManager import FirebaseManager
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from loguru import logger
 
 from ml_logic import PredictParams, SearchModel
@@ -19,7 +19,10 @@ def create_search_model() -> SearchModel:
     return SearchModel(firebase_manager)
 
 
-@https_fn.on_request(region="asia-southeast1")
+@https_fn.on_request(
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,  # Increases memory to 1GB
+)
 def schemes_search(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for schemes search endpoint

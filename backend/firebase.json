@@ -10,20 +10,25 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         "*.local"
-      ],
-       "region": "asia-southeast1"
+      ]
     }
   ],
   "emulators": {
     "functions": {
+      "host": "0.0.0.0",
       "port": 5001
     },
     "ui": {
       "enabled": true,
+      "host": "0.0.0.0",
       "port": 4000
     },
     "firestore": {
       "port": 8080
+    },
+    "hub": {
+      "host": "0.0.0.0",
+      "port": 4400
     }
   }
 }
