@@ -1,37 +1,21 @@
-'use client';
-
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from '../../assets/icons/search-icon';
-import classes from './search-bar.module.css';
-import { useState } from "react";
-import { useChat } from "@/app/providers";
+import classes from './chat-bar.module.css';
 
-export default function SearchBar() {
-    const { messages, setMessages } = useChat();
-    const [userInput, setUserInput] = useState("");
-    const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
+interface ChatBarProps {
+    userInput: string;
+    setUserInput: React.Dispatch<React.SetStateAction<string>>;
+    handleUserInput: (message: string) => void;
+    simulateBotResponse: (userMessage: string) => void;
+    isBotResponseGenerating: boolean
+}
 
-    const handleUserInput = (input: string) => {
-        setMessages([...messages,
-            { type: "user", text: input }
-        ]);
-        setUserInput("");
-    };
-
-    //TODO: Change bot response simulation to backend API
-    // const simulateBotResponse = (userMessage: string) => {
-    //   setIsBotResponseGenerating(true);
-    //   setTimeout(() => {
-    //     const botReply = `Bot response to: ${userMessage}`;
-    //     handleBotResponse(botReply);
-    //     setIsBotResponseGenerating(false);
-    //   }, 1000);
-    // };
+export default function ChatBar({ userInput, setUserInput, handleUserInput, simulateBotResponse, isBotResponseGenerating }: ChatBarProps) {
 
     const handleSend = () => {
         if (userInput.trim()) {
           handleUserInput(userInput);
-        //   simulateBotResponse(userInput);
+          simulateBotResponse(userInput);
         }
     };
 
@@ -40,14 +24,13 @@ export default function SearchBar() {
             <Textarea
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                className={classes.searchBar}
+                className={classes.chatBar}
                 type="text"
                 size="md"
                 radius="lg"
                 color="primary"
                 label="How can we help?"
                 labelPlacement="outside"
-                description="Please avoid providing identifiable information."
                 placeholder="I am a dialysis patient in need of financial assistance and food support after being retrenched due to Covid-19."
                 endContent={
                     isBotResponseGenerating

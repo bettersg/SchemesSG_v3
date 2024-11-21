@@ -1,10 +1,6 @@
-.searchBar textarea::placeholder{
+.chatBar textarea::placeholder{
     font-style: italic;
     color: rgba(0, 0, 0, 0.2);
-}
-
-.searchBar {
-    max-width: 35rem;
 }
 
 .endContent {

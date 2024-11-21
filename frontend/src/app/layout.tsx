@@ -6,6 +6,7 @@ import MainHeader from '@/components/main-header/main-header';
 import { NextUIProvider } from '@nextui-org/system';
 import React from 'react';
 import MainFooter from "@/components/main-footer/main-footer";
+import { ChatProvider } from "./providers";
 
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
@@ -23,11 +24,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang='en'>
       <body className={`${geistSans.variable} antialiased`}>
         <NextUIProvider>
-          <MainHeader/>
-          <div className={classes.contentWrapper}>
-            {children}
-          </div>
-          <MainFooter />
+          <ChatProvider>
+            <MainHeader/>
+            <div className={classes.contentWrapper}>
+              {children}
+            </div>
+            <MainFooter />
+          </ChatProvider>
         </NextUIProvider>
       </body>
     </html>
