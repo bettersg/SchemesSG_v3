@@ -1,17 +1,28 @@
 import { Card, CardHeader, CardBody, Image, Spacer } from "@nextui-org/react";
 import { Link } from "@nextui-org/react";
 
-export default function SchemesList() {
+export type Scheme = {
+    schemeType: string,
+    schemeName: string,
+    targetAudience: string,
+    agency: string,
+    description: string,
+    scrapedText: string,
+    benefits: string,
+    link: string,
+    image: string,
+    searchBooster: string,
+    schemeId: string,
+    query: string,
+    similarity: number,
+    quintile: number
+}
 
-    // TODO: Update with array from backend API
-    const schemes = [
-        { id: 1, name: "Scheme 1", agency: "Agency 1", description: "Description 1", route: "scheme-1" },
-        { id: 2, name: "Scheme 2", agency: "Agency 2", description: "Description 2", route: "scheme-2" },
-        { id: 3, name: "Scheme 3", agency: "Agency 3", description: "Description 3", route: "scheme-3" },
-        { id: 4, name: "Scheme 4", agency: "Agency 4", description: "Description 4", route: "scheme-4" },
-        { id: 5, name: "Scheme 5", agency: "Agency 5", description: "Description 5", route: "scheme-5" },
-        { id: 6, name: "Scheme 6", agency: "Agency 6", description: "Description 6", route: "scheme-6" },
-    ];
+interface SchemesListProps {
+    schemes: Scheme[]
+}
+
+export default function SchemesList({ schemes }: SchemesListProps) {
 
     return (
         <div>
@@ -22,7 +33,7 @@ export default function SchemesList() {
 
             <div className="gap-2 grid grid-cols-1 sm:grid-cols-2">
                 {schemes.map((scheme) => (
-                    <Link key={scheme.id} href={`/schemes/${scheme.route}`} className="w-full" target="_blank">
+                    <Link key={scheme.schemeId} href={`/schemes/${scheme.schemeId}`} className="w-full" target="_blank">
                         <Card shadow="sm" className="w-full" isHoverable>
                                 <CardHeader className="flex gap-3">
                                     <Image
@@ -33,7 +44,7 @@ export default function SchemesList() {
                                         width={40}
                                     />
                                     <div className="flex flex-col">
-                                        <p className="text-md">{scheme.name}</p>
+                                        <p className="text-md">{scheme.schemeName}</p>
                                         <p className="text-small text-default-500">{scheme.agency}</p>
                                     </div>
                                 </CardHeader>

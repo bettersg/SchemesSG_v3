@@ -2,24 +2,23 @@
 
 import MainChat from "@/components/main-chat/main-chat";
 import { Spacer } from "@nextui-org/react";
-import SchemesList from "@/components/schemes/schemes-list"
+import SchemesList, { Scheme } from "@/components/schemes/schemes-list"
 import React, { useState } from 'react';
 import SearchBar from "@/components/search-bar/search-bar";
 
-
 export default function Home() {
-    const [isSchemeListShown, setIsSchemeListShown] = useState<boolean>(true);
+    const [schemesResList, setSchemeResList] = useState<Scheme[]>([]);
 
     return (
         <main style={{ display: "flex", justifyContent: "center" }}>
             {
-                isSchemeListShown
+                schemesResList.length > 0
                 ? <>
                     <MainChat />
                     <Spacer x={1} />
-                    <SchemesList />
+                    <SchemesList schemes={schemesResList} />
                 </>
-                : <SearchBar setIsSchemeListShown={setIsSchemeListShown} />
+                : <SearchBar setSchemeResList={setSchemeResList} />
             }
         </main>
     )
