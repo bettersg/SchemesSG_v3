@@ -47,7 +47,7 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
     """
     text_summary = ""
     for _, row in df.iterrows():
-        cleanScrape = row["Scraped Text"]
+        cleanScrape = row["scraped_text"]
         sentence = clean_scraped_text(cleanScrape)
 
         text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
