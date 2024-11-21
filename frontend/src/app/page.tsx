@@ -9,7 +9,7 @@ import SearchBar from "@/components/search-bar/search-bar";
 
 export default function Home() {
     const [isSchemeListShown, setIsSchemeListShown] = useState<boolean>(true);
-
+ // TODO pass the sessionid to MainChat
     return (
         <main style={{ display: "flex", justifyContent: "center" }}>
             {

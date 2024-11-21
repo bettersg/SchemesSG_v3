@@ -7,20 +7,22 @@ import { Spacer } from "@nextui-org/react";
 import classes from "./main-chat.module.css"
 import { Message } from "@/app/providers";
 
-export default function MainChat() {
+export default function MainChat({sessionID = "435cd734-a80b-11ef-84f7-0242ac120002"}) {
     const [messages, setMessages] = useState<Message[]>([
         { type: "bot", text: "Hello! How can I help you today?" }
     ]);
     const [userInput, setUserInput] = useState("");
-    const [botResponse, setBotResponse] = useState("");
+    // const [botResponse, setBotResponse] = useState("");
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
 
-    const handleUserInput = (input: string) => {
+    const handleUserInput = async (input: string) => {
         setMessages((prevMessages) => [
             ...prevMessages,
             { type: "user", text: input }
         ]);
         setUserInput("");
+        // Trigger API call for bot response
+        await fetchBotResponse(input);
     };
 
     const handleBotResponse = (response: string) => {
@@ -28,17 +30,39 @@ export default function MainChat() {
             ...prevMessages,
             { type: "bot", text: response }
         ]);
-        setBotResponse("");
+        // setBotResponse("");
     };
 
-    //TODO: Change bot response simulation to backend API
-    const simulateBotResponse = (userMessage: string) => {
+    const fetchBotResponse = async (userMessage: string) => {
       setIsBotResponseGenerating(true);
-      setTimeout(() => {
-        const botReply = `Bot response to: ${userMessage}`;
-        handleBotResponse(botReply);
+      try {
+        const response = await fetch("http://localhost:5001/schemessg-v3-dev/asia-southeast1/chat_message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            sessionID: sessionID,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch bot response");
+        }
+
+        const data = await response.json();
+        if (data.response) {
+          handleBotResponse(data.message);
+        } else {
+          handleBotResponse("Sorry, something went wrong. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error fetching bot response:", error);
+        handleBotResponse("Sorry, something went wrong. Please try again.");
+      } finally {
         setIsBotResponseGenerating(false);
-      }, 1000);
+      }
     };
 
     return (
@@ -49,7 +73,6 @@ export default function MainChat() {
                 userInput={userInput}
                 setUserInput={setUserInput}
                 handleUserInput={handleUserInput}
-                simulateBotResponse={simulateBotResponse}
                 isBotResponseGenerating={isBotResponseGenerating}
             />
         </div>
