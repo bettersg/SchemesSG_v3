@@ -6,7 +6,11 @@ import classes from './search-bar.module.css';
 import { useState } from "react";
 import { useChat } from "@/app/providers";
 
-export default function SearchBar() {
+interface SearchBarProps {
+    setIsSchemeListShown: (val: boolean) => void
+}
+
+export default function SearchBar({ setIsSchemeListShown }: SearchBarProps) {
     const { messages, setMessages } = useChat();
     const [userInput, setUserInput] = useState("");
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
@@ -19,14 +23,15 @@ export default function SearchBar() {
     };
 
     //TODO: Change bot response simulation to backend API
-    // const simulateBotResponse = (userMessage: string) => {
-    //   setIsBotResponseGenerating(true);
-    //   setTimeout(() => {
-    //     const botReply = `Bot response to: ${userMessage}`;
-    //     handleBotResponse(botReply);
-    //     setIsBotResponseGenerating(false);
-    //   }, 1000);
-    // };
+    const simulateBotResponse = (userMessage: string) => {
+      setIsBotResponseGenerating(true);
+      setTimeout(() => {
+        const botReply = `Bot response to: ${userMessage}`;
+        // handleBotResponse(botReply);
+        setIsBotResponseGenerating(false);
+        setIsSchemeListShown(true);
+      }, 1000);
+    };
 
     const handleSend = () => {
         if (userInput.trim()) {

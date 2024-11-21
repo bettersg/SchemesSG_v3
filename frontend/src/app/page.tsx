@@ -8,17 +8,18 @@ import SearchBar from "@/components/search-bar/search-bar";
 
 
 export default function Home() {
-    const [isSchemeListShown, setIsSchemeListShown] = useState<boolean>(false);
+    const [isSchemeListShown, setIsSchemeListShown] = useState<boolean>(true);
+
     return (
         <main style={{ display: "flex", justifyContent: "center" }}>
-            <SearchBar />
             {
                 isSchemeListShown
                 ? <>
-                    <Spacer y={6} />
+                    <MainChat />
+                    <Spacer x={1} />
                     <SchemesList />
                 </>
-                : null
+                : <SearchBar setIsSchemeListShown={setIsSchemeListShown} />
             }
         </main>
     )
