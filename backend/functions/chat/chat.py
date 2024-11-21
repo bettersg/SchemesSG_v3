@@ -33,14 +33,30 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-    chatbot = create_chatbot()
+    # TODO remove for prod setup
+    #Set CORS headers for the preflight request
+    if req.method == 'OPTIONS':
+        # Allows GET and POST requests from any origin with the Content-Type
+        # header and caches preflight response for an hour
+        headers = {
+            'Access-Control-Allow-Origin': 'http://localhost:3000',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600'
+        }
+        return ('', 204, headers)
 
+    # Set CORS headers for the main request
+    headers = {
+        'Access-Control-Allow-Origin': 'http://localhost:3000'
+    }
     if not (req.method == "POST" or req.method == "GET"):
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request method; only POST or GET is supported"}),
             status=405,
             mimetype="application/json",
         )
+    chatbot = create_chatbot()
 
     try:
         data = req.get_json(silent=True)
@@ -61,6 +77,7 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Internal server error, unable to fetch user query from firestore"}),
             status=500,
             mimetype="application/json",
+            headers=headers
         )
 
     if not doc.exists:
@@ -68,6 +85,7 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Search query with sessionID does not exist"}),
             status=404,
             mimetype="application/json",
+            headers=headers
         )
 
     try:
@@ -77,7 +95,14 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Error with chatbot", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error"}), status=500, mimetype="application/json"
+            response=json.dumps({"error": "Internal server error"}),
+            status=500,
+            mimetype="application/json",
+            headers=headers
         )
 
-    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json")
+    return https_fn.Response(
+        response=json.dumps(results),
+        status=200,
+        mimetype="application/json",
+        headers=headers)

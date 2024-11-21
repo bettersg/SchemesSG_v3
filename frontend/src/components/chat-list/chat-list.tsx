@@ -1,6 +1,7 @@
 import { Avatar, Card, CardBody } from "@nextui-org/react";
 import classes from "./chat-list.module.css"
 import { Message } from "../main-chat/main-chat";
+import ReactMarkdown from "react-markdown";
 
 interface ChatListProps {
     messages: Message[];
@@ -25,7 +26,7 @@ export default function ChatList({ messages }: ChatListProps) {
                 shadow="none"
               >
                 <CardBody className={classes.cardBody}>
-                  <p>{msg.text}</p>
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </CardBody>
               </Card>
             </div>
