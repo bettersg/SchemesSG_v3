@@ -14,13 +14,13 @@ export default function SchemesList() {
     ];
 
     return (
-        <>
+        <div>
             <p className="text-base font-semibold">Search Results</p>
             <p className="text-xs text-slate-500">Showing {schemes.length} schemes</p>
 
             <Spacer y={3} />
 
-            <div className="gap-2 grid grid-cols-1 sm:grid-cols-3">
+            <div className="gap-2 grid grid-cols-1 sm:grid-cols-2">
                 {schemes.map((scheme) => (
                     <Link key={scheme.id} href={`/schemes/${scheme.route}`} className="w-full" target="_blank">
                         <Card shadow="sm" className="w-full" isHoverable>
@@ -44,6 +44,6 @@ export default function SchemesList() {
                     </Link>
                 ))}
             </div>
-        </>
+        </div>
     )
 }
