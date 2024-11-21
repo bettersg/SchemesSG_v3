@@ -14,3 +14,4 @@ python-dotenv==1.0.1
 spacy==3.7.5
 torch==2.2.2
 transformers==4.44.0
+firebase-admin==6.6.0

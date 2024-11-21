@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -26,6 +27,7 @@ model_path = parent_dir / "schemesv2-torch-allmpp-model"
 tokenizer_path = parent_dir / "schemesv2-torch-allmpp-tokenizer"
 embeddings_path = parent_dir / "schemesv2-your_embeddings.npy"
 index_path = parent_dir / "schemesv2-your_index.faiss"
+index_to_scheme_path = parent_dir / "index_to_scheme_id.json"
 
 
 class PredictParams(BaseModel):
@@ -43,43 +45,6 @@ class SearchPreprocessor:
         self.nlp_spacy = spacy.load("en_core_web_sm")
         logger.info("Search Preprocessor initialised!")
         pass
-
-    def preprocess(self, sentence: str) -> str:
-        """
-        Preprocesses text for schemes search model
-
-        Args:
-            sentence (str): sentence (need) to be preprocessed
-
-        Returns:
-            str: preprocessed text
-        """
-
-        sentence = re.sub("'", "", sentence)  # Remove distracting single quotes
-        sentence = re.sub(" +", " ", sentence)  # Replace extra spaces
-        sentence = re.sub(r"\n: \'\'.*", "", sentence)  # Remove specific unwanted lines
-        sentence = re.sub(r"\n!.*", "", sentence)
-        sentence = re.sub(r"^:\'\'.*", "", sentence)
-        sentence = re.sub(r"\n", " ", sentence)  # Replace non-breaking new lines with space
-
-        # Tokenization and further processing with spaCy
-        doc = self.nlp_spacy(sentence)
-        tokens = []
-        for token in doc:
-            # Check if the token is a stopword or punctuation
-            if token.is_stop or token.is_punct:
-                continue
-            # Check for numeric tokens or tokens longer than 2 characters
-            if token.like_num or len(token.text) > 2:
-                # Lemmatize (handling pronouns) and apply lowercase
-                lemma = token.lemma_.lower().strip() if token.lemma_ != "-PRON-" else token.lower_
-                tokens.append(lemma)
-
-        # Further clean up to remove any introduced extra spaces
-        processed_text = " ".join(tokens)
-        processed_text = re.sub(" +", " ", processed_text)
-
-        return processed_text
 
     def extract_needs_based_on_conjunctions(self, sentence: str) -> list[str]:
         """
@@ -143,7 +108,7 @@ class SearchPreprocessor:
             needs_in_sentence = self.extract_needs_based_on_conjunctions(sentence)
             all_needs.extend(needs_in_sentence)
 
-        return [self.preprocess(x) for x in all_needs]
+        return all_needs
 
 
 class SearchModel:
@@ -151,13 +116,14 @@ class SearchModel:
 
     _instance = None
 
+    db = None
     preprocessor = None
-    schemes_df = None
 
     model = None
     tokenizer = None
     embeddings = None
     index = None
+    index_to_scheme_id = None
 
     firebase_manager = None
 
@@ -170,16 +136,15 @@ class SearchModel:
         if cls.initialised:
             return
 
-        db = cls.firebase_manager.firestore_client
-        schemes = db.collection("schemes").stream()
-
+        cls.db = cls.firebase_manager.firestore_client
         cls.preprocessor = SearchPreprocessor()
-        cls.schemes_df = pd.DataFrame([{**scheme.to_dict(), "scheme_id": scheme.id} for scheme in schemes])
-
         cls.model = AutoModel.from_pretrained(model_path)
         cls.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         cls.embeddings = np.load(embeddings_path)
         cls.index = faiss.read_index(str(index_path)) # Seems that faiss does not support pathlib
+        # Load the FAISS index-to-scheme_id mapping
+        with open(index_to_scheme_path, 'r') as f:
+            cls.index_to_scheme_id = json.load(f)
         cls.initialised = True
 
         logger.info("Search Model initialised!")
@@ -255,32 +220,29 @@ class SearchModel:
         similarity_scores = np.exp(-distances)
         # similar_items = pd.DataFrame([df.iloc[indices[0]], distances[0], similarity_scores[0]])
 
-        # Retrieve the most similar items
-        similar_items = self.__class__.schemes_df.iloc[indices[0]][
-            ["scheme_id", "Scheme", "Agency", "Description", "Image", "Link", "scraped_text", "What it gives", "Scheme Type"]
-        ]
+        # Retrieve the scheme_ids using the FAISS indices
+        retrieved_scheme_ids = [self.__class__.index_to_scheme_id[str(idx)] for idx in indices[0]]
+        # Fetch scheme details from Firestore
+        scheme_details = []
+        for scheme_id in retrieved_scheme_ids:
+            doc_ref = self.__class__.db.collection("schemes").document(scheme_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                # Add the scheme_id to the document's data
+                scheme_data = doc.to_dict()
+                scheme_data["scheme_id"] = scheme_id
+                scheme_details.append(scheme_data)
+        # Convert scheme details to a DataFrame
+        scheme_df = pd.DataFrame(scheme_details)
 
+        # Add similarity scores to the DataFrame
         results = pd.concat(
-            [similar_items.reset_index(drop=True), pd.DataFrame(similarity_scores[0]).reset_index(drop=True)], axis=1
+            [scheme_df.reset_index(drop=True), pd.DataFrame(similarity_scores[0], columns=['Similarity']).reset_index(drop=True)],
+            axis=1
         )
-        results = results.set_axis(
-            [
-                "scheme_id",
-                "Scheme",
-                "Agency",
-                "Description",
-                "Image",
-                "Link",
-                "scraped_text",
-                "What it gives",
-                "Scheme Type",
-                "Similarity",
-            ],
-            axis=1,
-        )
-        results["query"] = full_query
-
-        results = results.sort_values(["Similarity"], ascending=False)
+        # Add the query to the results and sort by similarity
+        results['query'] = full_query
+        results = results.sort_values(['Similarity'], ascending=False)
 
         return results
 
@@ -301,48 +263,35 @@ class SearchModel:
         """
 
         # DataFrame to store combined results
-        combined_results = pd.DataFrame(
-            columns=[
-                "scheme_id",
-                "Scheme",
-                "Agency",
-                "Description",
-                "Image",
-                "Link",
-                "scraped_text",
-                "What it gives",
-                "Scheme Type",
-                "Similarity",
-                "query",
-            ]
-        )
+        combined_results = None
 
         # Process each need
+
         for need in needs:
             # Get the results for the current need
             current_results = self.search_similar_items(need, full_query, top_k)
+
             # Combine with the overall results
+            # combined_results = pd.concat([combined_results, current_results], ignore_index=True)
+            # Initialize combined_results schema dynamically from the first result
+            if combined_results is None:
+                combined_results = pd.DataFrame(columns=current_results.columns)
+
+            # Ensure consistent columns by reindexing current_results
+            current_results = current_results.reindex(columns=combined_results.columns, fill_value=None)
+
+            # Combine results
             combined_results = pd.concat([combined_results, current_results], ignore_index=True)
 
-        # Handle duplicates: Aggregate similarity for duplicates and drop duplicates
-        aggregated_results = combined_results.groupby(
-            [
-                "scheme_id",
-                "Scheme",
-                "Agency",
-                "Description",
-                "Image",
-                "Link",
-                "scraped_text",
-                "What it gives",
-                "Scheme Type",
-                "query",
-            ],
-            as_index=False,
-        ).agg(
-            {
-                "Similarity": "sum"  # Adjust this function as needed to aggregate similarity scores appropriately
-            }
+
+        # Dynamically determine grouping columns (excluding 'Similarity' and non-groupable columns)
+        group_columns = [
+            col for col in combined_results.columns if col not in ["Similarity", "Quintile"]
+        ]
+
+        # Handle duplicates: Aggregate similarity and drop duplicates
+        aggregated_results = combined_results.groupby(group_columns, as_index=False).agg(
+            {"Similarity": "sum"}  # Adjust this function to aggregate similarity scores as needed
         )
 
         # Calculate quintile thresholds
