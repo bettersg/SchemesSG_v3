@@ -62,10 +62,15 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
         data = req.get_json(silent=True)
         input_text = data.get("message")
         session_id = data.get("sessionID")
+        stream = data.get("stream", False) # new parameter to indicate streaming
         top_schemes_text = ""
     except Exception:
         return https_fn.Response(
-            response=json.dumps({"error": "Invalid request body"}), status=400, mimetype="application/json"
+            response=json.dumps(
+                {"error": "Invalid request body"}),
+                status=400,
+                mimetype="application/json",
+                headers=headers
         )
 
     try:
@@ -91,7 +96,30 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     try:
         df = pd.DataFrame(doc.to_dict()["schemes_response"])
         top_schemes_text = dataframe_to_text(df)
-        results = chatbot.chatbot(top_schemes_text=top_schemes_text, input_text=input_text, session_id=session_id)
+
+        if stream:
+            def generate():
+                for chunk in chatbot.chatbot_stream(
+                    top_schemes_text=top_schemes_text,
+                    input_text=input_text,
+                    session_id=session_id
+                ):
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+
+            return https_fn.Response(
+                response=generate(),
+                status=200,
+                mimetype='text/event-stream',
+                headers={
+                    'Access-Control-Allow-Origin': 'http://localhost:3000',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                    'Content-Type': 'text/event-stream',
+                }
+            )
+        else:
+            results = chatbot.chatbot(top_schemes_text=top_schemes_text, input_text=input_text, session_id=session_id)
+
     except Exception as e:
         logger.exception("Error with chatbot", e)
         return https_fn.Response(

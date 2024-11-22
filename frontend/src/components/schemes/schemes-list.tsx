@@ -40,10 +40,10 @@ export default function SchemesList({ schemes }: SchemesListProps) {
                                 <CardHeader className="flex gap-3 font-semibold">
                                     <Image
                                         alt={`${scheme.agency} logo`}
-                                        height={40}
+                                        height={60}
                                         radius="sm"
                                         src={scheme.image}
-                                        width={40}
+                                        width={60}
                                     />
                                     <div className="flex flex-col">
                                         <p className="text-md">{scheme.schemeName}</p>

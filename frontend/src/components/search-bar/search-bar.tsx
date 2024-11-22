@@ -44,11 +44,11 @@ export default function SearchBar({ setSchemeResList, setSessionId }: SearchBarP
     };
 
     const getSchemes = async () => {
-        const url = "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
+        const url = "http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
 
         const requestBody = {
             query: userInput,
-            top_k: 5,
+            top_k: 20,
             similarity_threshold: 0
         };
 
