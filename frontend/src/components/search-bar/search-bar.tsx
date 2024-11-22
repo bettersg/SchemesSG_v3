@@ -8,7 +8,8 @@ import { useChat } from "@/app/providers";
 import { Scheme } from "../schemes/schemes-list";
 
 interface SearchBarProps {
-    setSchemeResList: (val: Scheme[]) => void
+    setSchemeResList: (val: Scheme[]) => void;
+    setSessionId: (val: string) => void;
 }
 
 const mapToScheme = (rawData: any): Scheme => {
@@ -30,7 +31,7 @@ const mapToScheme = (rawData: any): Scheme => {
     };
 };
 
-export default function SearchBar({ setSchemeResList }: SearchBarProps) {
+export default function SearchBar({ setSchemeResList, setSessionId }: SearchBarProps) {
     const { messages, setMessages } = useChat();
     const [userInput, setUserInput] = useState("");
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
@@ -66,21 +67,26 @@ export default function SearchBar({ setSchemeResList }: SearchBarProps) {
             }
 
             const res = await response.json();
+            const sessionId: string = res["sessionID"];
             setIsBotResponseGenerating(false);
             const schemes: Scheme[] = res.data.map(mapToScheme);
-            return schemes;
+            return { schemes, sessionId };
         } catch (error) {
             console.error("Error making POST request:", error);
             setIsBotResponseGenerating(false);
+            return { schemes: [], sessionId: "" };
         }
 
     };
 
     const handleSend = async () => {
         if (userInput.trim()) {
-            const schemes = await getSchemes();
-            schemes && setSchemeResList(schemes);
-            handleUserInput(userInput);
+            const { schemes, sessionId } = await getSchemes();
+            if (schemes.length > 0 && sessionId !== "") {
+                schemes && setSchemeResList(schemes);
+                setSessionId(sessionId);
+                handleUserInput(userInput);
+            }
         }
     };
 

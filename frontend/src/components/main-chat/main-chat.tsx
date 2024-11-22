@@ -1,25 +1,27 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ChatList from "@/components/chat-list/chat-list";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import { Spacer } from "@nextui-org/react";
 import classes from "./main-chat.module.css"
-import { Message } from "@/app/providers";
+import { Message, useChat } from "@/app/providers";
 
-export default function MainChat({sessionID = "435cd734-a80b-11ef-84f7-0242ac120002"}) {
-    const [messages, setMessages] = useState<Message[]>([
-        { type: "bot", text: "Hello! How can I help you today?" }
-    ]);
+type MainChatProps = {
+  sessionId: string;
+};
+
+export default function MainChat({ sessionId }: MainChatProps) {
+    const { messages, setMessages } = useChat();
+
     const [userInput, setUserInput] = useState("");
-    // const [botResponse, setBotResponse] = useState("");
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
 
     const handleUserInput = async (input: string) => {
-        setMessages((prevMessages) => [
+        setMessages((prevMessages: Message[]) => [
             ...prevMessages,
             { type: "user", text: input }
-        ]);
+        ] as Message[]);
         setUserInput("");
         // Trigger API call for bot response
         await fetchBotResponse(input);
@@ -30,7 +32,6 @@ export default function MainChat({sessionID = "435cd734-a80b-11ef-84f7-0242ac120
             ...prevMessages,
             { type: "bot", text: response }
         ]);
-        // setBotResponse("");
     };
 
     const fetchBotResponse = async (userMessage: string) => {
@@ -43,7 +44,7 @@ export default function MainChat({sessionID = "435cd734-a80b-11ef-84f7-0242ac120
           },
           body: JSON.stringify({
             message: userMessage,
-            sessionID: sessionID,
+            sessionID: sessionId,
           }),
         });
 

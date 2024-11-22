@@ -1,9 +1,8 @@
 'use client';
 
 import MainChat from "@/components/main-chat/main-chat";
-import { Spacer } from "@nextui-org/react";
 import SchemesList, { Scheme } from "@/components/schemes/schemes-list"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SearchBar from "@/components/search-bar/search-bar";
 
 export default function Home() {
@@ -15,10 +14,10 @@ export default function Home() {
             {
                 schemesResList.length > 0
                 ? <div style={{ display:"grid", gridTemplateColumns: "2fr 3fr", gap: "0.5rem"}}>
-                    <MainChat />
+                    <MainChat sessionId={sessionId}/>
                     <SchemesList schemes={schemesResList} />
                 </div>
-                : <SearchBar setSchemeResList={setSchemeResList} />
+                : <SearchBar setSchemeResList={setSchemeResList} setSessionId={setSessionId} />
             }
         </main>
     )
