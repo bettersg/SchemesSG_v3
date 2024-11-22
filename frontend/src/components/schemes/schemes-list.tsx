@@ -42,7 +42,7 @@ export default function SchemesList({ schemes }: SchemesListProps) {
                                         alt={`${scheme.agency} logo`}
                                         height={40}
                                         radius="sm"
-                                        src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4"
+                                        src={scheme.image}
                                         width={40}
                                     />
                                     <div className="flex flex-col">
@@ -51,7 +51,7 @@ export default function SchemesList({ schemes }: SchemesListProps) {
                                     </div>
                                 </CardHeader>
                                 <CardBody>
-                                    <p className="text-small">{scheme.description}</p>
+                                    <p className="text-small">{scheme.description.substring(0, 250) + "..."}</p>
                                 </CardBody>
                         </Card>
                     </Link>
