@@ -1,7 +1,9 @@
 .contentWrapper {
     padding: 2em 5em;
     margin: 0 auto;
-    max-width: 1000px;
+    max-width: 1500px;
+    max-height: 100vh;
+    height: 100vh;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;

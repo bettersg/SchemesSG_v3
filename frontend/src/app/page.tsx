@@ -8,16 +8,16 @@ import SearchBar from "@/components/search-bar/search-bar";
 
 export default function Home() {
     const [schemesResList, setSchemeResList] = useState<Scheme[]>([]);
- // TODO pass the sessionid to MainChat
+    const [sessionId, setSessionId] = useState<string>("");
+
     return (
         <main style={{ display: "flex", justifyContent: "center" }}>
             {
                 schemesResList.length > 0
-                ? <>
+                ? <div style={{ display:"grid", gridTemplateColumns: "2fr 3fr", gap: "0.5rem"}}>
                     <MainChat />
-                    <Spacer x={1} />
                     <SchemesList schemes={schemesResList} />
-                </>
+                </div>
                 : <SearchBar setSchemeResList={setSchemeResList} />
             }
         </main>

@@ -25,13 +25,15 @@ interface SchemesListProps {
 export default function SchemesList({ schemes }: SchemesListProps) {
 
     return (
-        <div>
-            <p className="text-base font-semibold">Search Results</p>
-            <p className="text-xs text-slate-500">Showing {schemes.length} schemes</p>
+        <div style={{ padding:"0.8rem" }}>
+            <div>
+                <p className="text-base font-semibold">Search Results</p>
+                <p className="text-xs text-slate-500">Showing {schemes.length} schemes</p>
+            </div>
 
             <Spacer y={3} />
 
-            <div className="gap-2 grid grid-cols-1 sm:grid-cols-2">
+            <div className="gap-2 grid grid-cols-1 sm:grid-cols-2" style={{ overflowX: "hidden", overflowY: "auto", maxHeight: "85vh", padding:"0.5rem" }}>
                 {schemes.map((scheme) => (
                     <Link key={scheme.schemeId} href={`/schemes/${scheme.schemeId}`} className="w-full" target="_blank">
                         <Card shadow="sm" className="w-full" isHoverable>

@@ -1,6 +1,6 @@
 import { Avatar, Card, CardBody } from "@nextui-org/react";
 import classes from "./chat-list.module.css"
-import { Message } from "../main-chat/main-chat";
+import { Message } from "@/app/providers";
 import ReactMarkdown from "react-markdown";
 
 interface ChatListProps {

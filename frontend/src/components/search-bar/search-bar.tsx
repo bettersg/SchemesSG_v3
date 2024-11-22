@@ -52,6 +52,7 @@ export default function SearchBar({ setSchemeResList }: SearchBarProps) {
         };
 
         try {
+            setIsBotResponseGenerating(true);
             const response = await fetch(url, {
                 method: "POST",
                 headers: {
@@ -64,11 +65,13 @@ export default function SearchBar({ setSchemeResList }: SearchBarProps) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            const schemes: Scheme[] = data.results.map(mapToScheme);
+            const res = await response.json();
+            setIsBotResponseGenerating(false);
+            const schemes: Scheme[] = res.data.map(mapToScheme);
             return schemes;
         } catch (error) {
             console.error("Error making POST request:", error);
+            setIsBotResponseGenerating(false);
         }
 
     };
