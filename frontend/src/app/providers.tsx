@@ -17,9 +17,7 @@ type ChatContextType = {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<Message[]>([
-      { type: "bot", text: "Hello! How can I help you today?" }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   return (
     <ChatContext.Provider value={{ messages, setMessages }}>
