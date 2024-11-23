@@ -17,7 +17,17 @@ export default function Home() {
                     <MainChat sessionId={sessionId}/>
                     <SchemesList schemes={schemesResList} />
                 </div>
-                : <SearchBar setSchemeResList={setSchemeResList} setSessionId={setSessionId} />
+                :
+                <div style={{ width: "35rem" }}>
+                    <div style={{ width: "35rem", paddingBottom:"3rem" }}>
+                        <div className="font-extrabold text-2xl" style={{ display:"flex", justifyContent: "center" }}>
+                            <p style={{ color:"#171347" }}>Welcome to Schemes </p>
+                            <p style={{ color:"#008AFF" }}>SG</p>
+                        </div>
+                        <p className="font-medium text-center" style={{ color:"#171347" }}>This is an AI-supported search engine for public social assistance schemes in Singapore.</p>
+                    </div>
+                    <SearchBar setSchemeResList={setSchemeResList} setSessionId={setSessionId} />
+                </div>
             }
         </main>
     )
