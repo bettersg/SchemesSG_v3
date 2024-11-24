@@ -103,7 +103,7 @@ class Chatbot:
                 openai_api_key=config.apikey,
                 openai_api_type=config.type,
                 model_name=config.model,
-                temperature=0.3,
+                temperature=0.1,
             )
             logger.info("Chatbot initialised")
         except Exception as e:  # TODO: logger
@@ -197,7 +197,13 @@ class Chatbot:
 
         template_text = (
             """
-            As a virtual assistant, I'm dedicated to helping user navigate through the available schemes...
+            I’m a virtual assistant designed to help users explore schemes based on their needs. The user has already received top schemes relevant to their search. My role is to answer follow-up queries by analyzing and extracting insights from the provided scheme data, which includes the scheme name, agency, link to the website, and potentially text scraped from the scheme website.
+            Guidelines for my responses:
+                1.	Contextual Answers: I’ll consider the chat history to ensure coherent, contextual answers.
+                2.	Data-Driven Guidance: My role is to provide advice based on the scheme data only, staying within its scope.
+                3.	Clear Communication: I’ll use simple, clear English while preserving the accuracy of the scheme details.
+                4.	Respect and Focus: I’ll keep interactions respectful and safe, redirecting to scheme-related topics if the conversation diverges.
+                5.	No Speculation: My responses will strictly rely on the given scheme details, avoiding fabrication or assumptions.
             """
             + top_schemes_text
         )
@@ -252,3 +258,61 @@ class Chatbot:
             results_json = {"response": False, "message": "No response from the chatbot."}
 
         return results_json
+
+    def chatbot_stream(self, top_schemes_text: str, input_text: str, session_id: str):
+        """Streaming version of the chatbot method"""
+        template_text = (
+            """
+            I’m a virtual assistant designed to help users explore schemes based on their needs. The user has already received top schemes relevant to their search. My role is to answer follow-up queries by analyzing and extracting insights from the provided scheme data, which includes the scheme name, agency, link to the website, and potentially text scraped from the scheme website.
+            Guidelines for my responses:
+                1.	Contextual Answers: I’ll consider the chat history to ensure coherent, contextual answers.
+                2.	Data-Driven Guidance: My role is to provide advice based on the scheme data only, staying within its scope.
+                3.	Clear Communication: I’ll use simple, clear English while preserving the accuracy of the scheme details.
+                4.	Respect and Focus: I’ll keep interactions respectful and safe, redirecting to scheme-related topics if the conversation diverges.
+                5.	No Speculation: My responses will strictly rely on the given scheme details, avoiding fabrication or assumptions.
+            """
+            + top_schemes_text
+        )
+
+        prompt_template = ChatPromptTemplate.from_messages([
+            ("system", template_text),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{query}"),
+        ])
+
+        chain = prompt_template | self.__class__.llm
+        chain_with_history = RunnableWithMessageHistory(
+            chain,
+            self.get_session_history,
+            input_messages_key="query",
+            history_messages_key="history"
+        )
+
+        config = {"configurable": {"session_id": session_id}}
+
+        # Use streaming
+        for chunk in chain_with_history.stream(
+            {"query": input_text},
+            config=config
+        ):
+            if hasattr(chunk, 'content'):
+                yield chunk.content
+
+        # After streaming is complete, update chat history
+        try:
+            db = self.__class__.firebase_manager.firestore_client
+            ref = db.collection("chatHistory").document(session_id)
+            doc = ref.get()
+
+            current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+            if doc.exists:
+                chat_history = doc.to_dict().get("messages", [])
+                chat_history.append({"role": "user", "content": input_text})
+                chat_history.append({"role": "assistant", "content": full_response})
+                ref.set({
+                    "messages": chat_history,
+                    "last_updated": current_timestamp + " UTC"
+                })
+        except Exception as e:
+            logger.exception("Error updating chat history in Firestore", e)

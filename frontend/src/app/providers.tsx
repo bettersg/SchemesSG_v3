@@ -11,13 +11,14 @@ export type Message = {
 
 type ChatContextType = {
   messages: Message[];
-  setMessages: (messages: Message[]) => void;
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+
   return (
     <ChatContext.Provider value={{ messages, setMessages }}>
       {children}

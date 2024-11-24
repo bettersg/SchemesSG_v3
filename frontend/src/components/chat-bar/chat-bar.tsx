@@ -6,16 +6,14 @@ interface ChatBarProps {
     userInput: string;
     setUserInput: React.Dispatch<React.SetStateAction<string>>;
     handleUserInput: (message: string) => void;
-    simulateBotResponse: (userMessage: string) => void;
     isBotResponseGenerating: boolean
 }
 
-export default function ChatBar({ userInput, setUserInput, handleUserInput, simulateBotResponse, isBotResponseGenerating }: ChatBarProps) {
+export default function ChatBar({ userInput, setUserInput, handleUserInput, isBotResponseGenerating }: ChatBarProps) {
 
     const handleSend = () => {
         if (userInput.trim()) {
           handleUserInput(userInput);
-          simulateBotResponse(userInput);
         }
     };
 
@@ -29,9 +27,8 @@ export default function ChatBar({ userInput, setUserInput, handleUserInput, simu
                 size="md"
                 radius="lg"
                 color="primary"
-                label="How can we help?"
                 labelPlacement="outside"
-                placeholder="I am a dialysis patient in need of financial assistance and food support after being retrenched due to Covid-19."
+                placeholder="Please type your question"
                 endContent={
                     isBotResponseGenerating
                     ? <Spinner className={classes.endContent} size="sm" />

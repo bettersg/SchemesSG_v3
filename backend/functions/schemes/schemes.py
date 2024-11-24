@@ -30,6 +30,23 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
+    # TODO remove for prod setup
+    #Set CORS headers for the preflight request
+    if req.method == 'OPTIONS':
+        # Allows GET and POST requests from any origin with the Content-Type
+        # header and caches preflight response for an hour
+        headers = {
+            'Access-Control-Allow-Origin': 'http://localhost:3000',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600'
+        }
+        return ('', 204, headers)
+
+    # Set CORS headers for the main request
+    headers = {
+        'Access-Control-Allow-Origin': 'http://localhost:3000'
+    }
 
     firebase_manager = create_firebase_manager()
 
@@ -48,6 +65,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Invalid path parameters, please provide schemes id"}),
             status=400,
             mimetype="application/json",
+            headers=headers
         )
 
     try:
@@ -59,6 +77,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
             status=500,
             mimetype="application/json",
+            headers=headers
         )
 
     if not doc.exists:
@@ -66,7 +85,12 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Scheme with provided id does not exist"}),
             status=404,
             mimetype="application/json",
+            headers=headers
         )
 
     results = {"data": doc.to_dict(), "mh": 0.7}
-    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json")
+    return https_fn.Response(
+        response=json.dumps(results),
+        status=200,
+        mimetype="application/json",
+        headers=headers)
