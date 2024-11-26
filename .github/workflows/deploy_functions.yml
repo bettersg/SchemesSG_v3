@@ -38,6 +38,7 @@ jobs:
         GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/serviceAccountKey.json
       run: |
         echo "$SERVICE_ACCOUNT_KEY" > ${HOME}/serviceAccountKey.json
+        firebase login:ci --no-localhost --token $FIREBASE_TOKEN
 
     # Step 5: Deploy All Functions
     - name: Deploy Firebase Functions
