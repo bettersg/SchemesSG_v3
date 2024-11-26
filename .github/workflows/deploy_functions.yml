@@ -1,4 +1,4 @@
-name: Deploy to Firebase Functions
+name: Deploy Firebase Functions
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 env:
   FIREBASE_PROJECT_ID: "schemessg-v3-dev"
-  SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}
+  FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}
 
 jobs:
   deploy:
@@ -26,21 +26,27 @@ jobs:
       with:
         node-version: 18
 
-    # Step 3: Install Dependencies
+    # Step 3: Install Firebase CLI
+    - name: Install Firebase CLI
+      run: npm install -g firebase-tools
+
+    # Step 4: Install Dependencies
     - name: Install Dependencies
       run: |
-        cd backend
-        npm install -g firebase-tools@13.25.0
+        npm install
+      working-directory: ./backend/functions
 
-    # Step 4: Authenticate Firebase CLI
-    - name: Authenticate Firebase CLI
+    # Step 5: Deploy Firebase Functions
+    - name: Deploy Firebase Functions
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}
+      run: |
+        firebase deploy --only functions --project $FIREBASE_PROJECT_ID
+        firebase auth:import ${HOME}/serviceAccountKey.json
       env:
         GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/serviceAccountKey.json
-      run: |
-        echo "$SERVICE_ACCOUNT_KEY" > ${HOME}/serviceAccountKey.json
-        firebase login:ci --no-localhost --token $FIREBASE_TOKEN
 
-    # Step 5: Deploy All Functions
+    # Step 6: Deploy All Functions
     - name: Deploy Firebase Functions
       run: |
         cd backend
