@@ -42,14 +42,4 @@ jobs:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}
       run: |
         firebase deploy --only functions --project $FIREBASE_PROJECT_ID
-        firebase auth:import ${HOME}/serviceAccountKey.json
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/serviceAccountKey.json
-
-    # Step 6: Deploy All Functions
-    - name: Deploy Firebase Functions
-      run: |
-        cd backend
-        firebase deploy --only functions --project $FIREBASE_PROJECT_ID
-      env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/serviceAccountKey.json
+      working-directory: ./backend
