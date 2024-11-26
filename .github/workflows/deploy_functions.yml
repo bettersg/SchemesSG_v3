@@ -20,21 +20,23 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    # Step 2: Set up Node.js environment
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
+    # Step 2: Set up Python environment
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
-        node-version: 18
+        python-version: 3.10
 
     # Step 3: Install Firebase CLI
     - name: Install Firebase CLI
       run: npm install -g firebase-tools
 
-    # Step 4: Install Dependencies
+    # Step 4: Install Python Dependencies
     - name: Install Dependencies
       run: |
-        npm install
-      working-directory: ./backend/functions
+        python -m venv venv
+        source venv/bin/activate
+        pip install --no-cache-dir -r functions/requirements.txt
+      working-directory: ./backend
 
     # Step 5: Deploy Firebase Functions
     - name: Deploy Firebase Functions
