@@ -34,16 +34,13 @@ jobs:
     # Step 4: Authenticate Firebase CLI
     - name: Authenticate Firebase CLI
       env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMES_V3_DEV }}
+        GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/serviceAccountKey.json
       run: |
         echo "$SERVICE_ACCOUNT_KEY" > ${HOME}/serviceAccountKey.json
-        firebase auth:login:ci --project $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
-        firebase use --add $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
 
     # Step 5: Deploy All Functions
     - name: Deploy Firebase Functions
       run: |
         firebase deploy --only functions --project $FIREBASE_PROJECT_ID
       env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         GOOGLE_APPLICATION_CREDENTIALS: ${HOME}/serviceAccountKey.json
