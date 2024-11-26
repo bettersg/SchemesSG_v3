@@ -29,6 +29,12 @@ class FirebaseManager:
         if not firebase_admin._apps:
             # Replace newlines in private key
             private_key = os.getenv("FB_PRIVATE_KEY").replace("\\n", "\n")
+            # path_to_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+            # if not path_to_creds or not os.path.exists(path_to_creds):
+            #     raise ValueError(f"Invalid certificate path: {path_to_creds}. Make sure GOOGLE_APPLICATION_CREDENTIALS is set properly.")
+
+            # cred = credentials.Certificate(path_to_creds)  # Adjust path as needed
 
             cred = credentials.Certificate(
                 {
