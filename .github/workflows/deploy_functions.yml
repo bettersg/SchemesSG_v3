@@ -41,8 +41,6 @@ jobs:
       # Step 6: deploy functions
       - name: Deploy functions
         working-directory: backend
-        run: |
-          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
-          cat $GOOGLE_APPLICATION_CREDENTIALS
-          npx firebase-tools deploy --only functions --debug --token "${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
+        run: npx firebase-tools deploy --only functions --debug --token "${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}"
