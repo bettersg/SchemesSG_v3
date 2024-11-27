@@ -9,7 +9,6 @@ on:
 env:
   FIREBASE_PROJECT_ID: "schemessg-v3-dev"
   FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}
-
 jobs:
   deploy:
     name: Deploy Functions
@@ -40,8 +39,6 @@ jobs:
 
     # Step 5: Deploy Firebase Functions
     - name: Deploy Firebase Functions
-      env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}
       run: |
-        firebase deploy --only functions --project $FIREBASE_PROJECT_ID
+        firebase login:ci --token $FIREBASE_TOKEN && firebase deploy --only functions --project $FIREBASE_PROJECT_ID
       working-directory: ./backend
