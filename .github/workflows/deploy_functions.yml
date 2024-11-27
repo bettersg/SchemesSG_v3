@@ -25,9 +25,11 @@ jobs:
         with:
           node-version: 19.7.0
 
-      # Step 4: Create Service Account Key
-      - name: Create SA key
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
+      # Step 4: Create Service Account Key and Set Env Variables
+      - name: Create SA key and set env variables
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ runner.temp }}/gcloud.json" >> $GITHUB_ENV
 
       # Step 5: Prepare the environment
       - name: Prepare the environment
