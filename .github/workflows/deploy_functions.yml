@@ -1,4 +1,4 @@
-name: Deploy Firebase Functions
+name: Deploy to DEV
 
 on:
   push:
@@ -6,39 +6,36 @@ on:
       - stg
   workflow_dispatch:
 
-env:
-  FIREBASE_PROJECT_ID: "schemessg-v3-dev"
-  FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}
 jobs:
-  deploy:
-    name: Deploy Functions
+  build_and_deploy:
     runs-on: ubuntu-latest
-
     steps:
-    # Step 1: Checkout the code
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      # Step 1: Checkout the code
+      - uses: actions/checkout@v3
 
-    # Step 2: Set up Python environment
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    # Step 3: Install Firebase CLI
-    - name: Install Firebase CLI
-      run: npm install -g firebase-tools
+      # Step 3: Set up Node.js environment
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19.7.0
 
-    # Step 4: Install Python Dependencies
-    - name: Install Dependencies
-      run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install --no-cache-dir -r functions/requirements.txt
-      working-directory: ./backend
+      # Step 4: Create Service Account Key
+      - name: Create SA key
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > $HOME/gcloud.json
 
-    # Step 5: Deploy Firebase Functions
-    - name: Deploy Firebase Functions
-      run: |
-        firebase login:ci --token $FIREBASE_TOKEN && firebase deploy --only functions --project $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
-      working-directory: ./backend
+      # Step 5: Deploy Cloud Functions
+      - name: Deploy Cloud Functions
+        working-directory: backend/functions
+        run: |
+          python3.10 -m venv venv
+          . venv/bin/activate
+          npx firebase-tools --version
+          python3.10 -m pip install -r requirements.txt
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud.json
+          npx firebase-tools deploy --only functions --debug
