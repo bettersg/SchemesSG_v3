@@ -29,13 +29,20 @@ jobs:
       - name: Create SA key
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > $HOME/gcloud.json
 
-      # Step 5: Deploy Cloud Functions
-      - name: Deploy Cloud Functions
+      # Step 5: Prepare the environment
+      - name: Prepare the environment
         working-directory: backend/functions
         run: |
           python3.10 -m venv venv
           . venv/bin/activate
           npx firebase-tools --version
           python3.10 -m pip install -r requirements.txt
+
+      # Step 6: deploy functions
+      - name: Deploy functions
+        working-directory: backend
+        run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud.json
-          npx firebase-tools deploy --only functions --debug
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+          cat $GOOGLE_APPLICATION_CREDENTIALS
+          npx firebase-tools deploy --only functions --debug --token "${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}"
