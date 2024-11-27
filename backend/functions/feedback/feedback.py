@@ -5,8 +5,8 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/feedback
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn
-from datetime import timezone
-import datetime
+from datetime import datetime, timezone
+import json
 
 # Firestore client
 firebase_manager = FirebaseManager()
@@ -22,9 +22,16 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-
+    headers = {
+        'Access-Control-Allow-Origin': 'http://localhost:3000'
+    }
     if req.method != "POST":
-        return https_fn.Response("Only POST requests are allowed.", status=405)
+        return https_fn.Response(
+            response=json.dumps({"success": False, "message": "Only POST requests are allowed"}),
+            status=405,
+            mimetype="application/json",
+            headers=headers
+        )
 
     try:
         # Parse the request data
@@ -35,7 +42,12 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         timestamp = datetime.datetime.now(timezone.utc)
 
         if not feedback_text or not timestamp:
-            return {"success": False, "message": "Missing required fields."}, 400
+            return https_fn.Response(
+                response=json.dumps({"success": False, "message": "Missing required fields"}),
+                status=400,
+                mimetype="application/json",
+                headers=headers
+            )
 
         # Prepare the data for Firestore
         feedback_data = {
@@ -49,8 +61,18 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         firebase_manager.firestore_client.collection("userFeedback").add(feedback_data)
 
         # Return a success response
-        return {"success": True, "message": "Feedback successfully added."}, 200
+        return https_fn.Response(
+            response=json.dumps({"success": True, "message": "Feedback successfully added"}),
+            status=200,
+            mimetype="application/json",
+            headers=headers
+        )
 
     except Exception as e:
         print(f"Error: {e}")
-        return {"success": False, "message": "Failed to add feedback."}, 500
+        return https_fn.Response(
+            response=json.dumps({"success": False, "message": "Failed to add feedback"}),
+            status=500,
+            mimetype="application/json",
+            headers=headers
+        )

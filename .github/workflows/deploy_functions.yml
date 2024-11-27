@@ -33,6 +33,23 @@ jobs:
         with:
           node-version: 19.7.0
 
+      # Step 3.5: Download the ZIP file from Google Drive
+      - name: Download Models ZIP
+        run: |
+          FILE_ID="YOUR_GOOGLE_DRIVE_FILE_ID"
+          wget --no-check-certificate "https://drive.google.com/uc?export=download&id=1VaPJNto0HusO3ziQDLSUQwrlvNgPOKel" -O /tmp/cookie \
+            && CONFIRM=$(awk '/download/ {print $NF}' /tmp/cookie) \
+            && wget --load-cookies /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=1VaPJNto0HusO3ziQDLSUQwrlvNgPOKel" -O models.zip
+
+      # Step 3.5.2: Extract the ZIP file
+      - name: Extract Models ZIP
+        run: |
+          unzip models.zip -d backend/functions/ml_logic
+
+      # Step 3.5.3: Clean up
+      - name: Clean Up
+        run: rm models.zip
+
       # Step 4: Create Service Account Key and Set Env Variables
       - name: Create SA key and set env variables
         run: |
