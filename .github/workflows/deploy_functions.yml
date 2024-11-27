@@ -40,5 +40,5 @@ jobs:
     # Step 5: Deploy Firebase Functions
     - name: Deploy Firebase Functions
       run: |
-        firebase login:ci --token $FIREBASE_TOKEN && firebase deploy --only functions --project $FIREBASE_PROJECT_ID
+        firebase login:ci --token $FIREBASE_TOKEN && firebase deploy --only functions --project $FIREBASE_PROJECT_ID --token $FIREBASE_TOKEN
       working-directory: ./backend
