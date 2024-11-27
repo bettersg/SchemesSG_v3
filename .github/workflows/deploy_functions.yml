@@ -36,10 +36,14 @@ jobs:
       # Step 3.5: Download the ZIP file from Google Drive
       - name: Download Models ZIP
         run: |
-          FILE_ID="YOUR_GOOGLE_DRIVE_FILE_ID"
-          wget --no-check-certificate "https://drive.google.com/uc?export=download&id=1VaPJNto0HusO3ziQDLSUQwrlvNgPOKel" -O /tmp/cookie \
-            && CONFIRM=$(awk '/download/ {print $NF}' /tmp/cookie) \
-            && wget --load-cookies /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=1VaPJNto0HusO3ziQDLSUQwrlvNgPOKel" -O models.zip
+          FILE_ID="1VaPJNto0HusO3ziQDLSUQwrlvNgPOKel"
+          CONFIRM=$(wget --quiet --save-cookies /tmp/cookie --keep-session-cookies --no-check-certificate "https://drive.google.com/uc?export=download&id=${FILE_ID}" -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p')
+          wget --load-cookies /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -O models.zip
+
+      - name: List Directory Contents
+        run: ls -lh models.zip
+      - name: Check File Type
+        run: file models.zip
 
       # Step 3.5.2: Extract the ZIP file
       - name: Extract Models ZIP
