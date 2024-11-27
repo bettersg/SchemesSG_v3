@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: 19.7.0
 
-      Step 4: Create Service Account Key and Set Env Variables
+      # Step 4: Create Service Account Key and Set Env Variables
       - name: Create SA key and set env variables
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
