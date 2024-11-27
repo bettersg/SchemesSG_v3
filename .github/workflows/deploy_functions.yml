@@ -27,7 +27,7 @@ jobs:
 
       # Step 4: Create Service Account Key
       - name: Create SA key
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > $HOME/gcloud.json
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
 
       # Step 5: Prepare the environment
       - name: Prepare the environment
@@ -42,5 +42,5 @@ jobs:
       - name: Deploy functions
         working-directory: backend
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: $HOME/gcloud.json
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
         run: npx firebase-tools deploy --only functions --debug --token "${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}"
