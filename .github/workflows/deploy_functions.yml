@@ -36,9 +36,7 @@ jobs:
       # Step 3.5: Download the ZIP file from Google Drive
       - name: Download Models ZIP
         run: |
-          FILE_ID="1VaPJNto0HusO3ziQDLSUQwrlvNgPOKel"
-          CONFIRM=$(wget --quiet --save-cookies /tmp/cookie --keep-session-cookies --no-check-certificate "https://drive.google.com/uc?export=download&id=${FILE_ID}" -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p')
-          wget --load-cookies /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -O models.zip
+          wget "https://firebasestorage.googleapis.com/v0/b/schemessg-v3-dev.firebasestorage.app/o/modelfiles.zip?alt=media&token=5735bd52-1372-467e-bcc3-7505e3163813" -O models.zip
 
       - name: List Directory Contents
         run: ls -lh models.zip
