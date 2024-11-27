@@ -13,6 +13,14 @@ jobs:
       # Step 1: Checkout the code
       - uses: actions/checkout@v3
 
+      # Step 1.5:  Environment variables
+      - name: create env file
+        working-directory: backend
+        run: |
+          cd functions
+          touch .env
+          echo "${{ secrets.FUNCTIONS_ENV_VARS }}" >> .env
+
       # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -26,10 +34,10 @@ jobs:
           node-version: 19.7.0
 
       # Step 4: Create Service Account Key and Set Env Variables
-      - name: Create SA key and set env variables
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ runner.temp }}/gcloud.json" >> $GITHUB_ENV
+      # - name: Create SA key and set env variables
+      #   run: |
+      #     echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
+      #     echo "GOOGLE_APPLICATION_CREDENTIALS=${{ runner.temp }}/gcloud.json" >> $GITHUB_ENV
 
       # Step 5: Prepare the environment
       - name: Prepare the environment
@@ -43,6 +51,6 @@ jobs:
       # Step 6: deploy functions
       - name: Deploy functions
         working-directory: backend
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
+        # env:
+          # GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
         run: npx firebase-tools deploy --only functions --debug --token "${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}"
