@@ -35,6 +35,21 @@ def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, li
     return (query_id, schemes, None)
 
 
+def retrieve_scheme_results(query_id: str) -> bool | list[dict[str, str | int]]:
+    """
+    Handles API call to retrieve full search results of a query
+    """
+
+    endpoint = backend_url + "/retrieve_search_queries" + "/" + query_id
+
+    res = requests.get(endpoint)
+
+    if res.status_code != 200: # Error
+        return False
+
+    return res.json()["data"]["schemes_response"]
+
+
 def send_chat_message(input_text: str, query_id: str) -> tuple[str | None, str | None]:
     """
     Handles API call to backend (chat bot)

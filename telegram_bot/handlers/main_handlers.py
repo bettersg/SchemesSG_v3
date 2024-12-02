@@ -7,8 +7,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import BotConfig, bot
-from utils.api import search_schemes, send_chat_message
-from utils.data import read_query_records, update_query_records
+from utils.api import search_schemes, send_chat_message, retrieve_scheme_results
+# from utils.data import read_query_records, update_query_records
 
 
 main_router = Router()
@@ -135,12 +135,6 @@ async def search_handler(message: types.Message, config: BotConfig, state: FSMCo
         await message.answer(err_message)
         return
 
-    print('\n')
-    print(query_id)
-    print('\n')
-
-    update_query_records(query_id, schemes)
-
     num_schemes_to_show = min(len(schemes), NUM_SCHEME_PER_PAGE)
     reply_arr = [present_scheme(idx, scheme) for idx, scheme in enumerate(schemes[:num_schemes_to_show])]
     reply_message = "Here are some schemes I found that might address your concerns.\n\n" + "\n\n\n".join(reply_arr)
@@ -172,7 +166,7 @@ async def search_callback_handler(
         await bot.answer_callback_query(query.id)
         return
 
-    schemes = read_query_records(query_id)
+    schemes = retrieve_scheme_results(query_id)
 
     is_last_page = pgnum * NUM_SCHEME_PER_PAGE >= len(schemes)
 
