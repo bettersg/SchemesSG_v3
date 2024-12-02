@@ -16,7 +16,7 @@ poetry install
 poetry run python app.py
 
 # Deployment
-python app.py
+poetry run python app.py
 ```
 
 ### Progress

@@ -8,7 +8,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import BotConfig, bot
 from utils.api import search_schemes, send_chat_message, retrieve_scheme_results
-# from utils.data import read_query_records, update_query_records
 
 
 main_router = Router()
@@ -17,24 +16,37 @@ NUM_SCHEME_PER_PAGE = 5
 
 
 class Mode(Enum):
+    """Enum class for view or chat mode"""
+
     VIEW = "view"
     CHAT = "chat"
 
 
 class SearchResultsCallback(callback_data.CallbackData, prefix="respg"):
+    """Class for callback data (used to pass page number and query ID through messages and for pagination)"""
+
     page_num: int
     query_id: str
     mode: Mode = Mode.VIEW
 
 
 class Form(StatesGroup):
+    """Conversational state manager"""
+
     search = State()
     chat = State()
 
 
-def present_scheme(idx: int, scheme) -> str:
+def present_scheme(idx: int, scheme: dict[str, str | int]) -> str:
     """
     Formats the text message reply for each scheme
+
+    Args:
+        idx (int): scheme index
+        scheme (dict[str, str | int]): dictionary containing details of a scheme
+
+    Returns
+        str: message with details of scheme presented as a string
     """
 
     return (
@@ -51,6 +63,14 @@ def present_scheme(idx: int, scheme) -> str:
 def paginator(page: int, query_id: str, last: bool = False) -> types.InlineKeyboardMarkup:
     """
     Returns Back/Next buttons for pagination
+
+    Args:
+        page (int): current page number
+        query_id (int): ID of search query
+        last (bool): if current page is last
+
+    Returns:
+        types.InlineKeyboardMarkup: Inline Keyboard Markup for telegram bot
     """
 
     num_buttons = 1 if last or page == 1 else 2
@@ -77,7 +97,13 @@ def paginator(page: int, query_id: str, last: bool = False) -> types.InlineKeybo
 async def command_start_handler(message: types.Message, config: BotConfig, state: FSMContext) -> None:
     """
     This handler receives messages with the `/start` and `/help` commands
+
+    Args:
+        message (types.Message): message sent by user
+        config (BotConfig): configuration of telegram bot
+        state (FSMContext): state manager of telegram bot
     """
+
     await state.set_state(Form.search)
     await message.answer(f"Hello, {html.bold(message.from_user.full_name)}! {config.intro_message}")
 
@@ -86,7 +112,13 @@ async def command_start_handler(message: types.Message, config: BotConfig, state
 async def exit_chat_handler(message: types.Message, config: BotConfig, state: FSMContext) -> None:
     """
     This handler receives messages with the `/exit` commands when in the chat state
+
+    Args:
+        message (types.Message): message sent by user
+        config (BotConfig): configuration of telegram bot
+        state (FSMContext): state manager of telegram bot
     """
+
     await state.clear()
     await state.set_state(Form.search)
     await message.answer("You have exited Schemes Support Chat. Hope that we were able to help!")
@@ -96,6 +128,11 @@ async def exit_chat_handler(message: types.Message, config: BotConfig, state: FS
 async def chat_handler(message: types.Message, config: BotConfig, state: FSMContext) -> None:
     """
     Search Handler will make a query to the FASTAPI backend to search for most relevant scheme.
+
+    Args:
+        message (types.Message): message sent by user
+        config (BotConfig): configuration of telegram bot
+        state (FSMContext): state manager of telegram bot
     """
 
     if not message.text:
@@ -120,6 +157,11 @@ async def search_handler(message: types.Message, config: BotConfig, state: FSMCo
     Search Handler will make a query to the FASTAPI backend to search for most relevant scheme.
 
     By default, message handler will handle all message types (like a text, photo, sticker etc.)
+
+    Args:
+        message (types.Message): message sent by user
+        config (BotConfig): configuration of telegram bot
+        state (FSMContext): state manager of telegram bot
     """
 
     curr_state = await state.get_state()
@@ -151,7 +193,13 @@ async def search_callback_handler(
 ) -> None:
     """
     Callback Query Handler edits the initial text message based on Back/Next buttons.
+
+    Args:
+        query (types.CallbackQuery): query initiated by user clicking on a button in the inline keyboard
+        callback_data (SearchResultsCallback): callback data from message with the inline keyboard that the user clicked from
+        state (FSMContext): state manager of telegram bot
     """
+
     pgnum = callback_data.page_num
     query_id = callback_data.query_id
     mode = callback_data.mode
