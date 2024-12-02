@@ -4,7 +4,6 @@ version = "0.1.0"
 description = ""
 authors = ["schemes team"]
 readme = "README.md"
-package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.8"
@@ -12,7 +11,7 @@ aiogram = "3.11.0"
 python-dotenv = "1.0.1"
 requests = "2.32.3"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.dev-dependencies]
 ipykernel = "^6.29.5"
 ruff = "^0.5.7"
 pytest = "^8.3.2"

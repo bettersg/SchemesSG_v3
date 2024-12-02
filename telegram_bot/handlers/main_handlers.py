@@ -135,6 +135,10 @@ async def search_handler(message: types.Message, config: BotConfig, state: FSMCo
         await message.answer(err_message)
         return
 
+    print('\n')
+    print(query_id)
+    print('\n')
+
     update_query_records(query_id, schemes)
 
     num_schemes_to_show = min(len(schemes), NUM_SCHEME_PER_PAGE)
