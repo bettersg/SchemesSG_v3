@@ -14,11 +14,6 @@ This backend is built using Firebase Functions and serves as the API for the Sch
 - Schemes Search: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search)
 - Chat Message Service: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message)
 
-Boilerplate Services (as a guide): 
-- Bar Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar)
-- Foo Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo)
-- Main Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main)
-
 ## Getting Started
 
 1. **Clone the repository**
@@ -112,9 +107,6 @@ Boilerplate Services (as a guide):
    
    Staging
    - These endpoints were deployed manually via `firebase deploy --only functions` in the schemessg-v3-dev project. All public users are able to access these endpoints temporarily. 
-      - Bar Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/bar)
-      - Foo Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/foo)
-      - Main Service: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/main)
       - Health Check: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/health](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/health)
       - Schemes by ID: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes/{id}](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes/{id})
       - Schemes Search: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes_search](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes_search)

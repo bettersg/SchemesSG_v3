@@ -8,7 +8,6 @@ import json
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
-
 from ml_logic import PredictParams, SearchModel
 
 
@@ -21,7 +20,7 @@ def create_search_model() -> SearchModel:
 
 @https_fn.on_request(
     region="asia-southeast1",
-    memory=options.MemoryOption.GB_1,  # Increases memory to 1GB
+    memory=options.MemoryOption.GB_2,  # Increases memory to 1GB
 )
 def schemes_search(req: https_fn.Request) -> https_fn.Response:
     """
@@ -34,22 +33,20 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: response sent to client
     """
     # TODO remove for prod setup
-    #Set CORS headers for the preflight request
-    if req.method == 'OPTIONS':
+    # Set CORS headers for the preflight request
+    if req.method == "OPTIONS":
         # Allows GET and POST requests from any origin with the Content-Type
         # header and caches preflight response for an hour
         headers = {
-            'Access-Control-Allow-Origin': 'http://localhost:3000',
-            'Access-Control-Allow-Methods': 'POST',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '3600'
+            "Access-Control-Allow-Origin": "http://localhost:3000",
+            "Access-Control-Allow-Methods": "POST",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Max-Age": "3600",
         }
-        return ('', 204, headers)
+        return ("", 204, headers)
 
     # Set CORS headers for the main request
-    headers = {
-        'Access-Control-Allow-Origin': 'http://localhost:3000'
-    }
+    headers = {"Access-Control-Allow-Origin": "http://localhost:3000"}
 
     search_model = create_search_model()
 
@@ -58,7 +55,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Invalid request method; only POST or GET is supported"}),
             status=405,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )
 
     try:
@@ -69,11 +66,10 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         # print(query, top_k, similarity_threshold)
     except Exception:
         return https_fn.Response(
-            response=json.dumps(
-                {"error": "Invalid request body"}),
-                status=400,
-                mimetype="application/json",
-                headers=headers
+            response=json.dumps({"error": "Invalid request body"}),
+            status=400,
+            mimetype="application/json",
+            headers=headers,
         )
 
     if query is None:
@@ -81,7 +77,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Parameter 'query' in body is required"}),
             status=400,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )
 
     params = PredictParams(query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold))
@@ -91,16 +87,10 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Error searching schemes", e)
         return https_fn.Response(
-            response=json.dumps(
-                {"error": "Internal server error"}),
-                status=500,
-                mimetype="application/json",
-                headers=headers
+            response=json.dumps({"error": "Internal server error"}),
+            status=500,
+            mimetype="application/json",
+            headers=headers,
         )
 
-    return https_fn.Response(
-        response=json.dumps(results),
-        status=200,
-        mimetype="application/json",
-        headers=headers
-    )
+    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json", headers=headers)

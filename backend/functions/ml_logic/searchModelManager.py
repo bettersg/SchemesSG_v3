@@ -3,7 +3,7 @@ import re
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict
 from uuid import uuid1
 
 import faiss
@@ -18,6 +18,9 @@ from pydantic import BaseModel
 
 from transformers import AutoModel, AutoTokenizer
 from transformers.modeling_outputs import BaseModelOutputWithPooling
+
+from google.cloud.firestore import AsyncClient
+import asyncio
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -129,6 +132,9 @@ class SearchModel:
 
     initialised = False
 
+    # Add a cache to store query results
+    query_cache = {}
+
     @classmethod
     def initialise(cls):
         """Initialises the class by loading data from firestore, and loading pretrained models to Transformers"""
@@ -141,15 +147,41 @@ class SearchModel:
         cls.model = AutoModel.from_pretrained(model_path)
         cls.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         cls.embeddings = np.load(embeddings_path)
-        cls.index = faiss.read_index(str(index_path)) # Seems that faiss does not support pathlib
+        cls.index = faiss.read_index(str(index_path))  # Seems that faiss does not support pathlib
         # Load the FAISS index-to-scheme_id mapping
-        with open(index_to_scheme_path, 'r') as f:
+        with open(index_to_scheme_path, "r") as f:
             cls.index_to_scheme_id = json.load(f)
         cls.initialised = True
 
         logger.info("Search Model initialised!")
 
-        pass
+        # Initialize async client
+        cls.db_async = AsyncClient()
+
+    async def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
+        """Fetch multiple schemes in parallel"""
+        # Create a cache key based on the scheme IDs
+        scheme_cache_key = tuple(scheme_ids)
+
+        # Check if the results are already in the cache
+        if scheme_cache_key in self.query_cache:
+            logger.info("Returning cached scheme details.")
+            return self.query_cache[scheme_cache_key]
+
+        # Get all documents in the collection
+        docs = await self.__class__.db_async.collection("schemes").where("__name__", "in", scheme_ids).get()
+
+        # Process results
+        scheme_details = []
+        for doc in docs:
+            scheme_data = doc.to_dict()
+            scheme_data["scheme_id"] = doc.id
+            scheme_details.append(scheme_data)
+
+        # Store the results in the cache
+        self.query_cache[scheme_cache_key] = scheme_details
+
+        return scheme_details
 
     def __new__(cls, firebase_manager: FirebaseManager):
         """Implementation of singleton pattern (returns initialised instance)"""
@@ -197,6 +229,14 @@ class SearchModel:
             pd.DataFrame: most suitable schemes for the query
         """
 
+        # Create a cache key based on the query parameters
+        query_cache_key = (query_text, full_query, top_k)
+
+        # Check if the results are already in the cache
+        if query_cache_key in self.query_cache:
+            logger.info("Returning cached results for query.")
+            return self.query_cache[query_cache_key]
+
         preproc = query_text
 
         # Tokenize text
@@ -222,27 +262,38 @@ class SearchModel:
 
         # Retrieve the scheme_ids using the FAISS indices
         retrieved_scheme_ids = [self.__class__.index_to_scheme_id[str(idx)] for idx in indices[0]]
-        # Fetch scheme details from Firestore
-        scheme_details = []
-        for scheme_id in retrieved_scheme_ids:
-            doc_ref = self.__class__.db.collection("schemes").document(scheme_id)
-            doc = doc_ref.get()
-            if doc.exists:
-                # Add the scheme_id to the document's data
-                scheme_data = doc.to_dict()
-                scheme_data["scheme_id"] = scheme_id
-                scheme_details.append(scheme_data)
-        # Convert scheme details to a DataFrame
+
+        # Get event loop or create new one
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        # Run async operation
+        try:
+            scheme_details = loop.run_until_complete(self.fetch_schemes_batch(retrieved_scheme_ids))
+        except Exception as e:
+            logger.error(f"Error fetching schemes: {e}")
+            raise
+
+        # Convert to DataFrame
         scheme_df = pd.DataFrame(scheme_details)
 
         # Add similarity scores to the DataFrame
         results = pd.concat(
-            [scheme_df.reset_index(drop=True), pd.DataFrame(similarity_scores[0], columns=['Similarity']).reset_index(drop=True)],
-            axis=1
+            [
+                scheme_df.reset_index(drop=True),
+                pd.DataFrame(similarity_scores[0], columns=["Similarity"]).reset_index(drop=True),
+            ],
+            axis=1,
         )
         # Add the query to the results and sort by similarity
-        results['query'] = full_query
-        results = results.sort_values(['Similarity'], ascending=False)
+        results["query"] = full_query
+        results = results.sort_values(["Similarity"], ascending=False)
+
+        # Store the results in the cache
+        self.query_cache[query_cache_key] = results
 
         return results
 
@@ -283,11 +334,8 @@ class SearchModel:
             # Combine results
             combined_results = pd.concat([combined_results, current_results], ignore_index=True)
 
-
         # Dynamically determine grouping columns (excluding 'Similarity' and non-groupable columns)
-        group_columns = [
-            col for col in combined_results.columns if col not in ["Similarity", "Quintile"]
-        ]
+        group_columns = [col for col in combined_results.columns if col not in ["Similarity", "Quintile"]]
 
         # Handle duplicates: Aggregate similarity and drop duplicates
         aggregated_results = combined_results.groupby(group_columns, as_index=False).agg(
@@ -324,13 +372,13 @@ class SearchModel:
 
         user_query = {
             "query_text": query,
-            "query_timestamp": datetime.now(tz=timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT'),
+            "query_timestamp": datetime.now(tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
             "schemes_response": schemes_response,
-            "session_id": session_id
+            "session_id": session_id,
         }
 
         # Add to 'userQuery' collection in firestore with document name = session_id
-        self.__class__.firebase_manager.firestore_client.collection('userQuery').document(session_id).set(user_query)
+        self.__class__.firebase_manager.firestore_client.collection("userQuery").document(session_id).set(user_query)
 
     def predict(self, params: PredictParams) -> dict[str, any]:
         """
@@ -356,10 +404,6 @@ class SearchModel:
 
         self.save_user_query(params.query, session_id, results_dict)
 
-        results_json = {
-            "sessionID": session_id,
-            "data": results_dict,
-            "mh": 0.7
-        }
+        results_json = {"sessionID": session_id, "data": results_dict, "mh": 0.7}
 
         return results_json
