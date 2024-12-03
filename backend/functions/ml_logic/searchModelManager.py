@@ -132,6 +132,9 @@ class SearchModel:
 
     initialised = False
 
+    # Add a cache to store query results
+    query_cache = {}
+
     @classmethod
     def initialise(cls):
         """Initialises the class by loading data from firestore, and loading pretrained models to Transformers"""
@@ -157,6 +160,14 @@ class SearchModel:
 
     async def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
         """Fetch multiple schemes in parallel"""
+        # Create a cache key based on the scheme IDs
+        scheme_cache_key = tuple(scheme_ids)
+
+        # Check if the results are already in the cache
+        if scheme_cache_key in self.query_cache:
+            logger.info("Returning cached scheme details.")
+            return self.query_cache[scheme_cache_key]
+
         # Get all documents in the collection
         docs = await self.__class__.db_async.collection("schemes").where("__name__", "in", scheme_ids).get()
 
@@ -166,6 +177,9 @@ class SearchModel:
             scheme_data = doc.to_dict()
             scheme_data["scheme_id"] = doc.id
             scheme_details.append(scheme_data)
+
+        # Store the results in the cache
+        self.query_cache[scheme_cache_key] = scheme_details
 
         return scheme_details
 
@@ -214,6 +228,14 @@ class SearchModel:
         Returns:
             pd.DataFrame: most suitable schemes for the query
         """
+
+        # Create a cache key based on the query parameters
+        query_cache_key = (query_text, full_query, top_k)
+
+        # Check if the results are already in the cache
+        if query_cache_key in self.query_cache:
+            logger.info("Returning cached results for query.")
+            return self.query_cache[query_cache_key]
 
         preproc = query_text
 
@@ -269,6 +291,9 @@ class SearchModel:
         # Add the query to the results and sort by similarity
         results["query"] = full_query
         results = results.sort_values(["Similarity"], ascending=False)
+
+        # Store the results in the cache
+        self.query_cache[query_cache_key] = results
 
         return results
 
