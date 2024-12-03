@@ -157,19 +157,15 @@ class SearchModel:
 
     async def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
         """Fetch multiple schemes in parallel"""
-        # Create references for all documents
-        doc_refs = [self.__class__.db_async.collection("schemes").document(id) for id in scheme_ids]
-
-        # Fetch all documents in parallel
-        docs = await asyncio.gather(*[ref.get() for ref in doc_refs])
+        # Get all documents in the collection
+        docs = await self.__class__.db_async.collection("schemes").where("__name__", "in", scheme_ids).get()
 
         # Process results
         scheme_details = []
-        for doc, scheme_id in zip(docs, scheme_ids):
-            if doc.exists:
-                scheme_data = doc.to_dict()
-                scheme_data["scheme_id"] = scheme_id
-                scheme_details.append(scheme_data)
+        for doc in docs:
+            scheme_data = doc.to_dict()
+            scheme_data["scheme_id"] = doc.id
+            scheme_details.append(scheme_data)
 
         return scheme_details
 
