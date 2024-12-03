@@ -26,6 +26,14 @@ Before we dive in, make sure you've got:
    npm install
    ```
 
+   If Errors:
+   ```bash
+   rm -rf node_modules
+   rm package-lock.json
+   npm cache clean --force
+   npm install
+   ```
+
 2. **Development (Where the magic happens)**
    ```bash
    npm run dev
@@ -43,6 +51,7 @@ Before we dive in, make sure you've got:
    npm run build:prod
    npm run test-build:prod
    ```
+
 
 ## Key Scripts
 
