@@ -13,12 +13,12 @@ export default function Home() {
         <main style={{ display: "flex", justifyContent: "center" }}>
             {
                 schemesResList.length > 0
-                ? <div style={{ display:"grid", gridTemplateColumns: "2fr 3fr", gap: "0.5rem"}}>
+                ? <div style={{ display:"grid", gridTemplateColumns: "2fr 3fr", gap: "1rem"}}>
                     <MainChat sessionId={sessionId}/>
                     <SchemesList schemes={schemesResList} />
                 </div>
-                :
-                <div style={{ width: "35rem" }}>
+                :   
+                <div>
                     <div style={{ width: "35rem", paddingBottom:"3rem" }}>
                         <div className="font-extrabold text-2xl" style={{ display:"flex", justifyContent: "center" }}>
                             <p style={{ color:"#171347" }}>Welcome to Schemes </p>

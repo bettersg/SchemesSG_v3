@@ -25,7 +25,7 @@ interface SchemesListProps {
 export default function SchemesList({ schemes }: SchemesListProps) {
 
     return (
-        <div style={{ padding:"0.8rem" }}>
+        <div>
             <div>
                 <p className="text-base font-semibold">Search Results</p>
                 <p className="text-xs text-slate-500">Showing {schemes.length} schemes</p>
