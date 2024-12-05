@@ -1,6 +1,8 @@
 .mainChat {
+    display: flex;
+    flex-direction: column;
     background: #FAFBFE;
-    border-radius: 2rem;
+    border-radius: 1rem;
     margin: auto;
     width: 100%;
     height: 100%;

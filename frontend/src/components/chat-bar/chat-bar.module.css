@@ -1,3 +1,7 @@
+.chatBar {
+    margin-top: auto;
+}
+
 .chatBar textarea::placeholder{
     font-style: italic;
     color: rgba(0, 0, 0, 0.2);
