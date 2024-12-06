@@ -22,6 +22,12 @@ export default function ChatBar({ userInput, setUserInput, handleUserInput, isBo
             <Textarea
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={async (e) => {
+                    if (e.key === "Enter" && !isBotResponseGenerating) {
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }}
                 className={classes.chatBar}
                 type="text"
                 size="md"
