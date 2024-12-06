@@ -11,16 +11,19 @@ export type Message = {
 
 type ChatContextType = {
   messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
+  userQuery: string,
+  setUserQuery: React.Dispatch<React.SetStateAction<string>>
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [userQuery, setUserQuery] = useState<string>("");
 
   return (
-    <ChatContext.Provider value={{ messages, setMessages }}>
+    <ChatContext.Provider value={{ messages, setMessages, userQuery, setUserQuery }}>
       {children}
     </ChatContext.Provider>
   );

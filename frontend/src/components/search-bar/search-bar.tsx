@@ -32,15 +32,15 @@ const mapToScheme = (rawData: any): Scheme => {
 };
 
 export default function SearchBar({ setSchemeResList, setSessionId }: SearchBarProps) {
-    const { setMessages } = useChat();
+    const { setMessages, setUserQuery } = useChat();
     const [userInput, setUserInput] = useState("");
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
 
     const handleUserInput = (input: string) => {
         setMessages([
-            { type: "bot", text: `Your query is: ${input}` },
             { type: "bot", text: "You can see the search results on the right. Please ask me any further questions about the schemes." }
         ]);
+        setUserQuery(input);
         setUserInput("");
     };
 
