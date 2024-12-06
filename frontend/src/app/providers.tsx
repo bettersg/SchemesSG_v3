@@ -1,7 +1,8 @@
 'use client';
 
+import { Scheme } from '@/components/schemes/schemes-list';
 import { NextUIProvider } from '@nextui-org/react';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Chat Context
 export type Message = {
@@ -10,10 +11,12 @@ export type Message = {
 };
 
 type ChatContextType = {
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
   userQuery: string,
-  setUserQuery: React.Dispatch<React.SetStateAction<string>>
+  setUserQuery: React.Dispatch<React.SetStateAction<string>>,
+  messages: Message[],
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  schemes: Scheme[];
+  setSchemes: React.Dispatch<React.SetStateAction<Scheme[]>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -21,9 +24,16 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userQuery, setUserQuery] = useState<string>("");
+  const [schemes, setSchemes] = useState<Scheme[]>(
+    () => JSON.parse(localStorage.getItem('schemes') || '[]')
+  );
+
+  useEffect(() => {
+    localStorage.setItem('schemes', JSON.stringify(schemes));
+  }, [schemes]);
 
   return (
-    <ChatContext.Provider value={{ messages, setMessages, userQuery, setUserQuery }}>
+    <ChatContext.Provider value={{ messages, setMessages, userQuery, setUserQuery, schemes, setSchemes }}>
       {children}
     </ChatContext.Provider>
   );
