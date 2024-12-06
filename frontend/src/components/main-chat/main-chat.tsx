@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatList from "@/components/chat-list/chat-list";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import { Spacer } from "@nextui-org/react";
@@ -21,6 +21,10 @@ export default function MainChat({ sessionId }: MainChatProps) {
 
     const scrollableDivRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+      handleScrollToBottom();
+    }, [messages])
+
     const handleUserInput = async (input: string) => {
         setMessages((prevMessages: Message[]) => [
             ...prevMessages,
@@ -29,7 +33,6 @@ export default function MainChat({ sessionId }: MainChatProps) {
         setUserInput("");
         // Trigger API call for bot response
         await fetchBotResponse(input);
-        handleScrollToBottom();
     };
 
     const handleBotResponse = (response: string) => {
