@@ -1,12 +1,13 @@
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from '../../assets/icons/search-icon';
 import classes from './chat-bar.module.css';
+import { RefObject } from "react";
 
 interface ChatBarProps {
     userInput: string;
     setUserInput: React.Dispatch<React.SetStateAction<string>>;
     handleUserInput: (message: string) => void;
-    isBotResponseGenerating: boolean
+    isBotResponseGenerating: boolean;
 }
 
 export default function ChatBar({ userInput, setUserInput, handleUserInput, isBotResponseGenerating }: ChatBarProps) {

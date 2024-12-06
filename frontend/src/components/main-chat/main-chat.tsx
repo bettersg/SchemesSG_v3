@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import ChatList from "@/components/chat-list/chat-list";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import { Spacer } from "@nextui-org/react";
@@ -19,6 +19,8 @@ export default function MainChat({ sessionId }: MainChatProps) {
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
     const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
 
+    const scrollableDivRef = useRef<HTMLDivElement>(null);
+
     const handleUserInput = async (input: string) => {
         setMessages((prevMessages: Message[]) => [
             ...prevMessages,
@@ -27,6 +29,7 @@ export default function MainChat({ sessionId }: MainChatProps) {
         setUserInput("");
         // Trigger API call for bot response
         await fetchBotResponse(input);
+        handleScrollToBottom();
     };
 
     const handleBotResponse = (response: string) => {
@@ -96,10 +99,19 @@ export default function MainChat({ sessionId }: MainChatProps) {
       }
     };
 
+    const handleScrollToBottom = () => {
+        if (scrollableDivRef.current) {
+        scrollableDivRef.current.scrollTo({
+            top: scrollableDivRef.current.scrollHeight,
+            behavior: 'smooth',
+        });
+        }
+    };
+
     return (
         <div className={classes.mainChat}>
             <UserQuery />
-            <ChatList messages={messages} streamingMessage={currentStreamingMessage} />
+            <ChatList messages={messages} streamingMessage={currentStreamingMessage} scrollableDivRef={scrollableDivRef} />
             <Spacer y={4} />
             <ChatBar
                 userInput={userInput}
