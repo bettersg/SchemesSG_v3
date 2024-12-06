@@ -6,6 +6,7 @@ import ChatBar from "@/components/chat-bar/chat-bar";
 import { Spacer } from "@nextui-org/react";
 import classes from "./main-chat.module.css"
 import { Message, useChat } from "@/app/providers";
+import UserQuery from "../user-query/user-query";
 
 type MainChatProps = {
   sessionId: string;
@@ -86,12 +87,6 @@ export default function MainChat({ sessionId }: MainChatProps) {
         }
         handleBotResponse(fullMessage);
 
-        // const data = await response.json();
-        // if (data.response) {
-        //   handleBotResponse(data.message);
-        // } else {
-        //   handleBotResponse("Sorry, something went wrong. Please try again.");
-        // }
       } catch (error) {
         console.error("Error fetching bot response:", error);
         handleBotResponse("Sorry, something went wrong. Please try again.");
@@ -103,6 +98,7 @@ export default function MainChat({ sessionId }: MainChatProps) {
 
     return (
         <div className={classes.mainChat}>
+            <UserQuery />
             <ChatList messages={messages} streamingMessage={currentStreamingMessage} />
             <Spacer y={4} />
             <ChatBar
