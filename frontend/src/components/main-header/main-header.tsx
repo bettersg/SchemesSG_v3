@@ -36,9 +36,9 @@ export default function MainHeader() {
                 }}
             >
                 <NavbarBrand>
-                    <Link className={classes.logo} href="/">
+                    <a className={classes.logo} href="/">
                         <Image src={logoImg} alt="Schemes SG logo" width={120} height={30} priority/>
-                    </Link>
+                    </a>
                 </NavbarBrand>
                 <NavbarContent className="hidden sm:flex gap-4" justify="end">
                     {navbarItems.map((item, idx) => {

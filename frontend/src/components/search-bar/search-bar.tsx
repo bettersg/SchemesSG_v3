@@ -96,6 +96,12 @@ export default function SearchBar({ setSchemeResList, setSessionId }: SearchBarP
             <Textarea
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
+                onKeyDown={async (e) => {
+                    if (e.key === "Enter" && !isBotResponseGenerating) {
+                        e.preventDefault();
+                        await handleSend();
+                    }
+                }}
                 className={classes.searchBar}
                 type="text"
                 size="md"
