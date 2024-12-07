@@ -2,31 +2,28 @@
 
 import { useChat } from "@/app/providers";
 import { Image, Spacer } from "@nextui-org/react";
+import { useParams } from "next/navigation";
+import classes from "./scheme.module.css"
 
 
-type SchemePageParams = {
-    schemeId: string
-}
-
-export default function SchemePage({ params: { schemeId } }: { params: SchemePageParams }) {
+export default function SchemePage() {
     const { schemes } = useChat();
+    const { schemeId } = useParams();
 
     const getScheme = (schemeId: string) => {
-        console.log(`schemes: ${schemes}`);
-        console.log(`schemeId: ${schemeId}`);
-
         const idx = schemes.findIndex(scheme => scheme.schemeId === schemeId);
-        if (idx !== -1) {
+        if (idx >= 0) {
             return schemes[idx]
         } else {
             console.error("No scheme found.")
         }
     }
-    const scheme = getScheme(schemeId);
+    // useParams returns string | string[]
+    const scheme = getScheme(Array.isArray(schemeId) ? schemeId[0] : schemeId);
 
     return (
         scheme &&
-        <div>
+        <div className={classes.schemeContainer}>
             <div>
                 <Image
                     alt={`${scheme.agency} logo`}
