@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatList from "@/components/chat-list/chat-list";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import { Spacer } from "@nextui-org/react";
 import classes from "./main-chat.module.css"
 import { Message, useChat } from "@/app/providers";
+import UserQuery from "../user-query/user-query";
 
 type MainChatProps = {
   sessionId: string;
@@ -17,6 +18,12 @@ export default function MainChat({ sessionId }: MainChatProps) {
     const [userInput, setUserInput] = useState("");
     const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
     const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
+
+    const scrollableDivRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      handleScrollToBottom();
+    }, [messages])
 
     const handleUserInput = async (input: string) => {
         setMessages((prevMessages: Message[]) => [
@@ -86,12 +93,6 @@ export default function MainChat({ sessionId }: MainChatProps) {
         }
         handleBotResponse(fullMessage);
 
-        // const data = await response.json();
-        // if (data.response) {
-        //   handleBotResponse(data.message);
-        // } else {
-        //   handleBotResponse("Sorry, something went wrong. Please try again.");
-        // }
       } catch (error) {
         console.error("Error fetching bot response:", error);
         handleBotResponse("Sorry, something went wrong. Please try again.");
@@ -101,9 +102,19 @@ export default function MainChat({ sessionId }: MainChatProps) {
       }
     };
 
+    const handleScrollToBottom = () => {
+        if (scrollableDivRef.current) {
+        scrollableDivRef.current.scrollTo({
+            top: scrollableDivRef.current.scrollHeight,
+            behavior: 'smooth',
+        });
+        }
+    };
+
     return (
         <div className={classes.mainChat}>
-            <ChatList messages={messages} streamingMessage={currentStreamingMessage} />
+            <UserQuery />
+            <ChatList messages={messages} streamingMessage={currentStreamingMessage} scrollableDivRef={scrollableDivRef} />
             <Spacer y={4} />
             <ChatBar
                 userInput={userInput}

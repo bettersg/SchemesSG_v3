@@ -3,11 +3,14 @@
     flex-direction: column;
     gap: 10px;
     padding: 16px;
+    overflow: hidden auto;
+    max-height: 68vh;
+    padding: 0.5rem;
 }
 
 .messageContainer {
     display: flex;
-    align-items: flex-start; 
+    align-items: flex-start;
 }
 
 .botContainer {
