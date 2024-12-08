@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from "@/app/providers";
-import { Divider, Image, Spacer } from "@nextui-org/react";
+import { Chip, Divider, Image, Spacer } from "@nextui-org/react";
 import { useParams } from "next/navigation";
 import classes from "./scheme.module.css"
 
@@ -21,9 +21,14 @@ export default function SchemePage() {
     // useParams returns string | string[]
     const scheme = getScheme(Array.isArray(schemeId) ? schemeId[0] : schemeId);
 
+    const getSchemeTypes = (schemeTypeStr: string) => {
+        return schemeTypeStr.split(",");
+    }
+
     return (
         scheme &&
         <div className={classes.schemeContainer}>
+            <div>{getSchemeTypes(scheme.schemeType).map((schemeType: string) => <Chip color="primary" className={classes.schemeType}>{schemeType}</Chip>)}</div>
             <div className={classes.schemeTitle}>
                 <Image
                     width={150}
