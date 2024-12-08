@@ -14,3 +14,8 @@
 .cardBody {
     padding: 4px 8px;
 }
+
+.cardFooter {
+    padding: 0.25rem;
+    justify-content: right;
+}
