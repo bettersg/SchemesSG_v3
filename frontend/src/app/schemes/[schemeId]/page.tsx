@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from "@/app/providers";
-import { Chip, Divider, Image, Spacer } from "@nextui-org/react";
+import { Chip, Divider, Image, Link, Spacer } from "@nextui-org/react";
 import { useParams } from "next/navigation";
 import classes from "./scheme.module.css"
 
@@ -54,6 +54,11 @@ export default function SchemePage() {
             <div>
                 <p className="text-3xl font-bold">Benefits</p>
                 <p>{scheme.benefits}</p>
+            </div>
+            <Spacer y={6} />
+            <div>
+                <p className="text-3xl font-bold">Contact</p>
+                <Link isExternal href={scheme.link}>{scheme.link}</Link>
             </div>
 
         </div>
