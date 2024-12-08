@@ -109,7 +109,7 @@ export default function SearchBar({ setSessionId }: SearchBarProps) {
                 label="How can we help?"
                 labelPlacement="outside"
                 description="Please avoid providing identifiable information."
-                placeholder="E.g. I am a dialysis patient in need of financial assistance and food support after being retrenched due to Covid-19."
+                placeholder="E.g. I am a dialysis patient in need of financial assistance and food support."
                 endContent={
                     isBotResponseGenerating
                     ? <Spinner className={classes.endContent} size="sm" />
