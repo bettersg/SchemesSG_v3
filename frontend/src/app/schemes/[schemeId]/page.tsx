@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from "@/app/providers";
-import { Image, Spacer } from "@nextui-org/react";
+import { Divider, Image, Spacer } from "@nextui-org/react";
 import { useParams } from "next/navigation";
 import classes from "./scheme.module.css"
 
@@ -24,19 +24,32 @@ export default function SchemePage() {
     return (
         scheme &&
         <div className={classes.schemeContainer}>
-            <div>
+            <div className={classes.schemeTitle}>
                 <Image
+                    width={150}
+                    height={150}
                     alt={`${scheme.agency} logo`}
-                    height={60}
                     radius="sm"
                     src={scheme.image}
-                    width={60}
                 />
-                <p className="text-2xl font-bold">{scheme.schemeName}</p>
-                <p className="text-l text-default-500">{scheme.agency}</p>
+                <div>
+                    <p className="text-5xl font-bold">{scheme.schemeName}</p>
+                    <p className="text-xl text-default-500">{scheme.agency}</p>
+                </div>
             </div>
-            <Spacer x={3} />
+            <Spacer y={1} />
             <p className="text-base">{scheme.description}</p>
+            <Divider className="my-4" />
+            <div>
+                <p className="text-3xl font-bold">Target Audience</p>
+                <Spacer y={3} />
+                <p>{scheme.targetAudience}</p>
+            </div>
+            <Spacer y={6} />
+            <div>
+                <p className="text-3xl font-bold">Benefits</p>
+                <p>{scheme.benefits}</p>
+            </div>
 
         </div>
     );

@@ -1,4 +1,16 @@
 .schemeContainer {
     max-width: 60rem;
+    height: 90vh;
     margin: auto
+}
+
+.schemeTitle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#scheme-logo {
+    max-width: 60%;
+    height: auto;
 }
