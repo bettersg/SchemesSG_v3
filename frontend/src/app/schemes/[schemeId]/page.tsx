@@ -60,7 +60,6 @@ export default function SchemePage() {
                 <p className="text-3xl font-bold">Contact</p>
                 <Link isExternal href={scheme.link}>{scheme.link}</Link>
             </div>
-
         </div>
     );
 }
