@@ -1,10 +1,9 @@
+import hashlib
 import os
 import re
+import sys
 import threading
 from datetime import datetime, timezone
-from time import perf_counter
-import hashlib
-import sys
 
 import pandas as pd
 from dotenv import dotenv_values, load_dotenv
@@ -16,6 +15,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import AzureChatOpenAI
 from loguru import logger
+
 
 # Remove default handler
 logger.remove()
@@ -221,7 +221,6 @@ class Chatbot:
             dict[str, bool | str]: a dictionary with 2 key-value pairs, first indicates the presence of a response from the chatbot, second contains the response (if any)
         """
 
-        start_time = perf_counter()
         logger.info(f"Starting chatbot method for session {session_id}")
 
         # Define the LLM string identifier
@@ -247,9 +246,6 @@ class Chatbot:
             + top_schemes_text
         )
 
-        logger.info(f"Time to prepare template: {perf_counter() - start_time:.2f}s")
-        history_start = perf_counter()
-
         prompt_template = ChatPromptTemplate.from_messages(
             [
                 ("system", template_text),
@@ -257,7 +253,6 @@ class Chatbot:
                 ("human", "{query}"),
             ]
         )
-        logger.info(f"Time to setup chain with history: {perf_counter() - history_start:.2f}s")
 
         chain = prompt_template | self.__class__.llm
         chain_with_history = RunnableWithMessageHistory(
@@ -265,14 +260,11 @@ class Chatbot:
         )
 
         config = {"configurable": {"session_id": session_id}}
-        llm_start = perf_counter()
         message = chain_with_history.invoke({"query": input_text}, config=config)
-        logger.info(f"Time for LLM response: {perf_counter() - llm_start:.2f}s")
 
         if message and message.content:
             # Cache the response with hashed key
             self.cache.update(llm_string, cache_key, message.content)
-            db_start = perf_counter()
             results_json = {"response": True, "message": message.content}
 
             try:
@@ -293,18 +285,15 @@ class Chatbot:
                         {"role": "assistant", "content": message.content},
                     ]
                     ref.set({"messages": chat_history, "last_updated": current_timestamp})
-                logger.info(f"Time for Firestore update: {perf_counter() - db_start:.2f}s")
             except Exception as e:
                 logger.exception("Error updating chat history in Firestore", e)
 
         else:
             results_json = {"response": False, "message": "No response from the chatbot."}
 
-        logger.info(f"Total chatbot execution time: {perf_counter() - start_time:.2f}s")
         return results_json
 
     def chatbot_stream(self, top_schemes_text: str, input_text: str, session_id: str, query_text: str):
-        start_time = perf_counter()
         logger.info(f"Starting chatbot_stream method for session {session_id}")
 
         # Define the LLM string identifier
@@ -339,12 +328,10 @@ class Chatbot:
             ]
         )
 
-        chain_setup_start = perf_counter()
         chain = prompt_template | self.__class__.llm
         chain_with_history = RunnableWithMessageHistory(
             chain, self.get_session_history, input_messages_key="query", history_messages_key="history"
         )
-        logger.info(f"Time to setup streaming chain: {perf_counter() - chain_setup_start:.2f}s")
 
         config = {"configurable": {"session_id": session_id}}
 
@@ -357,7 +344,6 @@ class Chatbot:
                 yield chunk.content
 
         # After streaming is complete, update chat history and cache
-        db_start = perf_counter()
         try:
             db = self.__class__.firebase_manager.firestore_client
             ref = db.collection("chatHistory").document(session_id)
@@ -370,7 +356,6 @@ class Chatbot:
                 chat_history.append({"role": "user", "content": input_text})
                 chat_history.append({"role": "assistant", "content": full_response})
                 ref.set({"messages": chat_history, "last_updated": current_timestamp + " UTC"})
-            logger.info(f"Time for Firestore update in stream: {perf_counter() - db_start:.2f}s")
 
             # Cache the full response with hashed key
             self.cache.update(llm_string, cache_key, full_response)
@@ -378,5 +363,3 @@ class Chatbot:
 
         except Exception as e:
             logger.exception("Error updating chat history in Firestore", e)
-
-        logger.info(f"Total streaming execution time: {perf_counter() - start_time:.2f}s")
