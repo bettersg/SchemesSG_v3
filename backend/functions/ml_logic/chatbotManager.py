@@ -2,16 +2,32 @@ import os
 import re
 import threading
 from datetime import datetime, timezone
+from time import perf_counter
+import hashlib
+import sys
 
 import pandas as pd
 from dotenv import dotenv_values, load_dotenv
 from fb_manager.firebaseManager import FirebaseManager
 from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.caches import InMemoryCache
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import AzureChatOpenAI
 from loguru import logger
+
+# Remove default handler
+logger.remove()
+
+# Add custom handler with async writing
+logger.add(
+    sys.stderr,
+    level="INFO",  # Set to "DEBUG" in development
+    enqueue=True,  # Enable async logging
+    backtrace=False,  # Disable traceback for better performance
+    diagnose=False,  # Disable diagnosis for better performance
+)
 
 
 def clean_scraped_text(text: str) -> str:
@@ -125,6 +141,9 @@ class Chatbot:
             self.__class__.firebase_manager = firebase_manager
             self.__class__.initialise()
 
+        # Initialize cache with a conservative size
+        self.cache = InMemoryCache(maxsize=1000)  # Start with 1000 entries
+
     def get_session_history(self, session_id: str) -> ChatMessageHistory:
         """
         Method to get session history of a conversation from Firestore.
@@ -137,7 +156,7 @@ class Chatbot:
         """
 
         ai_message = """
-        🌟 Welcome to Scheme Support Chat! 🌟 Feel free to ask me questions like:
+        ��� Welcome to Scheme Support Chat! 🌟 Feel free to ask me questions like:
         - "Can you tell me more about Scheme X?"
         - "How can I apply for support from Scheme X?"
 
@@ -169,20 +188,26 @@ class Chatbot:
                 else:
                     initial_history = ChatMessageHistory(messages=[AIMessage(ai_message)])
                     current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-                    ref.set({
-                        "messages": [
-                            {"role": "assistant", "content": ai_message}
-                        ],
-                        "last_updated": current_timestamp + " UTC"
-                    })
+                    ref.set(
+                        {
+                            "messages": [{"role": "assistant", "content": ai_message}],
+                            "last_updated": current_timestamp + " UTC",
+                        }
+                    )
                     return initial_history
 
             except Exception as e:
                 logger.exception("Error fetching chat history from Firestore", e)
                 return ChatMessageHistory(messages=[AIMessage(ai_message)])
 
+    def _generate_cache_key(self, query_text: str, input_text: str) -> str:
+        """Generate a hashed cache key from query_text and input_text."""
+        combined_text = f"{query_text}:{input_text}"
+        return hashlib.sha256(combined_text.encode()).hexdigest()
 
-    def chatbot(self, top_schemes_text: str, input_text: str, session_id: str) -> dict[str, bool | str]:
+    def chatbot(
+        self, top_schemes_text: str, input_text: str, session_id: str, query_text: str
+    ) -> dict[str, bool | str]:
         """
         Method called when sending message to chatbot
 
@@ -190,10 +215,108 @@ class Chatbot:
             top_schemes_text (str): cleaned text containing information of top schemes for original user query
             input_text (str): message sent by user to chatbot
             session_id (str): session ID for conversation (matches session ID of schemes search query)
+            query_text (str): text of the original query
 
         Returns:
             dict[str, bool | str]: a dictionary with 2 key-value pairs, first indicates the presence of a response from the chatbot, second contains the response (if any)
         """
+
+        start_time = perf_counter()
+        logger.info(f"Starting chatbot method for session {session_id}")
+
+        # Define the LLM string identifier
+        llm_string = "azure_openai_chatbot"
+
+        # Generate hashed cache key
+        cache_key = self._generate_cache_key(query_text, input_text)
+        cached_response = self.cache.lookup(llm_string, cache_key)
+        if cached_response:
+            logger.info(f"Cache hit for query combination (key: {cache_key[:8]}...)")
+            return {"response": True, "message": cached_response}
+
+        template_text = (
+            """
+            I’m a virtual assistant designed to help users explore schemes based on their needs. The user has already received top schemes relevant to their search. My role is to answer follow-up queries by analyzing and extracting insights from the provided scheme data, which includes the scheme name, agency, link to the website, and potentially text scraped from the scheme website.
+            Guidelines for my responses:
+                1.	Contextual Answers: I’ll consider the chat history to ensure coherent, contextual answers.
+                2.	Data-Driven Guidance: My role is to provide advice based on the scheme data only, staying within its scope.
+                3.	Clear Communication: I’ll use simple, clear English while preserving the accuracy of the scheme details.
+                4.	Respect and Focus: I’ll keep interactions respectful and safe, redirecting to scheme-related topics if the conversation diverges.
+                5.	No Speculation: My responses will strictly rely on the given scheme details, avoiding fabrication or assumptions.
+            """
+            + top_schemes_text
+        )
+
+        logger.info(f"Time to prepare template: {perf_counter() - start_time:.2f}s")
+        history_start = perf_counter()
+
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", template_text),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{query}"),
+            ]
+        )
+        logger.info(f"Time to setup chain with history: {perf_counter() - history_start:.2f}s")
+
+        chain = prompt_template | self.__class__.llm
+        chain_with_history = RunnableWithMessageHistory(
+            chain, self.get_session_history, input_messages_key="query", history_messages_key="history"
+        )
+
+        config = {"configurable": {"session_id": session_id}}
+        llm_start = perf_counter()
+        message = chain_with_history.invoke({"query": input_text}, config=config)
+        logger.info(f"Time for LLM response: {perf_counter() - llm_start:.2f}s")
+
+        if message and message.content:
+            # Cache the response with hashed key
+            self.cache.update(llm_string, cache_key, message.content)
+            db_start = perf_counter()
+            results_json = {"response": True, "message": message.content}
+
+            try:
+                db = self.__class__.firebase_manager.firestore_client
+                ref = db.collection("chatHistory").document(session_id)
+                doc = ref.get()
+
+                current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+                if doc.exists:
+                    chat_history = doc.to_dict().get("messages", [])
+                    chat_history.append({"role": "user", "content": input_text})
+                    chat_history.append({"role": "assistant", "content": message.content})
+                    ref.set({"messages": chat_history, "last_updated": current_timestamp + " UTC"})
+                else:
+                    chat_history = [
+                        {"role": "user", "content": input_text},
+                        {"role": "assistant", "content": message.content},
+                    ]
+                    ref.set({"messages": chat_history, "last_updated": current_timestamp})
+                logger.info(f"Time for Firestore update: {perf_counter() - db_start:.2f}s")
+            except Exception as e:
+                logger.exception("Error updating chat history in Firestore", e)
+
+        else:
+            results_json = {"response": False, "message": "No response from the chatbot."}
+
+        logger.info(f"Total chatbot execution time: {perf_counter() - start_time:.2f}s")
+        return results_json
+
+    def chatbot_stream(self, top_schemes_text: str, input_text: str, session_id: str, query_text: str):
+        start_time = perf_counter()
+        logger.info(f"Starting chatbot_stream method for session {session_id}")
+
+        # Define the LLM string identifier
+        llm_string = "azure_openai_chatbot"
+
+        # Generate hashed cache key
+        cache_key = self._generate_cache_key(query_text, input_text)
+        cached_response = self.cache.lookup(llm_string, cache_key)
+        if cached_response:
+            logger.info(f"Cache hit for query combination (key: {cache_key[:8]}...)")
+            yield cached_response
+            return
 
         template_text = (
             """
@@ -216,89 +339,25 @@ class Chatbot:
             ]
         )
 
+        chain_setup_start = perf_counter()
         chain = prompt_template | self.__class__.llm
         chain_with_history = RunnableWithMessageHistory(
             chain, self.get_session_history, input_messages_key="query", history_messages_key="history"
         )
+        logger.info(f"Time to setup streaming chain: {perf_counter() - chain_setup_start:.2f}s")
 
         config = {"configurable": {"session_id": session_id}}
-        message = chain_with_history.invoke({"query": input_text}, config=config)
 
-        if message and message.content:
-            results_json = {"response": True, "message": message.content}
-
-            try:
-                db = self.__class__.firebase_manager.firestore_client
-                ref = db.collection("chatHistory").document(session_id)
-                doc = ref.get()
-
-                current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-
-                if doc.exists:
-                    chat_history = doc.to_dict().get("messages", [])
-                    chat_history.append({"role": "user", "content": input_text})
-                    chat_history.append({"role": "assistant", "content": message.content})
-                    ref.set({
-                        "messages": chat_history,
-                        "last_updated": current_timestamp + " UTC"
-                    })
-                else:
-                    chat_history = [
-                        {"role": "user", "content": input_text},
-                        {"role": "assistant", "content": message.content},
-                    ]
-                    ref.set({
-                        "messages": chat_history,
-                        "last_updated": current_timestamp
-                    })
-            except Exception as e:
-                logger.exception("Error updating chat history in Firestore", e)
-
-        else:
-            results_json = {"response": False, "message": "No response from the chatbot."}
-
-        return results_json
-
-    def chatbot_stream(self, top_schemes_text: str, input_text: str, session_id: str):
-        """Streaming version of the chatbot method"""
-        template_text = (
-            """
-            I’m a virtual assistant designed to help users explore schemes based on their needs. The user has already received top schemes relevant to their search. My role is to answer follow-up queries by analyzing and extracting insights from the provided scheme data, which includes the scheme name, agency, link to the website, and potentially text scraped from the scheme website.
-            Guidelines for my responses:
-                1.	Contextual Answers: I’ll consider the chat history to ensure coherent, contextual answers.
-                2.	Data-Driven Guidance: My role is to provide advice based on the scheme data only, staying within its scope.
-                3.	Clear Communication: I’ll use simple, clear English while preserving the accuracy of the scheme details.
-                4.	Respect and Focus: I’ll keep interactions respectful and safe, redirecting to scheme-related topics if the conversation diverges.
-                5.	No Speculation: My responses will strictly rely on the given scheme details, avoiding fabrication or assumptions.
-            """
-            + top_schemes_text
-        )
-
-        prompt_template = ChatPromptTemplate.from_messages([
-            ("system", template_text),
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{query}"),
-        ])
-
-        chain = prompt_template | self.__class__.llm
-        chain_with_history = RunnableWithMessageHistory(
-            chain,
-            self.get_session_history,
-            input_messages_key="query",
-            history_messages_key="history"
-        )
-
-        config = {"configurable": {"session_id": session_id}}
+        full_response = ""  # Initialize full_response to accumulate streamed content
 
         # Use streaming
-        for chunk in chain_with_history.stream(
-            {"query": input_text},
-            config=config
-        ):
-            if hasattr(chunk, 'content'):
+        for chunk in chain_with_history.stream({"query": input_text}, config=config):
+            if hasattr(chunk, "content"):
+                full_response += chunk.content  # Accumulate the content
                 yield chunk.content
 
-        # After streaming is complete, update chat history
+        # After streaming is complete, update chat history and cache
+        db_start = perf_counter()
         try:
             db = self.__class__.firebase_manager.firestore_client
             ref = db.collection("chatHistory").document(session_id)
@@ -310,9 +369,14 @@ class Chatbot:
                 chat_history = doc.to_dict().get("messages", [])
                 chat_history.append({"role": "user", "content": input_text})
                 chat_history.append({"role": "assistant", "content": full_response})
-                ref.set({
-                    "messages": chat_history,
-                    "last_updated": current_timestamp + " UTC"
-                })
+                ref.set({"messages": chat_history, "last_updated": current_timestamp + " UTC"})
+            logger.info(f"Time for Firestore update in stream: {perf_counter() - db_start:.2f}s")
+
+            # Cache the full response with hashed key
+            self.cache.update(llm_string, cache_key, full_response)
+            logger.info(f"Cached response with key: {cache_key[:8]}...")
+
         except Exception as e:
             logger.exception("Error updating chat history in Firestore", e)
+
+        logger.info(f"Total streaming execution time: {perf_counter() - start_time:.2f}s")
