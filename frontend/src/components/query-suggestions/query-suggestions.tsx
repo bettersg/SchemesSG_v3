@@ -13,7 +13,7 @@ interface QuerySuggestionsProps {
 
 const QuerySuggestions = ({ setUserInput }: QuerySuggestionsProps) => {
   const suggestions = [
-    "Can you summarize the eligibility requirements and benefits for <insert scheme name here>?",
+    "Can you summarise the eligibility requirements and benefits for <insert scheme name here>?",
     "Can you draft an email template to apply for <insert scheme name here>?",
     "What are the typical processing times and next steps after applying?",
   ];
