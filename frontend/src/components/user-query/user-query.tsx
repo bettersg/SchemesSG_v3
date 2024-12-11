@@ -1,10 +1,12 @@
 import { Card, CardBody, CardFooter } from "@nextui-org/card";
 import classes from './user-query.module.css';
 import { useChat } from "@/app/providers";
-import { Button } from "@nextui-org/react";
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from "@nextui-org/react";
+import ResetQueryModal from "../reset-query-modal/reset-query-modal";
 
 export default function UserQuery() {
     const { userQuery, setSchemes } = useChat();
+    const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
     const handleReset = () => {
       localStorage.removeItem('schemes');
@@ -22,9 +24,10 @@ export default function UserQuery() {
                 Your query is: <b>{userQuery}</b>
             </CardBody>
             <CardFooter className={classes.cardFooter}>
-                <Button className="text-tiny" onClick={handleReset} color="primary" radius="full" size="sm">
+                <Button className="text-tiny" onPress={onOpen} color="primary" radius="full" size="sm">
                     Reset Query
                 </Button>
+                <ResetQueryModal isOpen={isOpen} onOpenChange={onOpenChange} handleReset={handleReset} />
             </CardFooter>
         </Card>
     )
