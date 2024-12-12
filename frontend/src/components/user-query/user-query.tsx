@@ -1,7 +1,7 @@
 import { Card, CardBody, CardFooter } from "@nextui-org/card";
 import classes from './user-query.module.css';
 import { useChat } from "@/app/providers";
-import { Button, useDisclosure } from "@nextui-org/react";
+import { Button, Tooltip, useDisclosure } from "@nextui-org/react";
 import ResetQueryModal from "../reset-query-modal/reset-query-modal";
 import { ResetIcon } from "@/assets/icons/reset-icon";
 
@@ -25,9 +25,11 @@ export default function UserQuery() {
                 Your query is: <b>{userQuery}</b>
             </CardBody>
             <CardFooter className={classes.cardFooter}>
-                <Button onPress={onOpen} isIconOnly radius="full" size="sm" className={classes.resetButton}>
-                    <ResetIcon />
-                </Button>
+                <Tooltip content="Reset Query" offset={-7}>
+                    <Button onPress={onOpen} isIconOnly radius="full" size="sm" className={classes.resetButton}>
+                        <ResetIcon />
+                    </Button>
+                </Tooltip>
                 <ResetQueryModal isOpen={isOpen} onOpenChange={onOpenChange} handleReset={handleReset} />
             </CardFooter>
         </Card>
