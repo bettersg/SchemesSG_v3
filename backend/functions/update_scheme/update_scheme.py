@@ -47,6 +47,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         entryId = request_json.get("entryId")
         userName = request_json.get("userName")
         userEmail = request_json.get("userEmail")
+        typeOfRequest = request_json.get("typeOfRequest")
         timestamp = datetime.now(timezone.utc)
 
         # Can use the below logic to have some null checks
