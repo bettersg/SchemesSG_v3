@@ -69,7 +69,8 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             "entryId": entryId,
             "timestamp": timestamp,
             "userName": userName,
-            "userEmail": userEmail
+            "userEmail": userEmail,
+            "typeOfRequest": typeOfRequest
         }
 
         # Add the data to Firestore
