@@ -1,7 +1,6 @@
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from '../../assets/icons/search-icon';
 import classes from './chat-bar.module.css';
-import { RefObject } from "react";
 
 interface ChatBarProps {
     userInput: string;

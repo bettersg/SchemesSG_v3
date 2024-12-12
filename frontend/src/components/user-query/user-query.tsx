@@ -1,8 +1,9 @@
 import { Card, CardBody, CardFooter } from "@nextui-org/card";
 import classes from './user-query.module.css';
 import { useChat } from "@/app/providers";
-import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from "@nextui-org/react";
+import { Button, useDisclosure } from "@nextui-org/react";
 import ResetQueryModal from "../reset-query-modal/reset-query-modal";
+import { ResetIcon } from "@/assets/icons/reset-icon";
 
 export default function UserQuery() {
     const { userQuery, setSchemes } = useChat();
@@ -24,8 +25,8 @@ export default function UserQuery() {
                 Your query is: <b>{userQuery}</b>
             </CardBody>
             <CardFooter className={classes.cardFooter}>
-                <Button className="text-tiny" onPress={onOpen} color="primary" radius="full" size="sm">
-                    Reset Query
+                <Button onPress={onOpen} isIconOnly radius="full" size="sm" className={classes.resetButton}>
+                    <ResetIcon />
                 </Button>
                 <ResetQueryModal isOpen={isOpen} onOpenChange={onOpenChange} handleReset={handleReset} />
             </CardFooter>
