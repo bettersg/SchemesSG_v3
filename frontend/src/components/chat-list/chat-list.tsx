@@ -2,16 +2,18 @@ import { Avatar, Card, CardBody } from "@nextui-org/react";
 import classes from "./chat-list.module.css"
 import ReactMarkdown from "react-markdown";
 import { Message } from "@/app/providers";
+import { RefObject } from "react";
 
 interface ChatListProps {
   messages: Message[];
   streamingMessage?: string;
+  scrollableDivRef: RefObject<HTMLDivElement>
 }
 
-export default function ChatList({ messages, streamingMessage }: ChatListProps) {
+export default function ChatList({ messages, streamingMessage, scrollableDivRef }: ChatListProps) {
 
   return (
-    <div className={classes.chatList}>
+    <div className={classes.chatList} ref={scrollableDivRef}>
         {messages.map((msg, index) => (
             <div key={index} className={`${classes.messageContainer} ${msg.type === "user" ? classes.userContainer : classes.botContainer}`}>
                 {msg.type === "bot" && (

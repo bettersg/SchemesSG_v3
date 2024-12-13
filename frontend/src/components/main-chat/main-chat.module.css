@@ -1,7 +1,11 @@
 .mainChat {
+    display: flex;
+    flex-direction: column;
+    background: #FAFBFE;
+    border-radius: 1rem;
     margin: auto;
     width: 100%;
-    max-height: 40rem;
+    height: 100%;
     padding: 0.8rem;
     overflow-y: auto
 }

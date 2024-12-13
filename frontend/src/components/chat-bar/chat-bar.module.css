@@ -1,8 +1,18 @@
-.chatBar textarea::placeholder{
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.2);
+.chatBar {
+  margin-top: auto;
+  z-index: 1;
+}
+
+.chatBar textarea {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+
+.chatBar textarea::placeholder {
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.2);
 }
 
 .endContent {
-    margin-top: auto
+  margin-top: auto;
 }
