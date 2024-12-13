@@ -14,19 +14,35 @@ export default function FeedbackPage() {
     message: string;
   }>({ type: null, message: "" });
 
+  const validateForm = () => {
+    if (!userName.trim() || !userEmail.trim() || !feedbackText.trim()) {
+      setSubmitStatus({
+        type: "error",
+        message: "Please fill in all required fields",
+      });
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userEmail)) {
+      setSubmitStatus({
+        type: "error",
+        message: "Please enter a valid email address",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!feedbackText.trim()) {
-      setSubmitStatus({
-        type: "error",
-        message: "Please provide your feedback",
-      });
+    if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
-    setSubmitStatus({ type: null, message: "" });
 
     try {
       const response = await fetch(
@@ -90,7 +106,7 @@ export default function FeedbackPage() {
                   label="Name"
                   placeholder="Enter your name"
                   value={userName}
-                  required
+                  isRequired
                   onChange={(e) => setUserName(e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
@@ -101,7 +117,7 @@ export default function FeedbackPage() {
                   label="Email"
                   placeholder="Enter your email"
                   type="email"
-                  required
+                  isRequired
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
                   variant="bordered"
@@ -112,13 +128,12 @@ export default function FeedbackPage() {
 
               <Textarea
                 label="Your Feedback"
-                required
+                isRequired
                 placeholder="Please share your thoughts, suggestions, or concerns"
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
-                isRequired
                 minRows={6}
                 className={styles.textarea}
               />
