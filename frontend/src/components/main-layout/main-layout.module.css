@@ -1,6 +1,19 @@
 .contentWrapper {
-  /* padding: 2em 5em; */
-  margin: 0 auto;
-  /* max-width: 1200px; */
-  box-sizing: border-box;
+    padding: 0.5em 4em;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.homePage {
+    max-width: 1500px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.welcomeMsg {
+    width: 35rem;
+    padding-bottom: 3rem;
 }
