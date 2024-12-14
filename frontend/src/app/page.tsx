@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import SearchBar from "@/components/search-bar/search-bar";
 import { useChat } from "./providers";
 import classes from "../components/main-layout/main-layout.module.css";
-import QueryGenerator from "@/components/query-generator/searchbar";
+import QueryGenerator from "@/components/query-generator/query-generator";
 
 export default function Home() {
   const { schemes } = useChat();
