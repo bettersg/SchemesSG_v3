@@ -3,7 +3,7 @@
 import { UniqueId } from "aws-sdk/clients/qldb"
 import { useState } from "react"
 import classes from "./styleClasses.module.css"
-import { Card, CardBody, Textarea, Button, Input, Dropdown, Spinner, DropdownTrigger, DropdownItem, DropdownMenu } from "@nextui-org/react"
+import { Card, CardBody, Textarea, Button, Input, Spinner, Radio, RadioGroup } from "@nextui-org/react"
 
 export type UpdateSchemeParams = {
     typeOfRequest?: "Update" | "New",
@@ -119,6 +119,7 @@ export default function UpdateSchemesPage() {
 
                             <Input
                                 label="Scheme"
+                                isRequired
                                 placeholder="Enter the scheme name"
                                 value={updates.scheme || ""}
                                 onChange={(e) => handleInputChange("scheme", e.target.value)}
@@ -138,15 +139,21 @@ export default function UpdateSchemesPage() {
                                 className={classes.input}
                             />
 
-                            <Input
-                                label="Type of Request"
-                                placeholder="Enter type of request (Update/New)"
+                            <RadioGroup label="Type of Request"
+                                size="sm"
+                                isRequired
                                 value={updates.typeOfRequest || ""}
-                                onChange={(e) => handleInputChange("typeOfRequest", e.target.value)}
-                                variant="bordered"
-                                labelPlacement="outside"
-                                className={classes.input}
-                            />
+                                onValueChange={(val) => handleInputChange("typeOfRequest", val)}
+                                orientation="horizontal"
+                                aria-labelledby="type-of-request"
+                            >
+                                <Radio value="Update">
+                                    Update
+                                </Radio>
+                                <Radio value="New">
+                                    New
+                                </Radio>
+                            </RadioGroup>
 
                             <Textarea
                                 label="Description"
@@ -168,16 +175,6 @@ export default function UpdateSchemesPage() {
                                 labelPlacement="outside"
                                 minRows={4}
                                 className={classes.textarea}
-                            />
-
-                            <Input
-                                label="Status"
-                                placeholder="Enter the status"
-                                value={updates.status || ""}
-                                onChange={(e) => handleInputChange("status", e.target.value)}
-                                variant="bordered"
-                                labelPlacement="outside"
-                                className={classes.input}
                             />
 
                             {submitStatus && (

@@ -24,9 +24,14 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userQuery, setUserQuery] = useState<string>("");
-  const [schemes, setSchemes] = useState<Scheme[]>(
-    () => JSON.parse(localStorage.getItem('schemes') || '[]')
-  );
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+
+  useEffect(() => {
+    const storedSchemes = localStorage.getItem('schemes');
+    if (storedSchemes) {
+      setSchemes(JSON.parse(storedSchemes));
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('schemes', JSON.stringify(schemes));
