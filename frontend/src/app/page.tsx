@@ -68,7 +68,7 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div>
+        <div className="flex flex-col items-center justify-center h-full">
           <div className={classes.welcomeMsg}>
             {/* Desktop*/}
             <div className="hidden md:block">
