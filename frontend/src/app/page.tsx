@@ -9,7 +9,6 @@ import UserQuery from "@/components/user-query/user-query";
 import { Button } from "@nextui-org/react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
-import classes from "../components/main-layout/main-layout.module.css";
 import QueryGenerator from "@/components/query-generator/query-generator";
         
 export default function Home() {
