@@ -79,23 +79,17 @@ const QueryGenerator = () => {
   const [selectedOrganisation, setSelectedOrganisation] = useState(
     new Set(["Organisation"])
   );
-  const selectedOrganisationText = Array.from(selectedOrganisation)[0];
-  const [firstWord, ...restWords] = selectedOrganisationText.split(" ");
-  const truncatedText = restWords.join(" ");
 
-  const renderButton = (selectedText: string) => {
-    const [firstWord, ...restWords] = selectedText.split(" ");
-    const truncatedText = restWords.join(" ");
-
+  const renderButton = (selectedText: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<React.AwaitedReactNode> | null | undefined) => {
     return (
-      <span className={`${styles.truncate} inline-block`}>
-        {firstWord} {truncatedText}
+      <span className={`${styles.truncate} inline-block font-bold`}>
+        {selectedText}
       </span>
     );
   };
 
   return (
-    <div className="border-[1px] w-full md:w-auto py-4 rounded-full shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center px-4">
+    <div className="border-[1px] w-full md:w-[800px] py-4 rounded-full shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center px-4">
       <Dropdown>
         <DropdownTrigger>
           <Button className="max-w-[150px] overflow-hidden" variant="light">
@@ -136,7 +130,7 @@ const QueryGenerator = () => {
 
       <Dropdown>
         <DropdownTrigger>
-          <Button className="max-w-[150px] overflow-hidden" variant="light">
+          <Button className="max-w-[180px] overflow-hidden" variant="light">
             {renderButton(Array.from(selectedSupportProvided)[0])}
           </Button>
         </DropdownTrigger>
@@ -155,7 +149,7 @@ const QueryGenerator = () => {
 
       <Dropdown>
         <DropdownTrigger>
-          <Button className="max-w-[115px] overflow-hidden" variant="light">
+          <Button className="max-w-[130px] overflow-hidden" variant="light">
             {renderButton(Array.from(selectedOrganisation)[0])}
           </Button>
         </DropdownTrigger>

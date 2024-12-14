@@ -38,7 +38,9 @@ export default function Home() {
             This is an AI-supported search engine for public social assistance
             schemes in Singapore.
           </p>
-          <QueryGenerator />
+          <div className={classes.centered}>
+            <QueryGenerator />
+          </div>
           <SearchBar setSessionId={setSessionId} />
         </div>
       )}
