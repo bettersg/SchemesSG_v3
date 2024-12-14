@@ -121,6 +121,8 @@ export default function SearchBar({
         schemesRes && setSchemes(schemesRes);
         setSessionId(sessionId);
         handleUserInput(userInput);
+      } else {
+        handleUserInput(userInput);
       }
     }
   };
