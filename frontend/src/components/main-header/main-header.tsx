@@ -14,11 +14,7 @@ import {
   NavbarMenuItem,
   NavbarMenuToggle,
 } from "@nextui-org/navbar";
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
 import { HamburgerIcon } from "../../assets/icons/hamburger-icon";
-import classes from "./main-header.module.css";
 
 type NavbarItem = {
   label: string;
