@@ -13,7 +13,6 @@ import sys
 
 from chat.chat import chat_message  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
-from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
