@@ -80,7 +80,18 @@ const QueryGenerator = () => {
     new Set(["Organisation"])
   );
 
-  const renderButton = (selectedText: string | number | bigint | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<React.AwaitedReactNode> | null | undefined) => {
+  const renderButton = (
+    selectedText:
+      | string
+      | number
+      | bigint
+      | boolean
+      | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+      | Iterable<React.ReactNode>
+      | Promise<React.AwaitedReactNode>
+      | null
+      | undefined
+  ) => {
     return (
       <span className={`${styles.truncate} inline-block font-bold`}>
         {selectedText}
@@ -98,7 +109,8 @@ const QueryGenerator = () => {
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Tags"
-          selectionMode="single"
+          closeOnSelect={false}
+          selectionMode="multiple"
           onSelectionChange={(keys) =>
             setSelectedTag(new Set([Array.from(keys)[0] as string]))
           }
@@ -117,7 +129,8 @@ const QueryGenerator = () => {
         </DropdownTrigger>
         <DropdownMenu
           aria-label="For Who"
-          selectionMode="single"
+          closeOnSelect={false}
+          selectionMode="multiple"
           onSelectionChange={(keys) =>
             setSelectedForWho(new Set([Array.from(keys)[0] as string]))
           }
@@ -136,7 +149,8 @@ const QueryGenerator = () => {
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Support Provided"
-          selectionMode="single"
+          closeOnSelect={false}
+          selectionMode="multiple"
           onSelectionChange={(keys) =>
             setSelectedSupportProvided(new Set([Array.from(keys)[0] as string]))
           }
@@ -155,7 +169,8 @@ const QueryGenerator = () => {
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Organisation"
-          selectionMode="single"
+          closeOnSelect={false}
+          selectionMode="multiple"
           onSelectionChange={(keys) =>
             setSelectedOrganisation(new Set([Array.from(keys)[0] as string]))
           }
