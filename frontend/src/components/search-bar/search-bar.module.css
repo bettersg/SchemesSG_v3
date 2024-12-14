@@ -1,0 +1,14 @@
+.searchBar textarea::placeholder {
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.searchBar {
+  width: 100%;
+  max-width: 35rem;
+  margin: 0 auto;
+}
+
+.endContent {
+  margin-top: auto;
+}

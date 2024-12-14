@@ -1,3 +1,10 @@
 /notebooks
 /__pycache__
 .env
+functions/venv/
+functions/__pycache__/
+functions/.pytest_cache/
+**/*.pyc
+**/__pycache__
+.pytest_cache
+*.pyc
