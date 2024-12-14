@@ -29,6 +29,7 @@ export default function MainHeader() {
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Feedback", href: "/feedback" },
+    { label: "Contribute", href: "/contribute" }
   ];
 
   return (

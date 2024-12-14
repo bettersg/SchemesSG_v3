@@ -33,9 +33,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [schemes, setSchemes] = useState<Scheme[]>([]);
 
   useEffect(() => {
-    const savedSchemes = localStorage.getItem("schemes");
-    if (savedSchemes) {
-      setSchemes(JSON.parse(savedSchemes));
+    const storedSchemes = localStorage.getItem('schemes');
+    if (storedSchemes) {
+      setSchemes(JSON.parse(storedSchemes));
     }
   }, []);
 
