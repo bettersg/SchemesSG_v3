@@ -11,10 +11,11 @@ import json
 # Firestore client
 firebase_manager = FirebaseManager()
 
+
 @https_fn.on_request(
-        region="asia-southeast1",
-        memory=options.MemoryOption.GB_1,
-    )
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,
+)
 def feedback(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for logging user feedback
@@ -26,14 +27,23 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: response sent to client
     """
     headers = {
-        'Access-Control-Allow-Origin': 'http://localhost:3000'
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Max-Age": "3600",
     }
+
+    if req.method == "OPTIONS":
+        return https_fn.Response(response="", status=204, headers=headers)
+
     if req.method != "POST":
         return https_fn.Response(
-            response=json.dumps({"success": False, "message": "Only POST requests are allowed"}),
+            response=json.dumps(
+                {"success": False, "message": "Only POST requests are allowed"}
+            ),
             status=405,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )
 
     try:
@@ -46,10 +56,12 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
 
         if not feedback_text:
             return https_fn.Response(
-                response=json.dumps({"success": False, "message": "Missing required feedbackText field"}),
+                response=json.dumps(
+                    {"success": False, "message": "Missing required fields"}
+                ),
                 status=400,
                 mimetype="application/json",
-                headers=headers
+                headers=headers,
             )
 
         # Prepare the data for Firestore
@@ -65,17 +77,21 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
 
         # Return a success response
         return https_fn.Response(
-            response=json.dumps({"success": True, "message": "Feedback successfully added"}),
+            response=json.dumps(
+                {"success": True, "message": "Feedback successfully added"}
+            ),
             status=200,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )
 
     except Exception as e:
         print(f"Error: {e}")
         return https_fn.Response(
-            response=json.dumps({"success": False, "message": "Failed to add feedback"}),
+            response=json.dumps(
+                {"success": False, "message": "Failed to add feedback"}
+            ),
             status=500,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )

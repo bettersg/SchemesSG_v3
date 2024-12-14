@@ -26,8 +26,15 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         https_fn.Response: response sent to client
     """
     headers = {
-        'Access-Control-Allow-Origin': 'http://localhost:3000'
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Max-Age": "3600",
     }
+
+    if req.method == "OPTIONS":
+        return https_fn.Response(response="", status=204, headers=headers)
+    
     if req.method != "POST":
         return https_fn.Response(
             response=json.dumps({"success": False, "message": "Only POST requests are allowed"}),
