@@ -1,42 +1,51 @@
+/* Footer Container */
 .footer {
-    margin-top: 2rem;
-    padding: 2em 6em;
-    color: white;
-    background-color: rgba(23, 19, 71, 1);
+  background-color: rgba(23, 19, 71, 1);
+  color: white;
+  margin-top: 2rem;
+  padding: 2em 6em;
 }
 
 .inner {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2em;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2em;
 }
 
 .groups {
-    display: flex;
-    flex-wrap: wrap;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .wrapper {
-    width: rem(160px);
-    display: flex;
-    flex-direction: column;
-    margin-right: 2em;
-}
-
-.link {
-    display: block;
-    color: #A1A1AA;
-    padding-top: rem(4px);
-    padding-bottom: rem(4px);
-    font-size: small;
-
-    &:hover {
-        text-decoration: underline;
-    }
+  display: flex;
+  flex-direction: column;
+  margin-right: 2em;
+  width: rem(160px);
 }
 
 .title {
-    font-weight: 800;
-    color: #FFFFFF;
-    margin-bottom: rem(6px)
+  color: #ffffff;
+  font-weight: 800;
+  margin-bottom: rem(6px);
+}
+
+.link {
+  color: #a1a1aa;
+  display: block;
+  font-size: small;
+  padding-bottom: rem(4px);
+  padding-top: rem(4px);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    background-color: rgba(23, 19, 71, 1);
+    color: white;
+    padding: 2em 1.5em 7em 1.5em;
+  }
 }
