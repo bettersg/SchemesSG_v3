@@ -82,12 +82,12 @@ export default function MainHeader() {
           </NavbarBrand>
           <NavbarMenuToggle
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            className="sm:hidden text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
+            className="md:hidden text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
             icon={<HamburgerIcon />}
           />
         </NavbarContent>
 
-        <NavbarContent className="hidden sm:flex gap-4" justify="end">
+        <NavbarContent className="hidden md:flex gap-4" justify="end">
           {navbarItems.map((item, idx) => (
             <NavbarItem
               className={`${classes.navbarItem} hover:text-blue-600 transition-colors`}

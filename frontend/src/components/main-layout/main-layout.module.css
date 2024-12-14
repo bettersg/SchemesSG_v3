@@ -26,29 +26,31 @@
   display: grid;
   width: 100%;
   gap: 0.5rem;
-  height: 90vh;
+  height: auto;
 }
 
+/* Tablet Breakpoint (768px) */
 @media (max-width: 768px) {
   .contentWrapper {
-    padding: 0.5em 1.5em;
+    padding: 0.5em 1em;
   }
-}
 
-@media (min-width: 768px) {
   .homePage {
-    padding: 1rem;
+    padding: 0;
   }
-}
 
-@media (min-width: 768px) {
   .mainLayout {
+    display: block;
     grid-template-columns: 1fr 1fr;
+    height: auto;
+    padding: unset;
   }
 }
 
+/* Desktop Breakpoint (1024px) */
 @media (min-width: 1024px) {
   .mainLayout {
     grid-template-columns: 2fr 3fr;
+    height: 90vh;
   }
 }

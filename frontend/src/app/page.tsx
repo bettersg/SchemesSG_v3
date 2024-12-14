@@ -1,23 +1,67 @@
 "use client";
 
+import { MinimizeIcon } from "@/assets/icons/minimize-icon";
+import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat/main-chat";
 import SchemesList from "@/components/schemes/schemes-list";
 import SearchBar from "@/components/search-bar/search-bar";
+import UserQuery from "@/components/user-query/user-query";
+import { Button } from "@nextui-org/react";
 import { useState } from "react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
-
 export default function Home() {
   const { schemes } = useChat();
   const [sessionId, setSessionId] = useState<string>("");
-
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
     <main className={classes.homePage}>
       {schemes.length > 0 ? (
-        <div className={classes.mainLayout}>
-          <MainChat sessionId={sessionId} />
-          <SchemesList schemes={schemes} />
-        </div>
+        <>
+          {/* Desktop Layout */}
+          <div className={classes.mainLayout}>
+            <div className="flex md:hidden">
+              <UserQuery />
+            </div>
+            <div className="hidden md:flex">
+              <MainChat sessionId={sessionId} />
+            </div>
+            <SchemesList schemes={schemes} />
+          </div>
+
+          {/* Mobile Layout */}
+          <div
+            className={`md:hidden fixed bottom-0 left-0 right-0 bg-white transition-all duration-300 ease-in-out z-50
+            ${isExpanded ? "h-full" : "h-16"}`}
+          >
+            <div
+              className={`absolute top-0 left-0 right-0 flex justify-between items-center p-2 bg-white border-b
+              ${isExpanded ? "border-gray-100" : "border-none"}`}
+            >
+              {isExpanded && (
+                <span className="text-sm font-medium px-2">Chat</span>
+              )}
+              <Button
+                isIconOnly
+                variant="light"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="z-10 ml-auto"
+              >
+                {isExpanded && <MinimizeIcon />}
+              </Button>
+            </div>
+            <div
+              className={`w-full h-full transition-opacity duration-300 pt-12
+              ${isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            >
+              <MainChat sessionId={sessionId} />
+            </div>
+            <MiniChatBar
+              onExpand={() => setIsExpanded(true)}
+              isExpanded={isExpanded}
+            />
+          </div>
+        </>
       ) : (
         <div>
           <div className={classes.welcomeMsg}>
