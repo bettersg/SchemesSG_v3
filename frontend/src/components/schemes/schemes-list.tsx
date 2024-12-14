@@ -1,7 +1,8 @@
 import { Card, CardHeader, CardBody, Image, Spacer } from "@nextui-org/react";
 import { Link } from "@nextui-org/react";
 
-export type Scheme = {
+// Type for scheme from search results
+export type SearchResScheme = {
     schemeType: string,
     schemeName: string,
     targetAudience: string,
@@ -19,7 +20,7 @@ export type Scheme = {
 }
 
 interface SchemesListProps {
-    schemes: Scheme[]
+    schemes: SearchResScheme[]
 }
 
 export default function SchemesList({ schemes }: SchemesListProps) {

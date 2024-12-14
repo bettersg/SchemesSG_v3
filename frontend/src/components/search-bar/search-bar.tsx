@@ -5,13 +5,13 @@ import { SearchIcon } from '../../assets/icons/search-icon';
 import classes from './search-bar.module.css';
 import { useState } from "react";
 import { useChat } from "@/app/providers";
-import { Scheme } from "../schemes/schemes-list";
+import { SearchResScheme } from "../schemes/schemes-list";
 
 interface SearchBarProps {
     setSessionId: (val: string) => void;
 }
 
-const mapToScheme = (rawData: any): Scheme => {
+const mapToSearchResScheme = (rawData: any): SearchResScheme => {
     return {
         schemeType: rawData["Scheme Type"] || "",
         schemeName: rawData["Scheme"] || "",
@@ -69,7 +69,7 @@ export default function SearchBar({ setSessionId }: SearchBarProps) {
             const res = await response.json();
             const sessionId: string = res["sessionID"];
             setIsBotResponseGenerating(false);
-            const schemesRes: Scheme[] = res.data.map(mapToScheme);
+            const schemesRes: SearchResScheme[] = res.data.map(mapToSearchResScheme);
             return { schemesRes, sessionId };
         } catch (error) {
             console.error("Error making POST request:", error);

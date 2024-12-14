@@ -1,6 +1,6 @@
 "use client";
 
-import { Scheme } from "@/components/schemes/schemes-list";
+import { SearchResScheme } from "@/components/schemes/schemes-list";
 import { NextUIProvider } from "@nextui-org/react";
 import React, {
   createContext,
@@ -21,8 +21,8 @@ type ChatContextType = {
   setUserQuery: React.Dispatch<React.SetStateAction<string>>;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-  schemes: Scheme[];
-  setSchemes: React.Dispatch<React.SetStateAction<Scheme[]>>;
+  schemes: SearchResScheme[];
+  setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -30,7 +30,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userQuery, setUserQuery] = useState<string>("");
-  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
 
   useEffect(() => {
     const storedSchemes = localStorage.getItem('schemes');
