@@ -19,3 +19,9 @@
     padding: 0.25rem;
     justify-content: right;
 }
+
+.resetButton {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}

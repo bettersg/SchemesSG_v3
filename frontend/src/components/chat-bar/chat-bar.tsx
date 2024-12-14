@@ -2,6 +2,7 @@ import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from "../../assets/icons/search-icon";
 import QuerySuggestions from "../query-suggestions/query-suggestions";
 import classes from "./chat-bar.module.css";
+
 interface ChatBarProps {
   userInput: string;
   setUserInput: React.Dispatch<React.SetStateAction<string>>;
