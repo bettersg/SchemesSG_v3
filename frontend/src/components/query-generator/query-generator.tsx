@@ -9,6 +9,17 @@ import {
 } from "@nextui-org/react";
 import styles from "./query-generator.module.css";
 
+// Define the props interface
+interface QueryGeneratorProps {
+  setSessionId: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedSupportProvided: React.Dispatch<
+    React.SetStateAction<string | null>
+  >;
+  setSelectedForWho: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedOrganisation: React.Dispatch<React.SetStateAction<string | null>>;
+  onSendQuery: () => void;
+}
+
 const tags = [
   "Caregiver",
   "Childcare",
@@ -70,13 +81,20 @@ const organisationTags = [
   "365 Cancer Prevention Society",
 ];
 
-const QueryGenerator = () => {
+const QueryGenerator: React.FC<QueryGeneratorProps> = ({
+  setSessionId,
+  setSelectedSupportProvided,
+  setSelectedForWho,
+  setSelectedOrganisation,
+  onSendQuery,
+}) => {
   const [selectedTag, setSelectedTag] = useState(new Set(["Scheme Type"]));
-  const [selectedForWho, setSelectedForWho] = useState(new Set(["For Who"]));
-  const [selectedSupportProvided, setSelectedSupportProvided] = useState(
-    new Set(["Support Provided"])
+  const [selectedForWhoState, setSelectedForWhoState] = useState(
+    new Set(["For Who"])
   );
-  const [selectedOrganisation, setSelectedOrganisation] = useState(
+  const [selectedSupportProvidedState, setSelectedSupportProvidedState] =
+    useState(new Set(["Support Provided"]));
+  const [selectedOrganisationState, setSelectedOrganisationState] = useState(
     new Set(["Organisation"])
   );
 
@@ -99,6 +117,35 @@ const QueryGenerator = () => {
     );
   };
 
+  const handleSupportProvidedChange = (
+    keys: Iterable<unknown> | ArrayLike<unknown>
+  ) => {
+    const selected = Array.from(keys) as string[];
+    const newSelected = selected.length > 0 ? selected[0] : "Support Provided"; // Default value
+    console.log("Selected Support Provided:", newSelected);
+    setSelectedSupportProvided(newSelected);
+    setSelectedSupportProvidedState(new Set([newSelected]));
+    onSendQuery();
+  };
+
+  const handleForWhoChange = (keys: Iterable<unknown> | ArrayLike<unknown>) => {
+    const selected = Array.from(keys) as string[];
+    const newSelected = selected.length > 0 ? selected[0] : "For Who"; // Default value
+    setSelectedForWho(newSelected);
+    setSelectedForWhoState(new Set([newSelected]));
+    onSendQuery();
+  };
+
+  const handleOrganisationChange = (
+    keys: Iterable<unknown> | ArrayLike<unknown>
+  ) => {
+    const selected = Array.from(keys) as string[];
+    const newSelected = selected.length > 0 ? selected[0] : "Organisation"; // Default value
+    setSelectedOrganisation(newSelected);
+    setSelectedOrganisationState(new Set([newSelected]));
+    onSendQuery();
+  };
+
   return (
     <div className="border-[1px] w-full md:w-[800px] py-4 rounded-full shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center px-4">
       <Dropdown>
@@ -111,9 +158,7 @@ const QueryGenerator = () => {
           aria-label="Tags"
           closeOnSelect={false}
           selectionMode="multiple"
-          onSelectionChange={(keys) =>
-            setSelectedTag(new Set([Array.from(keys)[0] as string]))
-          }
+          onSelectionChange={handleSupportProvidedChange}
         >
           {tags.map((tag) => (
             <DropdownItem key={tag}>{tag}</DropdownItem>
@@ -124,16 +169,14 @@ const QueryGenerator = () => {
       <Dropdown>
         <DropdownTrigger>
           <Button className="max-w-[100px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedForWho)[0])}
+            {renderButton(Array.from(selectedForWhoState)[0])}
           </Button>
         </DropdownTrigger>
         <DropdownMenu
           aria-label="For Who"
           closeOnSelect={false}
           selectionMode="multiple"
-          onSelectionChange={(keys) =>
-            setSelectedForWho(new Set([Array.from(keys)[0] as string]))
-          }
+          onSelectionChange={handleForWhoChange}
         >
           {forWhoTags.map((tag) => (
             <DropdownItem key={tag}>{tag}</DropdownItem>
@@ -144,16 +187,14 @@ const QueryGenerator = () => {
       <Dropdown>
         <DropdownTrigger>
           <Button className="max-w-[180px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedSupportProvided)[0])}
+            {renderButton(Array.from(selectedSupportProvidedState)[0])}
           </Button>
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Support Provided"
           closeOnSelect={false}
           selectionMode="multiple"
-          onSelectionChange={(keys) =>
-            setSelectedSupportProvided(new Set([Array.from(keys)[0] as string]))
-          }
+          onSelectionChange={handleSupportProvidedChange}
         >
           {supportProvidedTags.map((tag) => (
             <DropdownItem key={tag}>{tag}</DropdownItem>
@@ -164,16 +205,14 @@ const QueryGenerator = () => {
       <Dropdown>
         <DropdownTrigger>
           <Button className="max-w-[130px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedOrganisation)[0])}
+            {renderButton(Array.from(selectedOrganisationState)[0])}
           </Button>
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Organisation"
           closeOnSelect={false}
           selectionMode="multiple"
-          onSelectionChange={(keys) =>
-            setSelectedOrganisation(new Set([Array.from(keys)[0] as string]))
-          }
+          onSelectionChange={handleOrganisationChange}
         >
           {organisationTags.map((tag) => (
             <DropdownItem key={tag}>{tag}</DropdownItem>

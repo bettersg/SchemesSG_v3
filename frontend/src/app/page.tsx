@@ -1,16 +1,21 @@
-"use client";
+"use client"
 
+import React, { useState } from "react";
 import MainChat from "@/components/main-chat/main-chat";
 import SchemesList from "@/components/schemes/schemes-list";
-import React, { useState } from "react";
 import SearchBar from "@/components/search-bar/search-bar";
 import { useChat } from "./providers";
 import classes from "../components/main-layout/main-layout.module.css";
 import QueryGenerator from "@/components/query-generator/query-generator";
 
 export default function Home() {
-  const { schemes } = useChat();
+  const { schemes, setMessages } = useChat();
   const [sessionId, setSessionId] = useState<string>("");
+
+  // State for selected tags
+  const [selectedSupportProvided, setSelectedSupportProvided] = useState<string | null>(null);
+  const [selectedForWho, setSelectedForWho] = useState<string | null>(null);
+  const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
 
   return (
     <main className={classes.homePage}>
@@ -39,9 +44,20 @@ export default function Home() {
             schemes in Singapore.
           </p>
           <div className={classes.centered}>
-            <QueryGenerator />
+            <QueryGenerator
+              setSessionId={setSessionId}
+              setSelectedSupportProvided={setSelectedSupportProvided}
+              setSelectedForWho={setSelectedForWho}
+              setSelectedOrganisation={setSelectedOrganisation}
+              onSendQuery={() => {}}
+            />
           </div>
-          <SearchBar setSessionId={setSessionId} />
+          <SearchBar
+            setSessionId={setSessionId}
+            selectedSupportProvided={selectedSupportProvided}
+            selectedForWho={selectedForWho}
+            selectedOrganisation={selectedOrganisation}
+          />
         </div>
       )}
     </main>
