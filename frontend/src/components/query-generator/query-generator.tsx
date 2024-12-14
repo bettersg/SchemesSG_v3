@@ -71,9 +71,8 @@ const schemeTypeTags = [
   "Family Support Services",
   "Disability Support Services",
   "Palliative Care Services",
-  "Social Work & Casework"
+  "Social Work & Casework",
 ];
-
 
 // const organisationTags = [
 //   "Housing and Development Board",
