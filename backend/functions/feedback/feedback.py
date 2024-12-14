@@ -54,7 +54,7 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         userEmail = request_json.get("userEmail")
         timestamp = datetime.now(timezone.utc)
 
-        if not feedback_text or not timestamp:
+        if not feedback_text:
             return https_fn.Response(
                 response=json.dumps(
                     {"success": False, "message": "Missing required fields"}
