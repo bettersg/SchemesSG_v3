@@ -1,4 +1,4 @@
-import { Card, CardBody, CardFooter } from "@nextui-org/card";
+import { Card, CardBody, CardFooter, CardHeader } from "@nextui-org/card";
 import classes from './user-query.module.css';
 import { useChat } from "@/app/providers";
 import { Button, Tooltip, useDisclosure } from "@nextui-org/react";
@@ -21,17 +21,18 @@ export default function UserQuery() {
             radius="lg"
             shadow="none"
         >
-            <CardBody className={`${classes.cardBody}`}>
-                Your query is: <b>{userQuery}</b>
-            </CardBody>
-            <CardFooter className={classes.cardFooter}>
+            <CardHeader className={`justify-between ${classes.cardHeader}`}>
+                <h4 className="text-small leading-none text-default-600" >Your query is:</h4>
                 <Tooltip content="Reset Query" offset={-7}>
-                    <Button onPress={onOpen} isIconOnly radius="full" size="sm" className={classes.resetButton}>
+                    <Button onPress={onOpen} isIconOnly radius="full" size="sm" className={`${classes.resetButton}`}>
                         <ResetIcon />
                     </Button>
                 </Tooltip>
                 <ResetQueryModal isOpen={isOpen} onOpenChange={onOpenChange} handleReset={handleReset} />
-            </CardFooter>
+            </CardHeader>
+            <CardBody className={`${classes.cardBody}`}>
+                <b>{userQuery}</b>
+            </CardBody>
         </Card>
     )
 }

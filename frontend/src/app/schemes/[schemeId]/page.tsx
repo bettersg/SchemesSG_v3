@@ -1,4 +1,5 @@
 "use client";
+"use client";
 
 import {
   AdditionalInfoType,
@@ -184,17 +185,24 @@ export default function SchemePage() {
 
         <Spacer y={6} />
 
+        {/* Benefits */}
+
+        {/* To replace website with scheme.contact.website. Currently no such data. */}
+        <div>
+          <p className="text-3xl font-bold">Contact</p>
+          <Link isExternal showAnchorIcon href={scheme.link}>
+            {scheme.link}
+          </Link>
+        </div>
+
+        <Spacer y={6} />
+
         {scheme.contact && (
           <div>
             <p className="text-3xl font-bold">Contact</p>
             <p>Phone: {scheme.contact.phone}</p>
             <p>Email: {scheme.contact.email}</p>
-            <p>
-              Website:{" "}
-              <Link isExternal href={scheme.contact.website}>
-                {scheme.contact.website}
-              </Link>
-            </p>
+            {/* <p>Website: <Link isExternal href={scheme.contact.website}>{scheme.contact.website}</Link></p> */}
             <p>Address: {scheme.contact.address}</p>
           </div>
         )}

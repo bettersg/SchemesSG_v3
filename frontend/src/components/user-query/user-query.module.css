@@ -1,5 +1,5 @@
 .userQuery {
-    background: #E8ECFF;
+    background: #E6F1FE;
     margin: 0.5rem;
     font-size: 0.875rem;
 }
@@ -9,6 +9,10 @@
     padding: 3px;
     border-radius: 16px;
     line-height: 1.25rem;
+}
+
+.cardHeader {
+    padding: 4px 8px;
 }
 
 .cardBody {
@@ -24,4 +28,6 @@
     background: transparent;
     border: none;
     box-shadow: none;
+    width: 1.5em;
+    height: 1.5em;
 }

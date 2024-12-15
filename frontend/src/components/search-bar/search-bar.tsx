@@ -118,6 +118,7 @@ export default function SearchBar({ setSessionId }: SearchBarProps) {
           ) : (
             <Button
               className={classes.endContent}
+              color="primary"
               isIconOnly
               size="sm"
               radius="full"
