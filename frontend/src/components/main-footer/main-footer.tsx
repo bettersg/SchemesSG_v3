@@ -6,9 +6,7 @@ const data = [
     {
         title: "Info",
         links: [
-            { label: "About", link: "/about" },
-            { label: "Our Team", link: "/team" },
-            { label: "Blog", link: "/blog" }
+            { label: "About", link: "/about" }
         ]
     },
     {
@@ -41,7 +39,7 @@ export default function MainFooter() {
                 <div className={classes.groups}>{groups}</div>
             </div>
             <Divider orientation="vertical" className="divide-white" />
-            <p className="text-xs">© 2021 Schemes SG.</p>
+            <p className="text-xs">© 2025 Schemes SG.</p>
         </footer>
     )
 }
