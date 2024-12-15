@@ -1,5 +1,6 @@
 {
-  "hosting": {
+  "hosting": [{
+    "target": "staging",
     "source": ".",
     "ignore": [
       "firebase.json",
@@ -8,11 +9,6 @@
     ],
     "frameworksBackend": {
       "region": "asia-east1"
-    },
-    "targets": {
-      "schemessg-v3-dev": [
-        "staging"
-      ]
     }
-  }
+  }]
 }
