@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env APP_ENV=development next dev",
+    "dev": "cross-env NODE_ENV=development next dev",
+    "start": "cross-env NODE_ENV=production next start",
     "build": "next build",
-    "start": "next start",
     "lint": "next lint",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
