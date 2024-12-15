@@ -3,10 +3,13 @@ url for local testing:
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/feedback
 """
 
+import json
+from datetime import datetime, timezone
+
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
-from datetime import datetime, timezone
-import json
+from utils.cors_config import get_cors_headers, handle_cors_preflight
+
 
 # Firestore client
 firebase_manager = FirebaseManager()
@@ -26,45 +29,34 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-    headers = {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Max-Age": "3600",
-    }
-
     if req.method == "OPTIONS":
-        return https_fn.Response(response="", status=204, headers=headers)
+        return handle_cors_preflight(req)
+
+    headers = get_cors_headers(req)
 
     if req.method != "POST":
         return https_fn.Response(
-            response=json.dumps(
-                {"success": False, "message": "Only POST requests are allowed"}
-            ),
+            response=json.dumps({"error": "Method not allowed"}),
             status=405,
             mimetype="application/json",
             headers=headers,
         )
 
     try:
-        # Parse the request data
-        request_json = req.get_json()
-        feedback_text = request_json.get("feedbackText")
-        userName = request_json.get("userName")
-        userEmail = request_json.get("userEmail")
-        timestamp = datetime.now(timezone.utc)
+        data = req.get_json()
+        feedback_text = data.get("feedbackText")
+        userName = data.get("userName", "Anonymous")
+        userEmail = data.get("userEmail", "Not provided")
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
         if not feedback_text:
             return https_fn.Response(
-                response=json.dumps(
-                    {"success": False, "message": "Missing required fields"}
-                ),
+                response=json.dumps({"error": "Feedback text is required"}),
                 status=400,
                 mimetype="application/json",
                 headers=headers,
             )
 
-        # Prepare the data for Firestore
         feedback_data = {
             "feedbackText": feedback_text,
             "timestamp": timestamp,
@@ -72,14 +64,10 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
             "userEmail": userEmail,
         }
 
-        # Add the data to Firestore
         firebase_manager.firestore_client.collection("userFeedback").add(feedback_data)
 
-        # Return a success response
         return https_fn.Response(
-            response=json.dumps(
-                {"success": True, "message": "Feedback successfully added"}
-            ),
+            response=json.dumps({"success": True, "message": "Feedback successfully added"}),
             status=200,
             mimetype="application/json",
             headers=headers,
@@ -88,9 +76,7 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         print(f"Error: {e}")
         return https_fn.Response(
-            response=json.dumps(
-                {"success": False, "message": "Failed to add feedback"}
-            ),
+            response=json.dumps({"success": False, "message": "Failed to add feedback"}),
             status=500,
             mimetype="application/json",
             headers=headers,

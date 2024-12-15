@@ -8,6 +8,7 @@ import json
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
+from utils.cors_config import get_cors_headers, handle_cors_preflight
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -30,21 +31,12 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-    # TODO remove for prod setup
-    # Set CORS headers for the preflight request
+    # Handle CORS preflight request
     if req.method == "OPTIONS":
-        # Allows GET and POST requests from any origin with the Content-Type
-        # header and caches preflight response for an hour
-        headers = {
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "POST",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Max-Age": "3600",
-        }
-        return ("", 204, headers)
+        return handle_cors_preflight(req)
 
-    # Set CORS headers for the main request
-    headers = {"Access-Control-Allow-Origin": "http://localhost:3000"}
+    # Get standard CORS headers for all other requests
+    headers = get_cors_headers(req)
 
     firebase_manager = create_firebase_manager()
 
@@ -53,6 +45,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Invalid request method; only GET is supported"}),
             status=405,
             mimetype="application/json",
+            headers=headers,
         )
 
     splitted_path = req.path.split("/")
@@ -87,4 +80,9 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
         )
 
     results = {"data": doc.to_dict()}
-    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json", headers=headers)
+    return https_fn.Response(
+        response=json.dumps(results),
+        status=200,
+        mimetype="application/json",
+        headers=headers,
+    )
