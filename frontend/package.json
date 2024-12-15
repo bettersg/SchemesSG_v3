@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "cross-env APP_ENV=development next dev",
-    "build": "next build",
+    "build": "npm run clean && npm install && next build",
     "start": "next start",
     "lint": "next lint",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
-    "test-build:prod": "npm run build:prod && npx serve@latest out"
+    "test-build:prod": "npm run build:prod && npx serve@latest out",
+    "clean": "rm -rf node_modules .next out dist"
   },
   "dependencies": {
     "@nextui-org/navbar": "^2.0.37",
