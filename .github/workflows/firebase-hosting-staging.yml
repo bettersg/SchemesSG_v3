@@ -38,12 +38,13 @@ jobs:
                   cd frontend
                   npm ci
                   npm run build
-                  ls -la
+                  echo "Checking build output directory:"
+                  ls -la out/
             - name: Debug directory structure
               run: |
                   pwd
                   ls -la frontend/
-                  ls -la frontend/.next/
+                  ls -la frontend/out/
             - uses: FirebaseExtended/action-hosting-deploy@v0
               with:
                   repoToken: ${{ secrets.GITHUB_TOKEN }}
