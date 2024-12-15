@@ -8,6 +8,11 @@
     ],
     "frameworksBackend": {
       "region": "asia-east1"
+    },
+    "targets": {
+      "schemessg-v3-dev": [
+        "staging"
+      ]
     }
   }
 }
