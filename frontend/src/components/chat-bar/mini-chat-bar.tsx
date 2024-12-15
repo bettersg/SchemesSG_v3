@@ -28,6 +28,7 @@ export default function MiniChatBar({
           endContent={
             <Button
               isIconOnly
+              color="primary"
               size="sm"
               radius="full"
               onClick={onExpand}
