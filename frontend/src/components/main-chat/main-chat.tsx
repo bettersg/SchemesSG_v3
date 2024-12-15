@@ -49,7 +49,7 @@ export default function MainChat({ sessionId }: MainChatProps) {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/chat_message`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat_message`,
         {
           method: "POST",
           headers: {

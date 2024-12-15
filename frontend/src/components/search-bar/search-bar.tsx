@@ -47,7 +47,7 @@ export default function SearchBar({ setSessionId }: SearchBarProps) {
   };
 
   const getSchemes = async () => {
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/schemes_search`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
 
     const requestBody = {
       query: userInput,

@@ -58,7 +58,7 @@ export default function UpdateSchemesPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/update_scheme`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/update_scheme`,
         {
           method: "POST",
           headers: {

@@ -78,7 +78,7 @@ export default function SchemePage() {
       try {
         const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/schemes/${id}`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes/${id}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch scheme");

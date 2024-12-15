@@ -46,7 +46,7 @@ export default function FeedbackPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/feedback`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback`,
         {
           method: "POST",
           headers: {
