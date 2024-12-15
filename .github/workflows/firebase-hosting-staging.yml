@@ -8,6 +8,7 @@ on:
             - stg
         paths:
             - "frontend/**"
+            - ".github/workflows/firebase-hosting-staging.yml"
     workflow_dispatch:
 jobs:
     build_and_deploy:
