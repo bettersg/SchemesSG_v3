@@ -1,6 +1,14 @@
 "use client";
+"use client";
 
-import { useEffect, useState } from "react";
+import {
+  AdditionalInfoType,
+  ApplicationType,
+  ContactType,
+  EligibilityType,
+  RawSchemeData,
+} from "@/app/interfaces/schemes";
+import { SearchResScheme } from "@/components/schemes/schemes-list";
 import {
   Chip,
   Divider,
@@ -10,50 +18,27 @@ import {
   Spacer,
 } from "@nextui-org/react";
 import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import classes from "./scheme.module.css";
-import { SearchResScheme } from "@/components/schemes/schemes-list";
 
 // Type for full scheme properties
 type Scheme = SearchResScheme & {
   lastUpdated?: string;
-  eligibility?: {
-    criteria: string;
-    requiredDocuments: string[];
-  };
-  application?: {
-    process: string;
-    deadline: string;
-    formLink: string;
-    termsAndConditions: string;
-  };
-  contact?: {
-    phone: string;
-    email: string;
-    address: string;
-    website: string;
-    socialMedia?: {
-      facebook?: string;
-      instagram?: string;
-      linkedin?: string;
-    };
-    feedbackLink: string;
-  };
-  additionalInfo?: {
-    faqs?: { question: string; answer: string }[];
-    successStories?: { title: string; url: string }[];
-    relatedSchemes?: {
-      id: string;
-      scheme: string;
-      agency: string;
-      link: string;
-    }[];
-    additionalResources?: { title: string; url: string }[];
-    programmeDuration?: string;
-    languageOptions?: string[];
-  };
+  eligibility?: EligibilityType;
+  application?: ApplicationType;
+  contact?: ContactType;
+  additionalInfo?: AdditionalInfoType;
 };
 
-const mapToFullScheme = (rawData: any): Scheme => {
+interface FullSchemeData extends RawSchemeData {
+  "Last Updated": string;
+  Eligibility?: EligibilityType;
+  Application?: ApplicationType;
+  Contact?: ContactType;
+  "Additional Info"?: AdditionalInfoType;
+}
+
+const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
   return {
     // Properties from Scheme
     schemeType: rawData["Scheme Type"] || "",
@@ -93,7 +78,7 @@ export default function SchemePage() {
       try {
         const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
         const response = await fetch(
-          `http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes/${id}`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes/${id}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch scheme");
@@ -101,7 +86,7 @@ export default function SchemePage() {
         const res = await response.json();
         const schemeRes = mapToFullScheme(res.data);
         setScheme(schemeRes);
-      } catch (err: any) {
+      } catch (err) {
         console.log(err);
         setError("An error occurred");
       } finally {
