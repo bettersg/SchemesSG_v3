@@ -35,14 +35,18 @@ jobs:
             - name: Install dependencies and build
               env:
                   APP_ENV: staging
-                  NEXT_PUBLIC_API_BASE_URL: ${{ env.NEXT_PUBLIC_API_BASE_URL }}
+                  NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
               run: |
                   cd frontend
                   npm ci
                   npm install sharp
                   npm run build
-            - name: Debug
-              run: echo "API URL is $NEXT_PUBLIC_API_BASE_URL"
+            - name: Debug Variables
+              run: |
+                echo "Using vars context: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}"
+                echo "Current branch: ${{ github.ref_name }}"
+                echo "All environment variables:"
+                env
             - uses: FirebaseExtended/action-hosting-deploy@v0
               with:
                   repoToken: ${{ secrets.GITHUB_TOKEN }}
@@ -53,4 +57,4 @@ jobs:
                   entryPoint: ./frontend
               env:
                   FIREBASE_CLI_EXPERIMENTS: webframeworks
-                  NEXT_PUBLIC_API_BASE_URL: ${{ env.NEXT_PUBLIC_API_BASE_URL }}
+                  NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
