@@ -113,7 +113,7 @@ export default function SearchBar({ setSessionId }: SearchBarProps) {
                 endContent={
                     isBotResponseGenerating
                     ? <Spinner className={classes.endContent} size="sm" />
-                    : <Button className={classes.endContent} isIconOnly size="sm" radius="full" onClick={async () => await handleSend()}>
+                    : <Button className={classes.endContent} color="primary" isIconOnly size="sm" radius="full" onClick={async () => await handleSend()}>
                         <SearchIcon />
                     </Button>
                 }
