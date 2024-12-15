@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { Chip, Divider, Image, Link, Spacer } from "@nextui-org/react";
+import { Chip, Divider, Image, Link, Skeleton, Spacer } from "@nextui-org/react";
 import { useParams } from "next/navigation";
 import classes from "./scheme.module.css";
 import { SearchResScheme } from "@/components/schemes/schemes-list";
@@ -69,46 +69,80 @@ const mapToFullScheme = (rawData: any): Scheme => {
 };
 
 export default function SchemePage() {
-  const { schemeId } = useParams();
-  const [scheme, setScheme] = useState<Scheme | null>(null);
-  const [error, setError] = useState<string | null>(null);
+    const { schemeId } = useParams();
+    const [scheme, setScheme] = useState<Scheme | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchScheme() {
-      if (!schemeId) return;
+    useEffect(() => {
+      async function fetchScheme() {
+        if (!schemeId) return;
 
-      try {
-        const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
-        const response = await fetch(
-          `http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes/${id}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch scheme");
+        try {
+          const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
+          const response = await fetch(
+            `http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes/${id}`
+          );
+          if (!response.ok) {
+            throw new Error("Failed to fetch scheme");
+          }
+          const res = await response.json();
+          const schemeRes = mapToFullScheme(res.data);
+          setScheme(schemeRes);
+        } catch (err: any) {
+            console.log(err)
+          setError("An error occurred");
+        } finally {
+          setIsLoading(false);
         }
-        const res = await response.json();
-        const schemeRes = mapToFullScheme(res.data);
-        setScheme(schemeRes);
-      } catch (err: any) {
-        console.error("Error fetching scheme:", err);
-        setError(err.message || "An unexpected error occurred");
+      }
+
+      fetchScheme();
+    }, [schemeId]);
+
+    if (error) {
+      return <p className="text-error">{error}</p>;
     }
+
+    if (isLoading) {
+      return (
+        <div className="flex flex-col space-y-6 p-6">
+          {/* Skeleton loader for scheme type */}
+          <div>
+            <Skeleton className="h-3 w-12 rounded-md bg-gray-300" />
+            <Spacer y={1} />
+          </div>
+
+          {/* Skeleton loader for scheme title */}
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-36 w-36 rounded-full bg-gray-300" />
+            <div className="flex flex-col space-y-2">
+              <Skeleton className="h-8 w-3/5 rounded-md bg-gray-300" />
+              <Skeleton className="h-6 w-2/5 rounded-md bg-gray-300" />
+            </div>
+          </div>
+
+          <Spacer y={2} />
+
+          {/* Skeleton loader for description */}
+          <div className="flex flex-col space-y-3">
+            <Skeleton className="h-5 w-11/12 rounded-md bg-gray-300" />
+            <Skeleton className="h-5 w-9/12 rounded-md bg-gray-300" />
+          </div>
+          <Divider className="my-4" />
+
+          {/* Skeleton loader for other sections */}
+          <Skeleton className="h-8 w-1/2 rounded-md bg-gray-300" />
+          <Spacer y={1} />
+          <Skeleton className="h-5 w-3/4 rounded-md bg-gray-300" />
+        </div>
+      );
     }
-
-    fetchScheme();
-  }, [schemeId]);
-
-  if (error) {
-    return <p className="text-error">{error}</p>;
-  }
-
-  if (!scheme) {
-    return <p>Loading...</p>;
-  }
 
   // Helper to extract scheme types
   const getSchemeTypes = (schemeTypeStr: string) => schemeTypeStr.split(",");
 
-  return (
+  return (scheme &&
     <div className={classes.schemeContainer}>
       <div>
         {getSchemeTypes(scheme.schemeType).map((type) => (
