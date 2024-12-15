@@ -5,7 +5,7 @@ import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from "../../assets/icons/search-icon";
 import classes from "./search-bar.module.css";
 import { useChat } from "@/app/providers";
-import { Scheme } from "../schemes/schemes-list";
+import { SearchResScheme } from "../schemes/schemes-list";
 
 interface SearchBarProps {
   setSessionId: (val: string) => void;
@@ -60,7 +60,7 @@ export default function SearchBar({
     setUserInput("");
   };
 
-  const mapToScheme = (rawData: any): Scheme => {
+const mapToSearchResScheme = (rawData: any): SearchResScheme => {
     return {
       schemeType: rawData["Scheme Type"] || "",
       schemeName: rawData["Scheme"] || "",
@@ -79,8 +79,39 @@ export default function SearchBar({
     };
   };
 
-  const getSchemes = async () => {
-    const url = "http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
+    const getSchemes = async () => {
+        const url = "http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
+
+        const requestBody = {
+            query: userInput,
+            top_k: 20,
+            similarity_threshold: 0
+        };
+
+        try {
+            setIsBotResponseGenerating(true);
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const res = await response.json();
+            const sessionId: string = res["sessionID"];
+            setIsBotResponseGenerating(false);
+            const schemesRes: SearchResScheme[] = res.data.map(mapToSearchResScheme);
+            return { schemesRes, sessionId };
+        } catch (error) {
+            console.error("Error making POST request:", error);
+            setIsBotResponseGenerating(false);
+            return { schemesRes: [], sessionId: "" };
+        }
 
     const requestBody = {
       query: userInput,
