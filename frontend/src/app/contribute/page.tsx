@@ -58,7 +58,7 @@ export default function UpdateSchemesPage() {
 
     try {
       const response = await fetch(
-        "http://localhost:5001/schemessg-v3-dev/asia-southeast1/update_scheme",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/update_scheme`,
         {
           method: "POST",
           headers: {

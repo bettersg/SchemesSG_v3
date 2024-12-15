@@ -77,7 +77,7 @@ export default function SchemePage() {
       try {
         const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
         const response = await fetch(
-          `http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes/${id}`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/${process.env.NEXT_PUBLIC_API_PROJECT}/${process.env.NEXT_PUBLIC_API_REGION}/schemes/${id}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch scheme");
