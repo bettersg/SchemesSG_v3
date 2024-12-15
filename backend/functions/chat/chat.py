@@ -120,16 +120,19 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
                 ):
                     yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
+            cors_headers = get_cors_headers(req)
+            headers = {
+                **cors_headers,
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/event-stream",
+            }
+
             return https_fn.Response(
                 response=generate(),
                 status=200,
                 mimetype="text/event-stream",
-                headers={
-                    "Access-Control-Allow-Origin": "http://localhost:3000",
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
-                    "Content-Type": "text/event-stream",
-                },
+                headers=headers,
             )
         else:
             results = chatbot.chatbot(

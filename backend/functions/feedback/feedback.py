@@ -29,34 +29,38 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
+    # Handle CORS preflight request
     if req.method == "OPTIONS":
         return handle_cors_preflight(req)
 
+    # Get CORS headers based on request origin
     headers = get_cors_headers(req)
 
     if req.method != "POST":
         return https_fn.Response(
-            response=json.dumps({"error": "Method not allowed"}),
+            response=json.dumps({"success": False, "message": "Only POST requests are allowed"}),
             status=405,
             mimetype="application/json",
             headers=headers,
         )
 
     try:
-        data = req.get_json()
-        feedback_text = data.get("feedbackText")
-        userName = data.get("userName", "Anonymous")
-        userEmail = data.get("userEmail", "Not provided")
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        # Parse the request data
+        request_json = req.get_json()
+        feedback_text = request_json.get("feedbackText")
+        userName = request_json.get("userName")
+        userEmail = request_json.get("userEmail")
+        timestamp = datetime.now(timezone.utc)
 
         if not feedback_text:
             return https_fn.Response(
-                response=json.dumps({"error": "Feedback text is required"}),
+                response=json.dumps({"success": False, "message": "Missing required fields"}),
                 status=400,
                 mimetype="application/json",
                 headers=headers,
             )
 
+        # Prepare the data for Firestore
         feedback_data = {
             "feedbackText": feedback_text,
             "timestamp": timestamp,
@@ -64,8 +68,10 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
             "userEmail": userEmail,
         }
 
+        # Add the data to Firestore
         firebase_manager.firestore_client.collection("userFeedback").add(feedback_data)
 
+        # Return a success response
         return https_fn.Response(
             response=json.dumps({"success": True, "message": "Feedback successfully added"}),
             status=200,
