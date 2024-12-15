@@ -1,17 +1,13 @@
 {
   "hosting": {
-    "target": "staging",
-    "public": "out",
+    "source": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
+    "frameworksBackend": {
+      "region": "asia-east1"
+    }
   }
 }
