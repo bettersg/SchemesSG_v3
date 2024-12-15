@@ -38,6 +38,12 @@ jobs:
                   cd frontend
                   npm ci
                   npm run build
+                  ls -la
+            - name: Debug directory structure
+              run: |
+                  pwd
+                  ls -la frontend/
+                  ls -la frontend/.next/
             - uses: FirebaseExtended/action-hosting-deploy@v0
               with:
                   repoToken: ${{ secrets.GITHUB_TOKEN }}

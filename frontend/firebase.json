@@ -1,7 +1,7 @@
 {
   "hosting": {
     "target": "staging",
-    "public": "out",
+    "public": "frontend/.next",
     "ignore": [
       "firebase.json",
       "**/.*",
