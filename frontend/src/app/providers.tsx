@@ -31,17 +31,47 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userQuery, setUserQuery] = useState<string>("");
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const storedSchemes = localStorage.getItem('schemes');
-    if (storedSchemes) {
-      setSchemes(JSON.parse(storedSchemes));
+    if (!isInitialized) {
+      try {
+        const storedSchemes = localStorage.getItem("schemes");
+        const storedQuery = localStorage.getItem("userQuery");
+
+        if (storedSchemes) {
+          const parsedSchemes = JSON.parse(storedSchemes);
+          setSchemes(parsedSchemes);
+        }
+        if (storedQuery) {
+          setUserQuery(storedQuery);
+        }
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error loading from localStorage:", error);
+      }
     }
-  }, []);
+  }, [isInitialized]);
 
   useEffect(() => {
-    localStorage.setItem("schemes", JSON.stringify(schemes));
-  }, [schemes]);
+    if (isInitialized) {
+      try {
+        localStorage.setItem("schemes", JSON.stringify(schemes));
+      } catch (error) {
+        console.error("Error saving schemes to localStorage:", error);
+      }
+    }
+  }, [schemes, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        localStorage.setItem("userQuery", userQuery);
+      } catch (error) {
+        console.error("Error saving userQuery to localStorage:", error);
+      }
+    }
+  }, [userQuery, isInitialized]);
 
   return (
     <ChatContext.Provider
