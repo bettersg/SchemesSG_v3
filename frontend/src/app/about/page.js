@@ -281,12 +281,13 @@ export default function AboutPage() {
 
   return (
     <div className={classes.mainlayout}>
-      <section className={classes.container}>
-        <h1 className={classes.header}>About</h1>
-        <h2 className={classes.description}>
-          A little more information about how Schemes SG came to be and thinking
-          behind it.
-        </h2>
+      <div className={classes.container}>
+        <div className={classes.textWrapper}>
+          <h1 className={classes.header}>About</h1>
+          <h2 className={classes.description}>
+            A little more information about how Schemes SG came to be and the thinking behind it.
+          </h2>
+        </div>
         <svg
           width="2560px"
           height="100px"
@@ -297,7 +298,7 @@ export default function AboutPage() {
         >
           <polygon points="2560 0 2560 100 0 100" fill="white"></polygon>
         </svg>
-      </section>
+      </div>
       <div className={classes.content}>
         <Chip
           color="primary"
@@ -307,26 +308,22 @@ export default function AboutPage() {
           Our vision
         </Chip>
         <p className={classes.para}>
-          Our vision is to empower social workers, volunteers, and in the long
-          run self-help users, to obtain relevant information on social
-          assistance in Singapore quickly, easily and accurately. We tap on the
-          power of crowdsourcing to keep information comprehensive and updated,
-          and leverage technology to make this information navigable.
+        Our vision is to empower social workers, volunteers, and in the long run self-help users, to obtain relevant information on social assistance in Singapore quickly, easily and accurately. We tap on the power of crowdsourcing to keep information comprehensive and updated, and leverage technology to make this information navigable.
         </p>
-        <Accordion variant="splitted" className={classes.accordionItem}>
+        <Accordion className={classes.accordion}>
           {accordionItems.map((item) => (
             <AccordionItem
               key={item.key}
               aria-label={item.ariaLabel}
               title={item.title}
               startContent={item.startContent}
-              className={classes.accordionTitle}
             >
-              <div className={classes.accordianContent}>{item.content}</div>
+              {item.content}
             </AccordionItem>
           ))}
         </Accordion>
       </div>
     </div>
+
   );
 }
