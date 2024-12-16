@@ -30,6 +30,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Load data from localStorage on mount
   useEffect(() => {
     if (!isInitialized) {
       try {
