@@ -20,7 +20,7 @@ export default function Home() {
         <>
           {/* Desktop Layout */}
           <div className={classes.mainLayout}>
-            <div className="flex pt-28 md:hidden">
+            <div className="flex md:hidden">
               <UserQuery />
             </div>
             <div className="hidden md:flex">
