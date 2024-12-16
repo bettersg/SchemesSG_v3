@@ -31,7 +31,7 @@ export default function Home() {
 
           {/* Mobile Layout */}
           <div
-            className={`md:hidden fixed bottom-0 left-0 right-0 bg-white transition-all duration-300 ease-in-out z-50
+            className={`md:hidden flex fixed bottom-0 left-0 right-0 bg-white transition-all duration-300 ease-in-out z-50
             ${isExpanded ? "h-full" : "h-16"}`}
           >
             <div
