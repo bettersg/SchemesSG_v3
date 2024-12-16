@@ -6,14 +6,14 @@ import ResetQueryModal from "../reset-query-modal/reset-query-modal";
 import classes from "./user-query.module.css";
 
 export default function UserQuery() {
-  const { userQuery, setSchemes, setUserQuery } = useChat();
+  const { setSchemes, messages, setMessages } = useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
+  const firstMessage = messages[0].text;
   const handleReset = () => {
     localStorage.removeItem("schemes");
-    localStorage.removeItem("userQuery");
+    localStorage.removeItem("userMessages");
     setSchemes([]);
-    setUserQuery("");
+    setMessages([]);
   };
 
   return (
@@ -45,7 +45,7 @@ export default function UserQuery() {
         />
       </CardHeader>
       <CardBody className={`${classes.cardBody}`}>
-        <b>{userQuery}</b>
+        <b>{firstMessage}</b>
       </CardBody>
     </Card>
   );
