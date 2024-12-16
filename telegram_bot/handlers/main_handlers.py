@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import BotConfig, bot
-from utils.api import search_schemes, send_chat_message, retrieve_scheme_results
+from utils.api import retrieve_scheme_results, search_schemes, send_chat_message
 
 
 main_router = Router()
