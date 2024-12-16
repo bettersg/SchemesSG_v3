@@ -15,7 +15,7 @@ export default function MiniChatBar({
       className={`absolute bottom-0 left-0 right-0 bg-none
         ${isExpanded ? "hidden" : "block"}`}
     >
-      <div className="p-4">
+      <div className="py-2 px-8">
         <Textarea
           readOnly
           onClick={onExpand}

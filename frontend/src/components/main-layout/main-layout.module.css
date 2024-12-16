@@ -32,7 +32,7 @@
 /* Tablet Breakpoint (768px) */
 @media (max-width: 768px) {
   .contentWrapper {
-    padding: 0.5em 1em;
+    padding: 0.5em 2em;
   }
 
   .homePage {
