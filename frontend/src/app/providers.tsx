@@ -17,8 +17,6 @@ export type Message = {
 };
 
 type ChatContextType = {
-  userQuery: string;
-  setUserQuery: React.Dispatch<React.SetStateAction<string>>;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   schemes: SearchResScheme[];
@@ -29,7 +27,6 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [userQuery, setUserQuery] = useState<string>("");
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -37,15 +34,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     if (!isInitialized) {
       try {
         const storedSchemes = localStorage.getItem("schemes");
-        const storedQuery = localStorage.getItem("userQuery");
+        const storedMessages = localStorage.getItem("userMessages");
 
         if (storedSchemes) {
           const parsedSchemes = JSON.parse(storedSchemes);
           setSchemes(parsedSchemes);
         }
-        if (storedQuery) {
-          setUserQuery(storedQuery);
+        if (storedMessages) {
+          const parsedMessages = JSON.parse(storedMessages);
+          setMessages(parsedMessages);
         }
+
         setIsInitialized(true);
       } catch (error) {
         console.error("Error loading from localStorage:", error);
@@ -66,20 +65,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isInitialized) {
       try {
-        localStorage.setItem("userQuery", userQuery);
+        localStorage.setItem("userMessages", JSON.stringify(messages));
       } catch (error) {
-        console.error("Error saving userQuery to localStorage:", error);
+        console.error("Error saving messages to localStorage:", error);
       }
     }
-  }, [userQuery, isInitialized]);
-
+  }, [messages, isInitialized]);
   return (
     <ChatContext.Provider
       value={{
         messages,
         setMessages,
-        userQuery,
-        setUserQuery,
         schemes,
         setSchemes,
       }}

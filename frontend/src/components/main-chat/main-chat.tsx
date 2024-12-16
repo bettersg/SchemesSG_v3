@@ -13,7 +13,7 @@ type MainChatProps = {
 };
 
 export default function MainChat({ sessionId }: MainChatProps) {
-  const { messages, setMessages, setUserQuery } = useChat();
+  const { messages, setMessages } = useChat();
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
@@ -22,7 +22,9 @@ export default function MainChat({ sessionId }: MainChatProps) {
 
   useEffect(() => {
     const storedQuery = localStorage.getItem("userQuery");
-    if (storedQuery && messages.length === 0) {
+    const storedMessages = localStorage.getItem("userMessages");
+
+    if (storedQuery && !storedMessages && messages.length === 0) {
       setMessages([
         {
           type: "bot",
@@ -42,9 +44,6 @@ export default function MainChat({ sessionId }: MainChatProps) {
       { type: "user", text: input },
     ]);
 
-    setUserQuery(input);
-    localStorage.setItem("userQuery", input);
-    setUserInput("");
     await fetchBotResponse(input);
   };
 

@@ -20,7 +20,7 @@ export default function Home() {
         <>
           {/* Desktop Layout */}
           <div className={classes.mainLayout}>
-            <div className="flex pt-28 md:hidden">
+            <div className="flex md:hidden">
               <UserQuery />
             </div>
             <div className="hidden md:flex">
@@ -31,8 +31,8 @@ export default function Home() {
 
           {/* Mobile Layout */}
           <div
-            className={`md:hidden fixed bottom-0 left-0 right-0 bg-white transition-all duration-300 ease-in-out z-50
-            ${isExpanded ? "h-full" : "h-16"}`}
+            className={`md:hidden flex fixed bottom-0 left-0 right-0 bg-none transition-all duration-300 ease-in-out z-50
+            ${isExpanded ? "h-full" : "h-0"}`}
           >
             <div
               className={`absolute top-0 left-0 right-0 flex justify-between items-center p-2 bg-white border-b
