@@ -46,7 +46,7 @@ export default function FeedbackPage() {
 
     try {
       const response = await fetch(
-        "http://localhost:5001/schemessg-v3-dev/asia-southeast1/feedback",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback`,
         {
           method: "POST",
           headers: {

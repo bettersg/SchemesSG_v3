@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - stg
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy_functions.yml"
   workflow_dispatch:
 
 jobs:

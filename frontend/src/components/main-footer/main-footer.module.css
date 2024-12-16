@@ -42,10 +42,9 @@
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .footer {
-    background-color: rgba(23, 19, 71, 1);
-    color: white;
+    margin-top: 1rem;
     padding: 2em 1.5em 7em 1.5em;
   }
 }

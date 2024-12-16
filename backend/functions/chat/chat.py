@@ -12,6 +12,7 @@ from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
 from ml_logic import Chatbot, dataframe_to_text
+from utils.cors_config import get_cors_headers, handle_cors_preflight
 
 
 # Remove default handler
@@ -51,27 +52,19 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     """
     logger.info("Request received")
 
-    # TODO remove for prod setup
-    # Set CORS headers for the preflight request
     if req.method == "OPTIONS":
-        # Allows GET and POST requests from any origin with the Content-Type
-        # header and caches preflight response for an hour
-        headers = {
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "POST",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Max-Age": "3600",
-        }
-        return ("", 204, headers)
+        return handle_cors_preflight(req)
 
-    # Set CORS headers for the main request
-    headers = {"Access-Control-Allow-Origin": "http://localhost:3000"}
-    if not (req.method == "POST" or req.method == "GET"):
+    headers = get_cors_headers(req)
+
+    if not req.method == "POST":
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request method; only POST or GET is supported"}),
             status=405,
             mimetype="application/json",
+            headers=headers,
         )
+
     chatbot = create_chatbot()
 
     try:
@@ -127,16 +120,19 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
                 ):
                     yield f"data: {json.dumps({'chunk': chunk})}\n\n"
 
+            cors_headers = get_cors_headers(req)
+            headers = {
+                **cors_headers,
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/event-stream",
+            }
+
             return https_fn.Response(
                 response=generate(),
                 status=200,
                 mimetype="text/event-stream",
-                headers={
-                    "Access-Control-Allow-Origin": "http://localhost:3000",
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
-                    "Content-Type": "text/event-stream",
-                },
+                headers=headers,
             )
         else:
             results = chatbot.chatbot(

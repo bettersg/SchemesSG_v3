@@ -9,3 +9,9 @@
   padding: 0.8rem;
   overflow-y: auto;
 }
+
+@media (max-width: 640px) {
+  .mainChat {
+    padding: 0.5rem 2rem;
+  }
+}

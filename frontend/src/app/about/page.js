@@ -1,7 +1,7 @@
 "use client";
-import classes from "./about.module.css";
 import { Chip } from "@nextui-org/chip";
 import { Accordion, AccordionItem } from "@nextui-org/react";
+import classes from "./about.module.css";
 
 export default function AboutPage() {
   const accordionItems = [
@@ -30,13 +30,14 @@ export default function AboutPage() {
         <>
           <p>
             Schemes SG started as a side project by our product lead. A
-            long-time volunteer with various VWOs, he collated a "help-list" to
-            facilitate referral work and built a quick front-end to share these
-            resources with his friends. The resource gained unexpected traction
-            with social workers and volunteers. Sensing that a consolidated
-            directory could address care workers' pain point of having to
-            navigate the confusing social assistance landscape, he gathered
-            like-minded individuals from friends and the{" "}
+            long-time volunteer with various VWOs, he collated a
+            &quot;help-list&quot; to facilitate referral work and built a quick
+            front-end to share these resources with his friends. The resource
+            gained unexpected traction with social workers and volunteers.
+            Sensing that a consolidated directory could address care
+            workers&apos; pain point of having to navigate the confusing social
+            assistance landscape, he gathered like-minded individuals from
+            friends and the{" "}
             <a
               href="https://better.sg"
               target="_blank"
@@ -97,15 +98,15 @@ export default function AboutPage() {
             1. Social assistance listings were piecemeal and information was
             fragmented across various sites. There were some compilations, but
             they were often PDF files hidden within the repositories of
-            organisations' websites, so they might not be easy to find. Search
-            engines might also miss them.
+            organisations&apos; websites, so they might not be easy to find.
+            Search engines might also miss them.
           </p>
           <p>
             {" "}
             2. Even if one could get their hands on a compilation, it would take
-            a million "Ctrl + F"s and painstaking excavation to find schemes,
-            given how complex social assistance is. The volume of information
-            was simply mind-boggling.
+            a million &quot;Ctrl + F&quot;s and painstaking excavation to find
+            schemes, given how complex social assistance is. The volume of
+            information was simply mind-boggling.
           </p>
           <p>
             {" "}
@@ -163,7 +164,7 @@ export default function AboutPage() {
             1. All information is <strong>public-domain</strong>. Schemes SG
             only agglomerates public info to help navigate complexity. Where
             individual schemes are concerned, we use the descriptions from the
-            organisations' writeups wherever possible to let them speak for
+            organisations&apos; writeups wherever possible to let them speak for
             their own good work :) If we make edits, it is to improve search
             functionality, and we ensure that they are factually accurate.{" "}
           </p>
@@ -221,7 +222,7 @@ export default function AboutPage() {
       content: (
         <>
           <p>
-            Schemes Pal's natural language model involves the following
+            Schemes Pal&apos;s natural language model involves the following
             transformation: Bag of Words (BoW) -{">"} TF-IDF -{">"} latent
             semantic indexing (LSI). Some resources used include{" "}
             <a
@@ -247,7 +248,7 @@ export default function AboutPage() {
             . We are still improving the natural language feature, and if you
             have engineering expertise or insights to offer, reach out via the{" "}
             <a href="https://schemes.sg/feedback" target="_blank">
-              "Feedback"
+              &quot;Feedback&quot;
             </a>{" "}
             form.
           </p>

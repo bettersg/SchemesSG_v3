@@ -17,8 +17,6 @@ export type Message = {
 };
 
 type ChatContextType = {
-  userQuery: string;
-  setUserQuery: React.Dispatch<React.SetStateAction<string>>;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   schemes: SearchResScheme[];
@@ -29,27 +27,55 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [userQuery, setUserQuery] = useState<string>("");
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const storedSchemes = localStorage.getItem('schemes');
-    if (storedSchemes) {
-      setSchemes(JSON.parse(storedSchemes));
+    if (!isInitialized) {
+      try {
+        const storedSchemes = localStorage.getItem("schemes");
+        const storedMessages = localStorage.getItem("userMessages");
+
+        if (storedSchemes) {
+          const parsedSchemes = JSON.parse(storedSchemes);
+          setSchemes(parsedSchemes);
+        }
+        if (storedMessages) {
+          const parsedMessages = JSON.parse(storedMessages);
+          setMessages(parsedMessages);
+        }
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error loading from localStorage:", error);
+      }
     }
-  }, []);
+  }, [isInitialized]);
 
   useEffect(() => {
-    localStorage.setItem("schemes", JSON.stringify(schemes));
-  }, [schemes]);
+    if (isInitialized) {
+      try {
+        localStorage.setItem("schemes", JSON.stringify(schemes));
+      } catch (error) {
+        console.error("Error saving schemes to localStorage:", error);
+      }
+    }
+  }, [schemes, isInitialized]);
 
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        localStorage.setItem("userMessages", JSON.stringify(messages));
+      } catch (error) {
+        console.error("Error saving messages to localStorage:", error);
+      }
+    }
+  }, [messages, isInitialized]);
   return (
     <ChatContext.Provider
       value={{
         messages,
         setMessages,
-        userQuery,
-        setUserQuery,
         schemes,
         setSchemes,
       }}

@@ -1,50 +1,56 @@
 .chatList {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    overflow: hidden auto;
-    max-height: 68vh;
-    padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  overflow: hidden auto;
+  max-height: 68vh;
+  padding: 0.5rem;
 }
 
 .messageContainer {
-    display: flex;
-    align-items: flex-start;
+  display: flex;
+  align-items: flex-start;
 }
 
 .botContainer {
-    justify-content: flex-start;
+  justify-content: flex-start;
 }
 
 .userContainer {
-    justify-content: flex-end;
+  justify-content: flex-end;
 }
 
 .avatar {
-    margin-right: 8px;
+  margin-right: 8px;
 }
 
 .card {
-    max-width: 80%;
-    padding: 3px;
-    border-radius: 16px;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    word-wrap: break-word;
+  max-width: 80%;
+  padding: 3px;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  word-wrap: break-word;
 }
 
 .cardBody {
-    padding: 4px 8px;
+  padding: 4px 8px;
 }
 
 .bot {
-    background-color: #f1f5f9;
-    align-self: flex-start;
+  background-color: #f1f5f9;
+  align-self: flex-start;
 }
 
 .user {
-    background-color: #e6f1fe;
-    color: #006FEE;
-    align-self: flex-end;
+  background-color: #e6f1fe;
+  color: #006fee;
+  align-self: flex-end;
+}
+
+@media (max-width: 640px) {
+  .chatList {
+    max-height: 65vh;
+  }
 }

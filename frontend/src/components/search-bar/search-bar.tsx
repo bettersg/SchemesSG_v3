@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from "../../assets/icons/search-icon";
 import classes from "./search-bar.module.css";
+import { RawSchemeData } from "@/app/interfaces/schemes";
 import { useChat } from "@/app/providers";
 import { SearchResScheme } from "../schemes/schemes-list";
-
+import classes from "./search-bar.module.css";
 interface SearchBarProps {
   setSessionId: (val: string) => void;
   selectedSupportProvided: string | null;
@@ -14,16 +15,32 @@ interface SearchBarProps {
   selectedOrganisation: string | null;
 }
 
-export default function SearchBar({
-  setSessionId,
-  selectedSupportProvided,
+export default function SearchBar({ setSessionId, selectedSupportProvided,
   selectedForWho,
-  selectedOrganisation,
-}: SearchBarProps) {
+  selectedOrganisation, }: SearchBarProps) {
   const { setMessages, setUserQuery, setSchemes } = useChat();
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
+
+const mapToSearchResScheme = (rawData: RawSchemeData): SearchResScheme => {
+  return {
+    schemeType: rawData["Scheme Type"] || "",
+    schemeName: rawData["Scheme"] || "",
+    targetAudience: rawData["Who's it for"] || "",
+    agency: rawData["Agency"] || "",
+    description: rawData["Description"] || "",
+    scrapedText: rawData["scraped_text"] || "",
+    benefits: rawData["What it gives"] || "",
+    link: rawData["Link"] || "",
+    image: rawData["Image"] || "",
+    searchBooster: rawData["search_booster(WL)"] || "",
+    schemeId: rawData["scheme_id"] || "",
+    query: rawData["query"] || "",
+    similarity: rawData["Similarity"] || 0,
+    quintile: rawData["Quintile"] || 0,
+  };
+};
 
   useEffect(() => {
     let query = "I am looking for";
@@ -49,17 +66,6 @@ export default function SearchBar({
     setUserInput(query === "I am looking for" ? "" : query);
   }, [selectedSupportProvided, selectedForWho, selectedOrganisation]);
 
-  const handleUserInput = (input: string) => {
-    setMessages([
-      {
-        type: "user",
-        text: input,
-      },
-    ]);
-    setUserQuery(input);
-    setUserInput("");
-  };
-
 const mapToSearchResScheme = (rawData: any): SearchResScheme => {
     return {
       schemeType: rawData["Scheme Type"] || "",
@@ -79,39 +85,51 @@ const mapToSearchResScheme = (rawData: any): SearchResScheme => {
     };
   };
 
-    const getSchemes = async () => {
-        const url = "http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
+  const handleUserInput = (input: string) => {
+    setMessages([
+      { type: "user", text: input },
+      {
+        type: "bot",
+        text: "You can see the search results on the right. Please ask me any further questions about the schemes.",
+      },
+    ]);
+    setUserInput("");
+  };
 
-        const requestBody = {
-            query: userInput,
-            top_k: 20,
-            similarity_threshold: 0
-        };
+  const getSchemes = async () => {
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
 
-        try {
-            setIsBotResponseGenerating(true);
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(requestBody)
-            });
+    const requestBody = {
+      query: userInput,
+      top_k: 20,
+      similarity_threshold: 0,
+    };
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+    try {
+      setIsBotResponseGenerating(true);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-            const res = await response.json();
-            const sessionId: string = res["sessionID"];
-            setIsBotResponseGenerating(false);
-            const schemesRes: SearchResScheme[] = res.data.map(mapToSearchResScheme);
-            return { schemesRes, sessionId };
-        } catch (error) {
-            console.error("Error making POST request:", error);
-            setIsBotResponseGenerating(false);
-            return { schemesRes: [], sessionId: "" };
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = await response.json();
+      const sessionId: string = res["sessionID"];
+      setIsBotResponseGenerating(false);
+      const schemesRes: SearchResScheme[] = res.data.map(mapToSearchResScheme);
+      return { schemesRes, sessionId };
+    } catch (error) {
+      console.error("Error making POST request:", error);
+      setIsBotResponseGenerating(false);
+      return { schemesRes: [], sessionId: "" };
+    }
+  };
 
     const requestBody = {
       query: userInput,
@@ -158,6 +176,17 @@ const mapToSearchResScheme = (rawData: any): SearchResScheme => {
     }
   };
 
+  const handleSend = async () => {
+    if (userInput.trim()) {
+      const { schemesRes, sessionId } = await getSchemes();
+      if (schemesRes.length > 0 && sessionId !== "") {
+        schemesRes && setSchemes(schemesRes);
+        setSessionId(sessionId);
+        handleUserInput(userInput);
+      }
+    }
+  };
+
   return (
     <>
       <Textarea
@@ -184,6 +213,7 @@ const mapToSearchResScheme = (rawData: any): SearchResScheme => {
           ) : (
             <Button
               className={classes.endContent}
+              color="primary"
               isIconOnly
               size="sm"
               radius="full"
