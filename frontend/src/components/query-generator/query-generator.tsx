@@ -20,36 +20,6 @@ interface QueryGeneratorProps {
   onSendQuery: () => void;
 }
 
-const tags = [
-  "Caregiver",
-  "Childcare",
-  "Children",
-  "COVID-19",
-  "Debt",
-  "Education",
-  "Elderly",
-  "Employment",
-  "Family",
-  "Family Violence",
-  "Food",
-  "Healthcare",
-  "Homeless",
-  "Housing",
-  "Ex-offender",
-  "Low Income",
-  "Mental Health",
-  "Palliative",
-  "PWD",
-  "Referral",
-  "Special Needs",
-  "Student Care",
-  "Tech",
-  "Transport",
-  "Women",
-  "Work",
-  "Youth-at-Risk",
-];
-
 const forWhoTags = [
   "Elderly",
   "Low income families",
@@ -88,140 +58,115 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
   setSelectedOrganisation,
   onSendQuery,
 }) => {
-  const [selectedTag, setSelectedTag] = useState(new Set(["Scheme Type"]));
-  const [selectedForWhoState, setSelectedForWhoState] = useState(
-    new Set(["For Who"])
-  );
+  const [selectedForWhoState, setSelectedForWhoState] = useState("Add Who");
   const [selectedSupportProvidedState, setSelectedSupportProvidedState] =
-    useState(new Set(["Support Provided"]));
-  const [selectedOrganisationState, setSelectedOrganisationState] = useState(
-    new Set(["Organisation"])
-  );
+    useState("Add Support");
+  const [selectedOrganisationState, setSelectedOrganisationState] =
+    useState("Add Organisation");
 
-  const renderButton = (
-    selectedText:
-      | string
-      | number
-      | bigint
-      | boolean
-      | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-      | Iterable<React.ReactNode>
-      | Promise<React.AwaitedReactNode>
-      | null
-      | undefined
-  ) => {
+  const renderButton = (label: string, value: string) => {
     return (
-      <span className={`${styles.truncate} inline-block font-bold`}>
-        {selectedText}
-      </span>
+      <div className="flex flex-col text-left">
+        <span className="text-gray-500 text-xs">{label}</span>
+        <span
+          className={`text-sm font-medium truncate-first-word`}
+          style={{ maxWidth: "150px" }}
+        >
+          {value}
+        </span>
+      </div>
     );
   };
 
-  const handleSupportProvidedChange = (
-    keys: Iterable<unknown> | ArrayLike<unknown>
-  ) => {
+  const handleSupportProvidedChange = (keys: Iterable<unknown>) => {
     const selected = Array.from(keys) as string[];
-    const newSelected = selected.length > 0 ? selected[0] : "Support Provided"; // Default value
-    console.log("Selected Support Provided:", newSelected);
+    const newSelected = selected.length > 0 ? selected[0] : "Add Support";
     setSelectedSupportProvided(newSelected);
-    setSelectedSupportProvidedState(new Set([newSelected]));
+    setSelectedSupportProvidedState(newSelected);
     onSendQuery();
   };
 
-  const handleForWhoChange = (keys: Iterable<unknown> | ArrayLike<unknown>) => {
+  const handleForWhoChange = (keys: Iterable<unknown>) => {
     const selected = Array.from(keys) as string[];
-    const newSelected = selected.length > 0 ? selected[0] : "For Who"; // Default value
+    const newSelected = selected.length > 0 ? selected[0] : "Add Who";
     setSelectedForWho(newSelected);
-    setSelectedForWhoState(new Set([newSelected]));
+    setSelectedForWhoState(newSelected);
     onSendQuery();
   };
 
-  const handleOrganisationChange = (
-    keys: Iterable<unknown> | ArrayLike<unknown>
-  ) => {
+  const handleOrganisationChange = (keys: Iterable<unknown>) => {
     const selected = Array.from(keys) as string[];
-    const newSelected = selected.length > 0 ? selected[0] : "Organisation"; // Default value
+    const newSelected = selected.length > 0 ? selected[0] : "Add Organisation";
     setSelectedOrganisation(newSelected);
-    setSelectedOrganisationState(new Set([newSelected]));
+    setSelectedOrganisationState(newSelected);
     onSendQuery();
   };
 
   return (
-    <div className="border-[1px] w-full md:w-[800px] py-4 rounded-full shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center px-4">
-      <Dropdown>
-        <DropdownTrigger>
-          <Button className="max-w-[150px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedTag)[0])}
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="Tags"
-          closeOnSelect={false}
-          selectionMode="multiple"
-          onSelectionChange={handleSupportProvidedChange}
-        >
-          {tags.map((tag) => (
-            <DropdownItem key={tag}>{tag}</DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
+    <div>
+      {/* Instructional Text */}
+      <p className="text-sm text-gray-500 mb-2">
+        Click on the options below to generate a query or write your own.
+      </p>
 
-      <Dropdown>
-        <DropdownTrigger>
-          <Button className="max-w-[100px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedForWhoState)[0])}
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="For Who"
-          closeOnSelect={false}
-          selectionMode="multiple"
-          onSelectionChange={handleForWhoChange}
-        >
-          {forWhoTags.map((tag) => (
-            <DropdownItem key={tag}>{tag}</DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
+      {/* Main Query Input */}
+      <div className="border-[1px] w-full md:w-[800px] py-4 rounded-full shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center px-2">
+        {/* For Who Dropdown */}
+        <Dropdown>
+          <DropdownTrigger>
+            <Button className="max-w-[160px] overflow-hidden" variant="light">
+              {renderButton("For Who", selectedForWhoState)}
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="For Who"
+            closeOnSelect={true}
+            selectionMode="single"
+            onSelectionChange={handleForWhoChange}
+          >
+            {forWhoTags.map((tag) => (
+              <DropdownItem key={tag}>{tag}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
 
-      <Dropdown>
-        <DropdownTrigger>
-          <Button className="max-w-[180px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedSupportProvidedState)[0])}
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="Support Provided"
-          closeOnSelect={false}
-          selectionMode="multiple"
-          onSelectionChange={handleSupportProvidedChange}
-        >
-          {supportProvidedTags.map((tag) => (
-            <DropdownItem key={tag}>{tag}</DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
+        {/* Support Provided Dropdown */}
+        <Dropdown>
+          <DropdownTrigger>
+            <Button className="max-w-[200px] overflow-hidden" variant="light">
+              {renderButton("Support Provided", selectedSupportProvidedState)}
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="Support Provided"
+            closeOnSelect={true}
+            selectionMode="single"
+            onSelectionChange={handleSupportProvidedChange}
+          >
+            {supportProvidedTags.map((tag) => (
+              <DropdownItem key={tag}>{tag}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
 
-      <Dropdown>
-        <DropdownTrigger>
-          <Button className="max-w-[130px] overflow-hidden" variant="light">
-            {renderButton(Array.from(selectedOrganisationState)[0])}
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="Organisation"
-          closeOnSelect={false}
-          selectionMode="multiple"
-          onSelectionChange={handleOrganisationChange}
-        >
-          {organisationTags.map((tag) => (
-            <DropdownItem key={tag}>{tag}</DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
-
-      <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-700 rounded-full text-white">
-        <BiSearch size={20} />
+        {/* Organisation Dropdown */}
+        <Dropdown>
+          <DropdownTrigger>
+            <Button className="max-w-[160px] overflow-hidden" variant="light">
+              {renderButton("Organisation", selectedOrganisationState)}
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="Organisation"
+            closeOnSelect={true}
+            selectionMode="single"
+            onSelectionChange={handleOrganisationChange}
+          >
+            {organisationTags.map((tag) => (
+              <DropdownItem key={tag}>{tag}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
       </div>
     </div>
   );
