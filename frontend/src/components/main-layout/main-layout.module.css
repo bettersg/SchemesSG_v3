@@ -56,15 +56,10 @@
 }
 
 .homePage {
-    max-width: 1500px;
-    height: 90vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.welcomeMsg {
-    width: 35rem;
-    padding-bottom: 3rem;
+  max-width: 1500px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
