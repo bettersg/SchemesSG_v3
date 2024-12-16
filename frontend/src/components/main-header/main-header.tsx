@@ -1,5 +1,10 @@
 "use client";
+import { useEffect, useState } from "react"; // Import useEffect and useState
+import Link from "next/link";
+import Image from "next/image";
 import logoImg from "@/assets/logo.jpg";
+import classes from "./main-header.module.css";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Navbar,
   NavbarBrand,
@@ -9,12 +14,7 @@ import {
   NavbarMenuItem,
   NavbarMenuToggle,
 } from "@nextui-org/navbar";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { HamburgerIcon } from "../../assets/icons/hamburger-icon";
-import classes from "./main-header.module.css";
 
 type NavbarItem = {
   label: string;
@@ -23,6 +23,9 @@ type NavbarItem = {
 
 export default function MainHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [hidden, setHidden] = useState(false);
+  let lastScrollTop = 0;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navbarItems: NavbarItem[] = [
