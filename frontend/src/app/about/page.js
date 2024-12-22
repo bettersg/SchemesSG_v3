@@ -222,22 +222,22 @@ export default function AboutPage() {
       content: (
         <>
           <p>
-            Schemes Pal&apos;s natural language model involves the following
-            transformation: Bag of Words (BoW) -{">"} TF-IDF -{">"} latent
-            semantic indexing (LSI). Some resources used include{" "}
+          We began with an existing database of schemes, enriching it through meticulous manual curation and leveraging web scraping techniques to expand our dataset. This ensured that we have a robust and comprehensive list of schemes complete with relevant metadata.
+          </p>
+          <p>
+          We then harnessed the power of natural language processing, utilizing libraries like spacy and re for text preprocessing and lemmatization. Our choice of sentence-transformers, specifically the all-mpnet-base-v2 model, enabled us to generate meaningful embeddings that capture the essence of each scheme's intent. To efficiently retrieve relevant schemes, we utilized FAISS (Facebook AI Similarity Search) to add these embeddings to an index, allowing for lightning-fast searching capabilities. This indexing forms the backbone of our system, enabling users to find help with precision and speed.
+          </p>
+          <p>
+          To bring the conversation to life, we utilized OpenAI gpt 4o. It helped us to dynamically generate conversation flows, tailoring interactions based on the user’s emotional cues and the context of their inquiries.
+          </p>
+          <p>
+            Some resources used include{" "}
             <a
-              href="https://radimrehurek.com/gensim/auto_examples/core/run_topics_and_transformations.html"
+              href="https://sbert.net"
               target="_blank"
             >
               this
             </a>
-            ,{" "}
-            <a
-              href="https://markroxor.github.io/gensim/static/notebooks/Topics_and_Transformations.html"
-              target="_blank"
-            >
-              this
-            </a>{" "}
             and{" "}
             <a
               href="https://www.kaggle.com/datasets/devendra45/movies-similarity"
@@ -251,28 +251,6 @@ export default function AboutPage() {
               &quot;Feedback&quot;
             </a>{" "}
             form.
-          </p>
-          <p>
-            {" "}
-            Our steady-state vision is that as the user base grows, we get more
-            Schemes Bank contributions and Schemes Pal queries, allowing us to
-            train more robust and accurate semantic matches. Schemes Case, our
-            volunteer service, will cover the blind spots of the model. The
-            three components work in tandem to create an{" "}
-            <a
-              href="https://towardsdatascience.com/the-virtuous-cycle-of-ai-driven-growth-c3fbf35f70c"
-              target="_blank"
-            >
-              ever-improving
-            </a>
-            ,{" "}
-            <a
-              href="https://towardsdatascience.com/the-virtuous-cycle-of-ai-driven-growth-c3fbf35f70c"
-              target="_blank"
-            >
-              ever more robust
-            </a>{" "}
-            Schemes SG.
           </p>
         </>
       ),
