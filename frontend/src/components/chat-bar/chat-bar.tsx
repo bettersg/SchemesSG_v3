@@ -20,6 +20,7 @@ export default function ChatBar({
     if (userInput.trim()) {
       handleUserInput(userInput);
     }
+    setUserInput("");
   };
 
   const handleSetInput = (input: string) => {
