@@ -1,16 +1,42 @@
 .userQuery {
-    background: #E8ECFF;
-    margin: 0.5rem;
-    font-size: 0.875rem;
+  background: #e6f1fe;
+  margin: 0.5rem;
+  font-size: 0.875rem;
 }
 
 .card {
-    width: 95%;
-    padding: 3px;
-    border-radius: 16px;
-    line-height: 1.25rem;
+  width: 95%;
+  padding: 3px;
+  border-radius: 16px;
+  line-height: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .card {
+    width: 100%;
+  }
+  .userQuery {
+    margin: 0.5rem 0rem;
+  }
+}
+
+.cardHeader {
+  padding: 4px 8px;
 }
 
 .cardBody {
-    padding: 4px 8px;
+  padding: 4px 8px;
+}
+
+.cardFooter {
+  padding: 0.25rem;
+  justify-content: right;
+}
+
+.resetButton {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: 1.5em;
+  height: 1.5em;
 }

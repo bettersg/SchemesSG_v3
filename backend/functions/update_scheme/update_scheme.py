@@ -3,18 +3,22 @@ url for local testing:
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/update_scheme
 """
 
+import json
+from datetime import datetime, timezone
+
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
-from datetime import datetime, timezone
-import json
+from utils.cors_config import get_cors_headers, handle_cors_preflight
+
 
 # Firestore client
 firebase_manager = FirebaseManager()
 
+
 @https_fn.on_request(
-        region="asia-southeast1",
-        memory=options.MemoryOption.GB_1,
-    )
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,
+)
 def update_scheme(req: https_fn.Request) -> https_fn.Response:
     """
     Handler for users seeking to add new schemes or request an edit on an existing scheme
@@ -25,15 +29,17 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-    headers = {
-        'Access-Control-Allow-Origin': 'http://localhost:3000'
-    }
+    if req.method == "OPTIONS":
+        return handle_cors_preflight(req)
+
+    headers = get_cors_headers(req)
+
     if req.method != "POST":
         return https_fn.Response(
             response=json.dumps({"success": False, "message": "Only POST requests are allowed"}),
             status=405,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )
 
     try:
@@ -70,7 +76,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             "timestamp": timestamp,
             "userName": userName,
             "userEmail": userEmail,
-            "typeOfRequest": typeOfRequest
+            "typeOfRequest": typeOfRequest,
         }
 
         # Add the data to Firestore
@@ -81,7 +87,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"success": True, "message": "Request for scheme update successfully added"}),
             status=200,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )
 
     except Exception as e:
@@ -90,5 +96,5 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"success": False, "message": "Failed to add request for scheme update"}),
             status=500,
             mimetype="application/json",
-            headers=headers
+            headers=headers,
         )

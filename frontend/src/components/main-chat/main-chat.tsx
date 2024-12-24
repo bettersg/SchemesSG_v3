@@ -1,53 +1,66 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from "react";
-import ChatList from "@/components/chat-list/chat-list";
+import { useChat } from "@/app/providers";
 import ChatBar from "@/components/chat-bar/chat-bar";
+import ChatList from "@/components/chat-list/chat-list";
 import { Spacer } from "@nextui-org/react";
-import classes from "./main-chat.module.css"
-import { Message, useChat } from "@/app/providers";
+import { useEffect, useRef, useState } from "react";
 import UserQuery from "../user-query/user-query";
+import classes from "./main-chat.module.css";
 
 type MainChatProps = {
   sessionId: string;
 };
 
 export default function MainChat({ sessionId }: MainChatProps) {
-    const { messages, setMessages } = useChat();
+  const { messages, setMessages } = useChat();
+  const [userInput, setUserInput] = useState("");
+  const [isBotResponseGenerating, setIsBotResponseGenerating] =
+    useState<boolean>(false);
+  const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
+  const scrollableDivRef = useRef<HTMLDivElement>(null);
 
-    const [userInput, setUserInput] = useState("");
-    const [isBotResponseGenerating, setIsBotResponseGenerating] = useState<boolean>(false);
-    const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
+  useEffect(() => {
+    const storedQuery = localStorage.getItem("userQuery");
+    const storedMessages = localStorage.getItem("userMessages");
 
-    const scrollableDivRef = useRef<HTMLDivElement>(null);
+    if (storedQuery && !storedMessages && messages.length === 0) {
+      setMessages([
+        {
+          type: "bot",
+          text: "You can see the search results on the right. Please ask me any further questions about the schemes.",
+        },
+      ]);
+    }
+  }, []);
 
-    useEffect(() => {
-      handleScrollToBottom();
-    }, [messages])
+  useEffect(() => {
+    handleScrollToBottom();
+  }, [messages]);
 
-    const handleUserInput = async (input: string) => {
-        setMessages((prevMessages: Message[]) => [
-            ...prevMessages,
-            { type: "user", text: input }
-        ] as Message[]);
-        setUserInput("");
-        // Trigger API call for bot response
-        await fetchBotResponse(input);
-    };
+  const handleUserInput = async (input: string) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { type: "user", text: input },
+    ]);
 
-    const handleBotResponse = (response: string) => {
-        setMessages((prevMessages) => [
-            ...prevMessages,
-            { type: "bot", text: response }
-        ]);
-    };
+    await fetchBotResponse(input);
+  };
 
-    const fetchBotResponse = async (userMessage: string) => {
-      setIsBotResponseGenerating(true);
-      setCurrentStreamingMessage(""); // Reset streaming message
+  const handleBotResponse = (response: string) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { type: "bot", text: response },
+    ]);
+  };
 
-      try {
-        const response = await fetch("http://localhost:5001/schemessg-v3-dev/asia-southeast1/chat_message", {
+  const fetchBotResponse = async (userMessage: string) => {
+    setIsBotResponseGenerating(true);
+    setCurrentStreamingMessage("");
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat_message`,
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -57,71 +70,75 @@ export default function MainChat({ sessionId }: MainChatProps) {
             sessionID: sessionId,
             stream: true,
           }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch bot response");
         }
+      );
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-
-        if (!reader) {
-            throw new Error("No reader available");
-        }
-
-        let fullMessage = ""; // Keep track of the full message
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-
-          lines.forEach(line => {
-              if (line.startsWith('data: ')) {
-                  try {
-                      const data = JSON.parse(line.slice(6));
-                      fullMessage += data.chunk; // Add to full message
-                      setCurrentStreamingMessage(fullMessage); // Update streaming with full message
-                  } catch (e) {
-                      console.error('Error parsing SSE data:', e);
-                  }
-              }
-          });
-        }
-        handleBotResponse(fullMessage);
-
-      } catch (error) {
-        console.error("Error fetching bot response:", error);
-        handleBotResponse("Sorry, something went wrong. Please try again.");
-      } finally {
-        setIsBotResponseGenerating(false);
-        setCurrentStreamingMessage(""); // Clear streaming message after adding to chat history
+      if (!response.ok) {
+        throw new Error("Failed to fetch bot response");
       }
-    };
 
-    const handleScrollToBottom = () => {
-        if (scrollableDivRef.current) {
-        scrollableDivRef.current.scrollTo({
-            top: scrollableDivRef.current.scrollHeight,
-            behavior: 'smooth',
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No reader available");
+      }
+
+      let fullMessage = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        lines.forEach((line) => {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              fullMessage += data.chunk;
+              setCurrentStreamingMessage(fullMessage);
+            } catch (e) {
+              console.error("Error parsing SSE data:", e);
+            }
+          }
         });
-        }
-    };
+      }
+      handleBotResponse(fullMessage);
+    } catch (error) {
+      console.error("Error fetching bot response:", error);
+      handleBotResponse("Sorry, something went wrong. Please try again.");
+    } finally {
+      setIsBotResponseGenerating(false);
+      setCurrentStreamingMessage("");
+    }
+  };
 
-    return (
-        <div className={classes.mainChat}>
-            <UserQuery />
-            <ChatList messages={messages} streamingMessage={currentStreamingMessage} scrollableDivRef={scrollableDivRef} />
-            <Spacer y={4} />
-            <ChatBar
-                userInput={userInput}
-                setUserInput={setUserInput}
-                handleUserInput={handleUserInput}
-                isBotResponseGenerating={isBotResponseGenerating}
-            />
-        </div>
-    )
+  const handleScrollToBottom = () => {
+    if (scrollableDivRef.current) {
+      scrollableDivRef.current.scrollTo({
+        top: scrollableDivRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  return (
+    <div className={classes.mainChat}>
+      <UserQuery />
+      <ChatList
+        messages={messages}
+        streamingMessage={currentStreamingMessage}
+        scrollableDivRef={scrollableDivRef}
+      />
+      <Spacer y={4} />
+      <ChatBar
+        userInput={userInput}
+        setUserInput={setUserInput}
+        handleUserInput={handleUserInput}
+        isBotResponseGenerating={isBotResponseGenerating}
+      />
+    </div>
+  );
 }

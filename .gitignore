@@ -218,3 +218,5 @@ yarn-error.log*
 #dataset_workflow
 node_modules/
 creds.json
+frontend/env.development
+frontend/env.staging

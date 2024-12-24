@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env APP_ENV=development next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cross-env NODE_ENV=development next dev",
+    "build": "npm run clean && npm install && next build",
+    "start": "cross-env NODE_ENV=production next start",
+    "start:staging": "cross-env NODE_ENV=staging next start",
     "lint": "next lint",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
-    "test-build:prod": "npm run build:prod && npx serve@latest out"
+    "test-build:prod": "npm run build:prod && npx serve@latest out",
+    "clean": "rm -rf node_modules .next out dist"
   },
   "dependencies": {
     "@nextui-org/navbar": "^2.0.37",
@@ -25,7 +27,7 @@
     "react-markdown": "^9.0.1"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^20.17.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "cross-env": "^7.0.3",

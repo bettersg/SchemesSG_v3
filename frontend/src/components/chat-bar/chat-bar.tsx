@@ -2,6 +2,7 @@ import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SearchIcon } from "../../assets/icons/search-icon";
 import QuerySuggestions from "../query-suggestions/query-suggestions";
 import classes from "./chat-bar.module.css";
+
 interface ChatBarProps {
   userInput: string;
   setUserInput: React.Dispatch<React.SetStateAction<string>>;
@@ -36,7 +37,7 @@ export default function ChatBar({
             handleSend();
           }
         }}
-        className={classes.chatBar}
+        className={`${classes.chatBar} border-solid	border-2 border-primary-100 rounded-2xl`}
         type="text"
         size="md"
         radius="lg"
@@ -54,6 +55,7 @@ export default function ChatBar({
           ) : (
             <Button
               className={classes.endContent}
+              color="primary"
               isIconOnly
               size="sm"
               radius="full"
