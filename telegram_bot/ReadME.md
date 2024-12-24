@@ -7,6 +7,8 @@ API_KEY=your-telegram-api-key
 BACKEND_URL=your-backend-url
 ```
 
+### Development
+
 Enter the following commands (from `telegram_bot` folder)
 
 ```bash
@@ -19,8 +21,6 @@ poetry run python app.py
 poetry run python app.py
 ```
 
-### Progress
+### Production
 
-- [x] Implement schemes recommendation
-- [x] Implement chatbot integration
-- [x] Better storage of query records with SQLite (for pagination); previously stored in json files
+Run the `deploy.sh` shell script on your server console from this (`telegram_bot`) directory.
