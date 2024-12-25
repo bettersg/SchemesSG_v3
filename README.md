@@ -19,6 +19,13 @@ Ensure you have the following installed:
 - **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
 - **Docker Compose**: Included with Docker Desktop
 
+## Key branches
+- **main** branch contains frontend and backend code - push to Schemes prod
+- **stg** branch contains frontend and backend code - push to Schemes dev
+- **telegram_bot** branch contains telegram bot code - push to GCP
+- **dataset-workflow** branch contains files to update dataset and do webscraping adhoc
+- **v3-archive-021224** contains mix of old and prototype scheemes code for reference
+
 ### Required Files Setup
 
 1. **Environment Variables**
