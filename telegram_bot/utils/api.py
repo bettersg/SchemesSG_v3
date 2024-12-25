@@ -10,6 +10,20 @@ load_dotenv()
 backend_url = os.getenv("BACKEND_URL")
 
 
+def get_endpoint(func_name: str) -> str:
+    """
+    Helper function to generate full API url from given function names
+
+    Args:
+        func_name (str): name of function to be called
+
+    Returns:
+        str: full API url
+    """
+
+    return f"https://{func_name}{backend_url}"
+
+
 def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, list | None, str | None]:
     """
     Handles API call to backend (searching for schemes)
@@ -26,7 +40,7 @@ def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, li
 
     body = {"query": text, "similarity_threshold": similarity_threshold}
 
-    endpoint = backend_url + "/schemes_search"
+    endpoint = get_endpoint("schemes-search")
 
     res = requests.post(endpoint, json=body)
 
@@ -55,7 +69,7 @@ def retrieve_scheme_results(query_id: str) -> bool | list[dict[str, str | int]]:
         bool | list[dict[str, str | int]]: either returns False (in which case provided query_id is in incorrect) or full schemes result
     """
 
-    endpoint = backend_url + "/retrieve_search_queries" + "/" + query_id
+    endpoint = get_endpoint('retrieve-search-queries') + "/" + query_id
 
     res = requests.get(endpoint)
 
@@ -81,7 +95,7 @@ def send_chat_message(input_text: str, query_id: str) -> tuple[str | None, str |
     chatbot_query = input_text + "\n\nKeep the response to a strict maximum of 300 words."
     body = {"sessionID": query_id, "message": chatbot_query}
 
-    endpoint = backend_url + "/chat_message"
+    endpoint = get_endpoint("chat-message")
 
     res = requests.post(endpoint, json=body)
 
