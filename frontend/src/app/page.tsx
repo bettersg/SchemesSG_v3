@@ -11,8 +11,7 @@ import { useState } from "react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
 export default function Home() {
-  const { schemes } = useChat();
-  const [sessionId, setSessionId] = useState<string>("");
+  const { schemes, sessionId, setSessionId } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <main className={classes.homePage}>
