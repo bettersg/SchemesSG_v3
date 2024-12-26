@@ -19,6 +19,8 @@ export type Message = {
 type ChatContextType = {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  sessionId: string;
+  setSessionId: React.Dispatch<React.SetStateAction<string>>;
   schemes: SearchResScheme[];
   setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
 };
@@ -28,13 +30,16 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
+  const [sessionId, setSessionId] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Load data from localStorage on mount
   useEffect(() => {
     if (!isInitialized) {
       try {
         const storedSchemes = localStorage.getItem("schemes");
         const storedMessages = localStorage.getItem("userMessages");
+        const storedSessionId = localStorage.getItem("sessionID");
 
         if (storedSchemes) {
           const parsedSchemes = JSON.parse(storedSchemes);
@@ -44,7 +49,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           const parsedMessages = JSON.parse(storedMessages);
           setMessages(parsedMessages);
         }
-
+        if (storedSessionId) {
+          setSessionId(storedSessionId);
+        }
         setIsInitialized(true);
       } catch (error) {
         console.error("Error loading from localStorage:", error);
@@ -71,6 +78,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [messages, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized && sessionId) {
+      try {
+        localStorage.setItem("sessionID", sessionId);
+      } catch (error) {
+        console.error("Error saving sessionId to localStorage:", error);
+      }
+    }
+  }, [sessionId, isInitialized]);
   return (
     <ChatContext.Provider
       value={{
@@ -78,6 +95,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setMessages,
         schemes,
         setSchemes,
+        sessionId,
+        setSessionId,
       }}
     >
       {children}
