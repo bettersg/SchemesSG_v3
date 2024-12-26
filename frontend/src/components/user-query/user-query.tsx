@@ -6,14 +6,16 @@ import ResetQueryModal from "../reset-query-modal/reset-query-modal";
 import classes from "./user-query.module.css";
 
 export default function UserQuery() {
-  const { setSchemes, messages, setMessages } = useChat();
+  const { setSchemes, messages, setMessages, setSessionId } = useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
   const handleReset = () => {
     localStorage.removeItem("schemes");
     localStorage.removeItem("userMessages");
+    localStorage.removeItem("sessionID");
     setSchemes([]);
     setMessages([]);
+    setSessionId("");
   };
 
   return (
