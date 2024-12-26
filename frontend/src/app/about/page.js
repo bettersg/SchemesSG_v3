@@ -222,20 +222,32 @@ export default function AboutPage() {
       content: (
         <>
           <p>
-          We began with an existing database of schemes, enriching it through meticulous manual curation and leveraging web scraping techniques to expand our dataset. This ensured that we have a robust and comprehensive list of schemes complete with relevant metadata.
+            We began with an existing database of schemes, enriching it through
+            meticulous manual curation and leveraging web scraping techniques to
+            expand our dataset. This ensured that we have a robust and
+            comprehensive list of schemes complete with relevant metadata.
           </p>
           <p>
-          We then harnessed the power of natural language processing, utilizing libraries like spacy and re for text preprocessing and lemmatization. Our choice of sentence-transformers, specifically the all-mpnet-base-v2 model, enabled us to generate meaningful embeddings that capture the essence of each scheme's intent. To efficiently retrieve relevant schemes, we utilized FAISS (Facebook AI Similarity Search) to add these embeddings to an index, allowing for lightning-fast searching capabilities. This indexing forms the backbone of our system, enabling users to find help with precision and speed.
+            We then harnessed the power of natural language processing,
+            utilizing libraries like spacy and re for text preprocessing and
+            lemmatization. Our choice of sentence-transformers, specifically the
+            all-mpnet-base-v2 model, enabled us to generate meaningful
+            embeddings that capture the essence of each scheme&apos;s intent. To
+            efficiently retrieve relevant schemes, we utilized FAISS (Facebook
+            AI Similarity Search) to add these embeddings to an index, allowing
+            for lightning-fast searching capabilities. This indexing forms the
+            backbone of our system, enabling users to find help with precision
+            and speed.
           </p>
           <p>
-          To bring the conversation to life, we utilized OpenAI gpt 4o. It helped us to dynamically generate conversation flows, tailoring interactions based on the user’s emotional cues and the context of their inquiries.
+            To bring the conversation to life, we utilized OpenAI gpt 4o. It
+            helped us to dynamically generate conversation flows, tailoring
+            interactions based on the user&apos;s emotional cues and the context
+            of their inquiries.
           </p>
           <p>
             Some resources used include{" "}
-            <a
-              href="https://sbert.net"
-              target="_blank"
-            >
+            <a href="https://sbert.net" target="_blank">
               this
             </a>
             and{" "}
