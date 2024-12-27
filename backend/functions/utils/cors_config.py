@@ -6,7 +6,12 @@ from firebase_functions import https_fn
 # Define allowed origins
 ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Local development
-    "https://schemessg-v3-dev.web.app",  # Staging frontend
+    "https://schemessg-v3-dev.web.app",  # dev frontend
+    "https://schemessg-v3-dev.firebaseapp.com",  # dev frontend
+    "https://schemessg-v3-dev.firebaseapp.com",  # dev frontend
+    "https://staging.schemes.sg",  # Production frontend
+    "https://schemes.firebaseapp.com",  # Production frontend
+    "https://schemes.sg",  # Production frontend
 ]
 
 
