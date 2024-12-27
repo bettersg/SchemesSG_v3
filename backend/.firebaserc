@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "schemessg-v3-dev"
+    "default": "schemessg-v3-dev",
+    "dev": "schemessg-v3-dev",
+    "prod": "schemessg"
   }
 }
