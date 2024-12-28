@@ -1,5 +1,4 @@
 .contentWrapper {
-  padding: 0.5em 4em;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -15,7 +14,37 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  /* Responsive padding */
   padding: 1rem;
+}
+
+/* Small devices (phones) */
+@media (min-width: 640px) {
+  .homePage {
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Medium devices (tablets) */
+@media (min-width: 768px) {
+  .homePage {
+    padding: 0.5rem 2rem;
+  }
+}
+
+/* Large devices (laptops/desktops) */
+@media (min-width: 1024px) {
+  .homePage {
+    padding: 0.5rem 4rem;
+  }
+}
+
+/* Extra large devices */
+@media (min-width: 1280px) {
+  .homePage {
+    padding: 0.5rem 4rem;
+    margin: 0 auto;
+  }
 }
 
 .welcomeMsg {
@@ -33,14 +62,6 @@
 
 /* Tablet Breakpoint (768px) */
 @media (max-width: 768px) {
-  .contentWrapper {
-    padding: 0.5em 2em;
-  }
-
-  .homePage {
-    padding: 0;
-  }
-
   .mainLayout {
     display: block;
     grid-template-columns: 1fr 1fr;
