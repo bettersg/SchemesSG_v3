@@ -10,15 +10,15 @@ import { Button } from "@nextui-org/react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
 import QueryGenerator from "@/components/query-generator/query-generator";
-        
+
 export default function Home() {
-  const { schemes, setMessages } = useChat();
-  const [sessionId, setSessionId] = useState<string>("");
+  const { schemes, setMessages, sessionId, setSessionId } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedSupportProvided, setSelectedSupportProvided] = useState<string | null>(null);
   const [selectedForWho, setSelectedForWho] = useState<string | null>(null);
-  const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
-            
+  const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(null);
+  // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
+
   return (
     <main className={classes.homePage}>
       {schemes.length > 0 ? (
@@ -102,7 +102,8 @@ export default function Home() {
               setSessionId={setSessionId}
               setSelectedSupportProvided={setSelectedSupportProvided}
               setSelectedForWho={setSelectedForWho}
-              setSelectedOrganisation={setSelectedOrganisation}
+              // setSelectedOrganisation={setSelectedOrganisation}
+              setSelectedSchemeType={setSelectedSchemeType}
               onSendQuery={() => {}}
             />
           </div>
@@ -110,7 +111,11 @@ export default function Home() {
             setSessionId={setSessionId}
             selectedSupportProvided={selectedSupportProvided}
             selectedForWho={selectedForWho}
-            selectedOrganisation={selectedOrganisation}
+            // selectedOrganisation={selectedOrganisation}
+            selectedSchemeType={selectedSchemeType}
+            setSelectedSupportProvided={setSelectedSupportProvided}
+            setSelectedForWho={setSelectedForWho}
+            setSelectedSchemeType={setSelectedSchemeType}
           />
         </div>
       )}

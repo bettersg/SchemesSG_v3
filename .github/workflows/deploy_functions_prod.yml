@@ -1,16 +1,16 @@
-name: Deploy to DEV
+name: Deploy Functions Prod
 
 on:
   push:
     branches:
-      - stg
+      - main
     paths:
       - "backend/**"
-      - ".github/workflows/deploy_functions.yml"
+      - ".github/workflows/deploy_functions_prod.yml"
   workflow_dispatch:
 
 jobs:
-  build_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the code
@@ -22,7 +22,7 @@ jobs:
         run: |
           cd functions
           touch .env
-          echo "${{ secrets.FUNCTIONS_ENV_VARS }}" >> .env
+          echo "${{ secrets.FUNCTIONS_ENV_VARS_PROD }}" >> .env
 
       # Step 2: Set up Python environment
       - name: Set up Python
@@ -39,7 +39,7 @@ jobs:
       # Step 3.5: Download the ZIP file from Google Drive
       - name: Download Models ZIP
         run: |
-          wget "${{ secrets.LINK_TO_MODEL_FILES }}" -O models.zip
+          wget "${{ secrets.LINK_TO_MODEL_FILES_PROD }}" -O models.zip
 
       - name: List Directory Contents
         run: ls -lh models.zip
@@ -58,7 +58,7 @@ jobs:
       # Step 4: Create Service Account Key and Set Env Variables
       - name: Create SA key and set env variables
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_PROD }}' > ${{ runner.temp }}/gcloud.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ runner.temp }}/gcloud.json" >> $GITHUB_ENV
 
       # Step 5: Prepare the environment
@@ -75,4 +75,4 @@ jobs:
         working-directory: backend
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
-        run: npx firebase-tools deploy --only functions --debug --token "${{ secrets.FIREBASE_TOKEN_SCHEMESSG_V3_DEV }}"
+        run: npx firebase-tools deploy --only functions --project schemessg --debug --token "${{ secrets.FIREBASE_TOKEN_PROD }}"

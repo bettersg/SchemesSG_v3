@@ -357,6 +357,7 @@ class SearchModel:
 
         # Sort by similarity in descending order
         sorted_results = aggregated_results.sort_values(by="Similarity", ascending=False).reset_index(drop=True)
+        sorted_results = sorted_results.head(top_k * 3).reset_index(drop=True)
 
         return sorted_results
 

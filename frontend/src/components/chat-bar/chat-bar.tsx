@@ -1,5 +1,5 @@
 import { Button, Spinner, Textarea } from "@nextui-org/react";
-import { SearchIcon } from "../../assets/icons/search-icon";
+import { SendIcon } from "../../assets/icons/send-icon";
 import QuerySuggestions from "../query-suggestions/query-suggestions";
 import classes from "./chat-bar.module.css";
 
@@ -20,6 +20,7 @@ export default function ChatBar({
     if (userInput.trim()) {
       handleUserInput(userInput);
     }
+    setUserInput("");
   };
 
   const handleSetInput = (input: string) => {
@@ -61,7 +62,7 @@ export default function ChatBar({
               radius="full"
               onClick={handleSend}
             >
-              <SearchIcon />
+              <SendIcon />
             </Button>
           )
         }

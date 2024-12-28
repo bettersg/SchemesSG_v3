@@ -9,48 +9,69 @@ interface SearchBarProps {
   setSessionId: (val: string) => void;
   selectedSupportProvided: string | null;
   selectedForWho: string | null;
-  selectedOrganisation: string | null;
+  // selectedOrganisation: string | null;
+  selectedSchemeType: string | null;
+  setSelectedSupportProvided: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedForWho: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedSchemeType: React.Dispatch<React.SetStateAction<string | null>>;
+  onSendQuery?: () => void;
 }
 export default function SearchBar({
   setSessionId,
   selectedSupportProvided,
   selectedForWho,
-  selectedOrganisation,
+  // selectedOrganisation,
+  selectedSchemeType,
+  setSelectedSupportProvided,
+  setSelectedForWho,
+  setSelectedSchemeType,
 }: SearchBarProps) {
-  const { setMessages, setUserQuery, setSchemes } = useChat();
-  const [userInput, setUserInput] = useState("");
+  const { setMessages, userQuery, setUserQuery, setSchemes } = useChat();
+  // const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
 
   useEffect(() => {
-    let query = "I am looking for";
-    if (selectedSupportProvided) {
-      query += ` ${selectedSupportProvided}`;
-    }
-    if (selectedForWho) {
-      query += selectedSupportProvided
-        ? ` for ${selectedForWho}`
-        : ` schemes for ${selectedForWho}`;
-    }
-    if (selectedOrganisation) {
-      query +=
-        selectedSupportProvided || selectedForWho
-          ? ` from ${selectedOrganisation}`
-          : ` schemes from ${selectedOrganisation}`;
-    }
-    // Default to empty if no filters are selected
-    setUserInput(query === "I am looking for" ? "" : query);
-  }, [selectedSupportProvided, selectedForWho, selectedOrganisation]);
+    let query = "I am";
 
-  const handleUserInput = (input: string) => {
+    // Handle ForWho
+    if (selectedForWho) {
+      query += ` ${selectedForWho}`;
+    }
+
+    if (selectedSchemeType || selectedSupportProvided ) {
+      // Add "looking for" after ForWho or at start
+      query += " looking for";
+    }
+    // Handle SchemeType
+    if (selectedSchemeType) {
+      query += ` ${selectedSchemeType}`;
+    } else if (selectedSupportProvided) {
+      // If no SchemeType but has SupportProvided, add "scheme"
+      query += " scheme";
+    }
+
+    // Handle SupportProvided
+    if (selectedSupportProvided) {
+      query += ` that offers ${selectedSupportProvided}`;
+    }
+
+    // Default to empty if it's just the basic phrase
+    setUserQuery(query === "I am" ? "" : query);
+  }, [selectedForWho, selectedSchemeType, selectedSupportProvided]);
+
+  const handleUserQuery = (input: string) => {
     setMessages([
       {
         type: "user",
         text: input,
       },
     ]);
-    setUserQuery(input);
-    setUserInput("");
+    // Make sure input is a string
+    if (typeof input === 'string') {
+      setUserQuery(input);
+    }
+    setUserQuery("");
   };
 
   const mapToScheme = (rawData: any): Scheme => {
@@ -77,7 +98,7 @@ export default function SearchBar({
       "http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
 
     const requestBody = {
-      query: userInput,
+      query: userQuery,
       top_k: 20,
       similarity_threshold: 0,
     };
@@ -109,21 +130,26 @@ export default function SearchBar({
   };
 
   const handleSend = async () => {
-    if (userInput.trim()) {
+    if (userQuery.trim()) {
       const { schemesRes, sessionId } = await getSchemes();
       if (schemesRes.length > 0 && sessionId !== "") {
         schemesRes && setSchemes(schemesRes);
         setSessionId(sessionId);
-        handleUserInput(userInput);
+        handleUserQuery(userQuery);
       }
+
+      // Reset the filters
+      setSelectedSupportProvided(null);
+      setSelectedForWho(null);
+      setSelectedSchemeType(null);
     }
   };
 
   return (
     <>
       <Textarea
-        value={userInput}
-        onChange={(e) => setUserInput(e.target.value)}
+        value={userQuery}
+        onChange={(e) => setUserQuery(e.target.value)}
         onKeyDown={async (e) => {
           if (e.key === "Enter" && !isBotResponseGenerating) {
             e.preventDefault();
@@ -138,7 +164,7 @@ export default function SearchBar({
         label="How can we help?"
         labelPlacement="outside"
         description="Please avoid providing identifiable information."
-        placeholder="E.g. I am a dialysis patient in need of financial assistance and food support."
+        placeholder="E.g. I am a cancer patient in need of financial assistance and food support."
         endContent={
           isBotResponseGenerating ? (
             <Spinner className={classes.endContent} size="sm" />

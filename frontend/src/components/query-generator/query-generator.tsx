@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { BiSearch } from "react-icons/bi";
 import {
   Dropdown,
   DropdownItem,
@@ -16,29 +15,64 @@ interface QueryGeneratorProps {
     React.SetStateAction<string | null>
   >;
   setSelectedForWho: React.Dispatch<React.SetStateAction<string | null>>;
-  setSelectedOrganisation: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedSchemeType: React.Dispatch<React.SetStateAction<string | null>>;
+  // setSelectedOrganisation: React.Dispatch<React.SetStateAction<string | null>>;
   onSendQuery: () => void;
 }
 
 const forWhoTags = [
-  "Elderly",
-  "Low income families",
-  "Caregivers",
-  "Ex-offenders",
-  "Migrant workers",
-  "Cancer patients",
-  "HIV patients",
+  "Low-Income Individual or Family",
+  "Parent or Family Member",
+  "Elderly (Senior)",
+  "Person with Disabilities or Special Needs",
+  "Caregiver",
+  "Child or Youth",
+  "Ex-Offender or Incarcerated Individual",
+  "Migrant or Foreign Worker",
+  "Woman in Need of Support",
+  "Facing Mental Health Challenges",
+  "Homeless or in Need of Shelter",
+  "Dealing with Addictions or Recovery",
+  "Facing End-of-Life or Terminal Illness",
+  "In Need of Legal Aid",
+  "Experiencing Abuse or Violence"
 ];
 
 const supportProvidedTags = [
-  "Educational programmes for caregivers",
-  "Emotional care",
-  "Financial assistance",
+  "Financial Assistance",
+  "Food Support",
+  "Housing Assistance",
+  "Healthcare Services",
+  "Mental Health Support",
+  "Education Opportunities",
+  "Employment Support",
+  "Caregiver Assistance",
+  "Transport Mobility Support",
+  "Legal Aid Services",
+  "Addiction Recovery Services",
+  "Parenting Support",
+  "Disability Support",
+  "Palliative Care Services",
+  "Social Work Services"
+];
+
+const schemeTypeTags = [
+  "Financial Assistance",
   "Food",
-  "Counselling",
-  "Financial assistance for dialysis",
-  "Transport subsidy",
-  "Financial assistance for assistive technology",
+  "Housing",
+  "Shelter",
+  "Healthcare",
+  "Mental Health",
+  "Education",
+  "Employment",
+  "Caregivers",
+  "Transport",
+  "Legal Aid",
+  "Addictions",
+  "Family Support",
+  "Disability Support",
+  "Palliative Care",
+  "Social Work"
 ];
 
 const organisationTags = [
@@ -55,14 +89,17 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
   setSessionId,
   setSelectedSupportProvided,
   setSelectedForWho,
-  setSelectedOrganisation,
+  // setSelectedOrganisation,
+  setSelectedSchemeType,
   onSendQuery,
 }) => {
   const [selectedForWhoState, setSelectedForWhoState] = useState("Add Who");
   const [selectedSupportProvidedState, setSelectedSupportProvidedState] =
     useState("Add Support");
-  const [selectedOrganisationState, setSelectedOrganisationState] =
-    useState("Add Organisation");
+  // const [selectedOrganisationState, setSelectedOrganisationState] =
+  //   useState("Add Organisation");
+  const [selectedSchemeTypeState, setSelectedSchemeTypeState] =
+    useState("Add Scheme Type");
 
   const renderButton = (label: string, value: string) => {
     return (
@@ -94,11 +131,19 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
     onSendQuery();
   };
 
-  const handleOrganisationChange = (keys: Iterable<unknown>) => {
+  // const handleOrganisationChange = (keys: Iterable<unknown>) => {
+  //   const selected = Array.from(keys) as string[];
+  //   const newSelected = selected.length > 0 ? selected[0] : "Add Organisation";
+  //   setSelectedOrganisation(newSelected);
+  //   setSelectedOrganisationState(newSelected);
+  //   onSendQuery();
+  // };
+
+  const handleSchemeTypeChange = (keys: Iterable<unknown>) => {
     const selected = Array.from(keys) as string[];
-    const newSelected = selected.length > 0 ? selected[0] : "Add Organisation";
-    setSelectedOrganisation(newSelected);
-    setSelectedOrganisationState(newSelected);
+    const newSelected = selected.length > 0 ? selected[0] : "Add Scheme Type";
+    setSelectedSchemeType(newSelected);
+    setSelectedSchemeTypeState(newSelected);
     onSendQuery();
   };
 
@@ -130,6 +175,25 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
           </DropdownMenu>
         </Dropdown>
 
+        {/* Support Scheme Type Dropdown */}
+        <Dropdown>
+          <DropdownTrigger>
+            <Button className="max-w-[160px] overflow-hidden" variant="light">
+              {renderButton("Scheme Type", selectedSchemeTypeState)}
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="SchemeType"
+            closeOnSelect={true}
+            selectionMode="single"
+            onSelectionChange={handleSchemeTypeChange}
+          >
+            {schemeTypeTags.map((tag) => (
+              <DropdownItem key={tag}>{tag}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
+
         {/* Support Provided Dropdown */}
         <Dropdown>
           <DropdownTrigger>
@@ -150,7 +214,7 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
         </Dropdown>
 
         {/* Organisation Dropdown */}
-        <Dropdown>
+        {/* <Dropdown>
           <DropdownTrigger>
             <Button className="max-w-[160px] overflow-hidden" variant="light">
               {renderButton("Organisation", selectedOrganisationState)}
@@ -166,7 +230,7 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
               <DropdownItem key={tag}>{tag}</DropdownItem>
             ))}
           </DropdownMenu>
-        </Dropdown>
+        </Dropdown> */}
       </div>
     </div>
   );
