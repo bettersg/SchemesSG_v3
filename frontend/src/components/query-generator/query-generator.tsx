@@ -56,23 +56,24 @@ const supportProvidedTags = [
 ];
 
 const schemeTypeTags = [
-  "Financial Assistance",
-  "Food",
-  "Housing",
-  "Shelter",
-  "Healthcare",
-  "Mental Health",
-  "Education",
-  "Employment",
-  "Caregivers",
-  "Transport",
-  "Legal Aid",
-  "Addictions",
-  "Family Support",
-  "Disability Support",
-  "Palliative Care",
-  "Social Work",
+  "Financial Assistance Programs",
+  "Food Support",
+  "Housing Assistance",
+  "Shelter Services",
+  "Healthcare Services",
+  "Mental Health Support",
+  "Education Programs",
+  "Employment Assistance",
+  "Caregiver Support",
+  "Transport Services",
+  "Legal Aid Services",
+  "Addiction Recovery Services",
+  "Family Support Services",
+  "Disability Support Services",
+  "Palliative Care Services",
+  "Social Work & Casework"
 ];
+
 
 // const organisationTags = [
 //   "Housing and Development Board",
