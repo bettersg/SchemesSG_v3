@@ -1,9 +1,10 @@
-import { SearchIcon } from "../../assets/icons/search-icon";
-import classes from "./search-bar.module.css";
+import { RawSchemeData } from "@/app/interfaces/schemes";
 import { useChat } from "@/app/providers";
-import Scheme from "../schemes/schemes-list";
-import { useEffect, useState } from "react";
 import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { useEffect, useState } from "react";
+import { SearchIcon } from "../../assets/icons/search-icon";
+import { SearchResScheme } from "../schemes/schemes-list";
+import classes from "./search-bar.module.css";
 
 interface SearchBarProps {
   setSessionId: (val: string) => void;
@@ -11,7 +12,9 @@ interface SearchBarProps {
   selectedForWho: string | null;
   // selectedOrganisation: string | null;
   selectedSchemeType: string | null;
-  setSelectedSupportProvided: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedSupportProvided: React.Dispatch<
+    React.SetStateAction<string | null>
+  >;
   setSelectedForWho: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedSchemeType: React.Dispatch<React.SetStateAction<string | null>>;
   onSendQuery?: () => void;
@@ -39,7 +42,7 @@ export default function SearchBar({
       query += ` ${selectedForWho}`;
     }
 
-    if (selectedSchemeType || selectedSupportProvided ) {
+    if (selectedSchemeType || selectedSupportProvided) {
       // Add "looking for" after ForWho or at start
       query += " looking for";
     }
@@ -68,13 +71,13 @@ export default function SearchBar({
       },
     ]);
     // Make sure input is a string
-    if (typeof input === 'string') {
+    if (typeof input === "string") {
       setUserQuery(input);
     }
     setUserQuery("");
   };
 
-  const mapToScheme = (rawData: any): Scheme => {
+  const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
     return {
       schemeType: rawData["Scheme Type"] || "",
       schemeName: rawData["Scheme"] || "",
@@ -120,7 +123,7 @@ export default function SearchBar({
       const res = await response.json();
       const sessionId: string = res["sessionID"];
       setIsBotResponseGenerating(false);
-      const schemesRes: Scheme[] = res.data.map(mapToScheme);
+      const schemesRes: SearchResScheme[] = res.data.map(mapToScheme);
       return { schemesRes, sessionId };
     } catch (error) {
       console.error("Error making POST request:", error);

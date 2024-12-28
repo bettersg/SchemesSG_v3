@@ -1,16 +1,15 @@
-import React, { useState } from "react";
 import {
+  Button,
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
-  Button,
 } from "@nextui-org/react";
-import styles from "./query-generator.module.css";
+import React, { useState } from "react";
 
 // Define the props interface
 interface QueryGeneratorProps {
-  setSessionId: React.Dispatch<React.SetStateAction<string>>;
+  // setSessionId: React.Dispatch<React.SetStateAction<string>>;
   setSelectedSupportProvided: React.Dispatch<
     React.SetStateAction<string | null>
   >;
@@ -35,7 +34,7 @@ const forWhoTags = [
   "Dealing with Addictions or Recovery",
   "Facing End-of-Life or Terminal Illness",
   "In Need of Legal Aid",
-  "Experiencing Abuse or Violence"
+  "Experiencing Abuse or Violence",
 ];
 
 const supportProvidedTags = [
@@ -53,7 +52,7 @@ const supportProvidedTags = [
   "Parenting Support",
   "Disability Support",
   "Palliative Care Services",
-  "Social Work Services"
+  "Social Work Services",
 ];
 
 const schemeTypeTags = [
@@ -72,21 +71,21 @@ const schemeTypeTags = [
   "Family Support",
   "Disability Support",
   "Palliative Care",
-  "Social Work"
+  "Social Work",
 ];
 
-const organisationTags = [
-  "Housing and Development Board",
-  "Singapore Indian Development Association",
-  "SG Enable",
-  "Ministry of Health",
-  "Lakeside Family Services",
-  "Montfort Care Family Service",
-  "365 Cancer Prevention Society",
-];
+// const organisationTags = [
+//   "Housing and Development Board",
+//   "Singapore Indian Development Association",
+//   "SG Enable",
+//   "Ministry of Health",
+//   "Lakeside Family Services",
+//   "Montfort Care Family Service",
+//   "365 Cancer Prevention Society",
+// ];
 
 const QueryGenerator: React.FC<QueryGeneratorProps> = ({
-  setSessionId,
+  // setSessionId,
   setSelectedSupportProvided,
   setSelectedForWho,
   // setSelectedOrganisation,
@@ -150,71 +149,81 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
   return (
     <div>
       {/* Instructional Text */}
-      <p className="text-sm text-gray-500 mb-2">
+      <p className="text-sm text-gray-500 mb-4 text-center">
         Click on the options below to generate a query or write your own.
       </p>
 
       {/* Main Query Input */}
-      <div className="border-[1px] w-full md:w-[800px] py-4 rounded-full shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center px-2">
-        {/* For Who Dropdown */}
-        <Dropdown>
-          <DropdownTrigger>
-            <Button className="max-w-[160px] overflow-hidden" variant="light">
-              {renderButton("For Who", selectedForWhoState)}
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="For Who"
-            closeOnSelect={true}
-            selectionMode="single"
-            onSelectionChange={handleForWhoChange}
-          >
-            {forWhoTags.map((tag) => (
-              <DropdownItem key={tag}>{tag}</DropdownItem>
-            ))}
-          </DropdownMenu>
-        </Dropdown>
+      <div className="border-[1px] w-full sm:w-[600px] md:w-[800px] py-4 rounded-lg md:rounded-full shadow-sm hover:shadow-md transition cursor-pointer">
+        <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 gap-4 sm:gap-2">
+          {/* For Who Dropdown */}
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                className="w-full sm:w-auto max-w-[160px] overflow-hidden self-start justify-start"
+                variant="light"
+              >
+                {renderButton("For Who", selectedForWhoState)}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="For Who"
+              closeOnSelect={true}
+              selectionMode="single"
+              onSelectionChange={handleForWhoChange}
+            >
+              {forWhoTags.map((tag) => (
+                <DropdownItem key={tag}>{tag}</DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
 
-        {/* Support Scheme Type Dropdown */}
-        <Dropdown>
-          <DropdownTrigger>
-            <Button className="max-w-[160px] overflow-hidden" variant="light">
-              {renderButton("Scheme Type", selectedSchemeTypeState)}
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="SchemeType"
-            closeOnSelect={true}
-            selectionMode="single"
-            onSelectionChange={handleSchemeTypeChange}
-          >
-            {schemeTypeTags.map((tag) => (
-              <DropdownItem key={tag}>{tag}</DropdownItem>
-            ))}
-          </DropdownMenu>
-        </Dropdown>
+          {/* Support Scheme Type Dropdown */}
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                className="w-full sm:w-auto max-w-[160px] overflow-hidden self-start justify-start"
+                variant="light"
+              >
+                {renderButton("Scheme Type", selectedSchemeTypeState)}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="SchemeType"
+              closeOnSelect={true}
+              selectionMode="single"
+              onSelectionChange={handleSchemeTypeChange}
+            >
+              {schemeTypeTags.map((tag) => (
+                <DropdownItem key={tag}>{tag}</DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
 
-        {/* Support Provided Dropdown */}
-        <Dropdown>
-          <DropdownTrigger>
-            <Button className="max-w-[200px] overflow-hidden" variant="light">
-              {renderButton("Support Provided", selectedSupportProvidedState)}
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="Support Provided"
-            closeOnSelect={true}
-            selectionMode="single"
-            onSelectionChange={handleSupportProvidedChange}
-          >
-            {supportProvidedTags.map((tag) => (
-              <DropdownItem key={tag}>{tag}</DropdownItem>
-            ))}
-          </DropdownMenu>
-        </Dropdown>
+          {/* Support Provided Dropdown */}
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                className="w-full sm:w-auto max-w-[200px] overflow-hidden self-start justify-start"
+                variant="light"
+              >
+                {renderButton("Support Provided", selectedSupportProvidedState)}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="Support Provided"
+              closeOnSelect={true}
+              selectionMode="single"
+              onSelectionChange={handleSupportProvidedChange}
+            >
+              {supportProvidedTags.map((tag) => (
+                <DropdownItem key={tag}>{tag}</DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
 
-        {/* Organisation Dropdown */}
-        {/* <Dropdown>
+          {/* Organisation Dropdown */}
+          {/* <Dropdown>
           <DropdownTrigger>
             <Button className="max-w-[160px] overflow-hidden" variant="light">
               {renderButton("Organisation", selectedOrganisationState)}
@@ -231,6 +240,7 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
             ))}
           </DropdownMenu>
         </Dropdown> */}
+        </div>
       </div>
     </div>
   );

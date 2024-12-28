@@ -22,7 +22,6 @@
   width: 100%;
   max-width: 35rem;
   padding: 1rem;
-  padding-bottom: 3rem;
 }
 
 .mainLayout {
@@ -59,10 +58,10 @@
 }
 
 .centered {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    width: 100%;
-    margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  margin: 2rem 0;
 }

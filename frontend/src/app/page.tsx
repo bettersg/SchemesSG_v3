@@ -1,22 +1,26 @@
 "use client";
-import React, { useState } from "react";
 import { MinimizeIcon } from "@/assets/icons/minimize-icon";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat/main-chat";
+import QueryGenerator from "@/components/query-generator/query-generator";
 import SchemesList from "@/components/schemes/schemes-list";
 import SearchBar from "@/components/search-bar/search-bar";
 import UserQuery from "@/components/user-query/user-query";
 import { Button } from "@nextui-org/react";
+import { useState } from "react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
-import QueryGenerator from "@/components/query-generator/query-generator";
 
 export default function Home() {
-  const { schemes, setMessages, sessionId, setSessionId } = useChat();
+  const { schemes, sessionId, setSessionId } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedSupportProvided, setSelectedSupportProvided] = useState<string | null>(null);
+  const [selectedSupportProvided, setSelectedSupportProvided] = useState<
+    string | null
+  >(null);
   const [selectedForWho, setSelectedForWho] = useState<string | null>(null);
-  const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(null);
+  const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(
+    null
+  );
   // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
 
   return (
@@ -99,7 +103,7 @@ export default function Home() {
           </div>
           <div className={classes.centered}>
             <QueryGenerator
-              setSessionId={setSessionId}
+              // setSessionId={setSessionId}
               setSelectedSupportProvided={setSelectedSupportProvided}
               setSelectedForWho={setSelectedForWho}
               // setSelectedOrganisation={setSelectedOrganisation}
