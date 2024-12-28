@@ -20,19 +20,33 @@ export default function MainChat({ sessionId }: MainChatProps) {
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
   const scrollableDivRef = useRef<HTMLDivElement>(null);
 
+  const [botMessageAdded, setBotMessageAdded] = useState(false);
+
   useEffect(() => {
     const storedQuery = localStorage.getItem("userQuery");
     const storedMessages = localStorage.getItem("userMessages");
 
-    if (storedQuery && !storedMessages && messages.length === 0) {
+    // Parse storedMessages safely
+    const parsedMessages = storedMessages && storedMessages !== "[]" ? JSON.parse(storedMessages) : [];
+
+    // Append bot message only once
+    if (
+      storedQuery &&
+      parsedMessages.length === 0 && // No stored messages
+      !botMessageAdded && // Bot message has not been added
+      messages.length === 1 // User message exists
+    ) {
       setMessages([
+        ...messages, // Existing user messages
         {
           type: "bot",
           text: "You can see the search results on the right. Please ask me any further questions about the schemes.",
         },
       ]);
+      setBotMessageAdded(true); // Mark bot message as added
     }
-  }, []);
+  }, [botMessageAdded, setMessages]); // Minimal dependency array
+
 
   useEffect(() => {
     handleScrollToBottom();

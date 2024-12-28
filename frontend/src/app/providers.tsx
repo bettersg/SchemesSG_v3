@@ -23,6 +23,8 @@ type ChatContextType = {
   setSessionId: React.Dispatch<React.SetStateAction<string>>;
   schemes: SearchResScheme[];
   setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
+  userQuery: string;
+  setUserQuery: (query: string) => void;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -32,6 +34,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [userQuery, setUserQuery] = useState("");
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -40,6 +43,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         const storedSchemes = localStorage.getItem("schemes");
         const storedMessages = localStorage.getItem("userMessages");
         const storedSessionId = localStorage.getItem("sessionID");
+        const storedUserQuery = localStorage.getItem("userQuery");
 
         if (storedSchemes) {
           const parsedSchemes = JSON.parse(storedSchemes);
@@ -51,6 +55,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         }
         if (storedSessionId) {
           setSessionId(storedSessionId);
+        }
+        if (storedUserQuery) {
+          setUserQuery(storedUserQuery);
         }
         setIsInitialized(true);
       } catch (error) {
@@ -88,6 +95,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [sessionId, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        if (userQuery) {
+          localStorage.setItem("userQuery", userQuery);
+        } else {
+          localStorage.removeItem("userQuery");
+        }
+      } catch (error) {
+        console.error("Error saving userQuery to localStorage:", error);
+      }
+    }
+  }, [userQuery, isInitialized]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -97,6 +119,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setSchemes,
         sessionId,
         setSessionId,
+        userQuery,
+        setUserQuery,
       }}
     >
       {children}
