@@ -220,3 +220,6 @@ node_modules/
 creds.json
 frontend/env.development
 frontend/env.staging
+dataset_worfklow/dev-creds.json
+dataset_worfklow/prod-creds.json
+dataset_worfklow/schemes-dev-firestore-structure.json
