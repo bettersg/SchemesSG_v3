@@ -9,6 +9,8 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import { analytics } from "./firebaseConfig"; // Adjust path as needed
+
 
 // Chat Context
 export type Message = {
@@ -138,6 +140,13 @@ export const useChat = () => {
 
 // Combined Providers
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Firebase Analytics
+  useEffect(() => {
+    if (analytics) {
+      console.log("Firebase Analytics initialized.");
+    }
+  }, []);
+
   return (
     <NextUIProvider>
       <ChatProvider>{children}</ChatProvider>
