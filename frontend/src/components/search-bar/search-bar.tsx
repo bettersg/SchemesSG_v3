@@ -97,8 +97,7 @@ export default function SearchBar({
   };
 
   const getSchemes = async () => {
-    const url =
-      "http://localhost:5001/schemessg-v3-dev/asia-southeast1/schemes_search";
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
 
     const requestBody = {
       query: userQuery,
