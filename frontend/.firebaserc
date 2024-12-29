@@ -1,12 +1,20 @@
 {
   "projects": {
-    "default": "schemessg-v3-dev"
+    "default": "schemessg-v3-dev",
+    "prod": "schemessg"
   },
   "targets": {
     "schemessg-v3-dev": {
       "hosting": {
         "staging": [
           "schemessg-v3-dev"
+        ]
+      }
+    },
+    "schemessg": {
+      "hosting": {
+        "prod": [
+          "schemessg"
         ]
       }
     }
