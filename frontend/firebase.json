@@ -9,8 +9,18 @@
         "**/node_modules/**"
       ],
       "frameworksBackend": {
-        "region": "asia-east1"
-      }
+        "region": "asia-southeast1"
+      },
+      "rewrites": [
+        {
+          "source": "/_next/**",
+          "destination": "/_next/**"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     },
     {
       "target": "prod",
@@ -21,8 +31,18 @@
         "**/node_modules/**"
       ],
       "frameworksBackend": {
-        "region": "asia-east1"
-      }
+        "region": "asia-southeast1"
+      },
+      "rewrites": [
+        {
+          "source": "/_next/**",
+          "destination": "/_next/**"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     }
   ]
 }

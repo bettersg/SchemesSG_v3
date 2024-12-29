@@ -80,6 +80,7 @@ export default function MainHeader() {
                 alt="Schemes SG logo"
                 width={120}
                 height={30}
+                unoptimized
                 priority
               />
             </a>
