@@ -9,7 +9,7 @@
         "**/node_modules/**"
       ],
       "frameworksBackend": {
-        "region": "asia-southeast1"
+        "region": "asia-east1"
       }
     },
     {
@@ -21,7 +21,7 @@
         "**/node_modules/**"
       ],
       "frameworksBackend": {
-        "region": "asia-southeast1"
+        "region": "asia-east1"
       }
     }
   ]
