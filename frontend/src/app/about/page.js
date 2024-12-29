@@ -1,7 +1,6 @@
 "use client";
 import { Chip } from "@nextui-org/chip";
 import { Accordion, AccordionItem } from "@nextui-org/react";
-import classes from "./about.module.css";
 
 export default function AboutPage() {
   const accordionItems = [
@@ -28,7 +27,7 @@ export default function AboutPage() {
       ),
       content: (
         <>
-          <p>
+          <p className="mb-4">
             Schemes SG started as a side project by our product lead. A
             long-time volunteer with various VWOs, he collated a
             &quot;help-list&quot; to facilitate referral work and built a quick
@@ -42,11 +41,11 @@ export default function AboutPage() {
               href="https://better.sg"
               target="_blank"
               rel="noopener noreferrer"
+              className="text-blue-500 hover:text-blue-600"
             >
               better.sg
             </a>{" "}
-            <span className={classes.smallSpacing}>community</span> to improve
-            the tool.
+            community to improve the tool.
           </p>
           <p>
             The team engaged social workers, caregivers and friends to
@@ -270,53 +269,55 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className={classes.mainlayout}>
-      <section className={classes.container}>
-        <h1 className={classes.header}>About</h1>
-        <h2 className={classes.description}>
-          A little more information about how Schemes SG came to be and thinking
-          behind it.
-        </h2>
+    <div className="w-full overflow-x-hidden min-h-[90vh]">
+      <section className="w-full bg-[#171347]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold font-nunito text-white pt-16 md:pt-24">
+            About
+          </h1>
+          <h2 className="text-base md:text-lg text-white font-light mt-4 mb-8">
+            A little more information about how Schemes SG came to be and
+            thinking behind it.
+          </h2>
+        </div>
         <svg
-          width="2560px"
-          height="100px"
+          width="100%"
+          height="100"
           preserveAspectRatio="none"
-          x="0px"
-          y="0px"
           viewBox="0 0 2560 100"
+          className="block"
         >
           <polygon points="2560 0 2560 100 0 100" fill="white"></polygon>
         </svg>
       </section>
-      <div className={classes.content}>
-        <Chip
-          color="primary"
-          className={classes.chipTitle}
-          style={{ fontWeight: 600 }}
-        >
+
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+        <Chip color="primary" className="mt-12 mb-6 font-semibold">
           Our vision
         </Chip>
-        <p className={classes.para}>
+
+        <p className="text-lg md:text-xl text-[rgb(21,44,91)] leading-relaxed mb-8 font-semibold">
           Our vision is to empower social workers, volunteers, and in the long
           run self-help users, to obtain relevant information on social
           assistance in Singapore quickly, easily and accurately. We tap on the
           power of crowdsourcing to keep information comprehensive and updated,
           and leverage technology to make this information navigable.
         </p>
-        <Accordion variant="splitted" className={classes.accordionItem}>
+
+        <Accordion variant="splitted" className="w-full">
           {accordionItems.map((item) => (
             <AccordionItem
               key={item.key}
               aria-label={item.ariaLabel}
               title={item.title}
               startContent={item.startContent}
-              className={classes.accordionTitle}
+              className="text-[rgb(21,44,91)]"
             >
-              <div className={classes.accordianContent}>{item.content}</div>
+              <div className="text-[rgb(113,128,150)]">{item.content}</div>
             </AccordionItem>
           ))}
         </Accordion>
-      </div>
+      </main>
     </div>
   );
 }
