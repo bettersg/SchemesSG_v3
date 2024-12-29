@@ -1,14 +1,28 @@
 {
-  "hosting": [{
-    "target": "staging",
-    "source": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "frameworksBackend": {
-      "region": "asia-east1"
+  "hosting": [
+    {
+      "target": "staging",
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "asia-southeast1"
+      }
+    },
+    {
+      "target": "prod",
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "asia-southeast1"
+      }
     }
-  }]
+  ]
 }
