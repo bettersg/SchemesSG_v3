@@ -15,11 +15,11 @@ import classes from "./styleClasses.module.css";
 
 export type UpdateSchemeParams = {
   typeOfRequest?: "Update" | "New";
-  changes?: string;
-  description?: string;
-  link?: string;
-  scheme?: string;
-  status?: string;
+  Changes?: string;
+  Description?: string;
+  Link?: string;
+  Scheme?: string;
+  Status?: string;
   userName?: string;
   userEmail?: string;
 };
@@ -37,7 +37,7 @@ export default function UpdateSchemesPage() {
   };
 
   const validateForm = () => {
-    if (!updates.scheme) {
+    if (!updates.Scheme) {
       setSubmitStatus({
         type: "error",
         message: "Please fill in all required fields.",
@@ -139,8 +139,8 @@ export default function UpdateSchemesPage() {
                 label="Scheme"
                 isRequired
                 placeholder="Enter the scheme name"
-                value={updates.scheme || ""}
-                onChange={(e) => handleInputChange("scheme", e.target.value)}
+                value={updates.Scheme || ""}
+                onChange={(e) => handleInputChange("Scheme", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
                 className={classes.input}
@@ -150,8 +150,8 @@ export default function UpdateSchemesPage() {
                 label="Link"
                 placeholder="Enter the scheme link"
                 type="url"
-                value={updates.link || ""}
-                onChange={(e) => handleInputChange("link", e.target.value)}
+                value={updates.Link || ""}
+                onChange={(e) => handleInputChange("Link", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
                 className={classes.input}
@@ -173,9 +173,9 @@ export default function UpdateSchemesPage() {
               <Textarea
                 label="Description"
                 placeholder="Enter a description"
-                value={updates.description || ""}
+                value={updates.Description || ""}
                 onChange={(e) =>
-                  handleInputChange("description", e.target.value)
+                  handleInputChange("Description", e.target.value)
                 }
                 variant="bordered"
                 labelPlacement="outside"
@@ -186,8 +186,8 @@ export default function UpdateSchemesPage() {
               <Textarea
                 label="Changes"
                 placeholder="Describe the changes"
-                value={updates.changes || ""}
-                onChange={(e) => handleInputChange("changes", e.target.value)}
+                value={updates.Changes || ""}
+                onChange={(e) => handleInputChange("Changes", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={4}
