@@ -26,6 +26,8 @@ Before we dive in, make sure you've got:
    npm install
    ```
 
+   > 🔑 **Important**: Download the environment files (.env.*) from [Google Drive](https://drive.google.com/drive/u/2/folders/1RtqR8vZtjMrgqIGa-uQEZJa9x4dL3z4U) and place them in the frontend root directory before proceeding.
+
    If Errors:
    ```bash
    rm -rf node_modules
@@ -51,6 +53,11 @@ Before we dive in, make sure you've got:
    npm run build:prod
    npm run test-build:prod
    ```
+4. **Deploy to Firebase**
+   ```bash
+   # deploy to production (github action will trigger this)
+   export $(cat .env.prod | xargs) && firebase deploy --only hosting:prod --project schemessg
+   ```
 
 
 ## Key Scripts
@@ -73,9 +80,9 @@ Before we dive in, make sure you've got:
 ## Deployment
 
 - 🚦 **Staging**: Auto-deploys from `stg` branch
-- 🚀 **Production**: Not set up yet
+- 🚀 **Production**: Auto-deploys from `main` branch
 
-🤖 GitHub Actions is currently configured to automatically deploy changes from the `stg` branch to the staging environment. No manual intervention required for staging deployment!
+🤖 GitHub Actions is currently configured to automatically deploy changes from the `stg` branch to the schemessg-v3-dev project, and `main` branch to schemessg project. No manual intervention required.
 
 To prepare for future production deployment:
 1. 🕵️ Thoroughly investigate on staging
@@ -88,10 +95,10 @@ Note: Production deployment will be configured in the future. Stay tuned for upd
 
 - 🌍 `APP_ENV`: Set to `development`, `staging`, or `production`
 - ⚙️ Configure in `next.config.mjs` and set in npm scripts
+- Download the environment files (.env.*) from [Google Drive](https://drive.google.com/drive/u/2/folders/1RtqR8vZtjMrgqIGa-uQEZJa9x4dL3z4U) and place them in the frontend root directory before proceeding.
 
 ## URLs
 
 - 🧪 Staging: [https://schemessg-v3-dev.web.app/](https://schemessg-v3-dev.web.app/)
-- 🚀 Production: Not available yet
+- 🚀 Production: [https://schemes.sg](https://schemes.sg)
 
-For more details on the upcoming production setup, reach out to the team lead. Happy coding! 🎉
