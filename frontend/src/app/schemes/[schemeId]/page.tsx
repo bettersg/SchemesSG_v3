@@ -94,6 +94,8 @@ export default function SchemePage() {
     }
 
     fetchScheme();
+
+    console.log("Scheme page mounted, ID:", schemeId);
   }, [schemeId]);
 
   if (error) {
