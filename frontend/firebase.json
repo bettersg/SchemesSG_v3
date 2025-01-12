@@ -13,16 +13,8 @@
       },
       "rewrites": [
         {
-          "source": "/_next/**",
-          "destination": "/_next/**"
-        },
-        {
-          "source": "/schemes/**",
-          "destination": "/index.html"
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
+          "source": "**/**",
+          "function": "ssrschemessgv3dev"
         }
       ],
       "headers": [
@@ -50,16 +42,8 @@
       },
       "rewrites": [
         {
-          "source": "/_next/**",
-          "destination": "/_next/**"
-        },
-        {
-          "source": "/schemes/**",
-          "destination": "/index.html"
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
+          "source": "**/**",
+          "function": "ssrschemessg"
         }
       ],
       "headers": [
