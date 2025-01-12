@@ -72,10 +72,16 @@ export default function SchemePage() {
 
   useEffect(() => {
     async function fetchScheme() {
-      if (!schemeId) return;
-
+      if (!schemeId) {
+        console.error("schemeId is undefined or missing.");
+        setError("Invalid schemeId");
+        setIsLoading(false);
+        return;
+      }
       try {
         const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
+        console.log("Fetching scheme data for ID:", id);
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes/${id}`
         );
@@ -86,7 +92,7 @@ export default function SchemePage() {
         const schemeRes = mapToFullScheme(res.data);
         setScheme(schemeRes);
       } catch (err) {
-        console.log(err);
+        console.error("Error fetching scheme:", err);
         setError("An error occurred");
       } finally {
         setIsLoading(false);
