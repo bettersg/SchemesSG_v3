@@ -13,12 +13,19 @@
       },
       "rewrites": [
         {
-          "source": "/_next/**",
-          "destination": "/_next/**"
-        },
+          "source": "**/**",
+          "function": "ssrschemessgv3dev"
+        }
+      ],
+      "headers": [
         {
-          "source": "**",
-          "destination": "/index.html"
+          "source": "/_next/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
         }
       ]
     },
@@ -35,12 +42,19 @@
       },
       "rewrites": [
         {
-          "source": "/_next/**",
-          "destination": "/_next/**"
-        },
+          "source": "**/**",
+          "function": "ssrschemessg"
+        }
+      ],
+      "headers": [
         {
-          "source": "**",
-          "destination": "/index.html"
+          "source": "/_next/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
         }
       ]
     }

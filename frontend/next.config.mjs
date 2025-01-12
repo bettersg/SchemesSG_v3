@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export',
+  output: "standalone",
   env: {
-    APP_ENV: process.env.APP_ENV || 'development',
+    APP_ENV: process.env.APP_ENV || "development",
   },
   images: {
-    domains: ['schemes.sg'],
+    domains: ["schemes.sg"],
   },
   // You can add environment-specific configurations here if needed
   // For example:

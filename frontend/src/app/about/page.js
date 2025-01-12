@@ -47,7 +47,7 @@ export default function AboutPage() {
             </a>{" "}
             community to improve the tool.
           </p>
-          <p>
+          <p className="mb-4">
             The team engaged social workers, caregivers and friends to
             understand lived experiences and help-seeking practices. They found
             that social needs are often intertwined, and if technology could
@@ -114,14 +114,7 @@ export default function AboutPage() {
             that social workers and volunteers had to depend on the original
             poster to issue a new version should there be changes.{" "}
           </p>
-          <p>
-            4. There were actually intuitive directories (e.g. SupportGoWhere
-            has done a great job), but they were primarily government portals
-            and might not include NGO or VWO schemes. Again, the power of the
-            crowdsourcing could be useful here, given the size of the non-profit
-            sector.
-          </p>
-          <p>
+          <p className="mb-4">
             {" "}
             This portal hopes to address the above issues by tapping on the
             power of the crowd to make social assistance info{" "}
@@ -167,7 +160,7 @@ export default function AboutPage() {
             their own good work :) If we make edits, it is to improve search
             functionality, and we ensure that they are factually accurate.{" "}
           </p>
-          <p>
+          <p className="mb-4">
             2. Currently, Schemes SG only lists schemes that{" "}
             <strong>provide benefits</strong> in cash (financial assistance,
             subsidies) or in kind (free food, food vouchers, free clinics,
@@ -220,13 +213,13 @@ export default function AboutPage() {
       ),
       content: (
         <>
-          <p>
+          <p className="mb-4">
             We began with an existing database of schemes, enriching it through
             meticulous manual curation and leveraging web scraping techniques to
             expand our dataset. This ensured that we have a robust and
             comprehensive list of schemes complete with relevant metadata.
           </p>
-          <p>
+          <p className="mb-4">
             We then harnessed the power of natural language processing,
             utilizing libraries like spacy and re for text preprocessing and
             lemmatization. Our choice of sentence-transformers, specifically the
@@ -238,7 +231,7 @@ export default function AboutPage() {
             backbone of our system, enabling users to find help with precision
             and speed.
           </p>
-          <p>
+          <p className="mb-4">
             To bring the conversation to life, we utilized OpenAI gpt 4o. It
             helped us to dynamically generate conversation flows, tailoring
             interactions based on the user&apos;s emotional cues and the context
@@ -246,22 +239,69 @@ export default function AboutPage() {
           </p>
           <p>
             Some resources used include{" "}
-            <a href="https://sbert.net" target="_blank">
+            <a href="https://sbert.net"
+              target="_blank"
+              className="text-blue-500 hover:text-blue-600">
               this
             </a>
-            and{" "}
+            {" "} and {" "}
             <a
               href="https://www.kaggle.com/datasets/devendra45/movies-similarity"
               target="_blank"
+              className="text-blue-500 hover:text-blue-600"
             >
               this
-            </a>
+            </a> {" "}
             . We are still improving the natural language feature, and if you
             have engineering expertise or insights to offer, reach out via the{" "}
-            <a href="https://schemes.sg/feedback" target="_blank">
+            <a href="https://schemes.sg/feedback" target="_blank"
+             className="text-blue-500 hover:text-blue-600">
               &quot;Feedback&quot;
             </a>{" "}
             form.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: "5",
+      ariaLabel: "Media Mentions",
+      title: "Media Mentions",
+      startContent: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="1em"
+          height="1em"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="feather feather-folder mr-3"
+        >
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+      ),
+      content: (
+        <>
+          <p className="mb-4">
+            We are honored to be mentioned in local media:
+          </p>
+          <p className="mb-4">
+            1. {" "}
+            <a href="https://www.channelnewsasia.com/today/big-read/social-services-technology-burnout-challenges-4847736"
+              target="_blank"
+              className="text-blue-500 hover:text-blue-600">
+              Tech is easing the workload of burnt out social workers, but the challenges of emotional labour remain
+            </a>
+          </p>
+          <p>
+            2. <a href="https://www.zaobao.com.sg/news/singapore/story20250112-5721639"
+              target="_blank"
+              className="text-blue-500 hover:text-blue-600">
+              公务员开发应用 助查询援助计划
+            </a>
           </p>
         </>
       ),
