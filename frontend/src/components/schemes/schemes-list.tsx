@@ -50,7 +50,7 @@ export default function SchemesList({ schemes }: SchemesListProps) {
             key={scheme.schemeId}
             href={`/schemes/${scheme.schemeId}`}
             className="w-full"
-            target="_blank"
+            // target="_blank"
           >
             <Card shadow="sm" className="w-full" isHoverable>
               <CardHeader className="flex gap-3 font-semibold">
