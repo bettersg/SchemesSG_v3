@@ -168,19 +168,27 @@ export default function SearchBar({
         description="Please avoid providing identifiable information."
         placeholder="E.g. I am a cancer patient in need of financial assistance and food support."
         endContent={
-          isBotResponseGenerating ? (
-            <Spinner className={classes.endContent} size="sm" />
-          ) : (
-            <Button
-              className={classes.endContent}
-              isIconOnly
-              size="sm"
-              radius="full"
-              onClick={async () => await handleSend()}
-            >
-              <SearchIcon />
-            </Button>
-          )
+          <div className="flex items-center justify-end gap-2 h-full">
+            {isBotResponseGenerating ? (
+              <>
+                <span className="text-xs text-gray-500 whitespace-nowrap">
+                  Finding schemes...
+                </span>
+                <Spinner className={classes.endContent} size="sm" />
+              </>
+            ) : (
+              <Button
+                className={classes.endContent}
+                color="primary"
+                isIconOnly
+                size="sm"
+                radius="full"
+                onClick={async () => await handleSend()}
+              >
+                <SearchIcon />
+              </Button>
+            )}
+          </div>
         }
       />
     </>
