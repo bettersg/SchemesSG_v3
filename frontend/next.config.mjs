@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  trailingSlash: false,
-  reactStrictMode: true,
   env: {
     APP_ENV: process.env.APP_ENV || "development",
   },
