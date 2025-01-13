@@ -13,6 +13,10 @@
       },
       "rewrites": [
         {
+          "source": "/schemes/**",
+          "function":  "/index.html"
+        },
+        {
           "source": "/_next/**",
           "destination": "/_next/**"
         },
@@ -45,6 +49,10 @@
         "region": "asia-southeast1"
       },
       "rewrites": [
+        {
+          "source": "/schemes/**",
+          "function":  "/index.html"
+        },
         {
           "source": "/_next/**",
           "destination": "/_next/**"
