@@ -13,16 +13,12 @@
       },
       "rewrites": [
         {
-          "source": "/schemes/**",
-          "function": "ssrschemessgv3dev"
-        },
-        {
           "source": "/_next/**",
           "destination": "/_next/**"
         },
         {
           "source": "**",
-          "function": "ssrschemessgv3dev"
+          "function":  "/index.html"
         }
       ],
       "headers": [
@@ -50,16 +46,12 @@
       },
       "rewrites": [
         {
-          "source": "/schemes/**",
-          "function": "ssrschemessg"
-        },
-        {
           "source": "/_next/**",
           "destination": "/_next/**"
         },
         {
           "source": "**",
-          "function": "ssrschemessg"
+          "function":  "/index.html"
         }
       ],
       "headers": [
