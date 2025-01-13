@@ -14,7 +14,7 @@
       "rewrites": [
         {
           "source": "/schemes/**",
-          "function":  "/index.html"
+          "function": "ssrschemessgv3dev"
         },
         {
           "source": "/_next/**",
@@ -22,7 +22,7 @@
         },
         {
           "source": "**",
-          "function":  "/index.html"
+          "function": "index.html"
         }
       ],
       "headers": [
@@ -51,7 +51,7 @@
       "rewrites": [
         {
           "source": "/schemes/**",
-          "function":  "/index.html"
+          "function": "ssrschemessg"
         },
         {
           "source": "/_next/**",
@@ -59,7 +59,7 @@
         },
         {
           "source": "**",
-          "function":  "/index.html"
+          "function": "index.html"
         }
       ],
       "headers": [
