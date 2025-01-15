@@ -1,6 +1,8 @@
 "use client";
+import { SendIcon } from "@/assets/icons/send-icon";
 import logoImg from "@/assets/logo.jpg";
 import {
+  Button,
   Navbar,
   NavbarBrand,
   NavbarContent,
@@ -8,7 +10,7 @@ import {
   NavbarMenu,
   NavbarMenuItem,
   NavbarMenuToggle,
-} from "@nextui-org/navbar";
+} from "@nextui-org/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,9 +25,6 @@ type NavbarItem = {
 
 export default function MainHeader() {
   const pathname = usePathname();
-  // const router = useRouter();
-  // const [hidden, setHidden] = useState(false);
-  // let lastScrollTop = 0;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navbarItems: NavbarItem[] = [
@@ -85,14 +84,9 @@ export default function MainHeader() {
               />
             </a>
           </NavbarBrand>
-          <NavbarMenuToggle
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            className="md:hidden text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
-            icon={<HamburgerIcon />}
-          />
         </NavbarContent>
 
-        <NavbarContent className="hidden md:flex gap-4" justify="end">
+        <NavbarContent className="hidden md:flex gap-4" justify="center">
           {navbarItems.map((item, idx) => (
             <NavbarItem
               className={`${classes.navbarItem} hover:text-blue-600 transition-colors`}
@@ -102,6 +96,46 @@ export default function MainHeader() {
               <Link href={item.href}>{item.label}</Link>
             </NavbarItem>
           ))}
+        </NavbarContent>
+
+        <NavbarContent justify="end">
+          {/* Telegram Bot Button - Desktop */}
+          <NavbarItem className="hidden md:flex">
+            <Button
+              as={Link}
+              href="https://t.me/SchemesSGBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-2 border-gray-100 bg-white text-blue-500 hover:text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors group"
+            >
+              <SendIcon className="text-blue-500 group-hover:text-white transition-colors" />
+              <span className="ml-0 font-semibold">SchemesSGBot</span>
+            </Button>
+          </NavbarItem>
+
+          {/* Telegram Bot Button - Mobile */}
+          <NavbarItem className="md:hidden">
+            <Link
+              href="https://t.me/SchemesSGBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center"
+            >
+              <Button
+                size="sm"
+                className="border-2 border-gray-100 bg-white text-blue-500 hover:text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-colors group"
+              >
+                <SendIcon className="text-blue-500 group-hover:text-white transition-colors" />
+                <span className="ml-0 font-semibold">SchemesSGBot</span>
+              </Button>
+            </Link>
+          </NavbarItem>
+
+          <NavbarMenuToggle
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            className="md:hidden text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
+            icon={<HamburgerIcon />}
+          />
         </NavbarContent>
 
         <NavbarMenu className="pt-6 bg-white/80 backdrop-blur-md">

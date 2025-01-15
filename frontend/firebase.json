@@ -22,7 +22,7 @@
         },
         {
           "source": "**",
-          "function": "ssrschemessgv3dev"
+          "function": "index.html"
         }
       ],
       "headers": [
@@ -59,7 +59,7 @@
         },
         {
           "source": "**",
-          "function": "ssrschemessg"
+          "function": "index.html"
         }
       ],
       "headers": [

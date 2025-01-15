@@ -18,7 +18,6 @@ import {
 } from "@nextui-org/react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import classes from "./scheme.module.css";
 
 // Type for full scheme properties
 type Scheme = SearchResScheme & {
@@ -105,114 +104,131 @@ export default function SchemePage() {
   }, [schemeId]);
 
   if (error) {
-    return <p className="text-error">{error}</p>;
-  }
-
-  if (isLoading) {
     return (
-      <div className="flex flex-col space-y-6 p-6">
-        {/* Skeleton loader for scheme type */}
-        <div>
-          <Skeleton className="h-3 w-12 rounded-md bg-gray-300" />
-          <Spacer y={1} />
-        </div>
-
-        {/* Skeleton loader for scheme title */}
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-36 w-36 rounded-full bg-gray-300" />
-          <div className="flex flex-col space-y-2">
-            <Skeleton className="h-8 w-3/5 rounded-md bg-gray-300" />
-            <Skeleton className="h-6 w-2/5 rounded-md bg-gray-300" />
-          </div>
-        </div>
-
-        <Spacer y={2} />
-
-        {/* Skeleton loader for description */}
-        <div className="flex flex-col space-y-3">
-          <Skeleton className="h-5 w-11/12 rounded-md bg-gray-300" />
-          <Skeleton className="h-5 w-9/12 rounded-md bg-gray-300" />
-        </div>
-        <Divider className="my-4" />
-
-        {/* Skeleton loader for other sections */}
-        <Skeleton className="h-8 w-1/2 rounded-md bg-gray-300" />
-        <Spacer y={1} />
-        <Skeleton className="h-5 w-3/4 rounded-md bg-gray-300" />
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <p className="text-error text-center">{error}</p>
       </div>
     );
   }
 
-  // Helper to extract scheme types
-  const getSchemeTypes = (schemeTypeStr: string) => schemeTypeStr.split(",");
+  if (isLoading) {
+    return (
+      <div className="flex flex-col space-y-6 p-4 md:p-6 max-w-5xl mx-auto">
+        <div>
+          <Skeleton className="h-3 w-20 md:w-24 rounded-md" />
+          <Spacer y={1} />
+        </div>
+
+        <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+          <Skeleton className="h-24 w-24 md:h-36 md:w-36 rounded-lg" />
+          <div className="flex flex-col space-y-2 w-full md:w-auto">
+            <Skeleton className="h-6 md:h-8 w-full md:w-[400px] rounded-md" />
+            <Skeleton className="h-4 md:h-6 w-48 md:w-64 rounded-md" />
+          </div>
+        </div>
+
+        <div className="flex flex-col space-y-3">
+          <Skeleton className="h-4 md:h-5 w-full md:w-11/12 rounded-md" />
+          <Skeleton className="h-4 md:h-5 w-full md:w-9/12 rounded-md" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     scheme && (
-      <div className={classes.schemeContainer}>
-        <div>
-          {getSchemeTypes(scheme.schemeType).map((type) => (
-            <Chip key={type} color="primary" className={classes.schemeType}>
-              {type}
-            </Chip>
-          ))}
-        </div>
-
-        <div className={classes.schemeTitle}>
-          <Image
-            width={150}
-            height={150}
-            alt={`${scheme.agency} logo`}
-            radius="sm"
-            src={scheme.image}
-          />
-          <div>
-            <p className="text-5xl font-bold">{scheme.schemeName}</p>
-            <p className="text-xl text-default-500">{scheme.agency}</p>
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Scheme Type Chips */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {scheme.schemeType.split(",").map((type) => (
+              <Chip key={type} color="primary" className="text-xs md:text-sm">
+                {type.trim()}
+              </Chip>
+            ))}
           </div>
-        </div>
 
-        <Spacer y={1} />
-
-        <p className="text-base">{scheme.description}</p>
-        <Divider className="my-4" />
-
-        <div>
-          <p className="text-3xl font-bold">Target Audience</p>
-          <Spacer y={3} />
-          <p>{scheme.targetAudience}</p>
-        </div>
-
-        <Spacer y={6} />
-
-        {/* Benefits */}
-        <div>
-          <p className="text-3xl font-bold">What It Gives</p>
-          <p>{scheme.benefits}</p>
-        </div>
-
-        <Spacer y={6} />
-
-        {/* Benefits */}
-
-        {/* To replace website with scheme.contact.website. Currently no such data. */}
-        <div>
-          <p className="text-3xl font-bold">Contact</p>
-          <Link isExternal showAnchorIcon href={scheme.link}>
-            {scheme.link}
-          </Link>
-        </div>
-
-        <Spacer y={6} />
-
-        {scheme.contact && (
-          <div>
-            <p className="text-3xl font-bold">Contact</p>
-            <p>Phone: {scheme.contact.phone}</p>
-            <p>Email: {scheme.contact.email}</p>
-            {/* <p>Website: <Link isExternal href={scheme.contact.website}>{scheme.contact.website}</Link></p> */}
-            <p>Address: {scheme.contact.address}</p>
+          {/* Title Section */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-6 mb-8">
+            <Image
+              width={120}
+              height={120}
+              alt={`${scheme.agency} logo`}
+              radius="sm"
+              className="w-24 h-24 md:w-32 md:h-32 object-contain"
+              src={scheme.image}
+            />
+            <div className="flex-1">
+              <h1 className="text-4xl lg:text-5xl font-bold mb-2 break-words">
+                {scheme.schemeName}
+              </h1>
+              <p className="text-md md:text-xl text-default-500">
+                {scheme.agency}
+              </p>
+            </div>
           </div>
-        )}
+
+          {/* Description */}
+          <div className="prose max-w-none mb-8">
+            <p className="text-base md:text-lg">{scheme.description}</p>
+          </div>
+
+          <Divider className="my-8" />
+
+          {/* Target Audience Section */}
+          <section className="mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              Target Audience
+            </h2>
+            <p className="text-base md:text-lg">{scheme.targetAudience}</p>
+          </section>
+
+          {/* Benefits Section */}
+          <section className="mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              What It Gives
+            </h2>
+            <p className="text-base md:text-lg">{scheme.benefits}</p>
+          </section>
+
+          {/* Contact Section */}
+          <section className="mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">Contact</h2>
+            <div className="space-y-2">
+              <Link
+                isExternal
+                showAnchorIcon
+                href={scheme.link}
+                className="text-base md:text-lg break-words"
+              >
+                {scheme.link}
+              </Link>
+
+              {scheme.contact && (
+                <div className="mt-4 space-y-2">
+                  {scheme.contact.phone && (
+                    <p className="text-base md:text-lg">
+                      <span className="font-semibold">Phone:</span>{" "}
+                      {scheme.contact.phone}
+                    </p>
+                  )}
+                  {scheme.contact.email && (
+                    <p className="text-base md:text-lg">
+                      <span className="font-semibold">Email:</span>{" "}
+                      {scheme.contact.email}
+                    </p>
+                  )}
+                  {scheme.contact.address && (
+                    <p className="text-base md:text-lg">
+                      <span className="font-semibold">Address:</span>{" "}
+                      {scheme.contact.address}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     )
   );
