@@ -19,8 +19,6 @@ from pydantic import BaseModel
 from transformers import AutoModel, AutoTokenizer
 from transformers.modeling_outputs import BaseModelOutputWithPooling
 
-from google.cloud.firestore import AsyncClient
-import asyncio
 from google.cloud import firestore
 
 
@@ -156,8 +154,8 @@ class SearchModel:
 
         logger.info("Search Model initialised!")
 
-    async def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
-        """Fetch multiple schemes in parallel"""
+    def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
+        """Fetch multiple schemes"""
         # Create a cache key based on the scheme IDs
         scheme_cache_key = tuple(scheme_ids)
 
@@ -166,12 +164,8 @@ class SearchModel:
             logger.info("Returning cached scheme details.")
             return self.query_cache[scheme_cache_key]
 
-        # Get all documents in the collection using synchronous client
-        docs = (
-            self.__class__.db.collection("schemes")
-            .where(firestore.firestore.FieldPath.document_id(), "in", scheme_ids)
-            .get()
-        )
+        # Get all documents in the collection
+        docs = self.__class__.db.collection("schemes").where("__name__", "in", scheme_ids).get()
 
         # Process results
         scheme_details = []
@@ -265,16 +259,8 @@ class SearchModel:
         # Retrieve the scheme_ids using the FAISS indices
         retrieved_scheme_ids = [self.__class__.index_to_scheme_id[str(idx)] for idx in indices[0]]
 
-        # Get event loop or create new one
         try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        # Run async operation
-        try:
-            scheme_details = loop.run_until_complete(self.fetch_schemes_batch(retrieved_scheme_ids))
+            scheme_details = self.fetch_schemes_batch(retrieved_scheme_ids)
         except Exception as e:
             logger.error(f"Error fetching schemes: {e}")
             raise
