@@ -21,6 +21,7 @@ from transformers.modeling_outputs import BaseModelOutputWithPooling
 
 from google.cloud.firestore import AsyncClient
 import asyncio
+from google.cloud import firestore
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -155,9 +156,6 @@ class SearchModel:
 
         logger.info("Search Model initialised!")
 
-        # Initialize async client
-        cls.db_async = AsyncClient()
-
     async def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
         """Fetch multiple schemes in parallel"""
         # Create a cache key based on the scheme IDs
@@ -168,8 +166,12 @@ class SearchModel:
             logger.info("Returning cached scheme details.")
             return self.query_cache[scheme_cache_key]
 
-        # Get all documents in the collection
-        docs = await self.__class__.db_async.collection("schemes").where("__name__", "in", scheme_ids).get()
+        # Get all documents in the collection using synchronous client
+        docs = (
+            self.__class__.db.collection("schemes")
+            .where(firestore.firestore.FieldPath.document_id(), "in", scheme_ids)
+            .get()
+        )
 
         # Process results
         scheme_details = []
