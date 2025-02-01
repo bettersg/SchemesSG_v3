@@ -17,7 +17,7 @@ from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
-from schemes.search import schemes_search, keep_search_warm  # noqa: F401
+from schemes.search import keep_search_warm, schemes_search  # noqa: F401
 from schemes.search_queries import retrieve_search_queries  # noqa: F401
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 

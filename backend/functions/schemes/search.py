@@ -105,6 +105,10 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
     schedule="*/4 * * * *",  # Run every 4 minutes
     region="asia-southeast1",
     memory=options.MemoryOption.MB_256,
+    concurrency=1,  # Only allow one instance at a time
+    min_instances=0,  # Don't keep instances warm
+    max_instances=1,  # Maximum one instance
+    retry_count=0,  # Don't retry on failure
 )
 def keep_search_warm(event: scheduler_fn.ScheduledEvent) -> None:
     """
@@ -128,14 +132,18 @@ def keep_search_warm(event: scheduler_fn.ScheduledEvent) -> None:
 
         if response.status_code == 200:
             logger.info("Successfully kept search endpoint warm")
+            return None  # Explicitly return None for success
         else:
             logger.error(f"Failed to keep search endpoint warm. Status code: {response.status_code}")
             logger.error(f"Response: {response.text}")
+            return None  # Explicitly return None even for failure
 
     except requests.exceptions.Timeout:
         logger.error("Timeout while trying to keep search endpoint warm")
+        return None
     except requests.exceptions.ConnectionError:
         logger.error("Connection error while trying to keep search endpoint warm")
+        return None
     except Exception as e:
         logger.exception("Error in keep_search_warm function", e)
-        raise e
+        return None  # Return None instead of raising the exception
