@@ -22,6 +22,9 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/root/.config/firebase/creds.json
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
+      - ENVIRONMENT=local
+      - FUNCTIONS_HOST=127.0.0.1
+      - FUNCTIONS_PORT=5001
     # network_mode: host
     ports:
       - "5001:5001"

@@ -305,13 +305,10 @@ class SearchModel:
         combined_results = None
 
         # Process each need
-
         for need in needs:
             # Get the results for the current need
             current_results = self.search_similar_items(need, full_query, top_k)
 
-            # Combine with the overall results
-            # combined_results = pd.concat([combined_results, current_results], ignore_index=True)
             # Initialize combined_results schema dynamically from the first result
             if combined_results is None:
                 combined_results = pd.DataFrame(columns=current_results.columns)
@@ -322,32 +319,26 @@ class SearchModel:
             # Combine results
             combined_results = pd.concat([combined_results, current_results], ignore_index=True)
 
-        # Dynamically determine grouping columns (excluding 'Similarity' and non-groupable columns)
-        group_columns = [col for col in combined_results.columns if col not in ["Similarity", "Quintile"]]
-
-        # Handle duplicates: Aggregate similarity and drop duplicates
-        aggregated_results = combined_results.groupby(group_columns, as_index=False).agg(
-            {"Similarity": "sum"}  # Adjust this function to aggregate similarity scores as needed
+        # Drop duplicates and sort by similarity
+        aggregated_results = combined_results.sort_values("Similarity", ascending=False).drop_duplicates(
+            subset=["Scheme"]
         )
 
-        # Calculate quintile thresholds
-        quintile_thresholds = np.percentile(aggregated_results["Similarity"], [0, 20, 40, 60, 80, 100])
-        # Assign quintile categories (0, 1, 2, 3, 4)
-        # Since there are 5 thresholds (including 100th percentile), we specify 4 bins; pandas cuts into bins-1 categories
-        aggregated_results["Quintile"] = pd.cut(
-            aggregated_results["Similarity"], quintile_thresholds, labels=[0, 1, 2, 3, 4], include_lowest=True
-        )
+        # Filter by similarity threshold
+        aggregated_results = aggregated_results[aggregated_results["Similarity"] >= similarity_threshold]
 
-        # TODO add mental health model and increase the Similarity score
+        # Create quintiles only if we have enough unique similarity scores
+        unique_similarities = aggregated_results["Similarity"].nunique()
+        if unique_similarities >= 5:
+            aggregated_results["Quintile"] = pd.qcut(
+                aggregated_results["Similarity"], q=5, labels=["1", "2", "3", "4", "5"]
+            )
+        else:
+            # If we have less than 5 unique values, just rank them ordinally
+            aggregated_results["Quintile"] = pd.Series(range(1, len(aggregated_results) + 1)).astype(str)
 
-        # Filter out results that are below the minimum quintile threshold
-        aggregated_results = aggregated_results[aggregated_results["Quintile"].astype(int) >= similarity_threshold]
-
-        # Sort by similarity in descending order
-        sorted_results = aggregated_results.sort_values(by="Similarity", ascending=False).reset_index(drop=True)
-        sorted_results = sorted_results.head(top_k * 3).reset_index(drop=True)
-
-        return sorted_results
+        # Return top_k results
+        return aggregated_results.head(top_k)
 
     def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
         """
