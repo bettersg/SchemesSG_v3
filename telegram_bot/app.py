@@ -25,7 +25,7 @@ async def main() -> None:
     # Prepare configurations
     config = BotConfig(
         intro_message=f"Welcome to SchemesSG! I am your companion in searching for public assistance in Singapore. Do describe to me the help you need and I will try to find the most suitable assistance scheme for you. Please be specific but do not give any identifiable information. \n\n {html.italic('(E.g. I am a dialysis patient in need of financial assistance and food support after being retrenched due to COVID 19.)')}",
-        similarity_threshold=2,
+        similarity_threshold=0,
     )
 
     # All handlers should be attached to the Router (or Dispatcher)
