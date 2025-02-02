@@ -7,12 +7,25 @@
 
 ## Background
 
-This backend is built using Firebase Functions and serves as the API for the SchemesSG V3 application. The following endpoints are available for local testing:
+This backend is built using Firebase Functions and serves as the API for the SchemesSG V3 application. The following endpoints are available:
 
-- Health Check: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/health](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/health)
-- Schemes Service: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes)
-- Schemes Search: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search)
-- Chat Message Service: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message)
+- Health Check (`health`)
+- Schemes Service (`schemes`)
+- Schemes Search (`schemes_search`)
+- Chat Message Service (`chat_message`)
+- Search Queries (`retrieve_search_queries`)
+- Update Scheme (`update_scheme`)
+- Feedback (`feedback`)
+
+Additionally, there is a scheduled function that runs automatically:
+
+- **Keep Endpoints Warm** (`keep_endpoints_warm`):
+  - Type: Scheduled Function (runs every 4 minutes)
+  - Purpose: Reduces cold starts by periodically warming up all endpoints
+  - Memory: 1GB
+  - Concurrency: 1 (only one instance at a time)
+  - For local testing: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/keep_endpoints_warm-0](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/keep_endpoints_warm-0)
+  - Note: The `-0` suffix is required for testing scheduled functions locally
 
 ## Getting Started
 
@@ -92,7 +105,8 @@ This backend is built using Firebase Functions and serves as the API for the Sch
    firebase deploy --only functions:health --debug
    firebase deploy --only functions:chat_message --debug
    firebase deploy --only functions:schemes_search --debug
-   firebase deploy --only functions:schemes_search --debug
+   firebase deploy --only functions:schemes --debug
+   firebase deploy --only functions:keep_endpoints_warm --debug  # Deploy the scheduled warmup function
    ```
    > Note: Make sure you have the necessary permissions and are logged in to the correct Firebase project before deploying.
 
@@ -100,17 +114,34 @@ This backend is built using Firebase Functions and serves as the API for the Sch
    
    Local Mode 
    - Once the emulator is running, you can issue HTTP requests to the endpoints:
-      - Health Check: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/health](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/health)
-      - Schemes Service: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes)
-      - Schemes Search: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search)
-      - Chat Message Service: [http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message](http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message)
+      - Health Check: `/health`
+      - Schemes Service: `/schemes/{id}`
+      - Schemes Search: `/schemes_search`
+      - Chat Message Service: `/chat_message`
+      - Search Queries: `/retrieve_search_queries/{session_id}`
+      - Update Scheme: `/update_scheme`
+      - Feedback: `/feedback`
+   
+   - Testing the scheduled warmup function locally:
+      ```bash
+      # Trigger the warmup function manually
+      curl http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/keep_endpoints_warm-0
+      
+      # Check the Docker logs to see the warmup results
+      docker compose -f docker-compose-firebase.yml logs -f functions
+      ```
+      > Note: The `-0` suffix is required when testing scheduled functions locally
    
    Staging
-   - These endpoints were deployed manually via `firebase deploy --only functions` in the schemessg-v3-dev project. All public users are able to access these endpoints temporarily. 
-      - Health Check: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/health](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/health)
-      - Schemes by ID: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes/{id}](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes/{id})
-      - Schemes Search: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes_search](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/schemes_search)
-      - Chat Message: [https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/chat_message](https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/chat_message)
+   - These endpoints were deployed manually via `firebase deploy --only functions` in the schemessg-v3-dev project. All public users are able to access these endpoints temporarily. Base URL: `https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net`
+      - Health Check: `/health`
+      - Schemes by ID: `/schemes/{id}`
+      - Schemes Search: `/schemes_search`
+      - Chat Message: `/chat_message`
+      - Search Queries: `/retrieve_search_queries/{session_id}`
+      - Update Scheme: `/update_scheme`
+      - Feedback: `/feedback`
+      > Note: The warmup function runs automatically in staging/production every 4 minutes
 
 ## Future Work
 

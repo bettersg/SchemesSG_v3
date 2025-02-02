@@ -50,7 +50,17 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         feedback_text = request_json.get("feedbackText")
         userName = request_json.get("userName")
         userEmail = request_json.get("userEmail")
+        is_warmup = request_json.get("is_warmup", False)
         timestamp = datetime.now(timezone.utc)
+
+        # For warmup requests, return success immediately without database operations
+        if is_warmup:
+            return https_fn.Response(
+                response=json.dumps({"success": True, "message": "Warmup request successful"}),
+                status=200,
+                mimetype="application/json",
+                headers=headers,
+            )
 
         if not feedback_text:
             return https_fn.Response(

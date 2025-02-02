@@ -38,6 +38,7 @@ class PredictParams(BaseModel):
     query: str
     top_k: Optional[int] = 20
     similarity_threshold: Optional[int] = 0
+    is_warmup: Optional[bool] = False  # Add flag for warmup requests
 
 
 class SearchPreprocessor:
@@ -382,7 +383,9 @@ class SearchModel:
         session_id = str(uuid1())
         results_dict = final_results.to_dict(orient="records")
 
-        self.save_user_query(params.query, session_id, results_dict)
+        # Skip saving to Firestore if this is a warmup request
+        if not params.is_warmup:
+            self.save_user_query(params.query, session_id, results_dict)
 
         results_json = {"sessionID": session_id, "data": results_dict, "mh": 0.7}
 
