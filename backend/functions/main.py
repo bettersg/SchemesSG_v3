@@ -1,11 +1,33 @@
 """
 This is the main file for the Firebase Functions.
 
-Import the functions you want to use here.
-Search and chat services will be added soon.
+The following endpoints are available:
 
-To run the functions locally, run `firebase emulators:start`.
-Do not deploy the functions using firebase deploy, deployment will be handled automatically via Github Actions.
+1. Search and Retrieval:
+   - schemes_search: Search for schemes based on user query
+   - schemes: Get details of a specific scheme
+   - retrieve_search_queries: Get search history for a session
+
+2. User Interaction:
+   - chat_message: Chat interface for scheme recommendations
+   - feedback: Submit user feedback
+   - update_scheme: Submit new schemes or request edits
+
+3. System:
+   - health: Health check endpoint
+   - keep_endpoints_warm: Scheduled task to reduce cold starts
+
+All endpoints (except health) support warmup requests:
+- GET endpoints: Add ?is_warmup=true as URL parameter
+- POST endpoints: Include {"is_warmup": true} in request body
+
+When is_warmup=true, endpoints return 200 immediately without database operations.
+
+Local Development:
+1. Run emulator: `docker compose -f docker-compose-firebase.yml up --build`
+2. Test warmup: `curl http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/keep_endpoints_warm-0`
+
+Note: Do not deploy functions using firebase deploy. Deployment is handled by Github Actions.
 """
 
 import json
@@ -18,8 +40,9 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401
-from schemes.search_queries import retrieve_search_queries  #noqa: F401
+from schemes.search_queries import retrieve_search_queries  # noqa: F401
 from update_scheme.update_scheme import update_scheme  # noqa: F401
+from utils.endpoints import keep_endpoints_warm  # noqa: F401
 
 
 # Initialise logger

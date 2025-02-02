@@ -72,12 +72,22 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
         input_text = data.get("message")
         session_id = data.get("sessionID")
         stream = data.get("stream", False)  # new parameter to indicate streaming
+        is_warmup = data.get("is_warmup", False)  # Add warmup parameter
         top_schemes_text = ""
     except Exception:
         logger.error(f"[{datetime.now()}] JSON parsing failed")
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request body"}),
             status=400,
+            mimetype="application/json",
+            headers=headers,
+        )
+
+    # For warmup requests, return success immediately without querying Firestore
+    if is_warmup:
+        return https_fn.Response(
+            response=json.dumps({"message": "Warmup request successful"}),
+            status=200,
             mimetype="application/json",
             headers=headers,
         )

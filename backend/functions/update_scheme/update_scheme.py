@@ -54,16 +54,17 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         userName = request_json.get("userName")
         userEmail = request_json.get("userEmail")
         typeOfRequest = request_json.get("typeOfRequest")
+        is_warmup = request_json.get("is_warmup", False)
         timestamp = datetime.now(timezone.utc)
 
-        # Can use the below logic to have some null checks
-        # if not feedback_text or not timestamp:
-        #     return https_fn.Response(
-        #         response=json.dumps({"success": False, "message": "Missing required feedbackText field"}),
-        #         status=400,
-        #         mimetype="application/json",
-        #         headers=headers
-        #     )
+        # For warmup requests, return success immediately without database operations
+        if is_warmup:
+            return https_fn.Response(
+                response=json.dumps({"success": True, "message": "Warmup request successful"}),
+                status=200,
+                mimetype="application/json",
+                headers=headers,
+            )
 
         # Prepare the data for Firestore
         update_scheme_data = {

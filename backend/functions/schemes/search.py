@@ -51,6 +51,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         query = body.get("query", None)
         top_k = body.get("top_k", 20)
         similarity_threshold = body.get("similarity_threshold", 0)
+        is_warmup = body.get("is_warmup", False)
     except Exception:
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request body"}),
@@ -67,7 +68,9 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
-    params = PredictParams(query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold))
+    params = PredictParams(
+        query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold), is_warmup=is_warmup
+    )
 
     try:
         results = search_model.predict(params)

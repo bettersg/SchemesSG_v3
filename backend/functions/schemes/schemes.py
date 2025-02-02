@@ -51,10 +51,22 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
     splitted_path = req.path.split("/")
     schemes_id = splitted_path[1] if len(splitted_path) == 2 else None
 
+    # Check if this is a warmup request from the query parameters
+    is_warmup = req.args.get("is_warmup", "false").lower() == "true"
+
     if not schemes_id:
         return https_fn.Response(
             response=json.dumps({"error": "Invalid path parameters, please provide schemes id"}),
             status=400,
+            mimetype="application/json",
+            headers=headers,
+        )
+
+    # For warmup requests, return success immediately without querying Firestore
+    if is_warmup:
+        return https_fn.Response(
+            response=json.dumps({"message": "Warmup request successful"}),
+            status=200,
             mimetype="application/json",
             headers=headers,
         )
