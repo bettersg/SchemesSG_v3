@@ -1,5 +1,12 @@
 # Schemes Reimagined
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fschemes.sg)](https://schemes.sg)
+[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/)
+[![Node](https://img.shields.io/badge/node-%3E%3D%2014.0.0-brightgreen)](https://nodejs.org/)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/bettersg/SchemesSG_v3/issues)
+[![better.sg](https://img.shields.io/badge/Built%20by-better.sg-blue)](https://better.sg)
+
 **Schemesv3** is a modern reimagining of Singapore's social support system search, built using Firebase Cloud Functions and Next.js. The system leverages Azure OpenAI's GPT models to provide intelligent scheme recommendations and natural language interactions.
 
 The core functionality is powered by a sophisticated search system that combines:
@@ -28,27 +35,17 @@ Ensure you have the following installed:
 
 ### Required Files Setup
 
-1. **Environment Variables**
-Create `.env` file in `backend/functions/`:
-```shell
-APIKEY= # Azure OpenAI key
-TYPE= # Azure OpenAI type, e.g. "xxxx-Preview"
-VERSION= # Azure OpenAI version, e.g. "2022-02-16-preview"
-ENDPOINT= # Azure endpoint, e.g. "https://example-resource.azure.openai.com/"
-DEPLOYMENT= # Azure OpenAI model deployment
-MODEL= # Azure OpenAI model name, e.g. "gpt-4"
-```
+1. **Environment Variables and Model Files**
+Download the following required files from Google Drive (contact maintainers for access):
+- `.env` file → place in `backend/functions/`
+- `schemesv2-torch-allmpp-model/` → place in `backend/functions/ml_logic/`
+- `schemesv2-torch-allmpp-tokenizer/` → place in `backend/functions/ml_logic/`
+- Required `.npy` files → place in `backend/functions/ml_logic/`
+- Required `.faiss` files → place in `backend/functions/ml_logic/`
 
-2. **Model Files**
-Download and place the following files in `backend/functions/ml_logic/`:
-- `schemesv2-torch-allmpp-model/`
-- `schemesv2-torch-allmpp-tokenizer/`
-- Required `.npy` files
-- Required `.faiss` files
+Alternatively, you can build the model files yourself using `model-creation-transformer-faiss.ipynb`
 
-You can obtain these files from:
-- Google Drive (contact maintainers for access) or
-- Build them yourself using `model-creation-transformer-faiss.ipynb`
+Note: The `.env` file contains sensitive configuration for Azure OpenAI services and should never be committed to version control.
 
 ## Project Structure
 
@@ -57,10 +54,12 @@ The project consists of two main components:
 1. **Frontend**: Next.js application with TypeScript
    - See `frontend/README.md` for setup instructions
    - Staging URL: https://schemessg-v3-dev.web.app/
+   - Staging URL: https://schemes.sg/
 
 2. **Backend**: Firebase Functions with Python 3.10 runtime
    - See `backend/README.md` for setup instructions
    - Staging URL: https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/
+   - Staging URL: https://asia-southeast1-schemessg.cloudfunctions.net/
 
 ## Development Workflow
 
@@ -69,11 +68,48 @@ The project consists of two main components:
    - Make changes
    - Test locally
    - Create PR to `stg`
+   - When PR is merged, github action `.github/workflows/firebase-hosting-staging.yml` will be triggered to deploy to firebase hosting in Schemes dev
+   - Then create PR to merge `stg` into `main`
+   - When PR is merged, github action `.github/workflows/firebase-hosting-production.yml` will be triggered to deploy to firebase hosting in Schemes prod
 
 2. Backend changes:
    - Test using Firebase emulator
-   - Deploy to staging only if you're a project maintainer
+   - When `stg` branch is pushed, the github action `.github/workflows/deploy_functions_dev.yml` will be triggered to deploy to Schemes dev
+   - When `main` branch is pushed, the github action `.github/workflows/deploy_functions_prod.yml` will be triggered to deploy to Schemes prod
 
-## Notes
-- Production deployment is not yet configured
-- For any issues, contact Traci on Slack or WhatsApp
+Note: For local frontend development to work, you must have the backend running via Docker. Please refer to `backend/README.md` for Docker setup and running instructions.
+
+## Contributing
+
+We welcome contributions from the community! Here's how you can help:
+
+1. **Report Issues**: Create issues for bugs or feature requests
+2. **Submit Pull Requests**: 
+   - Fork the repository
+   - Create a feature branch from `stg`
+   - Make your changes
+   - Submit a pull request to `stg`
+   - Once approved and merged to `stg`, create another PR to merge into `main`
+
+Please ensure your PR:
+- Follows the existing code style
+- Includes appropriate tests
+- Updates documentation as needed
+- Describes the changes made
+
+## Community
+
+- **Website**: [https://schemes.sg](https://schemes.sg)
+- **Issues**: Please report bugs and feature requests through GitHub issues
+- **Discussions**: Feel free to start discussions in the GitHub Discussions tab
+- **Contact**: For other inquiries, reach out to the maintainers through GitHub
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Built with support from better.sg
+- Powered by Azure OpenAI
+- Special thanks to all contributors and maintainers
