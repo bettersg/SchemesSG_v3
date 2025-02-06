@@ -9,10 +9,11 @@ def mock_request():
     """Mock Firebase Functions request object."""
 
     class MockRequest:
-        def __init__(self, method="GET", json_data=None, headers=None):
+        def __init__(self, method="GET", json_data=None, headers=None, args=None):
             self.method = method
             self._json = json_data or {}
             self.headers = headers or {}
+            self.args = args or {}
 
         def get_json(self, silent=False):
             return self._json
