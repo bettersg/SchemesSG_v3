@@ -46,6 +46,7 @@ from typing import Dict, Optional
 import requests
 from firebase_functions import options, scheduler_fn
 from loguru import logger
+from firebase_admin import auth
 
 
 def get_endpoint_url(function_name: str) -> str:
@@ -88,11 +89,28 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
     try:
         logger.info(f"Making warm-up request to: {url}")
 
+        # Create a custom token for warmup requests
+        custom_token = auth.create_custom_token("warmup-user")
+
+        # Exchange custom token for ID token
+        response = requests.post(
+            f"https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
+            params={"key": os.getenv("FB_API_KEY")},
+            json={"token": custom_token.decode(), "returnSecureToken": True},
+        )
+
+        if response.status_code != 200:
+            logger.error("Failed to get ID token for warmup request")
+            return False
+
+        id_token = response.json()["idToken"]
+
+        # Make the actual warmup request with the ID token
         response = requests.request(
             method=method,
             url=url,
             json=json_data,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {id_token}"},
             timeout=30,
         )
 
