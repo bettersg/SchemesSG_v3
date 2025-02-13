@@ -12,6 +12,7 @@ import {
 } from "@nextui-org/react";
 import { useState } from "react";
 import classes from "./styleClasses.module.css";
+import { fetchWithAuth } from "@/app/utils/api";
 
 export type UpdateSchemeParams = {
   typeOfRequest?: "Update" | "New";
@@ -57,13 +58,10 @@ export default function UpdateSchemesPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/update_scheme`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify(updates),
         }
       );
