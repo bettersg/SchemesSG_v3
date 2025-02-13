@@ -17,4 +17,4 @@ def verify_auth_token(req: https_fn.Request) -> Tuple[bool, str]:
         return True, decoded_token["uid"]
     except Exception as e:
         logger.error(f"Token verification failed: {e}")
-        return False, str(e)
+        return False, "Token verification failed"
