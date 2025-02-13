@@ -7,6 +7,7 @@ import {
   EligibilityType,
   RawSchemeData,
 } from "@/app/interfaces/schemes";
+import { fetchWithAuth } from "@/app/utils/api";
 import { SearchResScheme } from "@/components/schemes/schemes-list";
 import {
   Chip,
@@ -81,7 +82,7 @@ export default function SchemePage() {
         const id = Array.isArray(schemeId) ? schemeId[0] : schemeId;
         console.log("Fetching scheme data for ID:", id);
 
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes/${id}`
         );
         if (!response.ok) {

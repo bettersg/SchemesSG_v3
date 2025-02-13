@@ -8,6 +8,8 @@ import json
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
+from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.auth import verify_auth_token
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -30,21 +32,20 @@ def retrieve_search_queries(req: https_fn.Request) -> https_fn.Response:
     Returns:
         https_fn.Response: response sent to client
     """
-    # TODO remove for prod setup
-    # Set CORS headers for the preflight request
     if req.method == "OPTIONS":
-        # Allows GET and POST requests from any origin with the Content-Type
-        # header and caches preflight response for an hour
-        headers = {
-            "Access-Control-Allow-Origin": "http://localhost:3000",
-            "Access-Control-Allow-Methods": "POST",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Access-Control-Max-Age": "3600",
-        }
-        return ("", 204, headers)
+        return handle_cors_preflight(req)
 
-    # Set CORS headers for the main request
-    headers = {"Access-Control-Allow-Origin": "http://localhost:3000"}
+    headers = get_cors_headers(req)
+
+    # Verify authentication
+    is_valid, auth_message = verify_auth_token(req)
+    if not is_valid:
+        return https_fn.Response(
+            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
+            status=401,
+            mimetype="application/json",
+            headers=headers,
+        )
 
     firebase_manager = create_firebase_manager()
 
@@ -53,6 +54,7 @@ def retrieve_search_queries(req: https_fn.Request) -> https_fn.Response:
             response=json.dumps({"error": "Invalid request method; only GET is supported"}),
             status=405,
             mimetype="application/json",
+            headers=headers,
         )
 
     splitted_path = req.path.split("/")

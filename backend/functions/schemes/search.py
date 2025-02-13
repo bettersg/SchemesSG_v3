@@ -10,6 +10,7 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from ml_logic import PredictParams, SearchModel
 from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.auth import verify_auth_token
 
 
 def create_search_model() -> SearchModel:
@@ -36,6 +37,17 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         return handle_cors_preflight(req)
 
     headers = get_cors_headers(req)
+
+    # Verify authentication
+    is_valid, auth_message = verify_auth_token(req)
+    if not is_valid:
+        return https_fn.Response(
+            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
+            status=401,
+            mimetype="application/json",
+            headers=headers,
+        )
+
     search_model = create_search_model()
 
     if not req.method == "POST":
@@ -74,13 +86,17 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
 
     try:
         results = search_model.predict(params)
+        return https_fn.Response(
+            response=json.dumps(results),
+            status=200,
+            mimetype="application/json",
+            headers=headers,
+        )
     except Exception as e:
         logger.exception("Error searching schemes", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error"}),
+            response=json.dumps({"error": "Internal server error searching schemes"}),
             status=500,
             mimetype="application/json",
             headers=headers,
         )
-
-    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json", headers=headers)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@/app/providers";
+import { fetchWithAuth } from "@/app/utils/api";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list/chat-list";
 import { Spacer } from "@nextui-org/react";
@@ -72,13 +73,10 @@ export default function MainChat({ sessionId }: MainChatProps) {
     setIsBotResponseGenerating(true);
     setCurrentStreamingMessage("");
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat_message`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             message: userMessage,
             sessionID: sessionId,

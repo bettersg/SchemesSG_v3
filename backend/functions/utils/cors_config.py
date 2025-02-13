@@ -30,14 +30,14 @@ def get_cors_headers(request: https_fn.Request) -> Dict[str, str]:
         return {
             "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Max-Age": "3600",
         }
 
     # If origin not allowed, return headers without Access-Control-Allow-Origin
     return {
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Max-Age": "3600",
     }
 
@@ -50,7 +50,7 @@ def handle_cors_preflight(
 
     Args:
         request: The incoming request
-        allowed_methods: Comma-separated string of allowed HTTP methods
+        allowed_methods: Allowed HTTP methods
     """
     headers = get_cors_headers(request)
     headers["Access-Control-Allow-Methods"] = allowed_methods

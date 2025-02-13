@@ -1,5 +1,6 @@
 import { RawSchemeData } from "@/app/interfaces/schemes";
 import { useChat } from "@/app/providers";
+import { fetchWithAuth } from "@/app/utils/api";
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { useEffect, useState } from "react";
 import { SearchIcon } from "../../assets/icons/search-icon";
@@ -107,11 +108,8 @@ export default function SearchBar({
 
     try {
       setIsBotResponseGenerating(true);
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(requestBody),
       });
 
