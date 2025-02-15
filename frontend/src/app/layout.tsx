@@ -7,6 +7,7 @@ import React from "react";
 import classes from "../components/main-layout/main-layout.module.css";
 import "./globals.css";
 import { ChatProvider } from "./providers";
+import { AuthProvider } from "./providers/AuthProvider";
 
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
@@ -29,11 +30,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} antialiased`}>
         <NextUIProvider>
-          <ChatProvider>
-            <MainHeader />
-            <div className={classes.contentWrapper}>{children}</div>
-            <MainFooter />
-          </ChatProvider>
+          <AuthProvider>
+            <ChatProvider>
+              <MainHeader />
+              <div className={classes.contentWrapper}>{children}</div>
+              <MainFooter />
+            </ChatProvider>
+          </AuthProvider>
         </NextUIProvider>
       </body>
     </html>

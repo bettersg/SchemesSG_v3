@@ -9,6 +9,7 @@ from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
 from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.auth import verify_auth_token
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -37,6 +38,16 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
 
     # Get standard CORS headers for all other requests
     headers = get_cors_headers(req)
+
+    # Verify authentication
+    is_valid, auth_message = verify_auth_token(req)
+    if not is_valid:
+        return https_fn.Response(
+            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
+            status=401,
+            mimetype="application/json",
+            headers=headers,
+        )
 
     firebase_manager = create_firebase_manager()
 
