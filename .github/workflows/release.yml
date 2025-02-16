@@ -1,0 +1,44 @@
+# This GitHub Actions workflow automates the release process using semantic-release,
+# while respecting strict branch protection rules on the 'main' branch.
+#
+# Workflow Summary:
+# 1. Checks out the code with full history so semantic-release can analyze all commits.
+# 2. Installs Node.js (v20+), which semantic-release requires.
+# 3. Runs semantic-release to:
+#    - Determine the next version from commit messages.
+#    - Create a GitHub release and tag.
+#
+# Release notes are documented on the GitHub Releases page.
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out code with full history so semantic-release can analyze commits
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # 2. Use Node 20+ (semantic-release requires >= 20.8.1)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 3. Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. Run semantic-release (publishes GitHub release and tag)
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
