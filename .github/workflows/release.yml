@@ -1,18 +1,14 @@
-# This GitHub Actions workflow automates the release process using semantic-release, 
-# while respecting strict branch protection rules on the 'main' branch (i.e., requiring pull requests).
+# This GitHub Actions workflow automates the release process using semantic-release,
+# while respecting strict branch protection rules on the 'main' branch.
 #
 # Workflow Summary:
-# 1. Checks out the code with full history, so semantic-release can analyze all commits.
+# 1. Checks out the code with full history so semantic-release can analyze all commits.
 # 2. Installs Node.js (v20+), which semantic-release requires.
 # 3. Runs semantic-release to:
 #    - Determine the next version from commit messages.
-#    - Create a GitHub release/tag.
-#    - Generate or update CHANGELOG.md (locally only).
-# 4. Commits the updated CHANGELOG.md to a temporary branch ('release-changelog').
-# 5. Opens a pull request from 'release-changelog' into 'main', satisfying "Require a pull request before merging."
+#    - Create a GitHub release and tag.
 #
-# By doing this, we avoid direct pushes to 'main' but still keep a local CHANGELOG.md in sync.
-
+# Release notes are documented on the GitHub Releases page.
 name: Release
 
 on:
@@ -31,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 2. Use Node 20+ (semantic-release recently requires >= 20.8.1)
+      # 2. Use Node 20+ (semantic-release requires >= 20.8.1)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -41,40 +37,8 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 4. Run semantic-release (generates local CHANGELOG.md + publishes GH release)
+      # 4. Run semantic-release (publishes GitHub release and tag)
       - name: Run semantic-release
         env:
-          # Use the default GITHUB_TOKEN or a PAT if needed for pushing tags
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
-
-      # 5. Create a new branch with the updated CHANGELOG.md
-      - name: Create release-changelog branch
-        run: |
-          # Configure git identity
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create a new branch (force in case it already exists)
-          git checkout -B release-changelog
-
-          # Stage the updated CHANGELOG.md
-          git add CHANGELOG.md
-
-          # Commit
-          git commit -m "chore: update changelog [skip ci]" || echo "No changes to commit."
-
-          # Push the branch to origin
-          git push -f origin release-changelog
-
-      # 6. Open a Pull Request from release-changelog -> main
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: release-changelog
-          base: main
-          title: "chore: update changelog"
-          body: |
-            This PR updates the local CHANGELOG.md with the latest release notes.
-            Merging this satisfies "Require a pull request before merging" for main.
