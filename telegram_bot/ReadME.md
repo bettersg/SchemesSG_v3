@@ -5,6 +5,8 @@ To install and deploy, create a file called `.env` and place it in the `telegram
 ```env
 API_KEY=your-telegram-api-key
 BACKEND_URL=your-backend-url
+FB_API_KEY=firebase-api-key
+FB_CREDS_PATH=path-to-firebase-credentials
 ```
 
 ### Development
