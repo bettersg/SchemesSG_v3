@@ -9,6 +9,18 @@ from utils.format import format_chat_text
 
 load_dotenv()
 backend_url = os.getenv("BACKEND_URL")
+prod = os.getenv("PROD") == 'true'
+
+
+def get_prod_endpoint(func_name: str) -> str:
+    """
+    Helper function to generate full API url from given function names
+    Args:
+        func_name (str): name of function to be called
+    Returns:
+        str: full API url
+    """
+    return f"https://{func_name}{backend_url}"
 
 
 def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, list | None, str | None]:
@@ -33,8 +45,7 @@ def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, li
 
     body = {"query": text, "similarity_threshold": similarity_threshold}
 
-    #endpoint = get_endpoint("search-schemes")
-    endpoint = backend_url + "/schemes_search"
+    endpoint = get_prod_endpoint("search-schemes") if prod else backend_url + "/schemes_search"
 
     res = requests.post(
         endpoint,
@@ -72,8 +83,7 @@ def retrieve_scheme_results(query_id: str) -> bool | list[dict[str, str | int]]:
     if id_token is None:
         return False
 
-    #endpoint = get_endpoint("retrieve-search-queries") + "/" + query_id
-    endpoint = backend_url + "/retrieve_search_queries" + "/" + query_id
+    endpoint = get_prod_endpoint("retrieve-search-queries") + "/" + query_id if prod else backend_url + "/retrieve_search_queries" + "/" + query_id
 
     res = requests.get(
         endpoint,
@@ -108,8 +118,7 @@ def send_chat_message(input_text: str, query_id: str) -> tuple[str | None, str |
     chatbot_query = input_text + "\n\nKeep the response to a strict maximum of 300 words."
     body = {"sessionID": query_id, "message": chatbot_query}
 
-    #endpoint = get_endpoint("chat-message")
-    endpoint = backend_url + "/chat_message"
+    endpoint = get_prod_endpoint("chat-message") if prod else backend_url + "/chat_message"
 
     res = requests.post(
         endpoint,
