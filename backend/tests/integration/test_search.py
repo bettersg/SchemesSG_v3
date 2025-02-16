@@ -6,7 +6,7 @@ from schemes.search import schemes_search, create_search_model
 from ml_logic import PredictParams
 
 
-def test_search_warmup_request(mock_request, mock_https_response, mocker):
+def test_search_warmup_request(mock_request, mock_https_response, mock_auth, mocker):
     """Test search endpoint with warmup request."""
     # Mock the SearchModel to avoid initialization
     mock_model = mocker.MagicMock()
@@ -16,9 +16,7 @@ def test_search_warmup_request(mock_request, mock_https_response, mocker):
     }
     mocker.patch("schemes.search.SearchModel", mock_model)
 
-    request = mock_request(
-        method="POST", json_data={"is_warmup": True, "query": "test"}
-    )
+    request = mock_request(method="POST", json_data={"is_warmup": True, "query": "test"})
 
     response = schemes_search(request)
 
@@ -27,7 +25,7 @@ def test_search_warmup_request(mock_request, mock_https_response, mocker):
     assert "Warmup request successful" in json.loads(response.get_data())["message"]
 
 
-def test_search_invalid_method(mock_request, mock_https_response, mocker):
+def test_search_invalid_method(mock_request, mock_https_response, mock_auth, mocker):
     """Test search endpoint with invalid HTTP method."""
     # Mock the SearchModel to avoid initialization
     mock_model = mocker.MagicMock()
@@ -42,7 +40,7 @@ def test_search_invalid_method(mock_request, mock_https_response, mocker):
     assert "Invalid request method; only POST is supported" == response_data["error"]
 
 
-def test_search_missing_query(mock_request, mock_https_response, mocker):
+def test_search_missing_query(mock_request, mock_https_response, mock_auth, mocker):
     """Test search endpoint with missing query."""
     # Mock the SearchModel to avoid initialization
     mock_model = mocker.MagicMock()
@@ -57,15 +55,13 @@ def test_search_missing_query(mock_request, mock_https_response, mocker):
     assert "Parameter 'query' in body is required" == response_data["error"]
 
 
-def test_search_successful_query(mock_request, mock_https_response, mocker):
+def test_search_successful_query(mock_request, mock_https_response, mock_auth, mocker):
     """Test successful search query."""
     # Mock the SearchModel
     mock_model = mocker.MagicMock()
     expected_results = {
         "success": True,
-        "schemes": [
-            {"id": 1, "title": "Test Scheme", "description": "Test Description"}
-        ],
+        "schemes": [{"id": 1, "title": "Test Scheme", "description": "Test Description"}],
     }
     mock_model.return_value.predict.return_value = expected_results
     mocker.patch("schemes.search.SearchModel", mock_model)
@@ -78,21 +74,17 @@ def test_search_successful_query(mock_request, mock_https_response, mocker):
     assert json.loads(response.get_data()) == expected_results
 
 
-def test_search_with_cors_preflight(mock_request, mock_https_response, mocker):
+def test_search_with_cors_preflight(mock_request, mock_https_response, mock_auth, mocker):
     """Test search endpoint CORS preflight request."""
-    request = mock_request(
-        method="OPTIONS", headers={"Origin": "http://localhost:3000"}
-    )
+    request = mock_request(method="OPTIONS")
 
     response = schemes_search(request)
 
     assert response.status_code == 204
-    assert (
-        response.headers.get("Access-Control-Allow-Origin") == "http://localhost:3000"
-    )
+    assert response.headers.get("Access-Control-Allow-Origin") == "http://localhost:3000"
 
 
-def test_search_with_prediction_error(mock_request, mock_https_response, mocker):
+def test_search_with_prediction_error(mock_request, mock_https_response, mock_auth, mocker):
     """Test search endpoint when prediction fails."""
     # Mock the SearchModel to raise an exception
     mock_model = mocker.MagicMock()
@@ -105,7 +97,7 @@ def test_search_with_prediction_error(mock_request, mock_https_response, mocker)
 
     assert response.status_code == 500
     response_data = json.loads(response.get_data())
-    assert "Internal server error" == response_data["error"]
+    assert "Internal server error searching schemes" == response_data["error"]
 
 
 def test_create_search_model(mock_firebase_manager, mocker):

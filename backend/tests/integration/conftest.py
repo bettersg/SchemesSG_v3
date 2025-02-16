@@ -5,6 +5,14 @@ from firebase_functions import https_fn
 
 
 @pytest.fixture
+def mock_auth(mocker):
+    """Mock Firebase Auth verification."""
+    mock_verify = mocker.patch("utils.auth.auth.verify_id_token")
+    mock_verify.return_value = {"uid": "test-user-id"}
+    return mock_verify
+
+
+@pytest.fixture
 def mock_request():
     """Mock Firebase Functions request object."""
 
@@ -12,8 +20,9 @@ def mock_request():
         def __init__(self, method="GET", json_data=None, headers=None, args=None):
             self.method = method
             self._json = json_data or {}
-            self.headers = headers or {}
+            self.headers = headers or {"Authorization": "Bearer mock-token", "Origin": "http://localhost:3000"}
             self.args = args or {}
+            self.path = "/"
 
         def get_json(self, silent=False):
             return self._json

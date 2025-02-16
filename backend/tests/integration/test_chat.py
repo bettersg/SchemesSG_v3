@@ -5,7 +5,7 @@ import pytest
 from chat.chat import chat_message, create_chatbot, Chatbot
 
 
-def test_chat_warmup_request(mock_request, mock_https_response):
+def test_chat_warmup_request(mock_request, mock_https_response, mock_auth):
     """Test chat endpoint with warmup request."""
     request = mock_request(method="POST", json_data={"is_warmup": True})
 
@@ -15,30 +15,24 @@ def test_chat_warmup_request(mock_request, mock_https_response):
     assert "Warmup request successful" in json.loads(response.get_data())["message"]
 
 
-def test_chat_invalid_method(mock_request, mock_https_response):
+def test_chat_invalid_method(mock_request, mock_https_response, mock_auth):
     """Test chat endpoint with invalid HTTP method."""
     request = mock_request(method="GET")
 
     response = chat_message(request)
 
     assert response.status_code == 405
-    assert (
-        "Invalid request method; only POST or GET is supported"
-        in json.loads(response.get_data())["error"]
-    )
+    assert "Invalid request method; only POST or GET is supported" in json.loads(response.get_data())["error"]
 
 
-def test_chat_missing_session_id(mock_request, mock_https_response):
+def test_chat_missing_session_id(mock_request, mock_https_response, mock_auth):
     """Test chat endpoint with missing session ID."""
     request = mock_request(method="POST", json_data={"message": "test message"})
 
     response = chat_message(request)
 
     assert response.status_code == 404
-    assert (
-        "Search query with sessionID does not exist"
-        in json.loads(response.get_data())["error"]
-    )
+    assert "Search query with sessionID does not exist" in json.loads(response.get_data())["error"]
 
 
 @pytest.mark.skip(reason="Requires OpenAI API key")

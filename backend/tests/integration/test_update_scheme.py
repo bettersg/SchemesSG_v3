@@ -6,7 +6,7 @@ import pytest
 from update_scheme.update_scheme import update_scheme
 
 
-def test_update_scheme_warmup_request(mock_request, mock_https_response, mocker):
+def test_update_scheme_warmup_request(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint with warmup request."""
     mock_manager = mocker.MagicMock()
     mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
@@ -24,7 +24,7 @@ def test_update_scheme_warmup_request(mock_request, mock_https_response, mocker)
         "is_warmup": True,
     }
 
-    request = mock_request(method="POST", headers={"Origin": "http://localhost:3000"}, json_data=request_data, args={})
+    request = mock_request(method="POST", json_data=request_data)
 
     response = update_scheme(request)
 
@@ -36,12 +36,12 @@ def test_update_scheme_warmup_request(mock_request, mock_https_response, mocker)
     mock_manager.firestore_client.collection.assert_not_called()
 
 
-def test_update_scheme_invalid_method(mock_request, mock_https_response, mocker):
+def test_update_scheme_invalid_method(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint with invalid HTTP method."""
     mock_manager = mocker.MagicMock()
     mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
 
-    request = mock_request(method="GET", headers={"Origin": "http://localhost:3000"}, args={})
+    request = mock_request(method="GET")
 
     response = update_scheme(request)
 
@@ -51,7 +51,7 @@ def test_update_scheme_invalid_method(mock_request, mock_https_response, mocker)
     assert "Only POST requests are allowed" in response_data["message"]
 
 
-def test_update_scheme_successful_new_request(mock_request, mock_https_response, mocker):
+def test_update_scheme_successful_new_request(mock_request, mock_https_response, mock_auth, mocker):
     """Test successful new scheme update request."""
     mock_manager = mocker.MagicMock()
     mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
@@ -68,7 +68,7 @@ def test_update_scheme_successful_new_request(mock_request, mock_https_response,
         "typeOfRequest": "New",
     }
 
-    request = mock_request(method="POST", headers={"Origin": "http://localhost:3000"}, json_data=request_data, args={})
+    request = mock_request(method="POST", json_data=request_data)
 
     response = update_scheme(request)
 
@@ -86,7 +86,7 @@ def test_update_scheme_successful_new_request(mock_request, mock_https_response,
     assert "timestamp" in call_args  # Verify timestamp was added
 
 
-def test_update_scheme_successful_edit_request(mock_request, mock_https_response, mocker):
+def test_update_scheme_successful_edit_request(mock_request, mock_https_response, mock_auth, mocker):
     """Test successful scheme edit request."""
     mock_manager = mocker.MagicMock()
     mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
@@ -103,7 +103,7 @@ def test_update_scheme_successful_edit_request(mock_request, mock_https_response
         "typeOfRequest": "Edit",
     }
 
-    request = mock_request(method="POST", headers={"Origin": "http://localhost:3000"}, json_data=request_data, args={})
+    request = mock_request(method="POST", json_data=request_data)
 
     response = update_scheme(request)
 
@@ -117,7 +117,7 @@ def test_update_scheme_successful_edit_request(mock_request, mock_https_response
     mock_manager.firestore_client.collection().add.assert_called_once()
 
 
-def test_update_scheme_missing_required_fields(mock_request, mock_https_response, mocker):
+def test_update_scheme_missing_required_fields(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint with missing required fields."""
     mock_manager = mocker.MagicMock()
     mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
@@ -125,7 +125,7 @@ def test_update_scheme_missing_required_fields(mock_request, mock_https_response
     # Missing several required fields
     request_data = {"Changes": "Some changes", "Scheme": "Test Scheme"}
 
-    request = mock_request(method="POST", headers={"Origin": "http://localhost:3000"}, json_data=request_data, args={})
+    request = mock_request(method="POST", json_data=request_data)
 
     response = update_scheme(request)
 
@@ -134,7 +134,7 @@ def test_update_scheme_missing_required_fields(mock_request, mock_https_response
     assert response_data["success"] is True  # Current implementation doesn't validate required fields
 
 
-def test_update_scheme_firestore_error(mock_request, mock_https_response, mocker):
+def test_update_scheme_firestore_error(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint when Firestore operation fails."""
     mock_manager = mocker.MagicMock()
     mock_manager.firestore_client.collection().add.side_effect = Exception("Firestore error")
@@ -152,7 +152,7 @@ def test_update_scheme_firestore_error(mock_request, mock_https_response, mocker
         "typeOfRequest": "New",
     }
 
-    request = mock_request(method="POST", headers={"Origin": "http://localhost:3000"}, json_data=request_data, args={})
+    request = mock_request(method="POST", json_data=request_data)
 
     response = update_scheme(request)
 
@@ -162,9 +162,9 @@ def test_update_scheme_firestore_error(mock_request, mock_https_response, mocker
     assert "Failed to add request for scheme update" in response_data["message"]
 
 
-def test_update_scheme_cors_preflight(mock_request, mock_https_response, mocker):
+def test_update_scheme_cors_preflight(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint CORS preflight request."""
-    request = mock_request(method="OPTIONS", headers={"Origin": "http://localhost:3000"}, args={})
+    request = mock_request(method="OPTIONS")
 
     response = update_scheme(request)
 
