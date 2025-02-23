@@ -3,6 +3,7 @@
 import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
 import { useState } from "react";
 import styles from "./feedback.module.css";
+import { fetchWithAuth } from "@/app/utils/api";
 
 export default function FeedbackPage() {
   const [feedbackText, setFeedbackText] = useState("");
@@ -45,13 +46,10 @@ export default function FeedbackPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             feedbackText,
             userName,
