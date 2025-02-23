@@ -3,6 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from utils.auth import get_id_token
 from utils.format import format_chat_text
 
 
@@ -24,11 +25,21 @@ def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, li
         str | None: error message to be displayed if error occurs
     """
 
+    id_token = get_id_token()
+
+    if id_token is None:
+        err_message = "Authentication failed!"
+        return (None, None, err_message)
+
     body = {"query": text, "similarity_threshold": similarity_threshold}
 
     endpoint = backend_url + "/schemes_search"
 
-    res = requests.post(endpoint, json=body)
+    res = requests.post(
+        endpoint,
+        json=body,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {id_token}"},
+    )
 
     if res.status_code != 200:  # Error
         err_message = "I am unable to search for suitable assistance schemes. Please try again!"
@@ -55,9 +66,17 @@ def retrieve_scheme_results(query_id: str) -> bool | list[dict[str, str | int]]:
         bool | list[dict[str, str | int]]: either returns False (in which case provided query_id is in incorrect) or full schemes result
     """
 
+    id_token = get_id_token()
+
+    if id_token is None:
+        return False
+
     endpoint = backend_url + "/retrieve_search_queries" + "/" + query_id
 
-    res = requests.get(endpoint)
+    res = requests.get(
+        endpoint,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {id_token}"},
+    )
 
     if res.status_code != 200: # Error
         return False
@@ -78,12 +97,22 @@ def send_chat_message(input_text: str, query_id: str) -> tuple[str | None, str |
         str | None: error message should chat bot not work
     """
 
+    id_token = get_id_token()
+
+    if id_token is None:
+        err_message = "Authentication failed!"
+        return (None, err_message)
+
     chatbot_query = input_text + "\n\nKeep the response to a strict maximum of 300 words."
     body = {"sessionID": query_id, "message": chatbot_query}
 
     endpoint = backend_url + "/chat_message"
 
-    res = requests.post(endpoint, json=body)
+    res = requests.post(
+        endpoint,
+        json=body,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {id_token}"},
+    )
 
     if res.status_code != 200:  # Error
         err_message = "Sorry, Schemes Support Chat is unable to work currently."
