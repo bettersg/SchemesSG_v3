@@ -1,6 +1,6 @@
 # Telegram Bot
 
-To install and deploy, create a file called `.env` and place it in the `telegram_bot` folder, as seen in `.env.sample`.
+To install and deploy, create a file called `.env` and place it in the `telegram_bot` folder, as seen in `.env.sample`. Add the Firebase credentials file into the `telegram_bot` folder as well (set `FB_CREDS_PATH` to the file path).
 
 ```env
 API_KEY=your-telegram-api-key
