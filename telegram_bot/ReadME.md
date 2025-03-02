@@ -26,3 +26,9 @@ poetry run python app.py
 ### Production
 
 Run the `deploy.sh` shell script on your server console from this (`telegram_bot`) directory.
+
+### Logs
+
+Logs will be generated in the `logs/` directory. It will update whenever the telegram bot replies to a message or whenever an error is returned when calling the backend APIs. Details on the user (e.g. user IDs, usernames, chat IDs, etc) and the conversation (e.g. the query messages and the responses from the bot) will **NOT** be stored in the logs - its main purpose is for logging errors to ease the fixing of any bugs that are encountered.
+
+The logs are rotated daily (a new `.log` file is created every day), and will be stored for 30 days before deletion.
