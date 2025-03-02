@@ -141,12 +141,12 @@ async def chat_handler(message: types.Message, config: BotConfig, state: FSMCont
 
     data = await state.get_data()
     query_id = data["search"]
-    #print(query_id)  # Use query ID to fetch search results and feed into chatbot
+    # Use query ID to fetch search results and feed into chatbot
 
     chat_response, err_message = send_chat_message(message.text, query_id)
     if err_message:
-            await message.answer(err_message)
-            return
+        await message.answer(err_message)
+        return
 
     await message.answer(chat_response, parse_mode="Markdown")
 
