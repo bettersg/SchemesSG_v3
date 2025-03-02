@@ -1,6 +1,7 @@
 from enum import Enum
 
 from aiogram import Router, html, types
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, callback_data
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -60,7 +61,7 @@ def present_scheme(idx: int, scheme: dict[str, str | int]) -> str:
     )
 
 
-def paginator(page: int, query_id: str, last: bool = False) -> types.InlineKeyboardMarkup:
+def paginator(page: int, query_id: str, last: bool = False, is_error: bool = False) -> types.InlineKeyboardMarkup:
     """
     Returns Back/Next buttons for pagination
 
@@ -68,6 +69,7 @@ def paginator(page: int, query_id: str, last: bool = False) -> types.InlineKeybo
         page (int): current page number
         query_id (int): ID of search query
         last (bool): if current page is last
+        is_error (bool): if pagination request resulted in error
 
     Returns:
         types.InlineKeyboardMarkup: Inline Keyboard Markup for telegram bot
@@ -85,9 +87,14 @@ def paginator(page: int, query_id: str, last: bool = False) -> types.InlineKeybo
             text="Next", callback_data=SearchResultsCallback(page_num=page + 1, query_id=query_id).pack()
         )
 
-    keyboard_builder.button(
-        text="Let's Chat!", callback_data=SearchResultsCallback(page_num=page, query_id=query_id, mode=Mode.CHAT).pack()
-    )
+    if is_error:
+        keyboard_builder.button(
+            text="Refresh", callback_data=SearchResultsCallback(page_num=page, query_id=query_id)
+        )
+    else:
+        keyboard_builder.button(
+            text="Let's Chat!", callback_data=SearchResultsCallback(page_num=page, query_id=query_id, mode=Mode.CHAT).pack()
+        )
 
     keyboard_builder.adjust(num_buttons)
     return keyboard_builder.as_markup()
@@ -215,6 +222,23 @@ async def search_callback_handler(
         return
 
     schemes = retrieve_scheme_results(query_id)
+
+    if not schemes:
+        # Error when retrieving scheme results
+
+        try:
+            await bot.edit_message_text(
+                "I am unable to retrieve your schemes.",
+                message_id=query.message.message_id,
+                chat_id=query.message.chat.id,
+                reply_markup=paginator(1, query_id, True, True),
+            )
+
+            await bot.answer_callback_query(query.id)
+        except TelegramBadRequest as e:
+            if "message is not modified" not in str(e):
+                raise
+        return
 
     is_last_page = pgnum * NUM_SCHEME_PER_PAGE >= len(schemes)
 
