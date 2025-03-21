@@ -213,30 +213,27 @@ class SearchModel:
         return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
     # Now, you can use `index` for similarity searches with new user queries
-    def search_similar_items(self, query_text: str, full_query: str, top_k: int) -> pd.DataFrame:
+    def search_similar_items(self, preproc: str, full_query: str, top_k: int) -> pd.DataFrame:
         """
-        Searches database for schemes matching search query
+        Searches for similar items in the FAISS index and returns a dataframe of schemes details and their similarity scores
 
         Args:
-            query_text (str): specific need of user
-            full_query (str): original query of user
-            top_k (int): number of schemes returned
+            preproc (str): preprocessed query (e.g. need or full query)
+            full_query (str): the full query for logging purposes
+            top_k (int): number of items to return
 
         Returns:
-            pd.DataFrame: most suitable schemes for the query
+            pd.DataFrame: pandas dataframe containing scheme details and similarity scores
         """
-
-        # Create a cache key based on the query parameters
-        query_cache_key = (query_text, full_query, top_k)
+        # Get the cache key
+        query_cache_key = f"{preproc}_{top_k}"
 
         # Check if the results are already in the cache
         if query_cache_key in self.query_cache:
-            logger.info("Returning cached results for query.")
+            logger.info("Returning cached search results.")
             return self.query_cache[query_cache_key]
 
-        preproc = query_text
-
-        # Tokenize text
+        # Encode the query
         encoded_input = self.__class__.tokenizer([preproc], padding=True, truncation=True, return_tensors="pt")
 
         # Compute token embeddings
@@ -258,7 +255,20 @@ class SearchModel:
         # similar_items = pd.DataFrame([df.iloc[indices[0]], distances[0], similarity_scores[0]])
 
         # Retrieve the scheme_ids using the FAISS indices
-        retrieved_scheme_ids = [self.__class__.index_to_scheme_id[str(idx)] for idx in indices[0]]
+        retrieved_scheme_ids = []
+        for idx in indices[0]:
+            try:
+                scheme_id = self.__class__.index_to_scheme_id[str(idx)]
+                retrieved_scheme_ids.append(scheme_id)
+            except KeyError:
+                logger.warning(f"Index {idx} not found in index_to_scheme_id mapping, skipping.")
+                # Continue with the rest of the indices
+
+        # If we have no valid scheme IDs after filtering, return an empty DataFrame
+        if not retrieved_scheme_ids:
+            logger.warning("No valid scheme IDs found after filtering missing indices.")
+            empty_df = pd.DataFrame(columns=["Scheme", "Agency", "Description", "scheme_id", "URL", "Similarity"])
+            return empty_df
 
         try:
             scheme_details = self.fetch_schemes_batch(retrieved_scheme_ids)
@@ -269,14 +279,42 @@ class SearchModel:
         # Convert to DataFrame
         scheme_df = pd.DataFrame(scheme_details)
 
-        # Add similarity scores to the DataFrame
-        results = pd.concat(
-            [
-                scheme_df.reset_index(drop=True),
-                pd.DataFrame(similarity_scores[0], columns=["Similarity"]).reset_index(drop=True),
-            ],
-            axis=1,
-        )
+        # If schemes were found, match with similarity scores
+        if not scheme_df.empty:
+            # Filter similarity scores to match retrieved schemes (excluding missing indices)
+            # Create a mapping from original indices to the filtered position
+            valid_indices = {}
+            filtered_scores = []
+
+            for i, idx in enumerate(indices[0]):
+                idx_str = str(idx)
+                if idx_str in self.__class__.index_to_scheme_id:
+                    valid_indices[self.__class__.index_to_scheme_id[idx_str]] = i
+                    filtered_scores.append(similarity_scores[0][i])
+
+            # Map each scheme in scheme_df to its corresponding similarity score
+            scheme_similarities = []
+            for scheme_id in scheme_df["scheme_id"]:
+                if scheme_id in valid_indices:
+                    idx = valid_indices[scheme_id]
+                    scheme_similarities.append(similarity_scores[0][idx])
+                else:
+                    # Fallback if for some reason scheme_id doesn't match
+                    logger.warning(f"Scheme ID {scheme_id} not found in valid_indices mapping")
+                    scheme_similarities.append(0.0)  # Default low similarity
+
+            # Add similarity scores to the DataFrame
+            results = pd.concat(
+                [
+                    scheme_df.reset_index(drop=True),
+                    pd.DataFrame(scheme_similarities, columns=["Similarity"]).reset_index(drop=True),
+                ],
+                axis=1,
+            )
+        else:
+            # If no schemes were found, return an empty DataFrame with the expected columns
+            results = pd.DataFrame(columns=["Scheme", "Agency", "Description", "scheme_id", "URL", "Similarity"])
+
         # Add the query to the results and sort by similarity
         results["query"] = full_query
         results = results.sort_values(["Similarity"], ascending=False)
