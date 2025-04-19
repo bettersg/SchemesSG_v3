@@ -3,7 +3,8 @@ const fs = require('fs/promises');
 const path = require('path');
 
 // Initialize Firebase Admin with prod credentials
-const serviceAccount = require('./prod-creds.json');
+// const serviceAccount = require('./prod-creds.json');
+const serviceAccount = require('./dev-creds.json')
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });

@@ -2,7 +2,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const admin = require('firebase-admin');
-const serviceAccount = require('./creds.json');
+const serviceAccount = require('./dev-creds.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
