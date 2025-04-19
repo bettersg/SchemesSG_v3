@@ -23,7 +23,6 @@ if __name__ == "__main__":
     # Get all documents from the collection
     docs = db.collection("schemes").stream()
     doc_ids = [doc.id for doc in docs]
-    doc_datas = []
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -32,21 +31,15 @@ if __name__ == "__main__":
         if scraped_text:
             try:
                 structured_output = text_extract.extract_text(scraped_text)
-                doc_ref.update({"structured_output": structured_output.dict()})
-                logger.info(f"Updated document {doc_id} with structured output")
-                # if "structured_output" in doc_data:
-                #     for key in doc_data["structured_output"]:
-                #         doc_data[key] =  doc_data["structured_output"][key]
-                # else:
-                #     keys = SchemesStructuredOutput.model_fields.keys()
-                #     for key in keys:
-                #         doc_data[key] = None
-                # doc_datas.append(doc_data)
-
-
+                structured_output_dict = structured_output.dict()
+                for key in structured_output_dict:
+                    doc_ref.update({key: structured_output_dict[key]})
+                    #logger.info(f"Updated document {doc_id} with key {key} and value {structured_output_dict[key]}")
             except Exception as e:
                 logger.error(f"Error extracting text and updating document {doc_id}: {e}")
-                raise e
+                keys = SchemesStructuredOutput.model_fields.keys()
+                for key in keys:
+                    doc_ref.update({key: None})
         else:
             logger.info(f"No scraped text found for document {doc_id}")
 

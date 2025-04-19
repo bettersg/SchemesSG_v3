@@ -2,9 +2,9 @@ import pandas as pd
 import os
 from dotenv import dotenv_values, load_dotenv
 from langchain_openai import AzureChatOpenAI
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, Field
-
+from dataset_worfklow.constants import WHAT_IT_GIVES, WHO_IS_IT_FOR, SCHEME_TYPE, SEARCH_BOOSTER
 
 class Config:
     def __init__(self):
@@ -22,44 +22,28 @@ class Config:
 
 class SchemesStructuredOutput(BaseModel):
     """Extract information from the description of the scheme."""
-
-    address: Optional[str] = Field(
+    llm_address: Optional[str] = Field(
         default=None, description="Location in the description"
     )
-    phone: Optional[str] = Field(
+    llm_phone: Optional[str] = Field(
         default=None, description="Phone number in the description"
     )
-    email: Optional[str] = Field(
+    llm_email: Optional[str] = Field(
         default=None, description="Relevant email in the description"
     )
-    purpose_of_scheme: Optional[str] = Field(
-        default=None, description="Purpose of the scheme in the description"
+    llm_description: Optional[str] = Field(
+        default=None, description="Concise description of the scheme"
     )
-    website: Optional[str] = Field(
-        default=None, description="Website in the description"
+    llm_eligibility: Optional[str] = Field(
+        default=None, description="Eligibility criteria and documents needed for scheme in the description"
     )
-    summary: Optional[str] = Field(
-        default=None, description="Concise summary of the text"
-    )
-    scheme_category: Optional[str] = Field(
-        default=None, description="Category of the scheme in the description"
-    )
-    target_beneficiaries: Optional[str] = Field(
-        default=None, description="Target beneficiaries of the scheme in the description"
-    )
-    eligibility_criteria: Optional[str] = Field(
-        default=None, description="Eligibility criteria of the scheme in the description"
-    )
-    implementation_agency: Optional[str] = Field(
-        default=None, description="Implementation agency of the scheme in the description"
-    )
-    eligibility_documents: Optional[str] = Field(
-        default=None, description="Eligibility documents of the scheme in the description"
-    )
-    application_process: Optional[str] = Field(
+    llm_how_to_apply: Optional[str] = Field(
         default=None, description="Application process of the scheme in the description"
     )
-
+    llm_who_is_it_for: Optional[str] = Field(default=None, description=f"Who is this scheme for? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHO_IS_IT_FOR}")
+    llm_what_it_gives: Optional[str] = Field(default=None, description=f"What does this scheme give? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHAT_IT_GIVES}")
+    llm_scheme_type: Optional[str] =  Field(default=None, description=f"What does this scheme type belong to? Must belong to one or many of this list, and separate by commas if there are multiple values: {SCHEME_TYPE}")
+    llm_search_booster: Optional[str]  =  Field(default=None, description=f"Adds some search booster? Must belong to one or many of this list, and separate by commas if there are multiple values: {SCHEME_TYPE}")
 
 class TextExtract:
     _instance = None
@@ -91,11 +75,3 @@ class TextExtract:
             SchemesStructuredOutput
         )
         return structured_llm.invoke(text)
-
-
-# df = pd.read_csv("backend/functions/ml_logic/schemes-updated-with-text.csv")
-# text_extract = TextExtract()
-# for index, row in df.iterrows():
-#     print(row["Scraped Text"])
-#     print(text_extract.extract_text(row["Scraped Text"]))
-#     breakpoint()
