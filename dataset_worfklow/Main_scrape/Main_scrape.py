@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Use a service account to connect to firestore.
-cred = credentials.Certificate("../schemessg-v3-dev-firebase-adminsdk-fehbb-e554498306.json")
+cred = credentials.Certificate("backend/functions/creds.json")
 
 app = firebase_admin.initialize_app(cred)
 
