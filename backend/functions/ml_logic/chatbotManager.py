@@ -63,10 +63,21 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
     """
     text_summary = ""
     for _, row in df.iterrows():
-        cleanScrape = row["scraped_text"]
-        sentence = clean_scraped_text(cleanScrape)
+        # Handle both uppercase and lowercase column names
+        scheme = row.get("scheme", "")
+        agency = row.get("agency", "")
+        description = row.get("description", "")
+        link = row.get("link", "")
+        phone = row.get("phone", "")
+        address = row.get("address", "")
+        eligibility = row.get("eligibility", "")
+        email = row.get("email", "")
+        how_to_apply = row.get("how_to_apply", "")
+        scraped_text = row.get("scraped_text", "")
 
-        text_summary += f"Scheme Name: {row['Scheme']}, Agency: {row['Agency']}, Description: {row['Description']}, Link: {row['Link']}, Scraped Text from website: {sentence}\n"
+        sentence = clean_scraped_text(scraped_text)
+
+        text_summary += f"Scheme Name: {scheme}, Agency: {agency}, Phone: {phone}, Address: {address}, Eligibility: {eligibility}, Email: {email}, How to Apply: {how_to_apply}, Description: {description}, Link: {link}, Scraped Text from website: {sentence}\n"
     return text_summary
 
 
@@ -123,7 +134,7 @@ class Chatbot:
                 top_p=0.9,
                 presence_penalty=0.2,
                 frequency_penalty=0.2,
-                max_tokens=512
+                max_tokens=512,
             )
             logger.info("Chatbot initialised")
         except Exception as e:  # TODO: logger
@@ -272,7 +283,6 @@ class Chatbot:
 
         template_text = system_instructions + top_schemes_text + "<END OF SCHEMES RESULTS>"
 
-
         prompt_template = ChatPromptTemplate.from_messages(
             [
                 ("system", template_text),
@@ -368,7 +378,6 @@ class Chatbot:
         """
 
         template_text = system_instructions + top_schemes_text + "<END OF SCHEMES RESULTS>"
-
 
         prompt_template = ChatPromptTemplate.from_messages(
             [
