@@ -1,18 +1,31 @@
 export interface RawSchemeData {
-  "Scheme Type": string;
-  Scheme: string;
-  "Who's it for": string;
-  Agency: string;
-  Description: string;
-  scraped_text: string;
-  "What it gives": string;
-  Link: string;
-  Image: string;
-  "search_booster(WL)": string;
-  scheme_id: string;
-  query: string;
-  Similarity: number;
-  Quintile: number;
+  "Scheme Type"?: string;
+  Scheme?: string;
+  "Who's it for"?: string;
+  Agency?: string;
+  Description?: string;
+  scraped_text?: string;
+  "What it gives"?: string;
+  Link?: string;
+  Image?: string;
+  "search_booster(WL)"?: string;
+  scheme_id?: string;
+  query?: string;
+  Similarity?: number;
+  Quintile?: number;
+  
+  // Lowercase properties from the backend
+  scheme_type?: string;
+  scheme?: string;
+  who_is_it_for?: string;
+  agency?: string;
+  description?: string;
+  what_it_gives?: string;
+  link?: string;
+  image?: string;
+  search_booster?: string;
+  similarity?: number;
+  quintile?: number;
 }
 
 export interface EligibilityType {

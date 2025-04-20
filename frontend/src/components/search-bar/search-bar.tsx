@@ -80,16 +80,16 @@ export default function SearchBar({
 
   const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
     return {
-      schemeType: rawData["Scheme Type"] || "",
-      schemeName: rawData["Scheme"] || "",
-      targetAudience: rawData["Who's it for"] || "",
-      agency: rawData["Agency"] || "",
-      description: rawData["Description"] || "",
+      schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
+      schemeName: rawData["scheme"] || rawData["Scheme"] || "",
+      targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
+      agency: rawData["agency"] || rawData["Agency"] || "",
+      description: rawData["description"] || rawData["Description"] || "",
       scrapedText: rawData["scraped_text"] || "",
-      benefits: rawData["What it gives"] || "",
-      link: rawData["Link"] || "",
-      image: rawData["Image"] || "",
-      searchBooster: rawData["search_booster(WL)"] || "",
+      benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
+      link: rawData["link"] || rawData["Link"] || "",
+      image: rawData["image"] || rawData["Image"] || "",
+      searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
       schemeId: rawData["scheme_id"] || "",
       query: rawData["query"] || "",
       similarity: rawData["Similarity"] || 0,
@@ -120,8 +120,15 @@ export default function SearchBar({
       const res = await response.json();
       const sessionId: string = res["sessionID"];
       setIsBotResponseGenerating(false);
-      const schemesRes: SearchResScheme[] = res.data.map(mapToScheme);
-      return { schemesRes, sessionId };
+      
+      // Check if data exists in the response
+      if (res.data && Array.isArray(res.data)) {
+        const schemesRes: SearchResScheme[] = res.data.map(mapToScheme);
+        return { schemesRes, sessionId };
+      } else {
+        console.error("Unexpected response format:", res);
+        return { schemesRes: [], sessionId };
+      }
     } catch (error) {
       console.error("Error making POST request:", error);
       setIsBotResponseGenerating(false);
