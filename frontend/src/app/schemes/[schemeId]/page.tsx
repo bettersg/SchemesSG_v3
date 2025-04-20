@@ -317,11 +317,9 @@ export default function SchemePage() {
             <div className="flex items-start gap-3">
               <div className="text-neutral-500 text-lg">ⓘ</div>
               <div>
-                <h3 className="text-sm font-semibold text-neutral-700 mb-1">Disclaimer</h3>
-                <p className="text-xs text-neutral-600">
-                  The information provided on this page is collected from various sources and may not be complete or up-to-date. 
-                  Please verify all details with the official organization website or contact the organization directly before taking any action. 
-                  SchemesSG is not responsible for the accuracy, reliability, or completeness of the information presented.
+                <h3 className="text-sm font-semibold text-neutral-700 mb-1">Important Information</h3>
+                <p className="text-sm text-neutral-600">
+                  We strive to provide accurate information about assistance schemes in Singapore. Program details may change over time, so please visit the official website for the most current information. <Link href="/feedback" className="text-primary">Help us improve with your feedback</Link>.
                 </p>
               </div>
             </div>
