@@ -322,7 +322,7 @@ class SearchModel:
 
         # Drop duplicates and sort by similarity
         aggregated_results = combined_results.sort_values("Similarity", ascending=False).drop_duplicates(
-            subset=["Scheme"]
+            subset=["scheme"]
         )
 
         # Filter by similarity threshold
