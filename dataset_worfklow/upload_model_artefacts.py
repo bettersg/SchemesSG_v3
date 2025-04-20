@@ -6,6 +6,7 @@ import time
 import argparse
 import sys
 from loguru import logger
+from uuid import uuid4
 
 def zip_folder(folder_path, output_zip_path):
     with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -47,6 +48,15 @@ if __name__ == "__main__":
 
     bucket = storage.bucket()
     blob = bucket.blob(zip_path)
+
+    # Create new token
+    new_token = uuid4()
+    # Create new dictionary with the metadata
+    metadata = {"firebaseStorageDownloadTokens": str(new_token)}
+    # Set metadata to blob - make sure to convert UUID to string
+    blob.metadata = metadata
+
     logger.info(f"Starting upload of {zip_path} to bucket {args.storage_bucket}...")
-    blob.upload_from_filename(zip_path, timeout=300)
+    # Add content_type and ensure metadata is uploaded
+    blob.upload_from_filename(zip_path, timeout=300, content_type='application/zip')
     logger.info(f"Successfully uploaded {zip_path}")

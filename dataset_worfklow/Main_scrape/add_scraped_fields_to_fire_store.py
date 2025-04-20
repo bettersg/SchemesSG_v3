@@ -32,12 +32,15 @@ if __name__ == "__main__":
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
-        doc_data = doc_ref.get().to_dict()
-        # current_time = datetime.now(timezone.utc) # No longer needed
+        doc_snapshot = doc_ref.get() # Get the snapshot object
+        if not doc_snapshot.exists:
+            logger.warning(f"Document {doc_id} not found.")
+            continue
+        doc_data = doc_snapshot.to_dict() # Get data from snapshot
+        update_time = doc_snapshot.update_time # Get update time from snapshot metadata
 
-        # Print existing last modified date
-        last_modified = doc_data.get("last_modified_date", "Not set")
-        logger.info(f"Document {doc_id} - Existing last_modified_date: {last_modified}")
+        # Log the document's last update time from metadata
+        logger.info(f"Document {doc_id} - Last updated (metadata): {update_time}")
 
         # Check if essential fields are already populated
         essential_fields = ["llm_description"] # User changed this
