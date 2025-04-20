@@ -1,4 +1,4 @@
-import { RawSchemeData } from "@/app/interfaces/schemes";
+import { RawSchemeData, SearchResponse } from "@/app/interfaces/schemes";
 import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import { Button, Spinner, Textarea } from "@nextui-org/react";
@@ -117,13 +117,26 @@ export default function SearchBar({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const res = await response.json();
-      const sessionId: string = res["sessionID"];
+      const res = await response.json() as SearchResponse;
+      console.log("Search response:", res); // Debug
+      
+      const sessionId: string = res["sessionID"] || "";
       setIsBotResponseGenerating(false);
       
       // Check if data exists in the response
-      if (res.data && Array.isArray(res.data)) {
-        const schemesRes: SearchResScheme[] = res.data.map(mapToScheme);
+      if (res.data) {
+        let schemesData;
+        
+        // Handle both array and single object responses
+        if (Array.isArray(res.data)) {
+          schemesData = res.data;
+        } else {
+          // If it's a single object, convert to array
+          schemesData = [res.data];
+        }
+        
+        const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
+        console.log("Mapped schemes:", schemesRes); // Debug
         return { schemesRes, sessionId };
       } else {
         console.error("Unexpected response format:", res);

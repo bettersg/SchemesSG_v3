@@ -27,6 +27,12 @@ type Scheme = SearchResScheme & {
   application?: ApplicationType;
   contact?: ContactType;
   additionalInfo?: AdditionalInfoType;
+  // Additional fields directly from API
+  phone?: string;
+  email?: string;
+  address?: string;
+  howToApply?: string;
+  eligibilityText?: string;
 };
 
 interface FullSchemeData extends RawSchemeData {
@@ -54,6 +60,13 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     query: rawData["query"] || "",
     similarity: rawData["Similarity"] || 0,
     quintile: rawData["Quintile"] || 0,
+    
+    // Direct access to contact fields
+    phone: rawData["phone"] || "",
+    email: rawData["email"] || "",
+    address: rawData["address"] || "",
+    howToApply: rawData["how_to_apply"] || "",
+    eligibilityText: rawData["eligibility"] || "",
 
     // Additional properties for FullScheme
     lastUpdated: rawData["Last Updated"] || "",
@@ -89,7 +102,39 @@ export default function SchemePage() {
           throw new Error("Failed to fetch scheme");
         }
         const res = await response.json();
-        const schemeRes = mapToFullScheme(res.data);
+        console.log("Response data:", res); // Debug
+        
+        const schemeData = res.data;
+        
+        // Handle the scheme data structure - map to our frontend format
+        const schemeRes = {
+          // Map from our formatted object
+          ...mapToFullScheme({
+            "Scheme Type": schemeData.scheme_type || "",
+            "Scheme": schemeData.scheme || "",
+            "Who's it for": schemeData.who_is_it_for || "",
+            "Agency": schemeData.agency || "",
+            "Description": schemeData.description || "",
+            "scraped_text": schemeData.scraped_text || "",
+            "What it gives": schemeData.what_it_gives || "",
+            "Link": schemeData.link || "",
+            "Image": schemeData.image || "",
+            "search_booster(WL)": schemeData.search_booster || "",
+            "scheme_id": id, // Use the ID from the URL parameter
+            "query": "", // No query for single scheme view
+            "Similarity": 0, // Not applicable for single scheme view
+            "Quintile": 0, // Not applicable for single scheme view
+            "Last Updated": schemeData.last_modified_date ? new Date(schemeData.last_modified_date).toLocaleString() : "",
+          }),
+          // Add additional fields directly from the API response using safe access
+          phone: (schemeData as any).phone || "",
+          email: (schemeData as any).email || "",
+          address: (schemeData as any).address || "",
+          howToApply: (schemeData as any).how_to_apply || "",
+          eligibilityText: (schemeData as any).eligibility || "",
+        } as Scheme; // Use type assertion to avoid TypeScript errors
+        
+        console.log("Mapped scheme:", schemeRes); // Debug
         setScheme(schemeRes);
       } catch (err) {
         console.error("Error fetching scheme:", err);
@@ -192,6 +237,26 @@ export default function SchemePage() {
             <p className="text-base md:text-lg">{scheme.benefits}</p>
           </section>
 
+          {/* Eligibility Section */}
+          {scheme.eligibilityText && (
+            <section className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                Eligibility
+              </h2>
+              <p className="text-base md:text-lg">{scheme.eligibilityText}</p>
+            </section>
+          )}
+
+          {/* How to Apply Section */}
+          {scheme.howToApply && (
+            <section className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                How to Apply
+              </h2>
+              <p className="text-base md:text-lg">{scheme.howToApply}</p>
+            </section>
+          )}
+
           {/* Contact Section */}
           <section className="mb-8">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Contact</h2>
@@ -205,28 +270,60 @@ export default function SchemePage() {
                 {scheme.link}
               </Link>
 
-              {scheme.contact && (
-                <div className="mt-4 space-y-2">
-                  {scheme.contact.phone && (
-                    <p className="text-base md:text-lg">
-                      <span className="font-semibold">Phone:</span>{" "}
-                      {scheme.contact.phone}
-                    </p>
-                  )}
-                  {scheme.contact.email && (
-                    <p className="text-base md:text-lg">
-                      <span className="font-semibold">Email:</span>{" "}
-                      {scheme.contact.email}
-                    </p>
-                  )}
-                  {scheme.contact.address && (
-                    <p className="text-base md:text-lg">
-                      <span className="font-semibold">Address:</span>{" "}
-                      {scheme.contact.address}
-                    </p>
-                  )}
-                </div>
-              )}
+              <div className="mt-4 space-y-2">
+                {scheme.phone && (
+                  <p className="text-base md:text-lg">
+                    <span className="font-semibold">Phone:</span>{" "}
+                    {scheme.phone}
+                  </p>
+                )}
+                {scheme.email && (
+                  <p className="text-base md:text-lg">
+                    <span className="font-semibold">Email:</span>{" "}
+                    {scheme.email}
+                  </p>
+                )}
+                {scheme.address && (
+                  <p className="text-base md:text-lg">
+                    <span className="font-semibold">Address:</span>{" "}
+                    {scheme.address}
+                  </p>
+                )}
+                {scheme.contact && scheme.contact.phone && !scheme.phone && (
+                  <p className="text-base md:text-lg">
+                    <span className="font-semibold">Phone:</span>{" "}
+                    {scheme.contact.phone}
+                  </p>
+                )}
+                {scheme.contact && scheme.contact.email && !scheme.email && (
+                  <p className="text-base md:text-lg">
+                    <span className="font-semibold">Email:</span>{" "}
+                    {scheme.contact.email}
+                  </p>
+                )}
+                {scheme.contact && scheme.contact.address && !scheme.address && (
+                  <p className="text-base md:text-lg">
+                    <span className="font-semibold">Address:</span>{" "}
+                    {scheme.contact.address}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Add disclaimer section at the bottom */}
+          <Divider className="my-8" />
+          <section className="mb-8 border border-neutral-200 rounded-lg p-4 bg-neutral-50">
+            <div className="flex items-start gap-3">
+              <div className="text-neutral-500 text-lg">ⓘ</div>
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-700 mb-1">Disclaimer</h3>
+                <p className="text-xs text-neutral-600">
+                  The information provided on this page is collected from various sources and may not be complete or up-to-date. 
+                  Please verify all details with the official organization website or contact the organization directly before taking any action. 
+                  SchemesSG is not responsible for the accuracy, reliability, or completeness of the information presented.
+                </p>
+              </div>
             </div>
           </section>
         </div>

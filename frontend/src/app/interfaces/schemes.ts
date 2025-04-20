@@ -66,3 +66,9 @@ export interface AdditionalInfoType {
   programmeDuration?: string;
   languageOptions?: string[];
 }
+
+export interface SearchResponse {
+  sessionID?: string;
+  data?: Array<RawSchemeData> | RawSchemeData;
+  mh?: number;
+}
