@@ -1,4 +1,4 @@
-import { RawSchemeData } from "@/app/interfaces/schemes";
+import { RawSchemeData, SearchResponse } from "@/app/interfaces/schemes";
 import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import { Button, Spinner, Textarea } from "@nextui-org/react";
@@ -80,16 +80,16 @@ export default function SearchBar({
 
   const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
     return {
-      schemeType: rawData["Scheme Type"] || "",
-      schemeName: rawData["Scheme"] || "",
-      targetAudience: rawData["Who's it for"] || "",
-      agency: rawData["Agency"] || "",
-      description: rawData["Description"] || "",
+      schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
+      schemeName: rawData["scheme"] || rawData["Scheme"] || "",
+      targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
+      agency: rawData["agency"] || rawData["Agency"] || "",
+      description: rawData["description"] || rawData["Description"] || "",
       scrapedText: rawData["scraped_text"] || "",
-      benefits: rawData["What it gives"] || "",
-      link: rawData["Link"] || "",
-      image: rawData["Image"] || "",
-      searchBooster: rawData["search_booster(WL)"] || "",
+      benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
+      link: rawData["link"] || rawData["Link"] || "",
+      image: rawData["image"] || rawData["Image"] || "",
+      searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
       schemeId: rawData["scheme_id"] || "",
       query: rawData["query"] || "",
       similarity: rawData["Similarity"] || 0,
@@ -117,11 +117,31 @@ export default function SearchBar({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const res = await response.json();
-      const sessionId: string = res["sessionID"];
+      const res = await response.json() as SearchResponse;
+      console.log("Search response:", res); // Debug
+      
+      const sessionId: string = res["sessionID"] || "";
       setIsBotResponseGenerating(false);
-      const schemesRes: SearchResScheme[] = res.data.map(mapToScheme);
-      return { schemesRes, sessionId };
+      
+      // Check if data exists in the response
+      if (res.data) {
+        let schemesData;
+        
+        // Handle both array and single object responses
+        if (Array.isArray(res.data)) {
+          schemesData = res.data;
+        } else {
+          // If it's a single object, convert to array
+          schemesData = [res.data];
+        }
+        
+        const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
+        console.log("Mapped schemes:", schemesRes); // Debug
+        return { schemesRes, sessionId };
+      } else {
+        console.error("Unexpected response format:", res);
+        return { schemesRes: [], sessionId };
+      }
     } catch (error) {
       console.error("Error making POST request:", error);
       setIsBotResponseGenerating(false);
