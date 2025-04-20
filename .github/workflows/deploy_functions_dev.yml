@@ -14,13 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the code
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # Updated to v4 for better compatibility
 
-      # Step 1.5:  Environment variables
-      - name: create env file
-        working-directory: backend
+      # Step 1.5: Environment variables
+      - name: Create env file
+        working-directory: backend/functions
         run: |
-          cd functions
           touch .env
           echo "${{ secrets.FUNCTIONS_ENV_VARS }}" >> .env
 
@@ -32,9 +31,9 @@ jobs:
 
       # Step 3: Set up Node.js environment
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # Updated to v4
         with:
-          node-version: 19.7.0
+          node-version: '20' # Upgraded to 20 to meet firebase-tools@14.2.0 requirements
 
       # Step 3.5: Download the ZIP file from Google Drive
       - name: Download Models ZIP
@@ -58,7 +57,7 @@ jobs:
       # Step 4: Create Service Account Key and Set Env Variables
       - name: Create SA key and set env variables
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}' > ${{ runner.temp }}/gcloud.json
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHEMESSG_V3_DEV }}" > ${{ runner.temp }}/gcloud.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ runner.temp }}/gcloud.json" >> $GITHUB_ENV
 
       # Step 5: Prepare the environment
@@ -69,8 +68,10 @@ jobs:
           . venv/bin/activate
           npx firebase-tools --version
           python3.10 -m pip install -r requirements.txt
+          npm install -g firebase-tools@14.2.0 # Install firebase-tools globally
+          npx firebase-tools --version # Verify version
 
-      # Step 6: deploy functions
+      # Step 6: Deploy functions
       - name: Deploy functions
         working-directory: backend
         env:
