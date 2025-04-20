@@ -15,3 +15,9 @@ spacy==3.7.5
 torch==2.2.2
 transformers==4.44.0
 firebase-admin==6.6.0
+google-cloud-firestore
+requests
+beautifulsoup4
+urllib3
+lxml
+pypdf

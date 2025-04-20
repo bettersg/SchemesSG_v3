@@ -2,7 +2,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const admin = require('firebase-admin');
-const serviceAccount = require('./dev-creds.json');
+const serviceAccount = require('../dev-creds.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -67,7 +67,7 @@ async function importCSV(filePath) {
 }
 
 // Change 'path/to/your-file.csv' to your actual CSV file path
-const csvFilePath = 'schemes 11 nov.csv';
+const csvFilePath = '../schemesv3_schemes_20Apr subset 400.csv';
 importCSV(csvFilePath)
   .then(() => console.log('Import completed successfully'))
   .catch((error) => {

@@ -4,7 +4,7 @@ const path = require('path');
 const createObjectCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 // Initialize Firebase Admin with dev credentials
-const serviceAccount = require('./prod-creds.json');
+const serviceAccount = require('../prod-creds.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)

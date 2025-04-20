@@ -48,54 +48,60 @@ Import structure to production
 
 ## Regular Maintenance Workflow
 
-## Regular Maintenance Workflow
+### Automated Steps with `run_steps_3_to_7.sh`
 
-### 1. Update Schemes Data
-- Update `schemes.csv` with new schemes information
-- Fields required:
-  - Scheme Name
-  - Description
-  - Agency
-  - Categories
-  - Links
-  - etc.
+The `run_steps_3_to_7.sh` script automates several key steps in the data processing and model deployment pipeline.
 
-### 2. Model Creation
-- `model-creation-transformer-laiss.ipynb`
-  - Jupyter notebook for creating:
-    - Model files for embeddings
-    - Faiss index for similarity search
-  - Input: Updated schemes.csv
-  - Output:
-    - model files
-    - index files
+**Purpose:**
+To streamline the process from data scraping (optional, currently commented out) through model generation, testing, and uploading artefacts to Firebase Storage.
 
-### 3. Database Update
-- `import-csv.js`: Updates schemes collection with new data
+**How it works:**
+1.  **Environment Setup:** Takes an environment argument (`dev` or `prod`) to determine the correct Firebase credentials (`dev-creds.json` or `prod-creds.json`) and Storage bucket.
+2.  **Load Environment Variables:** Loads necessary configurations (e.g., Azure OpenAI keys) from `.env`.
+3.  **Activate Virtual Environment:** Activates the Python virtual environment (`./dataset_worfklow/venv`).
+4.  **Data Processing:** Includes steps (currently inactive) to:
+    *   Run web scraping (`Main_scrape.py`).
+    *   Fetch logos.
+    *   Process scraped text and update Firestore (`add_scraped_fields_to_fire_store.py`).
+5.  ** Model Creation & Testing:**
+    *   Run `create_transformer_models.py` to generate sentence embeddings and a FAISS index from Firestore data, saving artefacts to `./dataset_worfklow/models/`.
+    *   Run `test_model_artefacts_created.py` to validate the generated model files.
+6.  **Upload Model Artefacts:**
+    *   Runs `upload_model_artefacts.py` which zips the contents of `./dataset_worfklow/models` into `modelfiles.zip` and uploads it to the appropriate Firebase Storage bucket (`schemessg-v3-dev.firebasestorage.app` for dev, `schemessg.appspot.com` for prod - verify prod bucket name).
 
-### 4. Web Scraping
-- `Main_scrape/`: Python scripts for content scraping
-  - Uses Beautiful Soup for web scraping
-  - Updates `scraped_text` field in Firestore
-  - Handles different website structures and error cases
+**Usage:**
+Navigate to the project root directory (one level above `dataset_worfklow`) and run:
+```bash
+./dataset_worfklow/run_steps_3_to_7.sh <environment>
+# Example for development:
+./dataset_worfklow/run_steps_3_to_7.sh dev
+# Example for production:
+./dataset_worfklow/run_steps_3_to_7.sh prod
+```
+**Note:** Ensure the Python virtual environment and necessary dependencies (see `requirements.txt`) are set up first. Steps 3-6b are currently commented out in the script; uncomment them if needed.
 
-### 5. Model Deployment
-1. Zip model files:
-2. Upload to Firebase Storage
-3. Trigger GitHub Actions to update Firebase Functions
+### Credentials and Environment Files
+
+-   **`dev-creds.json` / `prod-creds.json`**: Firebase Admin SDK service account keys for development and production environments, respectively. Obtain these from the Firebase Console (Project Settings -> Service Accounts -> Generate new private key). **Keep these files secure and do not commit them to Git.** Place them directly inside the `dataset_worfklow` directory.
+-   **`.env`**: Stores environment variables, primarily Azure OpenAI API configurations (`AZURE_OPENAI_CHAT_DEPLOYMENT`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, etc.). This file must be located at `dataset_worfklow/.env`.
+
+
 
 ## Utility Scripts
 
-### `count_documents.js`
-- Counts documents in Firestore collections
 
+### `helper_scripts/` Folder
+This folder contains various Node.js scripts for interacting with Firestore:
+-   `export-firestore-structure.js`: Exports the Firestore database structure (collections, basic fields) from a specified environment (likely development).
+-   `import-schemes-csv.js`: Imports scheme data from a CSV file into the Firestore `schemes` collection.
+-   `import-firestore-structure.js`: Imports a previously exported Firestore structure into a target environment (likely production).
+-   `export-firestore-structure-prod-user-logs.js`: Specifically exports user log data structures/collections from the production Firestore environment.
+-   `count_documents.js`: Counts the number of documents within specified Firestore collections.
 
-
-## Files to Remove/Archive
-The following files are no longer relevant to the workflow:
-1. `old-import-scripts/`: Legacy import scripts
-2. `test-data/`: Old test datasets
-3. Any CSV files other than the current `schemes.csv`
+### `notebooks/` Folder
+Contains Jupyter notebooks used for data processing and model development:
+-   `one-time-clean-new-data.ipynb`: Appears to be a notebook for initial or specific data cleaning tasks.
+-   `model-creation-transformer-laiss.ipynb`: A notebook environment for developing and experimenting with the model creation process (generating embeddings using transformers and building a FAISS index), similar to `create_transformer_models.py`.
 
 ## Important Notes
 - Always test changes in dev environment first
@@ -116,19 +122,3 @@ Common issues and solutions:
 3. Model creation issues:
    - Check Python dependencies
    - Verify input CSV format
-
-## Directory Structure
-```
-dataset_workflow/
-├── credentials/ # Store credentials here (gitignored)
-│ ├── dev-creds.json
-│ └── prod-creds.json
-├── scripts/
-│ ├── export-firestore-structure.js
-│ ├── import-firestore-structure.js
-│ └── import-csv.js
-├── data/
-│ └── schemes.csv # Current schemes data
-├── models/ # Generated model files
-└── Main_scrape/ # Web scraping scripts
-```

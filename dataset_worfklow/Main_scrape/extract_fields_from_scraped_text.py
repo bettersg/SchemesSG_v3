@@ -8,7 +8,7 @@ from dataset_worfklow.constants import WHAT_IT_GIVES, WHO_IS_IT_FOR, SCHEME_TYPE
 
 class Config:
     def __init__(self):
-        load_dotenv("backend/functions/.env")
+        load_dotenv(".env")
 
         for key, value in dotenv_values().items():
             setattr(self, key.lower(), value)
@@ -22,28 +22,28 @@ class Config:
 
 class SchemesStructuredOutput(BaseModel):
     """Extract information from the description of the scheme."""
-    llm_address: Optional[str] = Field(
-        default=None, description="Location in the description"
+    address: Optional[str] = Field(
+        default=None, description="Full Singapore address extracted from the scraped website text. Examples: '123 Orchard Road, #05-67, Singapore 238888', 'Blk 456 Ang Mo Kio Ave 10, #01-789, Singapore 560456'."
     )
-    llm_phone: Optional[str] = Field(
-        default=None, description="Phone number in the description"
+    phone: Optional[str] = Field(
+        default=None, description="Singapore phone number extracted from the scraped website text. Examples: '+65 6123 4567', '61234567', '8765 4321'."
     )
-    llm_email: Optional[str] = Field(
-        default=None, description="Relevant email in the description"
+    email: Optional[str] = Field(
+        default=None, description="Relevant email address extracted from the scraped website text. Example: 'contact_us@agency.gov.sg'."
     )
     llm_description: Optional[str] = Field(
-        default=None, description="Concise description of the scheme"
+        default=None, description="Concise description of the scheme extracted from the scraped website text, summarizing key details for quick understanding. Aim for under 200 words."
     )
-    llm_eligibility: Optional[str] = Field(
-        default=None, description="Eligibility criteria and documents needed for scheme in the description"
+    eligibility: Optional[str] = Field(
+        default=None, description="Extract all eligibility criteria mentioned in the scraped text, including any specific requirements or necessary documents."
     )
-    llm_how_to_apply: Optional[str] = Field(
-        default=None, description="Application process of the scheme in the description"
+    how_to_apply: Optional[str] = Field(
+        default=None, description="Extract the step-by-step application process described in the scraped text. Include details on where or how to apply."
     )
-    llm_who_is_it_for: Optional[str] = Field(default=None, description=f"Who is this scheme for? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHO_IS_IT_FOR}")
-    llm_what_it_gives: Optional[str] = Field(default=None, description=f"What does this scheme give? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHAT_IT_GIVES}")
-    llm_scheme_type: Optional[str] =  Field(default=None, description=f"What does this scheme type belong to? Must belong to one or many of this list, and separate by commas if there are multiple values: {SCHEME_TYPE}")
-    llm_search_booster: Optional[str]  =  Field(default=None, description=f"Adds some search booster? Must belong to one or many of this list, and separate by commas if there are multiple values: {SCHEME_TYPE}")
+    who_is_it_for: Optional[str] = Field(default=None, description=f"Who is this scheme for as explained in the scraped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHO_IS_IT_FOR}")
+    what_it_gives: Optional[str] = Field(default=None, description=f"What does this scheme give as explained in the scraped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHAT_IT_GIVES}")
+    scheme_type: Optional[str] =  Field(default=None, description=f"What is this scheme type as explained in the scraped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {SCHEME_TYPE}")
+    search_booster: Optional[str]  =  Field(default=None, description=f"How would people search for this scheme, infer from scaped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {SEARCH_BOOSTER}")
 
 class TextExtract:
     _instance = None
@@ -71,7 +71,11 @@ class TextExtract:
         self.open_ai_client = self.init_chatbot()
 
     def extract_text(self, text: str):
+        # Truncate text to fit within model context limits, leaving room for output
+        max_chars = 450000
+        truncated_text = text[:max_chars]
+
         structured_llm = self.open_ai_client.with_structured_output(
             SchemesStructuredOutput
         )
-        return structured_llm.invoke(text)
+        return structured_llm.invoke(truncated_text)

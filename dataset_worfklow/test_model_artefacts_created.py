@@ -8,6 +8,10 @@ import faiss
 import os
 import spacy
 import re
+import argparse
+import sys
+from loguru import logger
+from tqdm import tqdm  # Added tqdm for progress bar
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -15,30 +19,51 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
+# Set up argument parser
+parser = argparse.ArgumentParser(description='Test model artefacts and perform similarity search.')
+parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+args = parser.parse_args()
 
-model_save_path = './models/schemesv2-torch-allmpp-model'
-tokenizer_save_path = './models/schemesv2-torch-allmpp-tokenizer'
-embeddings_save_name = './models/schemesv2-your_embeddings.npy'
-index_save_name = './models/schemesv2-your_index.faiss'
+# Setup logger
+logger.remove()
+logger.add(
+    sys.stdout,
+    level="INFO",
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
+    colorize=True,
+    backtrace=True,
+)
+logger.info("Logger initialised")
+
+model_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-model'
+tokenizer_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-tokenizer'
+embeddings_save_name = './dataset_worfklow/models/schemesv2-your_embeddings.npy'
+index_save_name = './dataset_worfklow/models/schemesv2-your_index.faiss'
 
 # Use a service account to connect to firestore.
-cred = credentials.Certificate("backend/functions/creds.json")
+cred = credentials.Certificate(args.creds_file)
 nlp = spacy.load("en_core_web_sm")
 
 app = firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 # Load the FAISS index-to-scheme_id mapping
-with open('./models/index_to_scheme_id.json', 'r') as f:
+logger.info("Loading FAISS index-to-scheme_id mapping...")
+with open('./dataset_worfklow/models/index_to_scheme_id.json', 'r') as f:
     index_to_scheme_id = json.load(f)
+logger.info("Mapping loaded.")
 
 # Load model and tokenizer at startup
+logger.info("Loading model and tokenizer...")
 model = AutoModel.from_pretrained(model_save_path)
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_save_path)
+logger.info("Model and tokenizer loaded.")
 
 # Load the embeddings and index
+logger.info("Loading embeddings and FAISS index...")
 embeddings = np.load(embeddings_save_name)
 index = faiss.read_index(index_save_name)
+logger.info("Embeddings and index loaded.")
 
 #Mean Pooling - Take attention mask into account for correct averaging
 def mean_pooling(model_output, attention_mask):
@@ -77,12 +102,17 @@ def search_similar_items(query_text, full_query, top_k=10):
     retrieved_scheme_ids = [index_to_scheme_id[str(idx)] for idx in indices[0]]
 
     # Fetch scheme details from Firestore
+    logger.info(f"Fetching details for {len(retrieved_scheme_ids)} schemes...")
     scheme_details = []
-    for scheme_id in retrieved_scheme_ids:
+    # Added tqdm for progress bar
+    for scheme_id in tqdm(retrieved_scheme_ids, desc="Fetching scheme details"):
         doc_ref = db.collection("schemes").document(scheme_id)
         doc = doc_ref.get()
         if doc.exists:
             scheme_details.append(doc.to_dict())
+        else:
+            logger.warning(f"Scheme ID {scheme_id} not found in Firestore.")
+    logger.info("Scheme details fetched.")
 
     # Convert scheme details to a DataFrame
     scheme_df = pd.DataFrame(scheme_details)
@@ -113,17 +143,20 @@ def search_similar_items(query_text, full_query, top_k=10):
 
 def combine_and_aggregate_results(needs, user_query):
     # DataFrame to store combined results
-    combined_results = pd.DataFrame(columns=['Scheme', 'Agency', 'Description', 'Similarity', 'query'])
+    combined_results = pd.DataFrame(columns=['scheme', 'agency', 'description', 'Similarity', 'query'])
 
-    # Process each need
-    for need in needs:
+    logger.info(f"Processing {len(needs)} identified needs...")
+    # Process each need with tqdm progress bar
+    for need in tqdm(needs, desc="Processing needs"):
         # Get the results for the current need
+        logger.debug(f"Searching for need: {need}")
         current_results = search_similar_items(need, user_query)
         # Combine with the overall results
         combined_results = pd.concat([combined_results, current_results], ignore_index=True)
+    logger.info("Finished processing needs.")
 
     # Handle duplicates: Aggregate similarity for duplicates and drop duplicates
-    aggregated_results = combined_results.groupby(['Scheme', 'Agency', 'Description', 'query'], as_index=False).agg({
+    aggregated_results = combined_results.groupby(['scheme', 'agency', 'description', 'query'], as_index=False).agg({
         'Similarity': 'mean'  # Adjust this function as needed to aggregate similarity scores appropriately
     })
 
@@ -202,18 +235,21 @@ def preprocessing(sentence):
 
 def test_function():
     query = "my client needs a blood pressure monitor"
+    logger.info(f"Testing with query: {query}")
     distinct_needs = split_query_into_needs(query)
-    print(f"Distinct needs: {distinct_needs}")
+    logger.info(f"Distinct needs: {distinct_needs}")
 
-    print(f"Distinct needs preproc : {[preprocessing(x) for x in distinct_needs]}")
+    logger.info(f"Distinct needs preproc : {[preprocessing(x) for x in distinct_needs]}")
+
     user_query = "I am pregnant teen suffering from depression and family abuse"
     # user_query = "My client needs assistance as a dialysis patient. She is also in need of a job and financial support after COVID 19 has caused her to be retrenched"
+    logger.info(f"Testing with user query: {user_query}")
 
     split_query = split_query_into_needs(user_query)
     # split_query = split_query_into_needs("I am a 31 year old married with one kid in need of more money")
-    print(split_query)
+    logger.info(f"Split query into needs: {split_query}")
     final_results = combine_and_aggregate_results(split_query, user_query)
 
-    print(final_results)
+    logger.info(f"Final aggregated results:\n{final_results}")
 
 test_function()

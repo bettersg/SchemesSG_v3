@@ -16,6 +16,7 @@ import torch.nn.functional as F
 import faiss
 import numpy as np
 from loguru import logger
+import argparse # Import argparse
 
 NLP = spacy.load("en_core_web_sm")
 
@@ -51,20 +52,20 @@ def build_desc_booster(row):
     components = []
 
     # Check each column and add non-null values
-    if pd.notna(row['Scheme']):
-        components.append(str(row['Scheme']))
-    if pd.notna(row['Agency']):
-        components.append(str(row['Agency']))
-    if pd.notna(row['Description']):
-        components.append(str(row['Description']))
-    if pd.notna(row['search_booster(WL)']):
-        components.append(str(row['search_booster(WL)']))
-    if pd.notna(row["Who's it for"]):
-        components.append(str(row["Who's it for"]))
-    if pd.notna(row['What it gives']):
-        components.append(str(row['What it gives']))
-    if pd.notna(row['Scheme Type']):
-        components.append(str(row['Scheme Type']))
+    if pd.notna(row['scheme']):
+        components.append(str(row['scheme']))
+    if pd.notna(row['agency']):
+        components.append(str(row['agency']))
+    if pd.notna(row['description']):
+        components.append(str(row['description']))
+    if pd.notna(row['search_booster']):
+        components.append(str(row['search_booster']))
+    if pd.notna(row["who_is_it_for"]):
+        components.append(str(row["who_is_it_for"]))
+    if pd.notna(row['what_it_gives']):
+        components.append(str(row['what_it_gives']))
+    if pd.notna(row['scheme_type']):
+        components.append(str(row['scheme_type']))
 
     # Join all non-null components with spaces
     return ' '.join(components)
@@ -75,6 +76,11 @@ def mean_pooling(model_output, attention_mask):
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 if __name__ == "__main__":
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Create transformer models and FAISS index.')
+    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    args = parser.parse_args()
+
     logger.remove()
     logger.add(
         sys.stdout,
@@ -84,7 +90,7 @@ if __name__ == "__main__":
         backtrace=True,
     )
     # Use a service account to connect to firestore.
-    cred = credentials.Certificate("backend/functions/creds.json")
+    cred = credentials.Certificate(args.creds_file) # Use the path from arguments
 
     app = firebase_admin.initialize_app(cred)
 
@@ -128,17 +134,17 @@ if __name__ == "__main__":
 
 
     # Assuming `model` is your PyTorch model and `tokenizer` is the Hugging Face tokenizer
-    if not os.path.exists('./models'):
-        os.makedirs('./models')
+    if not os.path.exists('./dataset_worfklow/models'):
+        os.makedirs('./dataset_worfklow/models')
 
-    with open('./models/index_to_scheme_id.json', 'w') as f:
+    with open('./dataset_worfklow/models/index_to_scheme_id.json', 'w') as f:
         json.dump(index_to_scheme_id, f)
         logger.info("Index to scheme id saved")
 
-    model_save_path = './models/schemesv2-torch-allmpp-model'
-    tokenizer_save_path = './models/schemesv2-torch-allmpp-tokenizer'
-    embeddings_save_name = './models/schemesv2-your_embeddings.npy'
-    index_save_name = './models/schemesv2-your_index.faiss'
+    model_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-model'
+    tokenizer_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-tokenizer'
+    embeddings_save_name = './dataset_worfklow/models/schemesv2-your_embeddings.npy'
+    index_save_name = './dataset_worfklow/models/schemesv2-your_index.faiss'
 
 
     # Save the embeddings and index to disk
@@ -152,5 +158,3 @@ if __name__ == "__main__":
     # Save tokenizer
     tokenizer.save_pretrained(tokenizer_save_path)
     logger.info("Tokenizer saved")
-
-
