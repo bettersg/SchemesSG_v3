@@ -41,6 +41,35 @@ interface FullSchemeData extends RawSchemeData {
   Application?: ApplicationType;
   Contact?: ContactType;
   "Additional Info"?: AdditionalInfoType;
+  // Additional fields that might be in the API response
+  "phone"?: string;
+  "email"?: string;
+  "address"?: string;
+  "how_to_apply"?: string;
+  "eligibility"?: string;
+}
+
+interface ApiSchemeData {
+  scheme_type?: string;
+  scheme?: string;
+  who_is_it_for?: string;
+  agency?: string;
+  description?: string;
+  scraped_text?: string;
+  what_it_gives?: string;
+  link?: string;
+  image?: string;
+  search_booster?: string;
+  scheme_id?: string;
+  query?: string;
+  similarity?: number;
+  quintile?: number;
+  phone?: string;
+  email?: string;
+  address?: string;
+  how_to_apply?: string;
+  eligibility?: string;
+  last_modified_date?: number;
 }
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
@@ -104,7 +133,7 @@ export default function SchemePage() {
         const res = await response.json();
         console.log("Response data:", res); // Debug
         
-        const schemeData = res.data;
+        const schemeData = res.data as ApiSchemeData;
         
         // Handle the scheme data structure - map to our frontend format
         const schemeRes = {
@@ -125,14 +154,14 @@ export default function SchemePage() {
             "Similarity": 0, // Not applicable for single scheme view
             "Quintile": 0, // Not applicable for single scheme view
             "Last Updated": schemeData.last_modified_date ? new Date(schemeData.last_modified_date).toLocaleString() : "",
+            // Add additional fields from API response directly here instead of later
+            "phone": schemeData.phone || "",
+            "email": schemeData.email || "",
+            "address": schemeData.address || "",
+            "how_to_apply": schemeData.how_to_apply || "",
+            "eligibility": schemeData.eligibility || "",
           }),
-          // Add additional fields directly from the API response using safe access
-          phone: (schemeData as any).phone || "",
-          email: (schemeData as any).email || "",
-          address: (schemeData as any).address || "",
-          howToApply: (schemeData as any).how_to_apply || "",
-          eligibilityText: (schemeData as any).eligibility || "",
-        } as Scheme; // Use type assertion to avoid TypeScript errors
+        } as Scheme; // Use type assertion for the whole object
         
         console.log("Mapped scheme:", schemeRes); // Debug
         setScheme(schemeRes);
