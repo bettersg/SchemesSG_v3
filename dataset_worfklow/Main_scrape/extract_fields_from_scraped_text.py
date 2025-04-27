@@ -101,7 +101,7 @@ class TextExtract:
     def _initialize_app(self):
         self.open_ai_client = self.init_chatbot()
         self.no_valuable_text_examples = self._init_no_valuable_text_examples()
-        self.max_tokens = 100
+        self.max_tokens = 450000
         self.text_splitter = self._init_text_splitter()
 
     def reformat_llm_description(self, text):
@@ -201,6 +201,3 @@ class TextExtract:
             ]
             merged_data[field] = ",".join(parts) if parts else None
         return SchemesStructuredOutput(**merged_data)
-
-
-print(TextExtract().extract_text("hello"))

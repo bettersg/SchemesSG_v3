@@ -43,17 +43,18 @@ if __name__ == "__main__":
         logger.info(f"Document {doc_id} - Last updated (metadata): {update_time}")
 
         # Check if essential fields are already populated
-        essential_fields = ["llm_description"] # User changed this
-        fields_populated = all(doc_data.get(field) for field in essential_fields)
+        # essential_fields = ["llm_description"] # User changed this
+        # fields_populated = all(doc_data.get(field) for field in essential_fields)
 
-        if fields_populated:
-            logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
-            continue # Skip to the next document
+        # if fields_populated:
+        #     logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
+        #     continue # Skip to the next document
 
         scraped_text = doc_data.get("scraped_text")
         if scraped_text:
             try:
                 structured_output = text_extract.extract_text(scraped_text)
+                logger.info("Updated")
                 structured_output_dict = structured_output.dict()
                 keys_to_conditionally_update = {"who_is_it_for", "what_it_gives", "scheme_type", "search_booster"}
                 updates = {} # Dictionary to hold updates
@@ -82,7 +83,9 @@ if __name__ == "__main__":
                 doc_ref.update(error_updates) # Update with None for error cases
 
         else:
+            # if no scraped text, continue to add empty fields to prevent NaNs in pandas
             logger.info(f"No scraped text found for document {doc_id}")
+            keys = SchemesStructuredOutput.model_fields.keys()
+            error_updates = {key: None for key in keys}
+            doc_ref.update(error_updates) # Update with None for error cases
 
-    # df = pd.DataFrame(doc_datas)
-    # breakpoint()
