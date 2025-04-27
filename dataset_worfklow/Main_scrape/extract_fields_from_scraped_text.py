@@ -100,11 +100,12 @@ class TextExtract:
 
     def _initialize_app(self):
         self.open_ai_client = self.init_chatbot()
-        self.no_valuable_text_examples = self._init_no_valuable_text_examples()
+        self.no_valuable_text_examples = self._init_examples()
         self.max_tokens = 450000
         self.text_splitter = self._init_text_splitter()
 
     def reformat_llm_description(self, text):
+        """Use the LLM to re-format the description"""
         if text is None:
             return None
         prompt_template = ChatPromptTemplate.from_messages(
@@ -137,8 +138,8 @@ class TextExtract:
                 ("human", "{text}"),
             ]
         )
-        # Truncate text to fit within model context limits, leaving room for output
         if len(text) > self.max_tokens:
+            # if length of text exceeds max tokens, split the text into chunks to run extraction over it
             texts = self.text_splitter.split_text(text)
             data_models = []
             for text in texts:
@@ -148,15 +149,18 @@ class TextExtract:
                     self.no_valuable_text_examples + messages
                 )
                 data_models.append(data_model)
+            # combine extraction results into one model
             data_model = self.merge_models_concat(data_models)
         else:
             prompt = prompt_template.invoke({"text": text})
             messages = prompt.to_messages()
             data_model = structured_llm.invoke(self.no_valuable_text_examples + messages)
+        # format llm description into something that is more readable
         data_model.llm_description = self.reformat_llm_description(data_model.llm_description)
         return data_model
 
-    def _init_no_valuable_text_examples(self):
+    def _init_examples(self):
+        """Generate negative examples for the model to ignore"""
         messages = []
         examples = [
             (
@@ -181,6 +185,7 @@ class TextExtract:
         return messages
 
     def _init_text_splitter(self):
+        """Intialize text splitter for splitting text across chunks"""
         text_splitter = TokenTextSplitter(
             # Controls the size of each chunk
             chunk_size=self.max_tokens,
@@ -192,6 +197,7 @@ class TextExtract:
     def merge_models_concat(
         self, instances: List[SchemesStructuredOutput]
     ) -> SchemesStructuredOutput:
+        """Merge multiple instances of SchemesStructuredOutput to produce one instance of SchemesStructuredOutput"""
         merged_data = {field: "" for field in SchemesStructuredOutput.__fields__}
         for field in SchemesStructuredOutput.__fields__:
             parts = [
