@@ -82,7 +82,9 @@ if __name__ == "__main__":
                 doc_ref.update(error_updates) # Update with None for error cases
 
         else:
+            # if no scraped text, continue to add empty fields to prevent NaNs in pandas
             logger.info(f"No scraped text found for document {doc_id}")
+            keys = SchemesStructuredOutput.model_fields.keys()
+            error_updates = {key: None for key in keys}
+            doc_ref.update(error_updates) # Update with None for error cases
 
-    # df = pd.DataFrame(doc_datas)
-    # breakpoint()
