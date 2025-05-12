@@ -1,3 +1,4 @@
+import logging
 import os
 
 import firebase_admin
@@ -29,7 +30,8 @@ def get_id_token() -> str | None:
     )
 
     if response.status_code != 200:
-        print(response.json())
+        res_json = response.json()
+        logging.error(f"Authetication Failed!\tCode: {res_json['error']['code']}\tMessage: {res_json['error']['message']}")
         return None
 
     id_token = response.json()["idToken"]

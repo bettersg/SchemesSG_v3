@@ -1,3 +1,4 @@
+import logging
 import os
 
 import requests
@@ -42,6 +43,7 @@ def search_schemes(text: str, similarity_threshold: int) -> tuple[str | None, li
     )
 
     if res.status_code != 200:  # Error
+        logging.error(f"Request failed! (schemes_search)\tMessage: {res.json()['error']}")
         err_message = "I am unable to search for suitable assistance schemes. Please try again!"
         return (None, None, err_message)
 
@@ -79,6 +81,7 @@ def retrieve_scheme_results(query_id: str) -> bool | list[dict[str, str | int]]:
     )
 
     if res.status_code != 200: # Error
+        logging.error(f"Request failed! (retrieve_search_queries)\tMessage: {res.json()['error']}")
         return False
 
     return res.json()["data"]["schemes_response"]
@@ -115,6 +118,7 @@ def send_chat_message(input_text: str, query_id: str) -> tuple[str | None, str |
     )
 
     if res.status_code != 200:  # Error
+        logging.error(f"Request failed! (chat_message)\tMessage: {res.json()['error']}")
         err_message = "Sorry, Schemes Support Chat is unable to work currently."
         return (None, err_message)
 

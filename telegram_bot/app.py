@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from logging.handlers import TimedRotatingFileHandler
 
 from aiogram import Dispatcher, html
 
@@ -38,5 +39,18 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+
+    # Set up logging
+    logger = logging.getLogger()
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+
+    log_file = "logs/telegram_bot_logfile.log"
+    logging_handler = TimedRotatingFileHandler(log_file, when='midnight', interval=1, backupCount=30)
+    logging_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logging_handler.setLevel(logging.INFO)
+
+    logger.addHandler(logging_handler)
+
+    logging.info('')
+
     asyncio.run(main())
