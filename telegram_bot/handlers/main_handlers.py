@@ -50,14 +50,16 @@ def present_scheme(idx: int, scheme: dict[str, str | int]) -> str:
         str: message with details of scheme presented as a string
     """
 
+    website_url = f"https://schemes.sg/schemes/{scheme['scheme_id']}"
+
     return (
-        html.bold(f'{str(idx+1)}. {html.link(scheme["Scheme"], scheme["Link"])}')
+        html.bold(f"{str(idx+1)}. {html.link(scheme['scheme'], website_url)}")
         + "\n"
-        + html.italic(scheme["Agency"])
+        + html.italic(scheme["agency"])
         + "\n\n"
-        + scheme["Description"]
-        + "\n\n"
-        + html.italic(f'Similarity score: {round(scheme["Similarity"],4 )}')
+        + scheme["description"]
+        # + "\n\n"
+        # + html.italic(f'Similarity score: {round(scheme["Similarity"],4 )}')
     )
 
 
