@@ -1,10 +1,9 @@
-from os import getenv  # noqa: I001
+from os import getenv
 
 #aiogram
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-
 from dotenv import load_dotenv
 
 

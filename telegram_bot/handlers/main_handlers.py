@@ -59,8 +59,6 @@ def present_scheme(idx: int, scheme: dict[str, str | int]) -> str:
         + html.italic(scheme["agency"])
         + "\n\n"
         + format_text(scheme["llm_description"])
-        # + "\n\n"
-        # + html.italic(f'Similarity score: {round(scheme["Similarity"],4 )}')
     )
 
 
