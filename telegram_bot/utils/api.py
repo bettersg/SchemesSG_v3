@@ -5,7 +5,7 @@ import requests
 from dotenv import load_dotenv
 
 from utils.auth import get_id_token
-from utils.format import format_chat_text
+from utils.format import format_text
 
 
 load_dotenv()
@@ -122,6 +122,6 @@ def send_chat_message(input_text: str, query_id: str) -> tuple[str | None, str |
         err_message = "Sorry, Schemes Support Chat is unable to work currently."
         return (None, err_message)
 
-    message = format_chat_text(res.json()["message"])
+    message = format_text(res.json()["message"])
 
     return (message, None)

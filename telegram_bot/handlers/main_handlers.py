@@ -9,6 +9,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot import BotConfig, bot
 from utils.api import retrieve_scheme_results, search_schemes, send_chat_message
+from utils.format import format_text
 
 
 main_router = Router()
@@ -57,7 +58,7 @@ def present_scheme(idx: int, scheme: dict[str, str | int]) -> str:
         + "\n"
         + html.italic(scheme["agency"])
         + "\n\n"
-        + scheme["description"]
+        + format_text(scheme["llm_description"])
         # + "\n\n"
         # + html.italic(f'Similarity score: {round(scheme["Similarity"],4 )}')
     )
@@ -157,7 +158,7 @@ async def chat_handler(message: types.Message, config: BotConfig, state: FSMCont
         await message.answer(err_message)
         return
 
-    await message.answer(chat_response, parse_mode="Markdown")
+    await message.answer(chat_response)
 
 
 @main_router.message()
