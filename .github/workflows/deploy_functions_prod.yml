@@ -14,13 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the code
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Step 1.5:  Environment variables
       - name: create env file
-        working-directory: backend
+        working-directory: backend/functions
         run: |
-          cd functions
           touch .env
           echo "${{ secrets.FUNCTIONS_ENV_VARS_PROD }}" >> .env
 
@@ -32,9 +31,9 @@ jobs:
 
       # Step 3: Set up Node.js environment
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 19.7.0
+          node-version: '20'
 
       # Step 3.5: Download the ZIP file from Google Drive
       - name: Download Models ZIP
@@ -69,6 +68,8 @@ jobs:
           . venv/bin/activate
           npx firebase-tools --version
           python3.10 -m pip install -r requirements.txt
+          npm install -g firebase-tools@14.2.0
+          npx firebase-tools --version
 
       # Step 6: deploy functions
       - name: Deploy functions
