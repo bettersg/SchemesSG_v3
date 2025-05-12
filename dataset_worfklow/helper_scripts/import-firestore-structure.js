@@ -3,8 +3,8 @@ const fs = require('fs/promises');
 const path = require('path');
 
 // Initialize Firebase Admin with prod credentials
-// const serviceAccount = require('./prod-creds.json');
-const serviceAccount = require('../dev-creds.json')
+const serviceAccount = require('../prod-creds.json');
+// const serviceAccount = require('../dev-creds.json')
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
@@ -57,6 +57,26 @@ async function importStructure() {
     if (structure.schemes?.documents) {
       console.log(`Found ${structure.schemes.documents.length} schemes to import`);
 
+      // Clear the schemes collection before importing
+      const schemesSnapshot = await db.collection('schemes').get();
+      if (!schemesSnapshot.empty) {
+        let deleteBatch = db.batch();
+        let deleteCount = 0;
+        for (const doc of schemesSnapshot.docs) {
+          deleteBatch.delete(doc.ref);
+          deleteCount++;
+          if (deleteCount === 500) {
+            await deleteBatch.commit();
+            deleteBatch = db.batch();
+            deleteCount = 0;
+          }
+        }
+        if (deleteCount > 0) {
+          await deleteBatch.commit();
+        }
+        console.log('Cleared existing documents from schemes collection');
+      }
+
       let batch = db.batch();
       let count = 0;
       let batchCount = 0;
@@ -93,7 +113,7 @@ async function importStructure() {
     // Create other collections
     for (const [collectionName, collectionData] of Object.entries(structure)) {
       if (collectionName !== 'schemes') {
-        await createEmptyCollection(collectionName, collectionData.fields);
+        // await createEmptyCollection(collectionName, collectionData.fields);
       }
     }
 
