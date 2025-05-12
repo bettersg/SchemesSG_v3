@@ -31,3 +31,11 @@
 .showMarker li > p {
   display: inline;
 }
+
+/* Add styling for horizontal dividers in markdown content */
+.showMarker hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 0;
+  border-top: 1px solid rgb(229, 231, 235);
+}
