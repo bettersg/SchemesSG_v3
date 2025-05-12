@@ -1,21 +1,41 @@
 .schemeContainer {
-    padding-top: 2rem;
-    max-width: 60rem;
-    height: 90vh;
-    margin: auto
+  padding-top: 2rem;
+  max-width: 60rem;
+  height: 90vh;
+  margin: auto;
 }
 
 .schemeTitle {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 #scheme-logo {
-    max-width: 60%;
-    height: auto;
+  max-width: 60%;
+  height: auto;
 }
 
 .schemeType {
-    margin: 0rem 0.1rem;
+  margin: 0rem 0.1rem;
+}
+
+.showMarker ul {
+  list-style-type: disc;
+  list-style-position: inside;
+}
+.showMarker li::marker {
+  color: rgb(100 116 139);
+}
+
+.showMarker li > p {
+  display: inline;
+}
+
+/* Add styling for horizontal dividers in markdown content */
+.showMarker hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 0;
+  border-top: 1px solid rgb(229, 231, 235);
 }
