@@ -232,55 +232,24 @@ export default function SchemePage() {
             </div>
           </div>
 
-          {/* Detail Card */}
+          {/* Description Card */}
           <Card className="p-6 text-slate-700">
-            <CardHeader><h1 className="text-xl font-bold">Details</h1></CardHeader>
+            <CardHeader><h1 className="text-xl font-bold">Description</h1></CardHeader>
             <CardBody>
               {scheme.description && <Markdown className={`mb-5 ${styles.showMarker}`}>{scheme.description}</Markdown>}
-              <div className="flex flex-col gap-2 mt-6">
-                {scheme.link && (
-                  <div className="flex gap-2">
-                    <span className="font-semibold min-w-20">Website</span>
-                    <Link href={scheme.link} isExternal>
-                      {scheme.link}
-                    </Link>
-                  </div>
-                )}
-                {scheme.phone && (
-                  <div className="flex gap-2">
-                    <span className="font-semibold min-w-20">Phone</span>
-                    <span>{scheme.phone}</span>
-                  </div>
-                )}
-                {scheme.email && (
-                  <div className="flex gap-2">
-                    <span className="font-semibold min-w-20">Email</span>
-                    <span>{scheme.email}</span>
-                  </div>
-                )}
-                {scheme.address && (
-                  <div className="flex gap-2">
-                    <span className="font-semibold min-w-20">Location</span>
-                    <span>{scheme.address}</span>
-                  </div>
-                )}
-              </div>
             </CardBody>
           </Card>
 
+          {/* Details Card */}
           <Card className="p-6 mt-10 text-slate-700">
-            <CardHeader><h1 className="text-xl font-bold">Scheme</h1></CardHeader>
+            <CardHeader><h1 className="text-xl font-bold">Details</h1></CardHeader>
             <CardBody>
               <div className="sm:flex gap-5 mb-4">
-                {/* right */}
+                {/* main details */}
                 <div className="flex-[2]">
-                  {/*name*/}
-                  <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">Name</span>
-                    <p>{scheme.schemeName}</p>
-                  </div>
                   <div className="sm:flex gap-5 mb-4">
-                    <div className="flex-1 sm:mb-4">
+                    {/* who */}
+                    <div className="flex-1 mb-4">
                       <span className="font-bold uppercase text-xs text-slate-500 mb-2">Who is it for</span>
                       {scheme.targetAudience && <ul className="list-disc list-inside marker:text-slate-500">
                         {scheme.targetAudience.split(",").map((target) => (
@@ -288,6 +257,7 @@ export default function SchemePage() {
                         ))}
                       </ul>}
                     </div>
+                    {/* what */}
                     <div className="flex-1">
                       <span className="font-bold uppercase text-xs text-slate-500 mb-2">What it gives</span>
                       {scheme.benefits && <ul className="list-disc list-inside marker:text-slate-500">
@@ -306,7 +276,7 @@ export default function SchemePage() {
                     {scheme.howToApply && <p>{scheme.howToApply}</p>}
                   </div>
                 </div>
-                {/* left */}
+                {/* other details */}
                 <div className="flex-1">
                   {/* type */}
                   <div className="mb-4">
@@ -325,21 +295,26 @@ export default function SchemePage() {
                       ))}
                     </div>}
                   </div>
-                  {/* keywords */}
-                  <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">Useful keywords</span>
-                    {scheme.searchBooster && <div className="flex flex-wrap gap-2">
-                      {scheme.searchBooster.split(",").map((booster) => (
-                        <Chip
-                          key={booster}
-                          size="sm"
-                          radius="sm"
-                          variant="flat"
-                        >
-                          {booster.trim()}
-                        </Chip>
-                      ))}
-                    </div>}
+                  {/* contacts */}
+                  <div className="flex flex-col gap-2 mt-6">
+                    {scheme.phone && (
+                      <div>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Phone</p>
+                        <p>{scheme.phone}</p>
+                      </div>
+                    )}
+                    {scheme.email && (
+                      <div>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Email</p>
+                        <p>{scheme.email}</p>
+                      </div>
+                    )}
+                    {scheme.address && (
+                      <div>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Location</p>
+                        <p>{scheme.address}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

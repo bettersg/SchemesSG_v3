@@ -19,31 +19,18 @@ export default function SchemeSkeleton() {
                 </div>
             </div>
 
-            {/* Details section */}
+            {/* Description section */}
             <div className="p-6 mt-4">
                 <Skeleton className="h-7 w-32 mb-6 rounded-lg" />
                 <Skeleton className="h-5 w-full mb-2 rounded-lg" />
                 <Skeleton className="h-5 w-full mb-2 rounded-lg" />
                 <Skeleton className="h-5 w-full mb-2 rounded-lg" />
                 <Skeleton className="h-5 w-full mb-2 rounded-lg" />
-
-                <div className="flex gap-2 w-full mt-4">
-                    <Skeleton className="h-5 w-32 rounded-lg" />
-                    <Skeleton className="h-5 flex-1 rounded-lg" />
-                </div>
-                <div className="flex gap-2 w-full mt-4">
-                    <Skeleton className="h-5 w-32 rounded-lg" />
-                    <Skeleton className="h-5 flex-1 rounded-lg" />
-                </div>
-                <div className="flex gap-2 w-full mt-4">
-                    <Skeleton className="h-5 w-32 rounded-lg" />
-                    <Skeleton className="h-5 flex-1 rounded-lg" />
-                </div>
             </div>
 
-            {/* Scheme section */}
+            {/* details section */}
             <div className="p-6 mt-4 sm:flex gap-7">
-                {/* left */}
+                {/* main */}
                 <div className="flex-[2]">
                     <Skeleton className="h-7 w-32 mb-6 rounded-lg" />
 
@@ -107,7 +94,7 @@ export default function SchemeSkeleton() {
                     </div>
                 </div>
 
-                {/* right */}
+                {/* other */}
                 <div className="flex-1">
                     <div className="mt-6">
                         <Skeleton className="h-4 w-20 mb-3 rounded-lg" />
@@ -120,35 +107,27 @@ export default function SchemeSkeleton() {
                         </div>
                     </div>
                     <div className="mt-6">
-                        <Skeleton className="h-4 w-20 mb-3 rounded-lg" />
-                        <div className="flex flex-wrap gap-2">
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-20 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-22 rounded-xl" />
-                            <Skeleton className="h-5 w-20 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-20 rounded-xl" />
-                            <Skeleton className="h-5 w-18 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-10 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-20 rounded-xl" />
-                            <Skeleton className="h-5 w-24 rounded-xl" />
-                            <Skeleton className="h-5 w-28 rounded-xl" />
+                        <div className="flex flex-col gap-2 w-full mt-4">
+                            <Skeleton className="h-5 w-32 rounded-lg" />
+                            <Skeleton className="h-5 w-full rounded-lg" />
+                        </div>
+                        <div className="flex flex-col gap-2 w-full mt-4">
+                            <Skeleton className="h-5 w-32 rounded-lg" />
+                            <Skeleton className="h-5 w-full rounded-lg" />
+                        </div>
+                        <div className="flex flex-col gap-2 w-full mt-4">
+                            <Skeleton className="h-5 w-32 rounded-lg" />
+                            <Skeleton className="h-5 w-full rounded-lg" />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="my-10 flex justify-end">
+            <div className="flex justify-end">
                 <Skeleton className="h-10 w-40 rounded-full" />
             </div>
 
-            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 my-10 w-full" />
         </>
     );
 }
