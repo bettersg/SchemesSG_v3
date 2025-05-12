@@ -7,16 +7,24 @@ import {
   EligibilityType,
   RawSchemeData,
 } from "@/app/interfaces/schemes";
+import styles from "./scheme.module.css";
 import { fetchWithAuth } from "@/app/utils/api";
 import { SearchResScheme } from "@/components/schemes/schemes-list";
 import {
+  Button,
   Chip,
-  Divider,
   Image,
   Link,
-  Skeleton,
-  Spacer,
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter
 } from "@nextui-org/react";
+import SchemeSkeleton from "@/components/schemes/scheme-skeleton"
+import Markdown from "react-markdown";
+import { MailIcon } from "@/assets/icons/mail-icon";
+import { LinkIcon } from "@/assets/icons/link-icon";
+import { PhoneIcon } from "@/assets/icons/phone-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -27,6 +35,12 @@ type Scheme = SearchResScheme & {
   application?: ApplicationType;
   contact?: ContactType;
   additionalInfo?: AdditionalInfoType;
+  // Additional fields directly from API
+  phone?: string;
+  email?: string;
+  address?: string;
+  howToApply?: string;
+  eligibilityText?: string;
 };
 
 interface FullSchemeData extends RawSchemeData {
@@ -35,6 +49,36 @@ interface FullSchemeData extends RawSchemeData {
   Application?: ApplicationType;
   Contact?: ContactType;
   "Additional Info"?: AdditionalInfoType;
+  // Additional fields that might be in the API response
+  phone?: string;
+  email?: string;
+  address?: string;
+  how_to_apply?: string;
+  eligibility?: string;
+}
+
+interface ApiSchemeData {
+  scheme_type?: string;
+  scheme?: string;
+  who_is_it_for?: string;
+  agency?: string;
+  description?: string;
+  llm_description?: string;
+  scraped_text?: string;
+  what_it_gives?: string;
+  link?: string;
+  image?: string;
+  search_booster?: string;
+  scheme_id?: string;
+  query?: string;
+  similarity?: number;
+  quintile?: number;
+  phone?: string;
+  email?: string;
+  address?: string;
+  how_to_apply?: string;
+  eligibility?: string;
+  last_modified_date?: number;
 }
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
@@ -54,6 +98,13 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     query: rawData["query"] || "",
     similarity: rawData["Similarity"] || 0,
     quintile: rawData["Quintile"] || 0,
+
+    // Direct access to contact fields
+    phone: rawData["phone"] || "",
+    email: rawData["email"] || "",
+    address: rawData["address"] || "",
+    howToApply: rawData["how_to_apply"] || "",
+    eligibilityText: rawData["eligibility"] || "",
 
     // Additional properties for FullScheme
     lastUpdated: rawData["Last Updated"] || "",
@@ -89,7 +140,41 @@ export default function SchemePage() {
           throw new Error("Failed to fetch scheme");
         }
         const res = await response.json();
-        const schemeRes = mapToFullScheme(res.data);
+        console.log("Response data:", res); // Debug
+
+        const schemeData = res.data as ApiSchemeData;
+
+        // Handle the scheme data structure - map to our frontend format
+        const schemeRes = {
+          // Map from our formatted object
+          ...mapToFullScheme({
+            "Scheme Type": schemeData.scheme_type || "",
+            Scheme: schemeData.scheme || "",
+            "Who's it for": schemeData.who_is_it_for || "",
+            Agency: schemeData.agency || "",
+            Description: schemeData.llm_description || schemeData.description || "",
+            scraped_text: schemeData.scraped_text || "",
+            "What it gives": schemeData.what_it_gives || "",
+            Link: schemeData.link || "",
+            Image: schemeData.image || "",
+            "search_booster(WL)": schemeData.search_booster || "",
+            scheme_id: id, // Use the ID from the URL parameter
+            query: "", // No query for single scheme view
+            Similarity: 0, // Not applicable for single scheme view
+            Quintile: 0, // Not applicable for single scheme view
+            "Last Updated": schemeData.last_modified_date
+              ? new Date(schemeData.last_modified_date).toLocaleString()
+              : "",
+            // Add additional fields from API response directly here instead of later
+            phone: schemeData.phone || "",
+            email: schemeData.email || "",
+            address: schemeData.address || "",
+            how_to_apply: schemeData.how_to_apply || "",
+            eligibility: schemeData.eligibility || "",
+          }),
+        } as Scheme; // Use type assertion for the whole object
+
+        console.log("Mapped scheme:", schemeRes); // Debug
         setScheme(schemeRes);
       } catch (err) {
         console.error("Error fetching scheme:", err);
@@ -114,23 +199,9 @@ export default function SchemePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col space-y-6 p-4 md:p-6 max-w-5xl mx-auto">
-        <div>
-          <Skeleton className="h-3 w-20 md:w-24 rounded-md" />
-          <Spacer y={1} />
-        </div>
-
-        <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-          <Skeleton className="h-24 w-24 md:h-36 md:w-36 rounded-lg" />
-          <div className="flex flex-col space-y-2 w-full md:w-auto">
-            <Skeleton className="h-6 md:h-8 w-full md:w-[400px] rounded-md" />
-            <Skeleton className="h-4 md:h-6 w-48 md:w-64 rounded-md" />
-          </div>
-        </div>
-
-        <div className="flex flex-col space-y-3">
-          <Skeleton className="h-4 md:h-5 w-full md:w-11/12 rounded-md" />
-          <Skeleton className="h-4 md:h-5 w-full md:w-9/12 rounded-md" />
+      <div className="min-h-screen bg-background p-4 w-full">
+        <div className="max-w-5xl mx-auto">
+          <SchemeSkeleton />
         </div>
       </div>
     );
@@ -138,95 +209,141 @@ export default function SchemePage() {
 
   return (
     scheme && (
-      <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="min-h-screen bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
-          {/* Scheme Type Chips */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            {scheme.schemeType.split(",").map((type) => (
-              <Chip key={type} color="primary" className="text-xs md:text-sm">
-                {type.trim()}
-              </Chip>
-            ))}
-          </div>
-
           {/* Title Section */}
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-6 mb-8">
+          <div className="sm:flex items-center gap-4 mb-8">
             <Image
               width={120}
               height={120}
               alt={`${scheme.agency} logo`}
               radius="sm"
-              className="w-24 h-24 md:w-32 md:h-32 object-contain"
-              src={scheme.image}
-            />
-            <div className="flex-1">
-              <h1 className="text-4xl lg:text-5xl font-bold mb-2 break-words">
-                {scheme.schemeName}
-              </h1>
-              <p className="text-md md:text-xl text-default-500">
-                {scheme.agency}
-              </p>
+              className="w-24 h-24 md:w-32 md:h-32 object-contain shadow-lg md:mb-0 mb-4"
+              src={scheme.image} />
+            <div className="flex flex-col gap-1">
+              {scheme.agency && <h1 className="text-3xl font-bold">{scheme.agency}</h1>}
+              {scheme.schemeName && <h6 className="text-medium">{scheme.schemeName}</h6>}
+              {/* Action Buttons */}
+              <div className="flex gap-2 mt-2">
+                {scheme.link && <Button isIconOnly size="sm" aria-label="website" color="primary" variant="flat" as={Link} href={scheme.link} isExternal><LinkIcon size={20} /></Button>}
+                {scheme.email && <Button isIconOnly size="sm" aria-label="email" color="primary" variant="flat" as={Link} href={`mailto:${scheme.email}`}><MailIcon size={20} /></Button>}
+                {scheme.phone && <Button isIconOnly size="sm" aria-label="phone" color="primary" variant="flat" as={Link} href={`tel:${scheme.phone.slice(0, scheme.phone.indexOf(','))}`}><PhoneIcon size={20} /></Button>}
+              </div>
             </div>
           </div>
 
-          {/* Description */}
-          <div className="prose max-w-none mb-8">
-            <p className="text-base md:text-lg">{scheme.description}</p>
-          </div>
+          {/* Description Card */}
+          <Card className="p-6 text-slate-700">
+            <CardHeader><h1 className="text-xl font-bold">Description</h1></CardHeader>
+            <CardBody>
+              {scheme.description && <Markdown className={`mb-5 ${styles.showMarker}`}>{scheme.description}</Markdown>}
+            </CardBody>
+          </Card>
 
-          <Divider className="my-8" />
-
-          {/* Target Audience Section */}
-          <section className="mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Target Audience
-            </h2>
-            <p className="text-base md:text-lg">{scheme.targetAudience}</p>
-          </section>
-
-          {/* Benefits Section */}
-          <section className="mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              What It Gives
-            </h2>
-            <p className="text-base md:text-lg">{scheme.benefits}</p>
-          </section>
-
-          {/* Contact Section */}
-          <section className="mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Contact</h2>
-            <div className="space-y-2">
-              <Link
-                isExternal
-                showAnchorIcon
-                href={scheme.link}
-                className="text-base md:text-lg break-words"
-              >
-                {scheme.link}
-              </Link>
-
-              {scheme.contact && (
-                <div className="mt-4 space-y-2">
-                  {scheme.contact.phone && (
-                    <p className="text-base md:text-lg">
-                      <span className="font-semibold">Phone:</span>{" "}
-                      {scheme.contact.phone}
-                    </p>
-                  )}
-                  {scheme.contact.email && (
-                    <p className="text-base md:text-lg">
-                      <span className="font-semibold">Email:</span>{" "}
-                      {scheme.contact.email}
-                    </p>
-                  )}
-                  {scheme.contact.address && (
-                    <p className="text-base md:text-lg">
-                      <span className="font-semibold">Address:</span>{" "}
-                      {scheme.contact.address}
-                    </p>
-                  )}
+          {/* Details Card */}
+          <Card className="p-6 mt-10 text-slate-700">
+            <CardHeader><h1 className="text-xl font-bold">Details</h1></CardHeader>
+            <CardBody>
+              <div className="sm:flex gap-5 mb-4">
+                {/* main details */}
+                <div className="flex-[2]">
+                  <div className="sm:flex gap-5 mb-4">
+                    {/* who */}
+                    <div className="flex-1 mb-4">
+                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">Who is it for</span>
+                      {scheme.targetAudience && <ul className="list-disc list-inside marker:text-slate-500">
+                        {scheme.targetAudience.split(",").map((target) => (
+                          <li key={target}>{target.trim()}</li>
+                        ))}
+                      </ul>}
+                    </div>
+                    {/* what */}
+                    <div className="flex-1">
+                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">What it gives</span>
+                      {scheme.benefits && <ul className="list-disc list-inside marker:text-slate-500">
+                        {scheme.benefits.split(",").map((benefit) => (
+                          <li key={benefit}>{benefit.trim()}</li>
+                        ))}
+                      </ul>}
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">Who can apply</span>
+                    {scheme.eligibilityText && <p>{scheme.eligibilityText}</p>}
+                  </div>
+                  <div className="mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">How to apply</span>
+                    {scheme.howToApply && <p>{scheme.howToApply}</p>}
+                  </div>
                 </div>
-              )}
+                {/* other details */}
+                <div className="flex-1">
+                  {/* type */}
+                  <div className="mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">Type</span>
+                    {scheme.schemeType && <div className="flex flex-wrap gap-2">
+                      {scheme.schemeType.split(",").map((type) => (
+                        <Chip
+                          key={type}
+                          size="sm"
+                          radius="sm"
+                          color="primary"
+                          variant="flat"
+                        >
+                          {type.trim()}
+                        </Chip>
+                      ))}
+                    </div>}
+                  </div>
+                  {/* contacts */}
+                  <div className="flex flex-col gap-2 mt-6">
+                    {scheme.phone && (
+                      <div>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Phone</p>
+                        <p>{scheme.phone}</p>
+                      </div>
+                    )}
+                    {scheme.email && (
+                      <div>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Email</p>
+                        <p>{scheme.email}</p>
+                      </div>
+                    )}
+                    {scheme.address && (
+                      <div>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Location</p>
+                        <p>{scheme.address}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+            </CardBody>
+            {scheme.link && <CardFooter className="justify-end">
+              <Button color="primary" endContent={<LinkIcon size={20} />} variant="ghost" as={Link} href={scheme.link} isExternal>Find out more</Button>
+            </CardFooter>}
+          </Card>
+
+          {/* Add disclaimer section at the bottom */}
+          <section className="mt-20 mb-8 border border-neutral-200 rounded-lg p-4 bg-neutral-50">
+            <div className="flex items-start gap-3">
+              <div className="text-neutral-500 text-lg">ⓘ</div>
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-700 mb-1">
+                  Important Information
+                </h3>
+                <p className="text-sm text-neutral-600">
+                  We strive to provide accurate information about assistance
+                  schemes in Singapore. Program details may change over time, so
+                  please visit the official website for the most current
+                  information.{" "}
+                  <Link href="/feedback" className="text-primary text-sm">
+                    Help us improve with your feedback
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
           </section>
         </div>
