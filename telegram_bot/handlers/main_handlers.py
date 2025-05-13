@@ -53,12 +53,14 @@ def present_scheme(idx: int, scheme: dict[str, str | int]) -> str:
 
     website_url = f"https://schemes.sg/schemes/{scheme['scheme_id']}"
 
+    desccription = format_text(scheme["llm_description"] if scheme["llm_description"] else scheme["description"])
+
     return (
         html.bold(f"{str(idx+1)}. {html.link(scheme['scheme'], website_url)}")
         + "\n"
         + html.italic(scheme["agency"])
         + "\n\n"
-        + format_text(scheme["llm_description"])
+        + desccription
     )
 
 
