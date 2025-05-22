@@ -155,7 +155,7 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
       </p>
 
       {/* Main Query Input */}
-      <div className="border-[1px] w-full sm:w-[600px] md:w-[800px] py-4 rounded-lg md:rounded-full shadow-sm hover:shadow-md transition cursor-pointer">
+      <div className="border-[1px] w-full sm:w-[600px] md:w-[800px] py-4 rounded-lg md:rounded-full shadow-sm hover:shadow-md transition cursor-pointer bg-slate-50">
         <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 gap-4 sm:gap-2">
           {/* For Who Dropdown */}
           <Dropdown>
