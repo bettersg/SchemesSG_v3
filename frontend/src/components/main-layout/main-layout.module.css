@@ -12,10 +12,12 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
+  margin-top: 3rem;
   /* Responsive padding */
   padding: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Small devices (phones) */
@@ -43,8 +45,26 @@
 @media (min-width: 1280px) {
   .homePage {
     padding: 0.5rem 4rem;
-    margin: 0 auto;
+    margin: 3rem auto;
   }
+}
+
+.bgOne,
+.bgTwo {
+  position: absolute;
+  z-index: -1;
+}
+
+.bgOne {
+  width: 35%;
+  top: 10%;
+  left: 0;
+}
+
+.bgTwo {
+  width: 35%;
+  top: 0%;
+  right: 0;
 }
 
 .welcomeMsg {
