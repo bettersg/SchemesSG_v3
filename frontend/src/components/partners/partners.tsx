@@ -10,6 +10,8 @@ export default function Partners() {
                     src={SASW}
                     alt="SASW Logo"
                     height={60}
+                    unoptimized
+                    priority
                 />
             </div>
         </div>

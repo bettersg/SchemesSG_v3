@@ -130,11 +130,15 @@ export default function Home() {
             src={backgroundImageOne}
             alt="background image one"
             className={classes.bgOne}
+            unoptimized
+            priority
           />
           <Image
             src={backgroundImageTwo}
             alt="background image two"
             className={classes.bgTwo}
+            unoptimized
+            priority
           />
         </div>
       )}
