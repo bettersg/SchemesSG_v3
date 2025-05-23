@@ -11,8 +11,8 @@ import { useState } from "react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
 import Image from "next/image";
-import backgroundImageOne from "@/assets/images/bg1.png";
-import backgroundImageTwo from "@/assets/images/bg2.png";
+import backgroundImageOne from "@/assets/bg1.png";
+import backgroundImageTwo from "@/assets/bg2.png";
 import Partners from "@/components/partners/partners";
 
 export default function Home() {

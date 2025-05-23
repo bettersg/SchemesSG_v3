@@ -1,5 +1,5 @@
 import Image from "next/image";
-import SASW from "@/assets/images/sasw.png";
+import SASW from "@/assets/sasw.png";
 
 export default function Partners() {
     return (
