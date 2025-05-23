@@ -10,6 +10,10 @@ import { Button } from "@nextui-org/react";
 import { useState } from "react";
 import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
+import Image from "next/image";
+import backgroundImageOne from "@/assets/bg1.png";
+import backgroundImageTwo from "@/assets/bg2.png";
+import Partners from "@/components/partners/partners";
 
 export default function Home() {
   const { schemes, sessionId, setSessionId } = useChat();
@@ -108,7 +112,7 @@ export default function Home() {
               setSelectedForWho={setSelectedForWho}
               // setSelectedOrganisation={setSelectedOrganisation}
               setSelectedSchemeType={setSelectedSchemeType}
-              onSendQuery={() => {}}
+              onSendQuery={() => { }}
             />
           </div>
           <SearchBar
@@ -120,6 +124,21 @@ export default function Home() {
             setSelectedSupportProvided={setSelectedSupportProvided}
             setSelectedForWho={setSelectedForWho}
             setSelectedSchemeType={setSelectedSchemeType}
+          />
+          <Partners />
+          <Image
+            src={backgroundImageOne}
+            alt="background image one"
+            className={classes.bgOne}
+            unoptimized
+            priority
+          />
+          <Image
+            src={backgroundImageTwo}
+            alt="background image two"
+            className={classes.bgTwo}
+            unoptimized
+            priority
           />
         </div>
       )}
