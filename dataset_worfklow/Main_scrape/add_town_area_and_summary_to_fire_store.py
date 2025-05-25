@@ -7,6 +7,22 @@ from loguru import logger
 import argparse
 import requests
 import random
+from dotenv import dotenv_values, load_dotenv
+import os
+
+
+class Config:
+    def __init__(self):
+        load_dotenv("dataset_workflow/.env")
+
+        for key, value in dotenv_values().items():
+            setattr(self, key.lower(), value)
+
+    def __getattr__(self, item):
+        attr = os.getenv(item.upper())
+        if attr:
+            setattr(self, item.lower(), attr)
+        return attr
 
 
 def extract_planning_area_from_address(address, token):
@@ -59,8 +75,12 @@ def extract_planning_area_from_address(address, token):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate summary and planning area for each scheme and update Firestore.')
     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    parser.add_argument('--onemap_token', required=True, help='OneMap access token (required for public endpoint).')
     args = parser.parse_args()
+
+    # One map Access Token expires every 3 days, so need to get a new one if it expires
+    # Contact Eugene to get a new one if it expires
+    config = Config()
+    onemap_token = config.ONEMAP_TOKEN
 
     logger.remove()
     logger.add(
@@ -144,7 +164,7 @@ if __name__ == "__main__":
             updates["planning_area"] = doc_data["planning_area"]
         elif address:
             try:
-                planning_area = extract_planning_area_from_address(address, args.onemap_token)
+                planning_area = extract_planning_area_from_address(address, onemap_token)
                 updates["planning_area"] = planning_area
                 logger.info(f"Generated planning area for document {doc_id}")
             except Exception as e:

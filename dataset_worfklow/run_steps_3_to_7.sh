@@ -17,9 +17,7 @@ STORAGE_BUCKET="" # Variable for storage bucket
 DEV_STORAGE_BUCKET="schemessg-v3-dev.firebasestorage.app"
 PROD_STORAGE_BUCKET="schemessg.appspot.com" # PLEASE VERIFY THIS
 
-# One map Access Token expires every 3 days, so need to get a new one if it expires
-# Contact Eugene to get a new one if it expires
-ONEMAP_TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiZGMxZWExOTgxOThiZWI0NTI3NDRhNGY1ODIyZTU1ZiIsImlzcyI6Imh0dHA6Ly9pbnRlcm5hbC1hbGItb20tcHJkZXppdC1pdC1uZXctMTYzMzc5OTU0Mi5hcC1zb3V0aGVhc3QtMS5lbGIuYW1hem9uYXdzLmNvbS9hcGkvdjIvdXNlci9wYXNzd29yZCIsImlhdCI6MTc0ODE1NjgzOCwiZXhwIjoxNzQ4NDE2MDM4LCJuYmYiOjE3NDgxNTY4MzgsImp0aSI6ImpWSWpSVVhCMm1XRm0zQmIiLCJ1c2VyX2lkIjo3Mjg3LCJmb3JldmVyIjpmYWxzZX0.XAtnJSA6gtv2w_SF0UAXZHlDdHrJtO4e8yRuXMuL1oI"
+
 
 # Set the credentials file and storage bucket based on the environment argument
 if [ "$ENV" == "dev" ]; then

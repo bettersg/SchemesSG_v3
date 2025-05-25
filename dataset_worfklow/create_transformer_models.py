@@ -56,8 +56,8 @@ def build_desc_booster(row):
         components.append(str(row['scheme']))
     if pd.notna(row['agency']):
         components.append(str(row['agency']))
-    if pd.notna(row['description']):
-        components.append(str(row['description']))
+    if pd.notna(row['llm_description']):
+        components.append(str(row['llm_description']))
     if pd.notna(row['search_booster']):
         components.append(str(row['search_booster']))
     if pd.notna(row["who_is_it_for"]):
