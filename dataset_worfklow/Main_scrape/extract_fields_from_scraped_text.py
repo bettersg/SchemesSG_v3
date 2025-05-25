@@ -76,6 +76,14 @@ class SchemesStructuredOutput(BaseModel):
     )
 
 
+class SchemesSummaryStructuredOutput(BaseModel):
+    """Extract a one-sentence summary about the scheme based on the information provided."""
+    summary: Optional[str] = Field(
+        default=None,
+        description="A single-sentence summary of the scheme, extracted from the provided information. Should concisely capture the essence of the scheme in one sentence.",
+    )
+
+
 class TextExtract:
     _instance = None
 
@@ -207,3 +215,21 @@ class TextExtract:
             ]
             merged_data[field] = ",".join(parts) if parts else None
         return SchemesStructuredOutput(**merged_data)
+
+    def generate_summary(self, text):
+        """Use the LLM to generate a one-sentence summary about the scheme."""
+        if text is None:
+            return None
+        from .extract_fields_from_scraped_text import SchemesSummaryStructuredOutput
+        structured_llm = self.open_ai_client.with_structured_output(SchemesSummaryStructuredOutput)
+        prompt_template = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                "You are an expert at summarizing information. Generate a single, concise sentence that captures the essence of the scheme based on the provided text. Maximum 10 words.",
+            ),
+            ("human", "{text}"),
+        ])
+        prompt = prompt_template.invoke({"text": text})
+        messages = prompt.to_messages()
+        data_model = structured_llm.invoke(messages)
+        return data_model.summary

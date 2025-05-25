@@ -17,6 +17,10 @@ STORAGE_BUCKET="" # Variable for storage bucket
 DEV_STORAGE_BUCKET="schemessg-v3-dev.firebasestorage.app"
 PROD_STORAGE_BUCKET="schemessg.appspot.com" # PLEASE VERIFY THIS
 
+# One map Access Token expires every 3 days, so need to get a new one if it expires
+# Contact Eugene to get a new one if it expires
+ONEMAP_TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiZGMxZWExOTgxOThiZWI0NTI3NDRhNGY1ODIyZTU1ZiIsImlzcyI6Imh0dHA6Ly9pbnRlcm5hbC1hbGItb20tcHJkZXppdC1pdC1uZXctMTYzMzc5OTU0Mi5hcC1zb3V0aGVhc3QtMS5lbGIuYW1hem9uYXdzLmNvbS9hcGkvdjIvdXNlci9wYXNzd29yZCIsImlhdCI6MTc0ODE1NjgzOCwiZXhwIjoxNzQ4NDE2MDM4LCJuYmYiOjE3NDgxNTY4MzgsImp0aSI6ImpWSWpSVVhCMm1XRm0zQmIiLCJ1c2VyX2lkIjo3Mjg3LCJmb3JldmVyIjpmYWxzZX0.XAtnJSA6gtv2w_SF0UAXZHlDdHrJtO4e8yRuXMuL1oI"
+
 # Set the credentials file and storage bucket based on the environment argument
 if [ "$ENV" == "dev" ]; then
   CREDS_FILE="dataset_worfklow/dev-creds.json"
@@ -52,24 +56,27 @@ echo "Loaded environment variables from $ENV_FILE"
 # Activate the virtual environment located in dataset_worfklow
 source dataset_worfklow/venv/bin/activate
 
-echo "starting step 3"
-# # step 3: run Main_scrape.py to get scraped data in DB
-python -m dataset_worfklow.Main_scrape.Main_scrape "$CREDS_FILE"
+# echo "starting step 3"
+# # # step 3: run Main_scrape.py to get scraped data in DB
+# python -m dataset_worfklow.Main_scrape.Main_scrape "$CREDS_FILE"
 
-# step 4 get logos from website via scraping
+# # step 4 get logos from website via scraping
 
-echo "starting step 5"
-# step 5: Take scraped text from DB, and create new fields
-python -m dataset_worfklow.Main_scrape.add_scraped_fields_to_fire_store "$CREDS_FILE"
+# echo "starting step 5"
+# # step 5: Take scraped text from DB, and create new fields
+# python -m dataset_worfklow.Main_scrape.add_scraped_fields_to_fire_store "$CREDS_FILE"
 
-echo "starting step 6a"
-# step 6a: Run to recompute embeddings and faiss
-python -m dataset_worfklow.create_transformer_models "$CREDS_FILE"
+echo "starting step 5b"
+python -m dataset_worfklow.Main_scrape.add_town_area_and_summary_to_fire_store "$CREDS_FILE" --onemap_token "$ONEMAP_TOKEN"
 
-echo "starting step 6b"
-# step 6b: Test if model artefacts created are valid
-python -m dataset_worfklow.test_model_artefacts_created "$CREDS_FILE"
+# echo "starting step 6a"
+# # step 6a: Run to recompute embeddings and faiss
+# python -m dataset_worfklow.create_transformer_models "$CREDS_FILE"
 
-echo "only run step 7 if you are satisfied with results from steps 6b"
-# step 7: Upload model artefacts to firebase storage
-python -m dataset_worfklow.upload_model_artefacts "$CREDS_FILE" "$STORAGE_BUCKET"
+# echo "starting step 6b"
+# # step 6b: Test if model artefacts created are valid
+# python -m dataset_worfklow.test_model_artefacts_created "$CREDS_FILE"
+
+# echo "only run step 7 if you are satisfied with results from steps 6b"
+# # step 7: Upload model artefacts to firebase storage
+# python -m dataset_worfklow.upload_model_artefacts "$CREDS_FILE" "$STORAGE_BUCKET"
