@@ -64,15 +64,15 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
     text_summary = ""
     for _, row in df.iterrows():
         # Handle both uppercase and lowercase column names
-        scheme = row.get("scheme", "")
-        agency = row.get("agency", "")
-        description = row.get("description", "")
-        link = row.get("link", "")
-        phone = row.get("phone", "")
-        address = row.get("address", "")
-        eligibility = row.get("eligibility", "")
-        email = row.get("email", "")
-        how_to_apply = row.get("how_to_apply", "")
+        scheme = row.get("Scheme", row.get("scheme", ""))
+        agency = row.get("Agency", row.get("agency", ""))
+        description = row.get("Description", row.get("description", ""))
+        link = row.get("Link", row.get("link", ""))
+        phone = row.get("Phone", row.get("phone", ""))
+        address = row.get("Address", row.get("address", ""))
+        eligibility = row.get("Eligibility", row.get("eligibility", ""))
+        email = row.get("Email", row.get("email", ""))
+        how_to_apply = row.get("How to Apply", row.get("how_to_apply", ""))
         scraped_text = row.get("scraped_text", "")
 
         sentence = clean_scraped_text(scraped_text)

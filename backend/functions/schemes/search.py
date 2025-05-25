@@ -8,9 +8,9 @@ import json
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
-from ml_logic import PredictParams, SearchModel
-from utils.cors_config import get_cors_headers, handle_cors_preflight
+from ml_logic import PaginatedSearchParams, SearchModel
 from utils.auth import verify_auth_token
+from utils.cors_config import get_cors_headers, handle_cors_preflight
 
 
 def create_search_model() -> SearchModel:
@@ -25,7 +25,7 @@ def create_search_model() -> SearchModel:
 )
 def schemes_search(req: https_fn.Request) -> https_fn.Response:
     """
-    Handler for schemes search endpoint
+    Handler for schemes search endpoint with pagination
 
     Args:
         req (https_fn.Request): request sent from client
@@ -61,9 +61,11 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
     try:
         body = req.get_json(silent=True)
         query = body.get("query", None)
-        top_k = body.get("top_k", 20)
+        limit = body.get("limit", 20)
+        cursor = body.get("cursor", None)
         similarity_threshold = body.get("similarity_threshold", 0)
         is_warmup = body.get("is_warmup", False)
+        top_k = body.get("top_k", 100)
     except Exception:
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request body"}),
@@ -80,12 +82,17 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
-    params = PredictParams(
-        query=query, top_k=int(top_k), similarity_threshold=int(similarity_threshold), is_warmup=is_warmup
+    params = PaginatedSearchParams(
+        query=query,
+        limit=int(limit),
+        cursor=cursor,
+        similarity_threshold=int(similarity_threshold),
+        is_warmup=is_warmup,
+        top_k=int(top_k),
     )
 
     try:
-        results = search_model.predict(params)
+        results = search_model.predict_paginated(params)
         return https_fn.Response(
             response=json.dumps(results),
             status=200,
