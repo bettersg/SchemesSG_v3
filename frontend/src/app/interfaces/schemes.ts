@@ -69,6 +69,9 @@ export interface AdditionalInfoType {
 
 export interface SearchResponse {
   sessionID?: string;
-  data?: Array<RawSchemeData> | RawSchemeData;
-  mh?: number;
+  results?: Array<RawSchemeData> | RawSchemeData;
+  has_mode?: boolean;
+  next_cursor?: string;
+  total_count?: number;
+  // mh?: number;
 }

@@ -124,15 +124,15 @@ export default function SearchBar({
       setIsBotResponseGenerating(false);
       
       // Check if data exists in the response
-      if (res.data) {
+      if (res.results) {
         let schemesData;
         
         // Handle both array and single object responses
-        if (Array.isArray(res.data)) {
-          schemesData = res.data;
+        if (Array.isArray(res.results)) {
+          schemesData = res.results;
         } else {
           // If it's a single object, convert to array
-          schemesData = [res.data];
+          schemesData = [res.results];
         }
         
         const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
