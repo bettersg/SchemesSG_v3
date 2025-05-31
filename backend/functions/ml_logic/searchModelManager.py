@@ -50,6 +50,7 @@ class PaginatedSearchParams(BaseModel):
     similarity_threshold: Optional[int] = 0
     is_warmup: Optional[bool] = False
     top_k: Optional[int] = 100  # Number of items to retrieve from FAISS index
+    filters: Optional[Dict[str, List[str]]] = {}
 
 
 class SearchPreprocessor:
@@ -450,6 +451,11 @@ class SearchModel:
         complete_results = self.combine_and_aggregate_results(
             split_needs, params.query, internal_top_k, params.similarity_threshold
         )
+
+        filters = params.filters
+        if filters:
+            for field, criteria in filters.items():
+                complete_results = complete_results[complete_results[field].isin(criteria)]
 
         # Convert to dict records for pagination
         complete_results_dict = complete_results.to_dict(orient="records")

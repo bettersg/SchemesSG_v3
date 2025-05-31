@@ -66,6 +66,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         similarity_threshold = body.get("similarity_threshold", 0)
         is_warmup = body.get("is_warmup", False)
         top_k = body.get("top_k", 100)
+        filters = body.get("filters", None)
     except Exception:
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request body"}),
@@ -89,6 +90,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         similarity_threshold=int(similarity_threshold),
         is_warmup=is_warmup,
         top_k=int(top_k),
+        filters=filters,
     )
 
     try:
