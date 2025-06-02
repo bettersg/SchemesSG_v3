@@ -102,7 +102,7 @@ export default function SearchBar({
 
     const requestBody = {
       query: userQuery,
-      top_k: 20,
+      top_k: 40,
       similarity_threshold: 0,
     };
 
@@ -119,14 +119,14 @@ export default function SearchBar({
 
       const res = await response.json() as SearchResponse;
       console.log("Search response:", res); // Debug
-      
+
       const sessionId: string = res["sessionID"] || "";
       setIsBotResponseGenerating(false);
-      
+
       // Check if data exists in the response
       if (res.data) {
         let schemesData;
-        
+
         // Handle both array and single object responses
         if (Array.isArray(res.data)) {
           schemesData = res.data;
@@ -134,7 +134,7 @@ export default function SearchBar({
           // If it's a single object, convert to array
           schemesData = [res.data];
         }
-        
+
         const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
         console.log("Mapped schemes:", schemesRes); // Debug
         return { schemesRes, sessionId };

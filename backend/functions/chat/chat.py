@@ -128,6 +128,16 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
         doc_dict = doc.to_dict()
         query_text = doc_dict.get("query_text", "")
         df = pd.DataFrame(doc_dict["schemes_response"])
+
+        # --- New filtering logic for agency and planning_area ---
+        agency = data.get("agency")
+        planning_area = data.get("planning_area")
+        if agency is not None and isinstance(agency, list) and len(agency) > 0:
+            df = df[df["agency"].isin(agency)]
+        if planning_area is not None and isinstance(planning_area, list) and len(planning_area) > 0:
+            df = df[df["planning_area"].isin(planning_area)]
+        # --- End filtering logic ---
+
         top_schemes_text = dataframe_to_text(df)
 
         if stream:
