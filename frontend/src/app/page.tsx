@@ -14,10 +14,17 @@ import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
 import backgroundImageTwo from "@/assets/bg2.png";
 import Partners from "@/components/partners/partners";
+// import { SearchResponse } from "./interfaces/schemes";
+
+export type FilterObjType = {
+  planningArea?: Set<string>;
+  agency?: Set<string>;
+}
 
 export default function Home() {
-  const { schemes, sessionId, setSessionId } = useChat();
+  const { schemes, setSchemes, sessionId, setSessionId } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [nextCursor, setNextCursor] = useState("");
   const [selectedSupportProvided, setSelectedSupportProvided] = useState<
     string | null
   >(null);
@@ -25,6 +32,7 @@ export default function Home() {
   const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(
     null
   );
+  const [filterObj, setFilterObj] = useState<FilterObjType>({})
   // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
 
   return (
@@ -37,9 +45,16 @@ export default function Home() {
               <UserQuery />
             </div>
             <div className="hidden md:flex">
-              <MainChat sessionId={sessionId} />
+              <MainChat sessionId={sessionId} filterObj={filterObj}/>
             </div>
-            <SchemesList schemes={schemes} />
+            <SchemesList
+              schemes={schemes}
+              setSchemes={setSchemes}
+              filterObj={filterObj}
+              setFilterObj={setFilterObj}
+              nextCursor={nextCursor}
+              setNextCursor={setNextCursor}
+            />
           </div>
 
           {/* Mobile Layout */}
@@ -67,7 +82,7 @@ export default function Home() {
               className={`w-full h-full transition-opacity duration-300 pt-12
               ${isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             >
-              <MainChat sessionId={sessionId} />
+              <MainChat sessionId={sessionId} filterObj={filterObj}/>
             </div>
             <MiniChatBar
               onExpand={() => setIsExpanded(true)}
@@ -112,11 +127,12 @@ export default function Home() {
               setSelectedForWho={setSelectedForWho}
               // setSelectedOrganisation={setSelectedOrganisation}
               setSelectedSchemeType={setSelectedSchemeType}
-              onSendQuery={() => { }}
+              onSendQuery={() => {}}
             />
           </div>
           <SearchBar
             setSessionId={setSessionId}
+            setNextCursor={setNextCursor}
             selectedSupportProvided={selectedSupportProvided}
             selectedForWho={selectedForWho}
             // selectedOrganisation={selectedOrganisation}
