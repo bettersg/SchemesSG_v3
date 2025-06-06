@@ -1,14 +1,19 @@
 import { Button, Select, SelectItem } from "@nextui-org/react";
 import { SearchResScheme } from "./schemes-list";
-import { Dispatch, SetStateAction, useState } from "react";
-import { FilterObjType } from "@/app/page";
+import { Dispatch, SetStateAction } from "react";
+import { FilterObjType } from "@/app/interfaces/filter";
 
 interface SchemesFilterProps {
   schemes: SearchResScheme[];
-  setFilterObj: Dispatch<SetStateAction<FilterObjType>>
+  setFilterObj: Dispatch<SetStateAction<FilterObjType>>;
+  selectedLocations: Set<string>;
+  setSelectedLocations: Dispatch<SetStateAction<Set<string>>>;
+  selectedAgencies: Set<string>;
+  setSelectedAgencies: Dispatch<SetStateAction<Set<string>>>;
+  resetFilters: () => void;
 }
 
-function SchemesFilter({schemes, setFilterObj}: SchemesFilterProps) {
+function SchemesFilter({schemes, setFilterObj, selectedLocations, setSelectedLocations, selectedAgencies, setSelectedAgencies, resetFilters}: SchemesFilterProps) {
   const locations = Array.from(
     new Set(
       schemes
@@ -29,12 +34,6 @@ function SchemesFilter({schemes, setFilterObj}: SchemesFilterProps) {
 
   // console.log({ locations, agencies, audiences, schemeTypes, benefits });
 
-  const [selectedLocations, setSelectedLocations] = useState(new Set(""));
-  const [selectedAgencies, setSelectedAgencies] = useState(new Set(""));
-  // const [selectedAudiences, setSelectedAudiences] = useState(new Set(''));
-  // const [selectedSchemeTypes, setSelectedSchemeTypes] = useState(new Set(''));
-  // const [selectedBenefits, setSelectedBenefits] = useState(new Set(''));
-
   const handleFilter = () => {
     console.log(selectedLocations, selectedAgencies);
     setFilterObj({
@@ -42,11 +41,8 @@ function SchemesFilter({schemes, setFilterObj}: SchemesFilterProps) {
       agency: selectedAgencies
     })
   };
-  const handleClear = () => {
-    setSelectedLocations(new Set(''))
-    setSelectedAgencies(new Set(''))
-    setFilterObj({})
-  }
+  const handleClear = resetFilters;
+  const handleReset = resetFilters;
 
   return (
       <div className="flex gap-2 flex-wrap items-center">
@@ -57,7 +53,7 @@ function SchemesFilter({schemes, setFilterObj}: SchemesFilterProps) {
           renderValue={(items) => `${items.length} selected`}
           className="w-min min-w-[150px]"
           selectedKeys={selectedLocations}
-          onSelectionChange={setSelectedLocations}
+          onSelectionChange={(keys) => setSelectedLocations(new Set(Array.from(keys) as string[]))}
         >
           {locations.map((location) => (
             <SelectItem key={location}>{location}</SelectItem>
@@ -70,7 +66,7 @@ function SchemesFilter({schemes, setFilterObj}: SchemesFilterProps) {
           renderValue={(items) => `${items.length} selected`}
           className="w-min min-w-[200px]"
           selectedKeys={selectedAgencies}
-          onSelectionChange={setSelectedAgencies}
+          onSelectionChange={(keys) => setSelectedAgencies(new Set(Array.from(keys) as string[]))}
         >
           {agencies.map((agency) => (
             <SelectItem key={agency}>{agency}</SelectItem>

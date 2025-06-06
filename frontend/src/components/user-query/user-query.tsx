@@ -5,7 +5,7 @@ import { Button, Tooltip, useDisclosure } from "@nextui-org/react";
 import ResetQueryModal from "../reset-query-modal/reset-query-modal";
 import classes from "./user-query.module.css";
 
-export default function UserQuery() {
+export default function UserQuery({ resetFilters }: { resetFilters: () => void }) {
   const { setSchemes, messages, setMessages, setSessionId, setUserQuery } = useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
@@ -18,6 +18,7 @@ export default function UserQuery() {
     setMessages([]);
     setSessionId("");
     setUserQuery("");
+    resetFilters();
   };
 
   return (

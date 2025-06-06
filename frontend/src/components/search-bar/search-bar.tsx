@@ -30,7 +30,6 @@ export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
 
 interface SearchBarProps {
   setSessionId: (val: string) => void;
-  setNextCursor: (val: string) => void;
   selectedSupportProvided: string | null;
   selectedForWho: string | null;
   // selectedOrganisation: string | null;
@@ -44,7 +43,6 @@ interface SearchBarProps {
 }
 export default function SearchBar({
   setSessionId,
-  setNextCursor,
   selectedSupportProvided,
   selectedForWho,
   // selectedOrganisation,
@@ -85,7 +83,7 @@ export default function SearchBar({
 
     // Default to empty if it's just the basic phrase
     setUserQuery(query === "I am" ? "" : query);
-  }, [selectedForWho, selectedSchemeType, selectedSupportProvided]);
+  }, [selectedForWho, selectedSchemeType, selectedSupportProvided, setUserQuery]);
 
   const handleUserQuery = (input: string) => {
     setMessages([
