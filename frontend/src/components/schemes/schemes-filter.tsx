@@ -42,7 +42,6 @@ function SchemesFilter({schemes, setFilterObj, selectedLocations, setSelectedLoc
     })
   };
   const handleClear = resetFilters;
-  const handleReset = resetFilters;
 
   return (
       <div className="flex gap-2 flex-wrap items-center">
