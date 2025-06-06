@@ -1,5 +1,4 @@
 "use client";
-import { MinimizeIcon } from "@/assets/icons/minimize-icon";
 import { ExpandIcon } from "@/assets/icons/expand-icon";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat/main-chat";
