@@ -9,7 +9,7 @@ import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import { SearchResponse } from "@/app/interfaces/schemes";
 import { mapToScheme } from "../search-bar/search-bar";
-import { FilterObjType } from "@/app/page";
+import { FilterObjType } from "@/app/interfaces/filter";
 // Type for scheme from search results
 export type SearchResScheme = {
   schemeId: string;
@@ -32,11 +32,16 @@ export type SearchResScheme = {
 
 interface SchemesListProps {
   schemes: SearchResScheme[];
-  setSchemes: Dispatch<SetStateAction<SearchResScheme[]>>
+  setSchemes: Dispatch<SetStateAction<SearchResScheme[]>>;
   filterObj: FilterObjType;
-  setFilterObj: Dispatch<SetStateAction<FilterObjType>>
+  setFilterObj: Dispatch<SetStateAction<FilterObjType>>;
   nextCursor: string;
   setNextCursor: (val: string) => void;
+  selectedLocations: Set<string>;
+  setSelectedLocations: Dispatch<SetStateAction<Set<string>>>;
+  selectedAgencies: Set<string>;
+  setSelectedAgencies: Dispatch<SetStateAction<Set<string>>>;
+  resetFilters: () => void;
 }
 
 export default function SchemesList({
@@ -46,6 +51,11 @@ export default function SchemesList({
   setFilterObj,
   nextCursor,
   setNextCursor,
+  selectedLocations,
+  setSelectedLocations,
+  selectedAgencies,
+  setSelectedAgencies,
+  resetFilters,
 }: SchemesListProps) {
   const listBottomRef = useRef(null);
   const bottomReached = useInView(listBottomRef);
@@ -57,7 +67,7 @@ export default function SchemesList({
       console.log('loading');
       loadMoreSchemes();
     }
-  }, [bottomReached]);
+  });
 
   const loadMoreSchemes = async () => {
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
@@ -81,18 +91,18 @@ export default function SchemesList({
 
       const res = await response.json() as SearchResponse;
       console.log("Search response:", res); // Debug
-      
+
       setIsLoadingSchemes(false)
 
       // Check if there is more data to be paginated
       if (res.has_more && res.next_cursor) {
         setNextCursor(res.has_more ? res.next_cursor : '')
       }
-      
+
       // Check if data exists in the response
       if (res.data) {
         let schemesData;
-        
+
         // Handle both array and single object responses
         if (Array.isArray(res.data)) {
           schemesData = res.data;
@@ -100,7 +110,7 @@ export default function SchemesList({
           // If it's a single object, convert to array
           schemesData = [res.data];
         }
-        
+
         const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
         console.log("Mapped schemes:", schemesRes); // Debug
         setSchemes(prevSchemes => [...prevSchemes, ...schemesRes])
@@ -120,7 +130,15 @@ export default function SchemesList({
             Showing {schemes.length} schemes
           </p>
         </div>
-        <SchemesFilter schemes={schemes} setFilterObj={setFilterObj}/>
+        <SchemesFilter
+          schemes={schemes}
+          setFilterObj={setFilterObj}
+          selectedLocations={selectedLocations}
+          setSelectedLocations={setSelectedLocations}
+          selectedAgencies={selectedAgencies}
+          setSelectedAgencies={setSelectedAgencies}
+          resetFilters={resetFilters}
+        />
       </div>
 
       <Spacer y={3} />
@@ -134,13 +152,18 @@ export default function SchemesList({
           padding: "0.5rem",
         }}
       >
-        {schemes.filter(scheme => {
-          if (filterObj.planningArea && filterObj.planningArea.size > 0 && scheme.planningArea && !filterObj.planningArea.has(scheme.planningArea)) {
-            return false
-          } else if (filterObj.agency && filterObj.agency.size > 0 && scheme.agency && !filterObj.agency.has(scheme.agency)) {
-            return false
+        {  schemes.filter(scheme => {
+          if (filterObj.planningArea && filterObj.planningArea.size > 0) {
+            if (!scheme.planningArea || !filterObj.planningArea.has(scheme.planningArea)) {
+              return false;
+            }
           }
-          return true
+          if (filterObj.agency && filterObj.agency.size > 0) {
+            if (!scheme.agency || !filterObj.agency.has(scheme.agency)) {
+              return false;
+            }
+          }
+          return true;
         }).map((scheme) => (
           <SchemeCard key={scheme.schemeId} scheme={scheme}/>
         ))}

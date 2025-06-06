@@ -1,5 +1,6 @@
 "use client";
 import { MinimizeIcon } from "@/assets/icons/minimize-icon";
+import { ExpandIcon } from "@/assets/icons/expand-icon";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat/main-chat";
 import QueryGenerator from "@/components/query-generator/query-generator";
@@ -14,12 +15,7 @@ import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
 import backgroundImageTwo from "@/assets/bg2.png";
 import Partners from "@/components/partners/partners";
-// import { SearchResponse } from "./interfaces/schemes";
-
-export type FilterObjType = {
-  planningArea?: Set<string>;
-  agency?: Set<string>;
-}
+import { FilterObjType } from "./interfaces/filter";
 
 export default function Home() {
   const { schemes, setSchemes, sessionId, setSessionId } = useChat();
@@ -35,6 +31,15 @@ export default function Home() {
   const [filterObj, setFilterObj] = useState<FilterObjType>({})
   // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
 
+  // LIFTED filter state
+  const [selectedLocations, setSelectedLocations] = useState(new Set(""));
+  const [selectedAgencies, setSelectedAgencies] = useState(new Set(""));
+  const resetFilters = () => {
+    setSelectedLocations(new Set(""));
+    setSelectedAgencies(new Set(""));
+    setFilterObj({});
+  };
+
   return (
     <main className={classes.homePage}>
       {schemes.length > 0 ? (
@@ -42,10 +47,14 @@ export default function Home() {
           {/* Desktop Layout */}
           <div className={classes.mainLayout}>
             <div className="flex md:hidden">
-              <UserQuery />
+              <UserQuery resetFilters={resetFilters} />
             </div>
             <div className="hidden md:flex">
-              <MainChat sessionId={sessionId} filterObj={filterObj}/>
+              <MainChat
+                sessionId={sessionId}
+                filterObj={filterObj}
+                resetFilters={resetFilters}
+              />
             </div>
             <SchemesList
               schemes={schemes}
@@ -54,6 +63,11 @@ export default function Home() {
               setFilterObj={setFilterObj}
               nextCursor={nextCursor}
               setNextCursor={setNextCursor}
+              selectedLocations={selectedLocations}
+              setSelectedLocations={setSelectedLocations}
+              selectedAgencies={selectedAgencies}
+              setSelectedAgencies={setSelectedAgencies}
+              resetFilters={resetFilters}
             />
           </div>
 
@@ -61,28 +75,33 @@ export default function Home() {
           <div
             className={`md:hidden flex fixed bottom-0 left-0 right-0 bg-none transition-all duration-300 ease-in-out z-50
             ${isExpanded ? "h-full" : "h-0"}`}
+
           >
             <div
-              className={`absolute top-0 left-0 right-0 flex justify-between items-center p-2 bg-white border-b
-              ${isExpanded ? "border-gray-100" : "border-none"}`}
+              className={`w-full h-full transition-opacity duration-300 pt-12
+              ${isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             >
-              {isExpanded && (
+              <MainChat
+                sessionId={sessionId}
+                filterObj={filterObj}
+                resetFilters={resetFilters}
+              />
+            </div>
+            <div
+              className={`absolute left-0 right-0 flex justify-between items-center p-2 bg-transparent border-b
+              ${isExpanded ? "border-gray-100" : "border-none"} bottom-20`}
+            >
+              {/* {isExpanded && (
                 <span className="text-sm font-medium px-2">Chat</span>
-              )}
+              )} */}
               <Button
                 isIconOnly
                 variant="light"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="z-10 ml-auto"
               >
-                {isExpanded && <MinimizeIcon />}
+                {isExpanded ? <ExpandIcon /> : null}
               </Button>
-            </div>
-            <div
-              className={`w-full h-full transition-opacity duration-300 pt-12
-              ${isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            >
-              <MainChat sessionId={sessionId} filterObj={filterObj}/>
             </div>
             <MiniChatBar
               onExpand={() => setIsExpanded(true)}
@@ -132,7 +151,6 @@ export default function Home() {
           </div>
           <SearchBar
             setSessionId={setSessionId}
-            setNextCursor={setNextCursor}
             selectedSupportProvided={selectedSupportProvided}
             selectedForWho={selectedForWho}
             // selectedOrganisation={selectedOrganisation}

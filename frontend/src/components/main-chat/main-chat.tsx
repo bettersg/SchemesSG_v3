@@ -8,14 +8,15 @@ import { Spacer } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import UserQuery from "../user-query/user-query";
 import classes from "./main-chat.module.css";
-import { FilterObjType } from "@/app/page";
+import { FilterObjType } from "@/app/interfaces/filter";
 
 type MainChatProps = {
   sessionId: string;
-  filterObj: FilterObjType
+  filterObj: FilterObjType;
+  resetFilters: () => void;
 };
 
-export default function MainChat({ sessionId, filterObj }: MainChatProps) {
+export default function MainChat({ sessionId, filterObj, resetFilters }: MainChatProps) {
   const { messages, setMessages } = useChat();
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
@@ -51,7 +52,7 @@ export default function MainChat({ sessionId, filterObj }: MainChatProps) {
       ]);
       setBotMessageAdded(true); // Mark bot message as added
     }
-  }, [botMessageAdded, setMessages]); // Minimal dependency array
+  }, [botMessageAdded, setMessages, messages]); // Minimal dependency array
 
   useEffect(() => {
     handleScrollToBottom();
@@ -149,7 +150,7 @@ export default function MainChat({ sessionId, filterObj }: MainChatProps) {
 
   return (
     <div className={classes.mainChat}>
-      <UserQuery />
+      <UserQuery resetFilters={resetFilters} />
       <ChatList
         messages={messages}
         streamingMessage={currentStreamingMessage}
