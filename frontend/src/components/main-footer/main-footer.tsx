@@ -1,6 +1,6 @@
 import Link from "next/link";
 import classes from "./main-footer.module.css";
-import {Divider} from "@nextui-org/divider";
+import {Divider} from "@nextui-org/react";
 
 const data = [
     {

@@ -8,12 +8,14 @@ import { Spacer } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import UserQuery from "../user-query/user-query";
 import classes from "./main-chat.module.css";
+import { FilterObjType } from "@/app/page";
 
 type MainChatProps = {
   sessionId: string;
+  filterObj: FilterObjType
 };
 
-export default function MainChat({ sessionId }: MainChatProps) {
+export default function MainChat({ sessionId, filterObj }: MainChatProps) {
   const { messages, setMessages } = useChat();
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
@@ -28,7 +30,10 @@ export default function MainChat({ sessionId }: MainChatProps) {
     const storedMessages = localStorage.getItem("userMessages");
 
     // Parse storedMessages safely
-    const parsedMessages = storedMessages && storedMessages !== "[]" ? JSON.parse(storedMessages) : [];
+    const parsedMessages =
+      storedMessages && storedMessages !== "[]"
+        ? JSON.parse(storedMessages)
+        : [];
 
     // Append bot message only once
     if (
@@ -47,7 +52,6 @@ export default function MainChat({ sessionId }: MainChatProps) {
       setBotMessageAdded(true); // Mark bot message as added
     }
   }, [botMessageAdded, setMessages]); // Minimal dependency array
-
 
   useEffect(() => {
     handleScrollToBottom();
@@ -73,15 +77,22 @@ export default function MainChat({ sessionId }: MainChatProps) {
     setIsBotResponseGenerating(true);
     setCurrentStreamingMessage("");
     try {
+      const bodyParams : {[key: string]: string | string[] | boolean}= {
+        message: userMessage,
+        sessionID: sessionId,
+        stream: true,
+      }
+      if (filterObj.planningArea) {
+        bodyParams.planning_area = Array.from(filterObj.planningArea)
+      }
+      if (filterObj.agency) {
+        bodyParams.agency = Array.from(filterObj.agency)
+      }
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat_message`,
         {
           method: "POST",
-          body: JSON.stringify({
-            message: userMessage,
-            sessionID: sessionId,
-            stream: true,
-          }),
+          body: JSON.stringify(bodyParams),
         }
       );
 

@@ -156,7 +156,7 @@ class SearchModel:
         logger.info("Search Model initialised!")
 
     def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
-        """Fetch multiple schemes"""
+        """Fetch multiple schemes, batching to respect Firestore's 30-item 'in' limit, and remove 'scraped_text' field if present."""
         # Create a cache key based on the scheme IDs
         scheme_cache_key = tuple(scheme_ids)
 
@@ -165,15 +165,21 @@ class SearchModel:
             logger.info("Returning cached scheme details.")
             return self.query_cache[scheme_cache_key]
 
-        # Get all documents in the collection
-        docs = self.__class__.db.collection("schemes").where("__name__", "in", scheme_ids).get()
+        # Helper to chunk scheme_ids into batches of 30
+        def chunk_list(lst, n):
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
 
-        # Process results
         scheme_details = []
-        for doc in docs:
-            scheme_data = doc.to_dict()
-            scheme_data["scheme_id"] = doc.id
-            scheme_details.append(scheme_data)
+        for batch in chunk_list(scheme_ids, 30):
+            docs = self.__class__.db.collection("schemes").where("__name__", "in", batch).get()
+            for doc in docs:
+                scheme_data = doc.to_dict()
+                scheme_data["scheme_id"] = doc.id
+                # Remove 'scraped_text' field if present
+                if "scraped_text" in scheme_data:
+                    del scheme_data["scraped_text"]
+                scheme_details.append(scheme_data)
 
         # Store the results in the cache
         self.query_cache[scheme_cache_key] = scheme_details
