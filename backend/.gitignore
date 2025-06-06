@@ -67,3 +67,8 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# credentials
+creds.*
+*.sh
+jwt_token.txt

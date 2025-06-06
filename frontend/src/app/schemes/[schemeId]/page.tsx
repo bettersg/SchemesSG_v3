@@ -24,6 +24,7 @@ import SchemeSkeleton from "@/components/schemes/scheme-skeleton"
 import Markdown from "react-markdown";
 import { MailIcon } from "@/assets/icons/mail-icon";
 import { LinkIcon } from "@/assets/icons/link-icon";
+import { LocationIcon } from "@/assets/icons/location-icon"
 import { PhoneIcon } from "@/assets/icons/phone-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -98,6 +99,8 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     query: rawData["query"] || "",
     similarity: rawData["Similarity"] || 0,
     quintile: rawData["Quintile"] || 0,
+    planningArea: rawData["planning_area"] || "",
+    summary: rawData["summary"] || "",
 
     // Direct access to contact fields
     phone: rawData["phone"] || "",
@@ -312,6 +315,10 @@ export default function SchemePage() {
                     {scheme.address && (
                       <div>
                         <p className="font-bold uppercase text-xs text-slate-500 mb-1">Location</p>
+                        {scheme.planningArea && <p>
+                          <LocationIcon size={20} />
+                          <span>{scheme.planningArea}</span>
+                        </p>}
                         <p>{scheme.address}</p>
                       </div>
                     )}
@@ -320,9 +327,10 @@ export default function SchemePage() {
               </div>
 
             </CardBody>
-            {scheme.link && <CardFooter className="justify-end">
-              <Button color="primary" endContent={<LinkIcon size={20} />} variant="ghost" as={Link} href={scheme.link} isExternal>Find out more</Button>
-            </CardFooter>}
+            <CardFooter className="gap-4 justify-center sm:justify-end">
+              {scheme.address && <Button color="primary" endContent={<LocationIcon size={20} />} variant="ghost" as={Link} href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(scheme.address)}`} isExternal>Get Directions</Button>}
+              {scheme.link && <Button color="primary" endContent={<LinkIcon size={20} />} variant="ghost" as={Link} href={scheme.link} isExternal>Find out more</Button>}
+            </CardFooter>
           </Card>
 
           {/* Add disclaimer section at the bottom */}

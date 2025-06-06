@@ -7,8 +7,30 @@ import { SearchIcon } from "../../assets/icons/search-icon";
 import { SearchResScheme } from "../schemes/schemes-list";
 import classes from "./search-bar.module.css";
 
+export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
+  return {
+    schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
+    schemeName: rawData["scheme"] || rawData["Scheme"] || "",
+    targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
+    agency: rawData["agency"] || rawData["Agency"] || "",
+    description: rawData["description"] || rawData["Description"] || "",
+    scrapedText: rawData["scraped_text"] || "",
+    benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
+    link: rawData["link"] || rawData["Link"] || "",
+    image: rawData["image"] || rawData["Image"] || "",
+    searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
+    schemeId: rawData["scheme_id"] || "",
+    query: rawData["query"] || "",
+    similarity: rawData["Similarity"] || 0,
+    quintile: rawData["Quintile"] || 0,
+    planningArea: rawData["planning_area"] || "",
+    summary: rawData["summary"] || ""
+  };
+};
+
 interface SearchBarProps {
   setSessionId: (val: string) => void;
+  setNextCursor: (val: string) => void;
   selectedSupportProvided: string | null;
   selectedForWho: string | null;
   // selectedOrganisation: string | null;
@@ -22,6 +44,7 @@ interface SearchBarProps {
 }
 export default function SearchBar({
   setSessionId,
+  setNextCursor,
   selectedSupportProvided,
   selectedForWho,
   // selectedOrganisation,
@@ -76,25 +99,6 @@ export default function SearchBar({
       setUserQuery(input);
     }
     setUserQuery("");
-  };
-
-  const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
-    return {
-      schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
-      schemeName: rawData["scheme"] || rawData["Scheme"] || "",
-      targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
-      agency: rawData["agency"] || rawData["Agency"] || "",
-      description: rawData["description"] || rawData["Description"] || "",
-      scrapedText: rawData["scraped_text"] || "",
-      benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
-      link: rawData["link"] || rawData["Link"] || "",
-      image: rawData["image"] || rawData["Image"] || "",
-      searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
-      schemeId: rawData["scheme_id"] || "",
-      query: rawData["query"] || "",
-      similarity: rawData["Similarity"] || 0,
-      quintile: rawData["Quintile"] || 0,
-    };
   };
 
   const getSchemes = async () => {
