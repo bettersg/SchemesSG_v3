@@ -2,7 +2,6 @@ import { Button, Select, SelectItem } from "@nextui-org/react";
 import { SearchResScheme } from "./schemes-list";
 import { Dispatch, SetStateAction, useMemo } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
-import classes from "./schemes-filter.module.css";
 
 
 interface SchemesFilterProps {
