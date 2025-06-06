@@ -68,7 +68,7 @@ function SchemesFilter({schemes, setFilterObj}: SchemesFilterProps) {
           placeholder="All"
           selectionMode="multiple"
           renderValue={(items) => `${items.length} selected`}
-          className="w-min min-w-[150px]"
+          className="w-min min-w-[200px]"
           selectedKeys={selectedAgencies}
           onSelectionChange={setSelectedAgencies}
         >
