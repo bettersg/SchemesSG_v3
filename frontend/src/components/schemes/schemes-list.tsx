@@ -3,7 +3,7 @@
 import { Spacer, Spinner } from "@nextui-org/react";
 import SchemeCard from "./scheme-card";
 import SchemesFilter from "./schemes-filter";
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState, useMemo } from "react";
 import { useInView } from "framer-motion";
 import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
@@ -61,6 +61,25 @@ export default function SchemesList({
   const bottomReached = useInView(listBottomRef);
   const [isLoadingSchemes, setIsLoadingSchemes] = useState(false);
   const { userQuery } = useChat();
+
+  // Compute filtered schemes once per render
+  const filteredSchemes = useMemo(
+    () =>
+      schemes.filter((scheme) => {
+        if (filterObj.planningArea && filterObj.planningArea.size > 0) {
+          if (!scheme.planningArea || !filterObj.planningArea.has(scheme.planningArea)) {
+            return false;
+          }
+        }
+        if (filterObj.agency && filterObj.agency.size > 0) {
+          if (!scheme.agency || !filterObj.agency.has(scheme.agency)) {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [schemes, filterObj]
+  );
 
   useEffect(() => {
     if (bottomReached && nextCursor) {
@@ -127,7 +146,7 @@ export default function SchemesList({
         <div className="flex flex-col gap-1 shrink-0">
           <p className="text-base font-semibold">Search Results</p>
           <p className="text-xs text-slate-500">
-            Showing {schemes.length} schemes
+            Showing {filteredSchemes.length} schemes
           </p>
         </div>
         <SchemesFilter
@@ -152,23 +171,14 @@ export default function SchemesList({
           padding: "0.5rem",
         }}
       >
-        {  schemes.filter(scheme => {
-          if (filterObj.planningArea && filterObj.planningArea.size > 0) {
-            if (!scheme.planningArea || !filterObj.planningArea.has(scheme.planningArea)) {
-              return false;
-            }
-          }
-          if (filterObj.agency && filterObj.agency.size > 0) {
-            if (!scheme.agency || !filterObj.agency.has(scheme.agency)) {
-              return false;
-            }
-          }
-          return true;
-        }).map((scheme) => (
-          <SchemeCard key={scheme.schemeId} scheme={scheme}/>
+        {filteredSchemes.map((scheme) => (
+          <SchemeCard key={scheme.schemeId} scheme={scheme} />
         ))}
       </div>
-      <div ref={listBottomRef}>{isLoadingSchemes && <Spinner />}</div>
+
+      <div ref={listBottomRef}>
+        {isLoadingSchemes && <Spinner />}
+      </div>
     </div>
   );
 }

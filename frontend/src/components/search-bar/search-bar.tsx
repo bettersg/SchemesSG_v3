@@ -104,7 +104,7 @@ export default function SearchBar({
 
     const requestBody = {
       query: userQuery,
-      top_k: 40,
+      top_k: 50,
       similarity_threshold: 0,
     };
 
