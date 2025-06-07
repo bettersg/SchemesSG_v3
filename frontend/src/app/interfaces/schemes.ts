@@ -13,7 +13,7 @@ export interface RawSchemeData {
   query?: string;
   Similarity?: number;
   Quintile?: number;
-  
+
   // Lowercase properties from the backend
   scheme_type?: string;
   scheme?: string;
@@ -26,7 +26,10 @@ export interface RawSchemeData {
   search_booster?: string;
   similarity?: number;
   quintile?: number;
+  summary?: string;
+  planning_area?: string;
 }
+
 
 export interface EligibilityType {
   criteria: string;
@@ -70,5 +73,13 @@ export interface AdditionalInfoType {
 export interface SearchResponse {
   sessionID?: string;
   data?: Array<RawSchemeData> | RawSchemeData;
-  mh?: number;
+  total_count?: number;
+  has_more?: boolean;
+  next_cursor?: string;
 }
+
+// export interface SearchResponse {
+//   sessionID?: string;
+//   data?: Array<RawSchemeData> | RawSchemeData;
+//   mh?: number;
+// }

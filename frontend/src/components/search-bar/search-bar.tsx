@@ -7,6 +7,27 @@ import { SearchIcon } from "../../assets/icons/search-icon";
 import { SearchResScheme } from "../schemes/schemes-list";
 import classes from "./search-bar.module.css";
 
+export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
+  return {
+    schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
+    schemeName: rawData["scheme"] || rawData["Scheme"] || "",
+    targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
+    agency: rawData["agency"] || rawData["Agency"] || "",
+    description: rawData["description"] || rawData["Description"] || "",
+    scrapedText: rawData["scraped_text"] || "",
+    benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
+    link: rawData["link"] || rawData["Link"] || "",
+    image: rawData["image"] || rawData["Image"] || "",
+    searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
+    schemeId: rawData["scheme_id"] || "",
+    query: rawData["query"] || "",
+    similarity: rawData["Similarity"] || 0,
+    quintile: rawData["Quintile"] || 0,
+    planningArea: rawData["planning_area"] || "",
+    summary: rawData["summary"] || ""
+  };
+};
+
 interface SearchBarProps {
   setSessionId: (val: string) => void;
   selectedSupportProvided: string | null;
@@ -62,7 +83,7 @@ export default function SearchBar({
 
     // Default to empty if it's just the basic phrase
     setUserQuery(query === "I am" ? "" : query);
-  }, [selectedForWho, selectedSchemeType, selectedSupportProvided]);
+  }, [selectedForWho, selectedSchemeType, selectedSupportProvided, setUserQuery]);
 
   const handleUserQuery = (input: string) => {
     setMessages([
@@ -78,31 +99,12 @@ export default function SearchBar({
     setUserQuery("");
   };
 
-  const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
-    return {
-      schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
-      schemeName: rawData["scheme"] || rawData["Scheme"] || "",
-      targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
-      agency: rawData["agency"] || rawData["Agency"] || "",
-      description: rawData["description"] || rawData["Description"] || "",
-      scrapedText: rawData["scraped_text"] || "",
-      benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
-      link: rawData["link"] || rawData["Link"] || "",
-      image: rawData["image"] || rawData["Image"] || "",
-      searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
-      schemeId: rawData["scheme_id"] || "",
-      query: rawData["query"] || "",
-      similarity: rawData["Similarity"] || 0,
-      quintile: rawData["Quintile"] || 0,
-    };
-  };
-
   const getSchemes = async () => {
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
 
     const requestBody = {
       query: userQuery,
-      top_k: 20,
+      top_k: 50,
       similarity_threshold: 0,
     };
 
@@ -119,14 +121,14 @@ export default function SearchBar({
 
       const res = await response.json() as SearchResponse;
       console.log("Search response:", res); // Debug
-      
+
       const sessionId: string = res["sessionID"] || "";
       setIsBotResponseGenerating(false);
-      
+
       // Check if data exists in the response
       if (res.data) {
         let schemesData;
-        
+
         // Handle both array and single object responses
         if (Array.isArray(res.data)) {
           schemesData = res.data;
@@ -134,7 +136,7 @@ export default function SearchBar({
           // If it's a single object, convert to array
           schemesData = [res.data];
         }
-        
+
         const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
         console.log("Mapped schemes:", schemesRes); // Debug
         return { schemesRes, sessionId };

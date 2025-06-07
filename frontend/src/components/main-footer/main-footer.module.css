@@ -3,7 +3,9 @@
   background-color: rgba(23, 19, 71, 1);
   color: white;
   margin-top: 2rem;
-  padding: 2em 6em;
+  padding: 0.5em 6em;
+  display: flex;
+  justify-content: center;
 }
 
 .inner {
