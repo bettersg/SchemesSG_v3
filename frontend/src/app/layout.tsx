@@ -1,13 +1,14 @@
-import MainFooter from "@/components/main-footer/main-footer";
-import MainHeader from "@/components/main-header/main-header";
+// import MainFooter from "@/components/main-footer/main-footer";
+import MainHeader from "@/components/main-header";
+import Footer from "@/components/footer";
 import { NextUIProvider } from "@nextui-org/system";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import React from "react";
-import classes from "../components/main-layout/main-layout.module.css";
 import "./globals.css";
 import { ChatProvider } from "./providers";
 import { AuthProvider } from "./providers/AuthProvider";
+import clsx from "clsx";
 
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
@@ -27,14 +28,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="!p-0 !overflow-visible">
       <body className={`${geistSans.variable} antialiased`}>
         <NextUIProvider>
           <AuthProvider>
             <ChatProvider>
-              <MainHeader />
-              <div className={classes.contentWrapper}>{children}</div>
-              <MainFooter />
+              <div className="h-screen flex flex-col">
+                <MainHeader />
+                <div
+                  className={clsx(
+                    "h-[calc(100vh-64px)] sm:h-[calc(100vh-96px)]",
+                    "flex justify-center items-center"
+                  )}
+                >
+                  {children}
+                </div>
+                <Footer />
+              </div>
             </ChatProvider>
           </AuthProvider>
         </NextUIProvider>

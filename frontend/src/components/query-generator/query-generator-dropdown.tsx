@@ -32,6 +32,9 @@ function QueryGeneratorDropdown({label, value, tags, changeHandler, className}: 
         closeOnSelect={true}
         selectionMode="single"
         onSelectionChange={changeHandler}
+        classNames={{
+          base: 'max-h-[300px] overflow-y-scroll'
+        }}
       >
         {tags.map((tag) => (
           <DropdownItem key={tag}>{tag}</DropdownItem>

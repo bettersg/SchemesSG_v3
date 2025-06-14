@@ -1,7 +1,0 @@
-.truncate-first-word {
-  display: block; /* Ensures the element behaves like a block */
-  overflow: hidden; /* Hides overflow content */
-  white-space: nowrap; /* Prevents text wrapping */
-  text-overflow: ellipsis; /* Adds ellipsis at the end */
-  max-width: 200px; /* Set your desired max width in pixels */
-}

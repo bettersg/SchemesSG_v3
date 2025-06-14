@@ -1,20 +1,20 @@
 "use client";
 import { ExpandIcon } from "@/assets/icons/expand-icon";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
-import MainChat from "@/components/main-chat/main-chat";
+import MainChat from "@/components/main-chat";
 import QueryGenerator from "@/components/query-generator/query-generator";
 import SchemesList from "@/components/schemes/schemes-list";
-import SearchBar from "@/components/search-bar/search-bar";
-import UserQuery from "@/components/user-query/user-query";
+import SearchBar from "@/components/search-bar";
+import UserQuery from "@/components/user-query";
 import { Button } from "@nextui-org/react";
 import { useState } from "react";
-import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
 import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
 import backgroundImageTwo from "@/assets/bg2.png";
-import Partners from "@/components/partners/partners";
+import Partners from "@/components/partners";
 import { FilterObjType } from "./interfaces/filter";
+import clsx from "clsx";
 
 export default function Home() {
   const { schemes, setSchemes, sessionId, setSessionId } = useChat();
@@ -27,7 +27,7 @@ export default function Home() {
   const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(
     null
   );
-  const [filterObj, setFilterObj] = useState<FilterObjType>({})
+  const [filterObj, setFilterObj] = useState<FilterObjType>({});
   // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
 
   // LIFTED filter state
@@ -40,11 +40,23 @@ export default function Home() {
   };
 
   return (
-    <main className={classes.homePage}>
+    <main
+      className={clsx(
+        "max-w-[1500px] h-full",
+        "relative z-10",
+        "flex flex-col items-center",
+        "p-4 sm:py-2 md:px-8 lg:px-16",
+        "xl:mx-auto",
+      )}
+    >
       {schemes.length > 0 ? (
         <>
           {/* Desktop Layout */}
-          <div className={classes.mainLayout}>
+          <div className={clsx(
+            "overflow-hidden",
+            "max-md:flex flex-col h-full",
+            "md:grid gap-2 grid-rows-1 grid-cols-2 lg:grid-cols-[2fr_3fr]"
+            )}>
             <div className="flex md:hidden">
               <UserQuery resetFilters={resetFilters} />
             </div>
@@ -74,7 +86,6 @@ export default function Home() {
           <div
             className={`md:hidden flex fixed bottom-0 left-0 right-0 bg-none transition-all duration-300 ease-in-out z-50
             ${isExpanded ? "h-full" : "h-0"}`}
-
           >
             <div
               className={`w-full h-full transition-opacity duration-300 pt-12
@@ -96,7 +107,7 @@ export default function Home() {
               <Button
                 isIconOnly
                 variant="light"
-                onClick={() => setIsExpanded(!isExpanded)}
+                onPress={() => setIsExpanded(!isExpanded)}
                 className="z-10 ml-auto"
               >
                 {isExpanded ? <ExpandIcon /> : null}
@@ -110,14 +121,14 @@ export default function Home() {
         </>
       ) : (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className={classes.welcomeMsg}>
+          <div className="max-w-[35rem] p-4">
             {/* Desktop*/}
             <div className="hidden md:block">
               <h1 className="text-center text-4xl font-bold">
-                <span className="text-[#171347]">Welcome to Schemes</span>
-                <span className="text-[#008AFF]">SG</span>
+                <span className="text-schemes-darkblue">Welcome to Schemes</span>
+                <span className="text-schemes-blue">SG</span>
               </h1>
-              <p className="text-[#171347] text-center mt-6 text-lg">
+              <p className="text-schemes-darkblue text-center mt-6 text-lg">
                 This is an AI-supported search engine for public social
                 assistance schemes in Singapore.
               </p>
@@ -126,19 +137,19 @@ export default function Home() {
             {/* Mobile*/}
             <div className="block md:hidden">
               <h1 className="text-[32px] font-bold leading-tight">
-                <div className="text-[#171347] text-center">Welcome to</div>
+                <div className="text-schemes-darkblue text-center">Welcome to</div>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-[#171347]">Schemes</span>
-                  <span className="text-[#008AFF]">SG</span>
+                  <span className="text-schemes-darkblue">Schemes</span>
+                  <span className="text-schemes-blue">SG</span>
                 </div>
               </h1>
-              <p className="text-[#171347] mt-4 text-center leading-snug text-base">
+              <p className="text-schemes-darkblue mt-4 text-center leading-snug text-base">
                 This is an AI-supported search engine for public social
                 assistance schemes in Singapore.
               </p>
             </div>
           </div>
-          <div className={classes.centered}>
+          <div className="flex flex-col justify-center items-center my-8">
             <QueryGenerator
               // setSessionId={setSessionId}
               setSelectedSupportProvided={setSelectedSupportProvided}
@@ -162,14 +173,14 @@ export default function Home() {
           <Image
             src={backgroundImageOne}
             alt="background image one"
-            className={classes.bgOne}
+            className="absolute w-[35%] top-[10%] left-0 -z-10"
             unoptimized
             priority
           />
           <Image
             src={backgroundImageTwo}
             alt="background image two"
-            className={classes.bgTwo}
+            className="absolute w-[35%] top-0 right-0 -z-10"
             unoptimized
             priority
           />

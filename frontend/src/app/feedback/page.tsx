@@ -2,8 +2,8 @@
 
 import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
 import { useState } from "react";
-import styles from "./feedback.module.css";
 import { fetchWithAuth } from "@/app/utils/api";
+import clsx from "clsx";
 
 export default function FeedbackPage() {
   const [feedbackText, setFeedbackText] = useState("");
@@ -86,20 +86,20 @@ export default function FeedbackPage() {
 
   return (
     <div>
-      <div className={styles.contentContainer}>
-        <div className={styles.headerSection}>
-          <p className={styles.title}>
-            Share Your <span className={styles.highlight}>Feedback</span>
+      <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4">
+        <div className={clsx("text-center mb-8", "flex flex-col gap-4")}>
+          <p className="text-2xl sm:text-3xl font-extrabold text-schemes-blue">
+            Share Your <span>Feedback</span>
           </p>
-          <p className="font-medium text-center" style={{ color: "#171347" }}>
+          <p className="font-medium text-center text-schemes-darkblue">
             Help us improve Schemes SG with your valuable input
           </p>
         </div>
 
-        <Card className={styles.card}>
-          <CardBody className={styles.cardBody}>
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.inputGroup}>
+        <Card className="bg-white border border-schemes-lightgray shadow-none">
+          <CardBody>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Input
                   label="Name"
                   placeholder="Enter your name"
@@ -108,7 +108,6 @@ export default function FeedbackPage() {
                   onChange={(e) => setUserName(e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
-                  className={styles.input}
                 />
 
                 <Input
@@ -120,7 +119,6 @@ export default function FeedbackPage() {
                   onChange={(e) => setUserEmail(e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
-                  className={styles.input}
                 />
               </div>
 
@@ -133,16 +131,16 @@ export default function FeedbackPage() {
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={6}
-                className={styles.textarea}
               />
 
               {submitStatus.message && (
                 <div
-                  className={`${styles.statusMessage} ${
+                  className={clsx(
+                    "p-4 rounded-lg",
                     submitStatus.type === "success"
-                      ? styles.successMessage
-                      : styles.errorMessage
-                  }`}
+                      ? "successMessage"
+                      : "errorMessage"
+                  )}
                 >
                   {submitStatus.message}
                 </div>
@@ -151,7 +149,6 @@ export default function FeedbackPage() {
               <Button
                 type="submit"
                 color="primary"
-                className={styles.submitButton}
                 isLoading={isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit Feedback"}

@@ -1,6 +1,5 @@
 import { SearchIcon } from "@/assets/icons/search-icon";
 import { Button, Textarea } from "@nextui-org/react";
-import classes from "./chat-bar.module.css";
 interface MiniChatBarProps {
   onExpand: () => void;
   isExpanded: boolean;
@@ -24,14 +23,17 @@ export default function MiniChatBar({
           radius="lg"
           color="primary"
           labelPlacement="outside"
-          className={classes.chatBar}
+          className="z-10 mt-auto"
+          classNames={{
+            input:"py-[0.3rem] placeholder:italic placeholder:text-black/20"
+          }}
           endContent={
             <Button
               isIconOnly
               color="primary"
               size="sm"
               radius="full"
-              onClick={onExpand}
+              onPress={onExpand}
               className="min-w-unit-8 w-unit-8 h-unit-8 self-end"
             >
               <SearchIcon />
