@@ -3,9 +3,8 @@ import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { useEffect, useState } from "react";
-import { SearchIcon } from "../../assets/icons/search-icon";
-import { SearchResScheme } from "../schemes/schemes-list";
-import classes from "./search-bar.module.css";
+import { SearchIcon } from "../assets/icons/search-icon";
+import { SearchResScheme } from "./schemes/schemes-list";
 
 export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
   return {
@@ -178,7 +177,10 @@ export default function SearchBar({
             await handleSend();
           }
         }}
-        className={classes.searchBar}
+        className="max-w-[35rem] mx-auto"
+        classNames={{
+          input: 'placeholder:italic placeholder:text-black/20'
+        }}
         type="text"
         size="md"
         radius="lg"
@@ -194,16 +196,16 @@ export default function SearchBar({
                 <span className="text-xs text-gray-500 whitespace-nowrap">
                   Finding schemes...
                 </span>
-                <Spinner className={classes.endContent} size="sm" />
+                <Spinner size="sm" className="mt-auto"/>
               </>
             ) : (
               <Button
-                className={classes.endContent}
                 color="primary"
                 isIconOnly
                 size="sm"
                 radius="full"
-                onClick={async () => await handleSend()}
+                onPress={async () => await handleSend()}
+                 className="mt-auto"
               >
                 <SearchIcon />
               </Button>

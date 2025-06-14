@@ -11,8 +11,8 @@ import {
   Textarea,
 } from "@nextui-org/react";
 import { useState } from "react";
-import classes from "./styleClasses.module.css";
 import { fetchWithAuth } from "@/app/utils/api";
+import clsx from "clsx";
 
 export type UpdateSchemeParams = {
   typeOfRequest?: "Update" | "New";
@@ -91,22 +91,22 @@ export default function UpdateSchemesPage() {
   };
 
   return (
-    <div>
-      <div className={classes.contentContainer}>
-        <div className={classes.headerSection}>
-          <p className={classes.title}>
-            <span className={classes.highlight}>Add or Edit a Listing</span>
+    <div className="w-full h-full overflow-y-scroll flex justify-center grow">
+      <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4">
+        <div className={clsx("text-center mb-8", "flex flex-col gap-4")}>
+          <p className="text-2xl sm:text-3xl font-extrabold">
+            <span className="text-schemes-blue">Add or Edit a Listing</span>
           </p>
-          <p className="font-medium text-center" style={{ color: "#171347" }}>
+          <p className="font-medium text-center text-schemes-darkblue">
             Help us make the Schemes Bank more complete and accurate, and
             improve Schemes SG on the whole.
           </p>
         </div>
 
-        <Card className={classes.card}>
-          <CardBody className={classes.cardBody}>
-            <form onSubmit={handleSubmit} className={classes.form}>
-              <div className={classes.inputGroup}>
+        <Card className="bg-white border border-schemes-lightgray shadow-none">
+          <CardBody>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Input
                   label="Name"
                   placeholder="Enter your name"
@@ -116,7 +116,6 @@ export default function UpdateSchemesPage() {
                   }
                   variant="bordered"
                   labelPlacement="outside"
-                  className={classes.input}
                 />
 
                 <Input
@@ -129,7 +128,6 @@ export default function UpdateSchemesPage() {
                   }
                   variant="bordered"
                   labelPlacement="outside"
-                  className={classes.input}
                 />
               </div>
 
@@ -141,7 +139,6 @@ export default function UpdateSchemesPage() {
                 onChange={(e) => handleInputChange("Scheme", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
-                className={classes.input}
               />
 
               <Input
@@ -152,7 +149,6 @@ export default function UpdateSchemesPage() {
                 onChange={(e) => handleInputChange("Link", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
-                className={classes.input}
               />
 
               <RadioGroup
@@ -178,7 +174,6 @@ export default function UpdateSchemesPage() {
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={4}
-                className={classes.textarea}
               />
 
               <Textarea
@@ -189,27 +184,22 @@ export default function UpdateSchemesPage() {
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={4}
-                className={classes.textarea}
               />
 
               {submitStatus && (
                 <div
-                  className={
+                  className={clsx(
+                    "p-4 rounded-lg",
                     submitStatus.type === "success"
-                      ? classes.successMessage
-                      : classes.errorMessage
-                  }
+                      ? "successMessage"
+                      : "errorMessage"
+                  )}
                 >
                   {submitStatus.message}
                 </div>
               )}
 
-              <Button
-                type="submit"
-                color="primary"
-                className={classes.submitButton}
-                isDisabled={isSubmitting}
-              >
+              <Button type="submit" color="primary" isDisabled={isSubmitting}>
                 {isSubmitting ? <Spinner color="white" size="sm" /> : "Submit"}
               </Button>
             </form>
