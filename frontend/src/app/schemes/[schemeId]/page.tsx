@@ -230,7 +230,7 @@ export default function SchemePage() {
               <div className="flex gap-2 mt-2">
                 {scheme.link && <Button isIconOnly size="sm" aria-label="website" color="primary" variant="flat" as={Link} href={scheme.link} isExternal><LinkIcon size={20} /></Button>}
                 {scheme.email && <Button isIconOnly size="sm" aria-label="email" color="primary" variant="flat" as={Link} href={`mailto:${scheme.email}`}><MailIcon size={20} /></Button>}
-                {scheme.phone && <Button isIconOnly size="sm" aria-label="phone" color="primary" variant="flat" as={Link} href={`tel:${scheme.phone.slice(0, scheme.phone.indexOf(','))}`}><PhoneIcon size={20} /></Button>}
+                {scheme.phone && <Button isIconOnly size="sm" aria-label="phone" color="primary" variant="flat" as={Link} href={`tel:${scheme.phone.split(',')[0].trim()}`}><PhoneIcon size={20} /></Button>}
               </div>
             </div>
           </div>
