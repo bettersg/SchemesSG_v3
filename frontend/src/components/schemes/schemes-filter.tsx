@@ -99,7 +99,7 @@ function SchemesFilter({
       <div
         className={clsx(
           "max-xl:bg-schemes-lightgray max-xl:p-2 max-xl:rounded-lg max-xl:shadow-md",
-          "absolute top-14 z-20", 
+          "absolute top-14 z-50", 
           showFilter ? "flex" : "hidden",
           "flex-col gap-2 items-end",
           "xl:static xl:flex xl:flex-row"

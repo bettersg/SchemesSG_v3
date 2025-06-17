@@ -213,7 +213,7 @@ export default function SchemePage() {
 
   return (
     scheme && (
-      <div className="min-h-screen bg-background p-4 w-full">
+      <div className="overflow-y-scroll bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
           {/* Title Section */}
           <div className="sm:flex items-center gap-4 mb-8">

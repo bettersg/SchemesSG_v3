@@ -6,7 +6,7 @@ export default function Footer() {
       className={clsx(
         "max-md:hidden py-2",
         "bg-schemes-darkblue text-white",
-        "flex justify-center"
+        "flex justify-center",
       )}
     >
       <p className="text-xs">© 2025 Schemes SG.</p>

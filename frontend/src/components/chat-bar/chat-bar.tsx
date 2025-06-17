@@ -37,7 +37,7 @@ export default function ChatBar({
             handleSend();
           }
         }}
-        className="z-10 mt-auto border-solid border-2 border-primary-100 rounded-2xl"
+        className="z-10 border-solid border-2 border-primary-100 rounded-2xl"
         classNames={{
           input:"py-[0.3rem] placeholder:italic placeholder:text-black/20"
         }}

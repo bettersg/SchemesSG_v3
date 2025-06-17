@@ -91,7 +91,7 @@ export default function UpdateSchemesPage() {
   };
 
   return (
-    <div className="w-full h-full overflow-y-scroll flex justify-center grow">
+    <div className="w-full h-full overflow-y-scroll flex justify-center items-center grow">
       <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4">
         <div className={clsx("text-center mb-8", "flex flex-col gap-4")}>
           <p className="text-2xl sm:text-3xl font-extrabold">

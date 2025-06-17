@@ -4,22 +4,25 @@ import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list";
-import { Spacer } from "@nextui-org/react";
-import { useEffect, useRef, useState } from "react";
+import { Button, Spacer } from "@nextui-org/react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import UserQuery from "./user-query";
 import { FilterObjType } from "@/app/interfaces/filter";
 import clsx from "clsx";
+import { MinimizeIcon } from "@/assets/icons/minimize-icon";
 
 type MainChatProps = {
   sessionId: string;
   filterObj: FilterObjType;
   resetFilters: () => void;
+  setIsExpanded?: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function MainChat({
   sessionId,
   filterObj,
   resetFilters,
+  setIsExpanded,
 }: MainChatProps) {
   const { messages, setMessages } = useChat();
   const [userInput, setUserInput] = useState("");
@@ -155,6 +158,7 @@ export default function MainChat({
   return (
     <div
       className={clsx(
+        "w-full h-full",
         "flex flex-col",
         "bg-schemes-lightgray rounded-2xl",
         "mx-auto px-8 py-2 sm:p-[0.8rem]"
@@ -166,6 +170,23 @@ export default function MainChat({
         streamingMessage={currentStreamingMessage}
         scrollableDivRef={scrollableDivRef}
       />
+      <div
+        className={clsx(
+          "flex justify-between items-center",
+          "bg-transparent border-b",
+          "mt-auto border-gray-100"
+        )}
+      >
+        {setIsExpanded && <Button
+          isIconOnly
+          color="primary"
+          variant="solid"
+          onPress={() => setIsExpanded(false)}
+          className="z-10 ml-auto"
+        >
+          <MinimizeIcon />
+        </Button>}
+      </div>
       <Spacer y={4} />
       <ChatBar
         userInput={userInput}

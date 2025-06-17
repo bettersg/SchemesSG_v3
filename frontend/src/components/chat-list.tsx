@@ -20,7 +20,7 @@ export default function ChatList({
       className={clsx(
         "chatList",
         "flex flex-col gap-2",
-        "p-4 overflow-y-hidden max-h-[65vh] sm:max-h-[68vh]"
+        "p-4 overflow-y-auto max-h-[65vh] sm:max-h-[68vh]"
       )}
       ref={scrollableDivRef}
     >

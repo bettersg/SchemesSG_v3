@@ -85,8 +85,7 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div>
-      <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4">
+      <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4 flex flex-col justify-center">
         <div className={clsx("text-center mb-8", "flex flex-col gap-4")}>
           <p className="text-2xl sm:text-3xl font-extrabold text-schemes-blue">
             Share Your <span>Feedback</span>
@@ -157,6 +156,5 @@ export default function FeedbackPage() {
           </CardBody>
         </Card>
       </div>
-    </div>
   );
 }

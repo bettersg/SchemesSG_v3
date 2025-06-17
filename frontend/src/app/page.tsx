@@ -46,17 +46,19 @@ export default function Home() {
         "relative z-10",
         "flex flex-col items-center",
         "p-4 sm:py-2 md:px-8 lg:px-16",
-        "xl:mx-auto",
+        "xl:mx-auto"
       )}
     >
       {schemes.length > 0 ? (
         <>
           {/* Desktop Layout */}
-          <div className={clsx(
-            "overflow-hidden",
-            "max-md:flex flex-col h-full",
-            "md:grid gap-2 grid-rows-1 grid-cols-2 lg:grid-cols-[2fr_3fr]"
-            )}>
+          <div
+            className={clsx(
+              "overflow-hidden",
+              "max-md:flex flex-col h-full",
+              "md:grid gap-2 grid-rows-1 grid-cols-2 lg:grid-cols-[2fr_3fr]"
+            )}
+          >
             <div className="flex md:hidden">
               <UserQuery resetFilters={resetFilters} />
             </div>
@@ -88,30 +90,18 @@ export default function Home() {
             ${isExpanded ? "h-full" : "h-0"}`}
           >
             <div
-              className={`w-full h-full transition-opacity duration-300 pt-12
-              ${isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+              className={clsx(
+                "w-full h-full",
+                "transition-opacity duration-300 pt-12",
+                !isExpanded && "pointer-events-none"
+              )}
             >
-              <MainChat
+              {isExpanded && <MainChat
                 sessionId={sessionId}
                 filterObj={filterObj}
                 resetFilters={resetFilters}
-              />
-            </div>
-            <div
-              className={`absolute left-0 right-0 flex justify-between items-center p-2 bg-transparent border-b
-              ${isExpanded ? "border-gray-100" : "border-none"} bottom-20`}
-            >
-              {/* {isExpanded && (
-                <span className="text-sm font-medium px-2">Chat</span>
-              )} */}
-              <Button
-                isIconOnly
-                variant="light"
-                onPress={() => setIsExpanded(!isExpanded)}
-                className="z-10 ml-auto"
-              >
-                {isExpanded ? <ExpandIcon /> : null}
-              </Button>
+                setIsExpanded={setIsExpanded}
+              />}
             </div>
             <MiniChatBar
               onExpand={() => setIsExpanded(true)}
@@ -125,7 +115,9 @@ export default function Home() {
             {/* Desktop*/}
             <div className="hidden md:block">
               <h1 className="text-center text-4xl font-bold">
-                <span className="text-schemes-darkblue">Welcome to Schemes</span>
+                <span className="text-schemes-darkblue">
+                  Welcome to Schemes
+                </span>
                 <span className="text-schemes-blue">SG</span>
               </h1>
               <p className="text-schemes-darkblue text-center mt-6 text-lg">
@@ -137,7 +129,9 @@ export default function Home() {
             {/* Mobile*/}
             <div className="block md:hidden">
               <h1 className="text-[32px] font-bold leading-tight">
-                <div className="text-schemes-darkblue text-center">Welcome to</div>
+                <div className="text-schemes-darkblue text-center">
+                  Welcome to
+                </div>
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-schemes-darkblue">Schemes</span>
                   <span className="text-schemes-blue">SG</span>
