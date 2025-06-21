@@ -8,8 +8,9 @@ import { useInView } from "framer-motion";
 import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import { SearchResponse } from "@/app/interfaces/schemes";
-import { mapToScheme } from "../search-bar/search-bar";
+import { mapToScheme } from "../search-bar";
 import { FilterObjType } from "@/app/interfaces/filter";
+import clsx from "clsx";
 // Type for scheme from search results
 export type SearchResScheme = {
   schemeId: string;
@@ -141,9 +142,9 @@ export default function SchemesList({
     }
   };
   return (
-    <div>
-      <div className="flex flex-col gap-2 justify-between md:flex-row">
-        <div className="flex flex-col gap-1 shrink-0">
+    <div className="h-full flex flex-col">
+      <div className="flex gap-2 justify-between">
+        <div className="flex flex-col gap-1 shrink-0 p-2">
           <p className="text-base font-semibold">Search Results</p>
           <p className="text-xs text-slate-500">
             Showing {filteredSchemes.length} schemes
@@ -163,13 +164,11 @@ export default function SchemesList({
       <Spacer y={3} />
 
       <div
-        className="gap-2 grid grid-cols-1 sm:grid-cols-2"
-        style={{
-          overflowX: "hidden",
-          overflowY: "auto",
-          maxHeight: "85vh",
-          padding: "0.5rem",
-        }}
+        className={clsx(
+          "h-full p-2",
+          "gap-2 grid grid-cols-1 lg:grid-cols-2",
+          "overflow-x-hidden overflow-y-scroll",
+        )}
       >
         {filteredSchemes.map((scheme) => (
           <SchemeCard key={scheme.schemeId} scheme={scheme} />

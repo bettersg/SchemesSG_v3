@@ -1,12 +1,17 @@
 import { useChat } from "@/app/providers";
 import { ResetIcon } from "@/assets/icons/reset-icon";
-import { Card, CardBody, CardHeader } from "@nextui-org/card";
+import { Card, CardBody, CardHeader } from "@nextui-org/react";
 import { Button, Tooltip, useDisclosure } from "@nextui-org/react";
-import ResetQueryModal from "../reset-query-modal/reset-query-modal";
-import classes from "./user-query.module.css";
+import ResetQueryModal from "./reset-query-modal";
+import clsx from "clsx";
 
-export default function UserQuery({ resetFilters }: { resetFilters: () => void }) {
-  const { setSchemes, messages, setMessages, setSessionId, setUserQuery } = useChat();
+export default function UserQuery({
+  resetFilters,
+}: {
+  resetFilters: () => void;
+}) {
+  const { setSchemes, messages, setMessages, setSessionId, setUserQuery } =
+    useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
   const handleReset = () => {
@@ -23,12 +28,16 @@ export default function UserQuery({ resetFilters }: { resetFilters: () => void }
 
   return (
     <Card
-      className={`${classes.card} ${classes.userQuery}`}
+      className={clsx(
+        "w-full sm:w-[95%] p-[3px] my-2 sm:mx-2",
+        "rounded-2xl text-sm",
+        "bg-white"
+      )}
       fullWidth={false}
       radius="lg"
       shadow="none"
     >
-      <CardHeader className={`justify-between ${classes.cardHeader}`}>
+      <CardHeader className="justify-between px-2 py-1">
         <h4 className="text-small leading-none text-default-600">
           Your query is:
         </h4>
@@ -38,7 +47,7 @@ export default function UserQuery({ resetFilters }: { resetFilters: () => void }
             isIconOnly
             radius="full"
             size="sm"
-            className={`${classes.resetButton}`}
+            className="bg-transparent w-6 h-6"
           >
             <ResetIcon />
           </Button>
@@ -49,7 +58,7 @@ export default function UserQuery({ resetFilters }: { resetFilters: () => void }
           handleReset={handleReset}
         />
       </CardHeader>
-      <CardBody className={`${classes.cardBody}`}>
+      <CardBody className="px-2 py-1">
         <b>{firstMessage}</b>
       </CardBody>
     </Card>

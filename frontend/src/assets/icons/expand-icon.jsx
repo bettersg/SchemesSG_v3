@@ -10,7 +10,7 @@ export const ExpandIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      d="M4 9L12 17L20 9"
+      d="M4 14L12 6L20 14"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"

@@ -5,7 +5,6 @@ import {
   PopoverTrigger,
 } from "@nextui-org/react";
 import { InfoIcon } from "../../assets/icons/info-icon";
-import classes from "./query-suggestions.module.css";
 
 interface QuerySuggestionsProps {
   setUserInput: (input: string) => void;
@@ -29,20 +28,20 @@ const QuerySuggestions = ({ setUserInput }: QuerySuggestionsProps) => {
           isIconOnly
           size="sm"
           variant="light"
-          className={classes.infoButton}
+          className="text-schemes-darkgray hover:text-schemes-darkblue"
         >
           <InfoIcon />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={classes.popoverContent}>
+      <PopoverContent className="w-[320px] rounded-xl shadow-md">
         <div className="p-4">
-          <h3 className={classes.title}>Suggested Questions</h3>
-          <ul className={classes.suggestionList}>
+          <h3 className="text-lg mb-3 text-schemes-darkblue">Suggested Questions</h3>
+          <ul className="flex flex-col gap-1.5">
             {suggestions.map((query, index) => (
               <li
                 key={index}
                 onClick={() => handleSuggestionClick(query)}
-                className={classes.suggestionItem}
+                className="text-schemes-darkgray px-3 py-2 rounded-md cursor-pointer hover:bg-schemes-lightgray hover:text-schemes-blue"
               >
                 {query}
               </li>
