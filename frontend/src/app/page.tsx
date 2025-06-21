@@ -108,7 +108,7 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center h-full">
+        <div className="flex flex-col items-center">
           <div className="max-w-[35rem] p-4">
             {/* Desktop*/}
             <div className="hidden md:block">
