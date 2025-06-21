@@ -1,6 +1,7 @@
 import { Button, Spinner, Textarea } from "@nextui-org/react";
 import { SendIcon } from "../../assets/icons/send-icon";
 import QuerySuggestions from "../query-suggestions/query-suggestions";
+import { useEffect, useRef } from "react";
 
 interface ChatBarProps {
   userInput: string;
@@ -26,9 +27,17 @@ export default function ChatBar({
     setUserInput(input);
   };
 
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   return (
     <>
       <Textarea
+        ref={inputRef}
         value={userInput}
         onChange={(e) => setUserInput(e.target.value)}
         onKeyDown={async (e) => {
@@ -39,7 +48,7 @@ export default function ChatBar({
         }}
         className="z-10 border-solid border-2 border-primary-100 rounded-2xl"
         classNames={{
-          input:"py-[0.3rem] placeholder:italic placeholder:text-black/20"
+          input: "py-[0.3rem] placeholder:italic placeholder:text-black/20",
         }}
         type="text"
         size="md"

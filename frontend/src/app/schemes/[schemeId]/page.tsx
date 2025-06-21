@@ -28,6 +28,7 @@ import { LocationIcon } from "@/assets/icons/location-icon";
 import { PhoneIcon } from "@/assets/icons/phone-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import clsx from "clsx";
 
 // Type for full scheme properties
 type Scheme = SearchResScheme & {
@@ -216,7 +217,12 @@ export default function SchemePage() {
       <div className="overflow-y-scroll bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
           {/* Title Section */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+          <div
+            className={clsx(
+              "text-center sm:text-left gap-4 mb-8",
+              "flex flex-col sm:flex-row items-center",
+            )}
+          >
             <Image
               width={120}
               height={120}
@@ -288,9 +294,7 @@ export default function SchemePage() {
             </CardHeader>
             <CardBody>
               {scheme.description && (
-                <Markdown
-                  className={`mb-5 ${styles.showMarker}`}
-                >
+                <Markdown className={`mb-5 ${styles.showMarker}`}>
                   {scheme.description}
                 </Markdown>
               )}
