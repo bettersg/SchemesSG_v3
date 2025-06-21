@@ -1,12 +1,12 @@
-export const HamburgerIcon = (props) => (
+export const HamburgerIcon = ({ size, ...props }) => (
   <svg
     aria-hidden="true"
     fill="none"
     focusable="false"
-    height="1em"
+    height={size || 24}
+    width={size || 24}
     role="presentation"
     viewBox="0 0 24 24"
-    width="1em"
     {...props}
   >
     <path

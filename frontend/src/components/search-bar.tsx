@@ -190,7 +190,7 @@ export default function SearchBar({
         description="Please avoid providing identifiable information."
         placeholder="E.g. I am a cancer patient in need of financial assistance and food support."
         endContent={
-          <div className="flex items-center justify-end gap-2 h-full">
+          <div className="flex items-end gap-2 h-full">
             {isBotResponseGenerating ? (
               <>
                 <span className="text-xs text-gray-500 whitespace-nowrap">

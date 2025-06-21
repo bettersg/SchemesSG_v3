@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { HamburgerIcon } from "../assets/icons/hamburger-icon";
+import clsx from "clsx";
 
 type NavbarItem = {
   label: string;
@@ -132,8 +133,11 @@ export default function MainHeader() {
 
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="md:hidden text-gray-700 hover:bg-gray-100 p-1 rounded-lg transition-colors"
-          icon={<HamburgerIcon />}
+          className={clsx(
+            "md:hidden w-min h-min p-1 rounded-lg",
+            "text-gray-700 hover:bg-gray-100 transition-colors"
+          )}
+          icon={<HamburgerIcon size={32}/>}
         />
       </NavbarContent>
 

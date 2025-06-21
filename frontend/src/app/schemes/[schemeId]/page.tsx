@@ -216,7 +216,7 @@ export default function SchemePage() {
       <div className="overflow-y-scroll bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
           {/* Title Section */}
-          <div className="sm:flex items-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
             <Image
               width={120}
               height={120}
@@ -233,7 +233,7 @@ export default function SchemePage() {
                 <h6 className="text-medium">{scheme.schemeName}</h6>
               )}
               {/* Action Buttons */}
-              <div className="flex gap-2 mt-2">
+              <div className="flex justify-center sm:justify-start gap-2 mt-2">
                 {scheme.link && (
                   <Button
                     isIconOnly

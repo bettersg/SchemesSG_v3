@@ -85,8 +85,14 @@ export default function FeedbackPage() {
   };
 
   return (
-      <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4 flex flex-col justify-center">
-        <div className={clsx("text-center mb-8", "flex flex-col gap-4")}>
+    <div className="w-full overflow-y-auto">
+      <div
+        className={clsx(
+          "overflow-y-auto max-w-[400px] sm:max-w-[600px]",
+          "mx-auto p-2 sm:p-4"
+        )}
+      >
+        <div className={clsx("text-center my-8", "flex flex-col gap-4")}>
           <p className="text-2xl sm:text-3xl font-extrabold text-schemes-blue">
             Share Your <span>Feedback</span>
           </p>
@@ -94,7 +100,6 @@ export default function FeedbackPage() {
             Help us improve Schemes SG with your valuable input
           </p>
         </div>
-
         <Card className="bg-white border border-schemes-lightgray shadow-none">
           <CardBody>
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -108,7 +113,6 @@ export default function FeedbackPage() {
                   variant="bordered"
                   labelPlacement="outside"
                 />
-
                 <Input
                   label="Email"
                   placeholder="Enter your email"
@@ -120,7 +124,6 @@ export default function FeedbackPage() {
                   labelPlacement="outside"
                 />
               </div>
-
               <Textarea
                 label="Your Feedback"
                 isRequired
@@ -131,7 +134,6 @@ export default function FeedbackPage() {
                 labelPlacement="outside"
                 minRows={6}
               />
-
               {submitStatus.message && (
                 <div
                   className={clsx(
@@ -144,17 +146,13 @@ export default function FeedbackPage() {
                   {submitStatus.message}
                 </div>
               )}
-
-              <Button
-                type="submit"
-                color="primary"
-                isLoading={isSubmitting}
-              >
+              <Button type="submit" color="primary" isLoading={isSubmitting}>
                 {isSubmitting ? "Submitting..." : "Submit Feedback"}
               </Button>
             </form>
           </CardBody>
         </Card>
       </div>
+    </div>
   );
 }

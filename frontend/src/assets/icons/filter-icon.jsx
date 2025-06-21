@@ -11,9 +11,9 @@ export const FilterIcon = ({ size, ...props }) => (
   >
     <path
       d="M5 4H19L14 10.5V20L10 16V10.5L5 4Z"
-      stroke-width="1.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );

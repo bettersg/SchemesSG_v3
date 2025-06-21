@@ -86,7 +86,8 @@ function SchemesFilter({
   };
 
   return (
-    <div className="w-full flex gap-2 flex-wrap relative items-center xl:justify-end">
+    <div className="w-full flex gap-2 flex-wrap relative items-center xl:justify-end"
+    >
       <Button
         color="primary"
         isIconOnly
@@ -99,7 +100,7 @@ function SchemesFilter({
       <div
         className={clsx(
           "max-xl:bg-schemes-lightgray max-xl:p-2 max-xl:rounded-lg max-xl:shadow-md",
-          "absolute top-14 z-50", 
+          "absolute top-14 z-50",
           showFilter ? "flex" : "hidden",
           "flex-col gap-2 items-end",
           "xl:static xl:flex xl:flex-row"

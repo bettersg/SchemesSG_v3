@@ -91,18 +91,22 @@ export default function UpdateSchemesPage() {
   };
 
   return (
-    <div className="w-full h-full overflow-y-scroll flex justify-center items-center grow">
-      <div className="max-w-[500px] sm:max-w-[800px] mx-auto p-2 sm:p-4">
-        <div className={clsx("text-center mb-8", "flex flex-col gap-4")}>
+    <div className="w-full overflow-y-auto">
+      <div
+        className={clsx(
+          "max-w-[400px] sm:max-w-[600px]",
+          "mx-auto p-2 sm:p-4"
+        )}
+      >
+        <div className={clsx("text-center my-8", "flex flex-col gap-4")}>
           <p className="text-2xl sm:text-3xl font-extrabold">
             <span className="text-schemes-blue">Add or Edit a Listing</span>
           </p>
           <p className="font-medium text-center text-schemes-darkblue">
-            Help us make the Schemes Bank more complete and accurate, and
-            improve Schemes SG on the whole.
+            Help us make the Schemes Bank more complete and accurate, and improve
+            Schemes SG on the whole.
           </p>
         </div>
-
         <Card className="bg-white border border-schemes-lightgray shadow-none">
           <CardBody>
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -111,26 +115,20 @@ export default function UpdateSchemesPage() {
                   label="Name"
                   placeholder="Enter your name"
                   value={updates.userName || ""}
-                  onChange={(e) =>
-                    handleInputChange("userName", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("userName", e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
                 />
-
                 <Input
                   label="Email"
                   placeholder="Enter your email"
                   type="email"
                   value={updates.userEmail || ""}
-                  onChange={(e) =>
-                    handleInputChange("userEmail", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("userEmail", e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
                 />
               </div>
-
               <Input
                 label="Scheme"
                 isRequired
@@ -140,7 +138,6 @@ export default function UpdateSchemesPage() {
                 variant="bordered"
                 labelPlacement="outside"
               />
-
               <Input
                 label="Link"
                 placeholder="Enter the scheme link"
@@ -150,7 +147,6 @@ export default function UpdateSchemesPage() {
                 variant="bordered"
                 labelPlacement="outside"
               />
-
               <RadioGroup
                 label="Type of Request"
                 size="sm"
@@ -163,19 +159,15 @@ export default function UpdateSchemesPage() {
                 <Radio value="Update">Update</Radio>
                 <Radio value="New">New</Radio>
               </RadioGroup>
-
               <Textarea
                 label="Description"
                 placeholder="Enter a description"
                 value={updates.Description || ""}
-                onChange={(e) =>
-                  handleInputChange("Description", e.target.value)
-                }
+                onChange={(e) => handleInputChange("Description", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={4}
               />
-
               <Textarea
                 label="Changes"
                 placeholder="Describe the changes"
@@ -185,7 +177,6 @@ export default function UpdateSchemesPage() {
                 labelPlacement="outside"
                 minRows={4}
               />
-
               {submitStatus && (
                 <div
                   className={clsx(
@@ -198,7 +189,6 @@ export default function UpdateSchemesPage() {
                   {submitStatus.message}
                 </div>
               )}
-
               <Button type="submit" color="primary" isDisabled={isSubmitting}>
                 {isSubmitting ? <Spinner color="white" size="sm" /> : "Submit"}
               </Button>

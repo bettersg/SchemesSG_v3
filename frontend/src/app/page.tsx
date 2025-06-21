@@ -1,12 +1,10 @@
 "use client";
-import { ExpandIcon } from "@/assets/icons/expand-icon";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat";
 import QueryGenerator from "@/components/query-generator/query-generator";
 import SchemesList from "@/components/schemes/schemes-list";
 import SearchBar from "@/components/search-bar";
 import UserQuery from "@/components/user-query";
-import { Button } from "@nextui-org/react";
 import { useState } from "react";
 import { useChat } from "./providers";
 import Image from "next/image";
