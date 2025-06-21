@@ -18,16 +18,17 @@ import {
   Card,
   CardHeader,
   CardBody,
-  CardFooter
+  CardFooter,
 } from "@nextui-org/react";
-import SchemeSkeleton from "@/components/schemes/scheme-skeleton"
+import SchemeSkeleton from "@/components/schemes/scheme-skeleton";
 import Markdown from "react-markdown";
 import { MailIcon } from "@/assets/icons/mail-icon";
 import { LinkIcon } from "@/assets/icons/link-icon";
-import { LocationIcon } from "@/assets/icons/location-icon"
+import { LocationIcon } from "@/assets/icons/location-icon";
 import { PhoneIcon } from "@/assets/icons/phone-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import clsx from "clsx";
 
 // Type for full scheme properties
 type Scheme = SearchResScheme & {
@@ -155,7 +156,8 @@ export default function SchemePage() {
             Scheme: schemeData.scheme || "",
             "Who's it for": schemeData.who_is_it_for || "",
             Agency: schemeData.agency || "",
-            Description: schemeData.llm_description || schemeData.description || "",
+            Description:
+              schemeData.llm_description || schemeData.description || "",
             scraped_text: schemeData.scraped_text || "",
             "What it gives": schemeData.what_it_gives || "",
             Link: schemeData.link || "",
@@ -212,40 +214,98 @@ export default function SchemePage() {
 
   return (
     scheme && (
-      <div className="min-h-screen bg-background p-4 w-full">
+      <div className="overflow-y-scroll bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
           {/* Title Section */}
-          <div className="sm:flex items-center gap-4 mb-8">
+          <div
+            className={clsx(
+              "text-center sm:text-left gap-4 mb-8",
+              "flex flex-col sm:flex-row items-center",
+            )}
+          >
             <Image
               width={120}
               height={120}
               alt={`${scheme.agency} logo`}
               radius="sm"
               className="w-24 h-24 md:w-32 md:h-32 object-contain shadow-lg md:mb-0 mb-4"
-              src={scheme.image} />
+              src={scheme.image}
+            />
             <div className="flex flex-col gap-1">
-              {scheme.agency && <h1 className="text-3xl font-bold">{scheme.agency}</h1>}
-              {scheme.schemeName && <h6 className="text-medium">{scheme.schemeName}</h6>}
+              {scheme.agency && (
+                <h1 className="text-3xl font-bold">{scheme.agency}</h1>
+              )}
+              {scheme.schemeName && (
+                <h6 className="text-medium">{scheme.schemeName}</h6>
+              )}
               {/* Action Buttons */}
-              <div className="flex gap-2 mt-2">
-                {scheme.link && <Button isIconOnly size="sm" aria-label="website" color="primary" variant="flat" as={Link} href={scheme.link} isExternal><LinkIcon size={20} /></Button>}
-                {scheme.email && <Button isIconOnly size="sm" aria-label="email" color="primary" variant="flat" as={Link} href={`mailto:${scheme.email}`}><MailIcon size={20} /></Button>}
-                {scheme.phone && <Button isIconOnly size="sm" aria-label="phone" color="primary" variant="flat" as={Link} href={`tel:${scheme.phone.split(',')[0].trim()}`}><PhoneIcon size={20} /></Button>}
+              <div className="flex justify-center sm:justify-start gap-2 mt-2">
+                {scheme.link && (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    aria-label="website"
+                    color="primary"
+                    variant="flat"
+                    as={Link}
+                    href={scheme.link}
+                    isExternal
+                  >
+                    <LinkIcon size={20} />
+                  </Button>
+                )}
+                {scheme.email && (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    aria-label="email"
+                    color="primary"
+                    variant="flat"
+                    as={Link}
+                    href={`mailto:${scheme.email}`}
+                  >
+                    <MailIcon size={20} />
+                  </Button>
+                )}
+                {scheme.phone && (
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    aria-label="phone"
+                    color="primary"
+                    variant="flat"
+                    as={Link}
+                    href={`tel:${scheme.phone.slice(
+                      0,
+                      scheme.phone.indexOf(",")
+                    )}`}
+                  >
+                    <PhoneIcon size={20} />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
 
           {/* Description Card */}
           <Card className="p-6 text-slate-700">
-            <CardHeader><h1 className="text-xl font-bold">Description</h1></CardHeader>
+            <CardHeader>
+              <h1 className="text-xl font-bold">Description</h1>
+            </CardHeader>
             <CardBody>
-              {scheme.description && <Markdown className={`mb-5 ${styles.showMarker}`}>{scheme.description}</Markdown>}
+              {scheme.description && (
+                <Markdown className={`mb-5 ${styles.showMarker}`}>
+                  {scheme.description}
+                </Markdown>
+              )}
             </CardBody>
           </Card>
 
           {/* Details Card */}
           <Card className="p-6 mt-10 text-slate-700">
-            <CardHeader><h1 className="text-xl font-bold">Details</h1></CardHeader>
+            <CardHeader>
+              <h1 className="text-xl font-bold">Details</h1>
+            </CardHeader>
             <CardBody>
               <div className="sm:flex gap-5 mb-4">
                 {/* main details */}
@@ -253,29 +313,41 @@ export default function SchemePage() {
                   <div className="sm:flex gap-5 mb-4">
                     {/* who */}
                     <div className="flex-1 mb-4">
-                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">Who is it for</span>
-                      {scheme.targetAudience && <ul className="list-disc list-inside marker:text-slate-500">
-                        {scheme.targetAudience.split(",").map((target) => (
-                          <li key={target}>{target.trim()}</li>
-                        ))}
-                      </ul>}
+                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                        Who is it for
+                      </span>
+                      {scheme.targetAudience && (
+                        <ul className="list-disc list-inside marker:text-slate-500">
+                          {scheme.targetAudience.split(",").map((target) => (
+                            <li key={target}>{target.trim()}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     {/* what */}
                     <div className="flex-1">
-                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">What it gives</span>
-                      {scheme.benefits && <ul className="list-disc list-inside marker:text-slate-500">
-                        {scheme.benefits.split(",").map((benefit) => (
-                          <li key={benefit}>{benefit.trim()}</li>
-                        ))}
-                      </ul>}
+                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                        What it gives
+                      </span>
+                      {scheme.benefits && (
+                        <ul className="list-disc list-inside marker:text-slate-500">
+                          {scheme.benefits.split(",").map((benefit) => (
+                            <li key={benefit}>{benefit.trim()}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
                   <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">Who can apply</span>
+                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                      Who can apply
+                    </span>
                     {scheme.eligibilityText && <p>{scheme.eligibilityText}</p>}
                   </div>
                   <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">How to apply</span>
+                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                      How to apply
+                    </span>
                     {scheme.howToApply && <p>{scheme.howToApply}</p>}
                   </div>
                 </div>
@@ -283,53 +355,88 @@ export default function SchemePage() {
                 <div className="flex-1">
                   {/* type */}
                   <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">Type</span>
-                    {scheme.schemeType && <div className="flex flex-wrap gap-2">
-                      {scheme.schemeType.split(",").map((type) => (
-                        <Chip
-                          key={type}
-                          size="sm"
-                          radius="sm"
-                          color="primary"
-                          variant="flat"
-                        >
-                          {type.trim()}
-                        </Chip>
-                      ))}
-                    </div>}
+                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                      Type
+                    </span>
+                    {scheme.schemeType && (
+                      <div className="flex flex-wrap gap-2">
+                        {scheme.schemeType.split(",").map((type) => (
+                          <Chip
+                            key={type}
+                            size="sm"
+                            radius="sm"
+                            color="primary"
+                            variant="flat"
+                          >
+                            {type.trim()}
+                          </Chip>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {/* contacts */}
                   <div className="flex flex-col gap-2 mt-6">
                     {scheme.phone && (
                       <div>
-                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Phone</p>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">
+                          Phone
+                        </p>
                         <p>{scheme.phone}</p>
                       </div>
                     )}
                     {scheme.email && (
                       <div>
-                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Email</p>
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">
+                          Email
+                        </p>
                         <p>{scheme.email}</p>
                       </div>
                     )}
                     {scheme.address && (
                       <div>
-                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">Location</p>
-                        {scheme.planningArea && <p>
-                          <LocationIcon size={20} />
-                          <span>{scheme.planningArea}</span>
-                        </p>}
+                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">
+                          Location
+                        </p>
+                        {scheme.planningArea && (
+                          <p>
+                            <LocationIcon size={20} />
+                            <span>{scheme.planningArea}</span>
+                          </p>
+                        )}
                         <p>{scheme.address}</p>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-
             </CardBody>
             <CardFooter className="gap-4 justify-center sm:justify-end">
-              {scheme.address && <Button color="primary" endContent={<LocationIcon size={20} />} variant="ghost" as={Link} href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(scheme.address)}`} isExternal>Get Directions</Button>}
-              {scheme.link && <Button color="primary" endContent={<LinkIcon size={20} />} variant="ghost" as={Link} href={scheme.link} isExternal>Find out more</Button>}
+              {scheme.address && (
+                <Button
+                  color="primary"
+                  endContent={<LocationIcon size={20} />}
+                  variant="ghost"
+                  as={Link}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    scheme.address
+                  )}`}
+                  isExternal
+                >
+                  Get Directions
+                </Button>
+              )}
+              {scheme.link && (
+                <Button
+                  color="primary"
+                  endContent={<LinkIcon size={20} />}
+                  variant="ghost"
+                  as={Link}
+                  href={scheme.link}
+                  isExternal
+                >
+                  Find out more
+                </Button>
+              )}
             </CardFooter>
           </Card>
 

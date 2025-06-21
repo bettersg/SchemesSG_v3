@@ -11,8 +11,8 @@ import {
   Textarea,
 } from "@nextui-org/react";
 import { useState } from "react";
-import classes from "./styleClasses.module.css";
 import { fetchWithAuth } from "@/app/utils/api";
+import clsx from "clsx";
 
 export type UpdateSchemeParams = {
   typeOfRequest?: "Update" | "New";
@@ -91,48 +91,44 @@ export default function UpdateSchemesPage() {
   };
 
   return (
-    <div>
-      <div className={classes.contentContainer}>
-        <div className={classes.headerSection}>
-          <p className={classes.title}>
-            <span className={classes.highlight}>Add or Edit a Listing</span>
+    <div className="w-full overflow-y-auto">
+      <div
+        className={clsx(
+          "max-w-[400px] sm:max-w-[600px]",
+          "mx-auto p-2 sm:p-4"
+        )}
+      >
+        <div className={clsx("text-center my-8", "flex flex-col gap-4")}>
+          <p className="text-2xl sm:text-3xl font-extrabold">
+            <span className="text-schemes-blue">Add or Edit a Listing</span>
           </p>
-          <p className="font-medium text-center" style={{ color: "#171347" }}>
-            Help us make the Schemes Bank more complete and accurate, and
-            improve Schemes SG on the whole.
+          <p className="font-medium text-center text-schemes-darkblue">
+            Help us make the Schemes Bank more complete and accurate, and improve
+            Schemes SG on the whole.
           </p>
         </div>
-
-        <Card className={classes.card}>
-          <CardBody className={classes.cardBody}>
-            <form onSubmit={handleSubmit} className={classes.form}>
-              <div className={classes.inputGroup}>
+        <Card className="bg-white border border-schemes-lightgray shadow-none">
+          <CardBody>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Input
                   label="Name"
                   placeholder="Enter your name"
                   value={updates.userName || ""}
-                  onChange={(e) =>
-                    handleInputChange("userName", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("userName", e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
-                  className={classes.input}
                 />
-
                 <Input
                   label="Email"
                   placeholder="Enter your email"
                   type="email"
                   value={updates.userEmail || ""}
-                  onChange={(e) =>
-                    handleInputChange("userEmail", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("userEmail", e.target.value)}
                   variant="bordered"
                   labelPlacement="outside"
-                  className={classes.input}
                 />
               </div>
-
               <Input
                 label="Scheme"
                 isRequired
@@ -141,9 +137,7 @@ export default function UpdateSchemesPage() {
                 onChange={(e) => handleInputChange("Scheme", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
-                className={classes.input}
               />
-
               <Input
                 label="Link"
                 placeholder="Enter the scheme link"
@@ -152,9 +146,7 @@ export default function UpdateSchemesPage() {
                 onChange={(e) => handleInputChange("Link", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
-                className={classes.input}
               />
-
               <RadioGroup
                 label="Type of Request"
                 size="sm"
@@ -167,20 +159,15 @@ export default function UpdateSchemesPage() {
                 <Radio value="Update">Update</Radio>
                 <Radio value="New">New</Radio>
               </RadioGroup>
-
               <Textarea
                 label="Description"
                 placeholder="Enter a description"
                 value={updates.Description || ""}
-                onChange={(e) =>
-                  handleInputChange("Description", e.target.value)
-                }
+                onChange={(e) => handleInputChange("Description", e.target.value)}
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={4}
-                className={classes.textarea}
               />
-
               <Textarea
                 label="Changes"
                 placeholder="Describe the changes"
@@ -189,27 +176,20 @@ export default function UpdateSchemesPage() {
                 variant="bordered"
                 labelPlacement="outside"
                 minRows={4}
-                className={classes.textarea}
               />
-
               {submitStatus && (
                 <div
-                  className={
+                  className={clsx(
+                    "p-4 rounded-lg",
                     submitStatus.type === "success"
-                      ? classes.successMessage
-                      : classes.errorMessage
-                  }
+                      ? "successMessage"
+                      : "errorMessage"
+                  )}
                 >
                   {submitStatus.message}
                 </div>
               )}
-
-              <Button
-                type="submit"
-                color="primary"
-                className={classes.submitButton}
-                isDisabled={isSubmitting}
-              >
+              <Button type="submit" color="primary" isDisabled={isSubmitting}>
                 {isSubmitting ? <Spinner color="white" size="sm" /> : "Submit"}
               </Button>
             </form>
