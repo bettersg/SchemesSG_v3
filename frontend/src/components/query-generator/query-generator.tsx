@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import QueryGeneratorDropdown from "./query-generator-dropdown";
+import clsx from "clsx";
 
 // Define the props interface
 interface QueryGeneratorProps {
@@ -65,9 +66,8 @@ const schemeTypeTags = [
   "Family Support Services",
   "Disability Support Services",
   "Palliative Care Services",
-  "Social Work & Casework"
+  "Social Work & Casework",
 ];
-
 
 // const organisationTags = [
 //   "Housing and Development Board",
@@ -135,21 +135,28 @@ const QueryGenerator: React.FC<QueryGeneratorProps> = ({
       </p>
 
       {/* Main Query Input */}
-      <div className="border-[1px] w-full sm:w-[600px] md:w-[800px] py-4 rounded-lg md:rounded-full shadow-sm hover:shadow-md transition cursor-pointer bg-slate-50">
+      <div
+        className={clsx(
+          "w-full sm:w-[600px] md:w-[700px] py-4",
+          "border  rounded-2xl sm:rounded-full shadow-sm",
+          "hover:shadow-md transition cursor-pointer",
+          "bg-slate-50"
+        )}
+      >
         <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 gap-4 sm:gap-2">
-          <QueryGeneratorDropdown 
+          <QueryGeneratorDropdown
             label="For Who"
             value={selectedForWhoState}
             tags={forWhoTags}
             changeHandler={handleForWhoChange}
           />
-          <QueryGeneratorDropdown 
+          <QueryGeneratorDropdown
             label="Scheme Type"
             value={selectedSchemeTypeState}
             tags={schemeTypeTags}
             changeHandler={handleSchemeTypeChange}
           />
-          <QueryGeneratorDropdown 
+          <QueryGeneratorDropdown
             label="Support Provided"
             value={selectedSupportProvidedState}
             tags={supportProvidedTags}

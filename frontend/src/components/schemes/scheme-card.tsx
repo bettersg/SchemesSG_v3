@@ -12,6 +12,7 @@ function SchemeCard({scheme}: SchemeCardProps) {
       href={`/schemes/${scheme.schemeId}`}
       className="w-full"
       target="_blank"
+      draggable="false"
     >
       <Card shadow="sm" className="w-full h-full" isHoverable>
         <CardHeader className="flex gap-3 font-semibold">
