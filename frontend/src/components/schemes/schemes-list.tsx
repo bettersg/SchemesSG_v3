@@ -1,6 +1,6 @@
 "use client";
 
-import { Spacer, Spinner } from "@nextui-org/react";
+import { Spacer, Spinner } from "@heroui/react";
 import SchemeCard from "./scheme-card";
 import SchemesFilter from "./schemes-filter";
 import { Dispatch, SetStateAction, useEffect, useRef, useState, useMemo } from "react";
@@ -165,9 +165,9 @@ export default function SchemesList({
 
       <div
         className={clsx(
-          "h-full p-2",
+          "p-2",
           "gap-2 grid grid-cols-1 lg:grid-cols-2",
-          "overflow-x-hidden overflow-y-scroll",
+          "overflow-x-hidden overflow-y-auto",
         )}
       >
         {filteredSchemes.map((scheme) => (

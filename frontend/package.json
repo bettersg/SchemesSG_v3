@@ -15,10 +15,10 @@
     "clean": "rm -rf node_modules .next out dist"
   },
   "dependencies": {
-    "@nextui-org/navbar": "^2.0.37",
-    "@nextui-org/react": "^2.4.8",
-    "@nextui-org/system": "^2.2.6",
-    "@nextui-org/theme": "^2.2.11",
+    "@heroui/navbar": "2.2.20",
+    "@heroui/react": "2.7.11",
+    "@heroui/system": "2.4.18",
+    "@heroui/theme": "2.4.17",
     "autoprefixer": "^10.4.20",
     "clsx": "^2.1.1",
     "firebase": "^11.6.0",

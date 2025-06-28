@@ -1,4 +1,4 @@
-import { Avatar, Card, CardBody } from "@nextui-org/react";
+import { Avatar, Card, CardBody } from "@heroui/react";
 import ReactMarkdown from "react-markdown";
 import { Message } from "@/app/providers";
 import { RefObject } from "react";

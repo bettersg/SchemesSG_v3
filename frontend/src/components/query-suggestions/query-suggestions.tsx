@@ -3,7 +3,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { InfoIcon } from "../../assets/icons/info-icon";
 
 interface QuerySuggestionsProps {

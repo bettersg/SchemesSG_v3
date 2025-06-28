@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SearchResScheme } from "./schemes-list";
-import { Card, CardBody, CardHeader, Chip, Image, Spacer } from "@nextui-org/react";
+import { Card, CardBody, CardHeader, Chip, Image, Spacer } from "@heroui/react";
 
 interface SchemeCardProps {
   scheme: SearchResScheme;

@@ -1,6 +1,6 @@
 import { InfoIcon } from "@/assets/icons/info-icon";
 import { SendIcon } from "@/assets/icons/send-icon";
-import { Button, Textarea } from "@nextui-org/react";
+import { Button, Textarea } from "@heroui/react";
 import clsx from "clsx";
 interface MiniChatBarProps {
   onExpand: () => void;

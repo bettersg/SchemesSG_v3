@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Divider } from "@nextui-org/react";
+import { Divider } from "@heroui/react";
 
 const data = [
   {

@@ -1,4 +1,4 @@
-import { Button, Select, SelectItem } from "@nextui-org/react";
+import { Button, Select, SelectItem } from "@heroui/react";
 import { SearchResScheme } from "./schemes-list";
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";

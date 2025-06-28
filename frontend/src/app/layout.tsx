@@ -1,7 +1,7 @@
 // import MainFooter from "@/components/main-footer/main-footer";
 import MainHeader from "@/components/main-header";
 import Footer from "@/components/footer";
-import { NextUIProvider } from "@nextui-org/system";
+import { HeroUIProvider } from "@heroui/system";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import React from "react";
@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="!p-0 !overflow-visible">
       <body className={`${geistSans.variable} antialiased`}>
-        <NextUIProvider>
+        <HeroUIProvider>
           <AuthProvider>
             <ChatProvider>
               <div className="h-screen flex flex-col">
@@ -47,7 +47,7 @@ export default function RootLayout({
               </div>
             </ChatProvider>
           </AuthProvider>
-        </NextUIProvider>
+        </HeroUIProvider>
       </body>
     </html>
   );
