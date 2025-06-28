@@ -4,7 +4,7 @@ import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list";
-import { Button, Spacer } from "@nextui-org/react";
+import { Button, Spacer } from "@heroui/react";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import UserQuery from "./user-query";
 import { FilterObjType } from "@/app/interfaces/filter";

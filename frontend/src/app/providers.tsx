@@ -1,7 +1,7 @@
 "use client";
 
 import { SearchResScheme } from "@/components/schemes/schemes-list";
-import { NextUIProvider } from "@nextui-org/react";
+import { HeroUIProvider } from "@heroui/react";
 import React, {
   createContext,
   ReactNode,
@@ -148,8 +148,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <NextUIProvider>
+    <HeroUIProvider>
       <ChatProvider>{children}</ChatProvider>
-    </NextUIProvider>
+    </HeroUIProvider>
   );
 }

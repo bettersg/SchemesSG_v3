@@ -1,7 +1,7 @@
 import { useChat } from "@/app/providers";
 import { ResetIcon } from "@/assets/icons/reset-icon";
-import { Card, CardBody, CardHeader } from "@nextui-org/react";
-import { Button, Tooltip, useDisclosure } from "@nextui-org/react";
+import { Card, CardBody, CardHeader } from "@heroui/react";
+import { Button, Tooltip, useDisclosure } from "@heroui/react";
 import ResetQueryModal from "./reset-query-modal";
 import clsx from "clsx";
 

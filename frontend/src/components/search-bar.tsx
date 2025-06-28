@@ -1,7 +1,7 @@
 import { RawSchemeData, SearchResponse } from "@/app/interfaces/schemes";
 import { useChat } from "@/app/providers";
 import { fetchWithAuth } from "@/app/utils/api";
-import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { Button, Spinner, Textarea } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { SearchIcon } from "../assets/icons/search-icon";
 import { SearchResScheme } from "./schemes/schemes-list";

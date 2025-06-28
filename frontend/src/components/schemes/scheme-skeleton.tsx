@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@nextui-org/react";
+import { Skeleton } from '@heroui/react'
 
 export default function SchemeSkeleton() {
   return (

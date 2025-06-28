@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import SchemeSkeleton from "@/components/schemes/scheme-skeleton";
 import Markdown from "react-markdown";
 import { MailIcon } from "@/assets/icons/mail-icon";
@@ -204,7 +204,7 @@ export default function SchemePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-4 w-full">
+      <div className="h-full overflow-hidden bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
           <SchemeSkeleton />
         </div>
@@ -214,7 +214,7 @@ export default function SchemePage() {
 
   return (
     scheme && (
-      <div className="overflow-y-scroll bg-background p-4 w-full">
+      <div className="overflow-y-auto bg-background p-4 w-full">
         <div className="max-w-5xl mx-auto">
           {/* Title Section */}
           <div
