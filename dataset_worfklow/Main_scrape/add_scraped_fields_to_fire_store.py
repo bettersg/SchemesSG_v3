@@ -30,6 +30,9 @@ if __name__ == "__main__":
     docs = db.collection("schemes").stream()
     doc_ids = [doc.id for doc in docs]
 
+    # TODO testing doc_ids
+    doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
+
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
         doc_snapshot = doc_ref.get() # Get the snapshot object
@@ -43,28 +46,39 @@ if __name__ == "__main__":
         logger.info(f"Document {doc_id} - Last updated (metadata): {update_time}")
 
         # Check if essential fields are already populated
-        essential_fields = ["llm_description"] # User changed this
-        fields_populated = all(doc_data.get(field) for field in essential_fields)
+        # essential_fields = ["llm_description"] # User changed this
+        # fields_populated = all(doc_data.get(field) for field in essential_fields)
 
-        if fields_populated:
-            logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
-            continue # Skip to the next document
+        # if fields_populated:
+        #     logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
+        #     continue # Skip to the next document
 
         scraped_text = doc_data.get("scraped_text")
         if scraped_text:
             try:
                 structured_output = text_extract.extract_text(scraped_text)
+
+                # Transform physical locations to database format
+                db_format = text_extract.transform_to_database_format(structured_output)
+
+                # Create the final structured output dict with transformed location data
                 structured_output_dict = structured_output.dict()
+
+                # Replace physical_locations with the transformed address, phone, email fields
+                structured_output_dict.pop('physical_locations', None)  # Remove the original field
+                structured_output_dict.update(db_format)  # Add the transformed fields
+
                 keys_to_conditionally_update = {"who_is_it_for", "what_it_gives", "scheme_type", "search_booster"}
                 updates = {} # Dictionary to hold updates
                 for key, value in structured_output_dict.items():
                     should_update = True
                     # Conditionally update only if the key is in the specified set AND the existing value is missing or empty
-                    if key in keys_to_conditionally_update:
-                        existing_value = doc_data.get(key)
-                        if existing_value:  # Checks if value exists and is not None, empty string, empty list, etc.
-                            should_update = False
-                            logger.info(f"Skipping update for key '{key}' in document {doc_id} as it already has value: {existing_value}")
+                    # TODO Skip checks for conditional update for testing
+                    # if key in keys_to_conditionally_update:
+                    #     existing_value = doc_data.get(key)
+                    #     if existing_value:  # Checks if value exists and is not None, empty string, empty list, etc.
+                    #         should_update = False
+                    #         logger.info(f"Skipping update for key '{key}' in document {doc_id} as it already has value: {existing_value}")
 
                     if should_update:
                         # Add the update to the dictionary
@@ -77,14 +91,39 @@ if __name__ == "__main__":
 
             except Exception as e:
                 logger.error(f"Error extracting text and updating document {doc_id}: {e}")
-                keys = SchemesStructuredOutput.model_fields.keys()
-                error_updates = {key: None for key in keys}
+                # Create error updates with the expected fields including address, phone, email
+                error_updates = {
+                    'address': None,
+                    'phone': None,
+                    'email': None,
+                    'llm_description': None,
+                    'eligibility': None,
+                    'how_to_apply': None,
+                    'who_is_it_for': None,
+                    'what_it_gives': None,
+                    'scheme_type': None,
+                    'search_booster': None,
+                    'summary': None,
+                    'service_area': None
+                }
                 doc_ref.update(error_updates) # Update with None for error cases
 
         else:
             # if no scraped text, continue to add empty fields to prevent NaNs in pandas
             logger.info(f"No scraped text found for document {doc_id}")
-            keys = SchemesStructuredOutput.model_fields.keys()
-            error_updates = {key: None for key in keys}
+            # Create empty updates with the expected fields including address, phone, email
+            error_updates = {
+                'address': None,
+                'phone': None,
+                'email': None,
+                'llm_description': None,
+                'eligibility': None,
+                'how_to_apply': None,
+                'who_is_it_for': None,
+                'what_it_gives': None,
+                'scheme_type': None,
+                'search_booster': None,
+                'summary': None,
+                'service_area': None
+            }
             doc_ref.update(error_updates) # Update with None for error cases
-

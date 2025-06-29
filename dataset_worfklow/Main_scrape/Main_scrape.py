@@ -64,7 +64,7 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Encoding': 'gzip, deflate, br',  # Explicitly accept Brotli compression
     'DNT': '1', # Do Not Track Request Header
     'Upgrade-Insecure-Requests': '1'
 }
@@ -108,7 +108,13 @@ def find_logo_url(soup, base_url):
         possible_logos.append(urljoin(base_url, og_image["content"]))
         logger.debug(f"Found og:image: {possible_logos[-1]}")
 
-    # 2. Favicons/Apple Touch Icons (prefer higher resolution if possible)
+    # 2. Twitter Card image
+    twitter_image = soup.find("meta", attrs={"name": "twitter:image"})
+    if twitter_image and twitter_image.get("content"):
+        possible_logos.append(urljoin(base_url, twitter_image["content"]))
+        logger.debug(f"Found twitter:image: {possible_logos[-1]}")
+
+    # 3. Favicons/Apple Touch Icons (prefer higher resolution if possible)
     icon_rels = ["apple-touch-icon", "icon", "shortcut icon"]
     for rel in icon_rels:
         link_tag = soup.find("link", rel=rel)
@@ -117,30 +123,52 @@ def find_logo_url(soup, base_url):
             possible_logos.append(logo_url)
             logger.debug(f"Found link rel='{rel}': {logo_url}")
 
-    # 3. Image tags (look for 'logo'/'brand' in src or alt, prioritize header)
-    header = soup.find("header")
-    search_area = header if header else soup # Search header first, then whole soup
+    # 4. Enhanced image tag search with better logo detection
+    # Look for images in header, navigation, or with logo-related attributes
+    logo_selectors = [
+        '.logo', '.brand', '.header-logo', '.site-logo',
+        'header img', '.header img', 'nav img', '.navigation img',
+        '[class*="logo"]', '[id*="logo"]', '[alt*="logo"]',
+        '[alt*="brand"]', '[alt*="company"]'
+    ]
 
-    for img in search_area.find_all("img"):
+    for selector in logo_selectors:
+        for img in soup.select(selector):
+            src = img.get("src", "")
+            if src:
+                img_url = urljoin(base_url, src)
+                # Avoid data URLs and very small images
+                if not img_url.startswith('data:') and not is_tiny_image(img):
+                    possible_logos.append(img_url)
+                    logger.debug(f"Found logo via selector '{selector}': {img_url}")
+
+    # 5. Fallback: Search for images with logo-related text in alt or title
+    for img in soup.find_all("img"):
         src = img.get("src", "").lower()
         alt = img.get("alt", "").lower()
-        # Basic check for 'logo' or 'brand' in src or alt
-        if "logo" in src or "brand" in src or "logo" in alt or "brand" in alt:
-            img_url = urljoin(base_url, img["src"]) # Use original src for urljoin
-            # Avoid tiny images if size is specified and obvious (heuristic)
-            width = img.get("width")
-            height = img.get("height")
-            try:
-                if width and int(width) < 32: continue
-                if height and int(height) < 32: continue
-            except ValueError:
-                pass # Ignore if width/height are not integers
+        title = img.get("title", "").lower()
 
-            possible_logos.append(img_url)
-            logger.debug(f"Found img tag with logo hint: {img_url}")
+        # Check for logo indicators in various attributes
+        logo_indicators = ["logo", "brand", "company", "organization"]
+        has_logo_indicator = any(indicator in alt or indicator in title or indicator in src for indicator in logo_indicators)
 
-    # Prioritize logo candidates (simple heuristic: prefer OG, then icons, then imgs)
-    # Remove duplicates while preserving order (simple list conversion)
+        if has_logo_indicator and src and not src.startswith('data:'):
+            img_url = urljoin(base_url, img["src"])
+            if not is_tiny_image(img):
+                possible_logos.append(img_url)
+                logger.debug(f"Found logo via text analysis: {img_url}")
+
+    # 6. Look for images in header area specifically
+    header = soup.find("header")
+    if header:
+        for img in header.find_all("img"):
+            src = img.get("src", "")
+            if src and not src.startswith('data:') and not is_tiny_image(img):
+                img_url = urljoin(base_url, src)
+                possible_logos.append(img_url)
+                logger.debug(f"Found logo in header: {img_url}")
+
+    # Prioritize logo candidates and remove duplicates
     seen = set()
     unique_logos = []
     for logo in possible_logos:
@@ -149,11 +177,75 @@ def find_logo_url(soup, base_url):
             unique_logos.append(logo)
 
     if unique_logos:
-        logger.info(f"Found potential logo for {base_url}: {unique_logos[0]}")
-        return unique_logos[0] # Return the first unique logo found (based on priority)
+        # Prioritize: prefer OG images, then larger images, then others
+        best_logo = select_best_logo(unique_logos, soup, base_url)
+        logger.info(f"Found potential logo for {base_url}: {best_logo}")
+        return best_logo
     else:
         logger.warning(f"Could not find a logo for: {base_url}")
         return None
+
+def is_tiny_image(img):
+    """Check if image is likely too small to be a logo"""
+    width = img.get("width")
+    height = img.get("height")
+
+    try:
+        if width and int(width) < 32:
+            return True
+        if height and int(height) < 32:
+            return True
+    except (ValueError, TypeError):
+        pass
+
+    # Check CSS classes that might indicate small decorative images
+    classes = img.get("class", [])
+    small_image_indicators = ["icon", "favicon", "small", "tiny", "thumb"]
+    if any(indicator in " ".join(classes).lower() for indicator in small_image_indicators):
+        return True
+
+    return False
+
+def select_best_logo(logos, soup, base_url):
+    """Select the best logo from a list of candidates"""
+    if not logos:
+        return None
+
+    # If only one logo, return it
+    if len(logos) == 1:
+        return logos[0]
+
+    # Prioritize logos based on various factors
+    scored_logos = []
+
+    for logo in logos:
+        score = 0
+
+        # Prefer OG images (highest priority)
+        if any(meta.get("content") == logo for meta in soup.find_all("meta", property="og:image")):
+            score += 100
+
+        # Prefer larger images
+        if "logo" in logo.lower() or "brand" in logo.lower():
+            score += 50
+
+        # Prefer images from the same domain
+        if urlparse(logo).netloc == urlparse(base_url).netloc:
+            score += 25
+
+        # Prefer common logo file patterns
+        if any(pattern in logo.lower() for pattern in ["logo", "brand", "header"]):
+            score += 20
+
+        # Prefer common image formats
+        if logo.lower().endswith(('.png', '.jpg', '.jpeg', '.svg')):
+            score += 10
+
+        scored_logos.append((score, logo))
+
+    # Sort by score (highest first) and return the best
+    scored_logos.sort(reverse=True)
+    return scored_logos[0][1]
 
 # Function to validate if the text looks like readable text
 def is_valid_text(text, bad_char_threshold=0.2):
@@ -198,6 +290,20 @@ def scrape_content(link):
         response = session.get(link, verify=False, timeout=30, headers=HEADERS)
         response.raise_for_status()
 
+        # Ensure content is properly decompressed
+        if response.headers.get('content-encoding'):
+            logger.info(f"Response is compressed with: {response.headers.get('content-encoding')}")
+            # Force decompression by accessing response.content
+            try:
+                # This should trigger automatic decompression
+                content = response.content
+                logger.info(f"Decompressed content length: {len(content)} bytes")
+            except Exception as e:
+                logger.error(f"Failed to decompress content: {e}")
+                return f"Decompression Error: {e}", None
+        else:
+            logger.info("Response is not compressed")
+
         if is_pdf:
             logger.info(f"Processing PDF link: {link}")
             try:
@@ -215,17 +321,191 @@ def scrape_content(link):
                 logger.error(f"Error processing PDF {link}: {pdf_err}")
                 return f"PDF Processing Error: {pdf_err}", None
         else:
-            # Handle HTML content
-            encoding = response.encoding if 'charset' in response.headers.get('content-type', '').lower() else None
-            try:
-                soup = BeautifulSoup(response.content, 'lxml', from_encoding=encoding)
-            except Exception: # Catch potential issue if lxml is not available
-                 soup = BeautifulSoup(response.content, 'html.parser', from_encoding=encoding)
+            # Handle HTML content with aggressive encoding detection
+            logger.info(f"Processing HTML content for: {link}")
 
-            # Enhanced text extraction (consider removing script/style, keeping structure)
-            for element in soup(['script', 'style', 'header', 'footer', 'nav', 'aside']):
-                element.decompose() # Remove these tags and their content
-            text = soup.get_text(separator='\n', strip=True) # Use newline separator, strip whitespace
+            # Debug: Let's see what we're actually getting
+            logger.info(f"Response status: {response.status_code}")
+            logger.info(f"Content-Type header: {response.headers.get('content-type', 'Not set')}")
+            logger.info(f"Content length: {len(response.content)} bytes")
+
+            # Check if response content looks valid
+            if not check_response_content(response):
+                logger.error("Response content appears to be invalid or contains errors")
+                return f"Invalid Response: Content appears to be invalid or contains errors", None
+
+            # Show first 200 characters of raw content for debugging
+            raw_preview = response.content[:200]
+            logger.info(f"Raw content preview: {raw_preview}")
+
+            # Also show a text preview if possible
+            try:
+                text_preview = response.content.decode('utf-8', errors='ignore')[:500]
+                logger.info(f"Text preview: {text_preview}")
+            except Exception as e:
+                logger.warning(f"Could not create text preview: {e}")
+
+            # Try multiple encoding strategies
+            decoded_content = None
+            soup = None
+            encoding_used = None
+
+            # Strategy 1: Try with requests' apparent encoding
+            try:
+                response.encoding = response.apparent_encoding
+                decoded_content = response.text
+                encoding_used = response.apparent_encoding
+                logger.info(f"Strategy 1: Using requests.apparent_encoding: {encoding_used}")
+
+                # Test if this gives us readable text
+                if is_readable_text(decoded_content):
+                    soup = BeautifulSoup(decoded_content, 'lxml')
+                    logger.info("Strategy 1 successful - text appears readable")
+                else:
+                    logger.warning("Strategy 1 failed - text not readable")
+                    # Show a preview of what we got
+                    preview = decoded_content[:200] if decoded_content else "None"
+                    logger.warning(f"Strategy 1 preview: {preview}")
+                    decoded_content = None
+            except Exception as e:
+                logger.warning(f"Strategy 1 failed: {e}")
+
+            # Strategy 2: Try common encodings
+            if not decoded_content:
+                common_encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'windows-1252', 'cp1252']
+                for encoding in common_encodings:
+                    try:
+                        decoded_content = response.content.decode(encoding, errors='replace')
+                        encoding_used = encoding
+                        logger.info(f"Strategy 2: Trying {encoding}")
+
+                        if is_readable_text(decoded_content):
+                            soup = BeautifulSoup(decoded_content, 'lxml')
+                            logger.info(f"Strategy 2 successful with {encoding}")
+                            break
+                        else:
+                            logger.warning(f"Strategy 2 failed with {encoding} - text not readable")
+                            # Show a preview of what we got
+                            preview = decoded_content[:200] if decoded_content else "None"
+                            logger.warning(f"Strategy 2 preview with {encoding}: {preview}")
+                            decoded_content = None
+                    except Exception as e:
+                        logger.warning(f"Strategy 2 failed with {encoding}: {e}")
+                        continue
+
+            # Strategy 3: Use chardet with multiple attempts
+            if not decoded_content:
+                try:
+                    import chardet
+                    # Try with different confidence levels
+                    for confidence_threshold in [0.8, 0.7, 0.6, 0.5]:
+                        detected = chardet.detect(response.content)
+                        if detected and detected['confidence'] > confidence_threshold:
+                            encoding = detected['encoding']
+                            logger.info(f"Strategy 3: chardet detected {encoding} with confidence {detected['confidence']:.2f}")
+
+                            try:
+                                decoded_content = response.content.decode(encoding, errors='replace')
+                                encoding_used = encoding
+
+                                if is_readable_text(decoded_content):
+                                    soup = BeautifulSoup(decoded_content, 'lxml')
+                                    logger.info(f"Strategy 3 successful with {encoding}")
+                                    break
+                                else:
+                                    logger.warning(f"Strategy 3 failed with {encoding} - text not readable")
+                                    # Show a preview of what we got
+                                    preview = decoded_content[:200] if decoded_content else "None"
+                                    logger.warning(f"Strategy 3 preview with {encoding}: {preview}")
+                                    decoded_content = None
+                            except Exception as e:
+                                logger.warning(f"Strategy 3 failed to decode with {encoding}: {e}")
+                                continue
+                except ImportError:
+                    logger.warning("chardet not available for Strategy 3")
+                except Exception as e:
+                    logger.warning(f"Strategy 3 failed: {e}")
+
+            # Strategy 4: Last resort - force UTF-8 with error handling
+            if not decoded_content:
+                logger.warning("All strategies failed, using forced UTF-8 with error handling")
+                try:
+                    decoded_content = response.content.decode('utf-8', errors='replace')
+                    encoding_used = 'utf-8-forced'
+                    soup = BeautifulSoup(decoded_content, 'lxml')
+                    logger.info("Strategy 4 completed (forced UTF-8)")
+
+                    # Show what we got even if it's not readable
+                    preview = decoded_content[:200] if decoded_content else "None"
+                    logger.info(f"Strategy 4 preview: {preview}")
+
+                except Exception as e:
+                    logger.error(f"Strategy 4 failed: {e}")
+                    return f"Encoding Error: Could not decode content with any method", None
+
+            # If we still don't have readable content, try to clean it
+            if decoded_content and not is_readable_text(decoded_content):
+                logger.warning("Content still not readable after decoding, attempting aggressive cleaning")
+                decoded_content = aggressive_text_cleaning(decoded_content)
+
+                if not is_readable_text(decoded_content):
+                    logger.error("Content still not readable after aggressive cleaning")
+                    # Show what we have after cleaning
+                    preview = decoded_content[:200] if decoded_content else "None"
+                    logger.error(f"After cleaning preview: {preview}")
+                    return f"Encoding Error: Content remains unreadable after all attempts", None
+
+            logger.info(f"Successfully decoded content using {encoding_used}")
+
+            # Enhanced text extraction with better content filtering
+            # Remove unwanted elements that don't contribute to main content
+            unwanted_selectors = [
+                'script', 'style', 'nav', 'aside', 'footer',
+                '.header', '.navigation', '.sidebar', '.footer',
+                '.menu', '.breadcrumb', '.pagination',
+                '.social-share', '.related-posts', '.comments',
+                '.advertisement', '.ads', '.banner',
+                '.cookie-notice', '.popup', '.modal',
+                '.newsletter-signup', '.subscribe',
+                '.search-form', '.search-results'
+            ]
+
+            for selector in unwanted_selectors:
+                for element in soup.select(selector):
+                    element.decompose()
+
+            # Remove common navigation and utility elements
+            for element in soup(['header', 'footer', 'nav', 'aside']):
+                element.decompose()
+
+            # Enhanced text extraction with better structure preservation
+            # First, try to find main content area
+            main_content = None
+            main_selectors = [
+                'main', 'article', '.main-content', '.content',
+                '.post-content', '.entry-content', '#content', '#main'
+            ]
+
+            for selector in main_selectors:
+                main_content = soup.select_one(selector)
+                if main_content:
+                    logger.debug(f"Found main content using selector: {selector}")
+                    break
+
+            if main_content:
+                # Extract text from main content area
+                text = main_content.get_text(separator='\n', strip=True)
+            else:
+                # Fallback to full page extraction with better cleaning
+                # Remove more unwanted elements before extraction
+                for element in soup.find_all(['script', 'style', 'noscript']):
+                    element.decompose()
+
+                # Get text with better separator handling
+                text = soup.get_text(separator='\n', strip=True)
+
+            # Post-process the extracted text
+            text = clean_extracted_text(text)
 
             if mod_security_error_signature in text:
                 logger.warning(f"Blocked by Mod_Security: {link}")
@@ -252,15 +532,301 @@ def scrape_content(link):
         logger.error(f"Unexpected scraping error for URL '{link}': {e}")
         return f"Unexpected Scraping Error: {e}", None
 
+def check_response_content(response):
+    """Check if response content has any obvious issues"""
+    logger.info(f"Checking response content...")
+
+    # Check if content is empty
+    if not response.content:
+        logger.warning("Response content is empty")
+        return False
+
+    # Check if content is too short (might be an error page)
+    if len(response.content) < 100:
+        logger.warning(f"Response content is very short: {len(response.content)} bytes")
+        return False
+
+    # Check for common error indicators in content - be more specific
+    error_indicators = [
+        b'<title>Error</title>',
+        b'<title>404</title>',
+        b'<title>403</title>',
+        b'<title>401</title>',
+        b'<title>400</title>',
+        b'HTTP Error',
+        b'Page Not Found',
+        b'Access Denied',
+        b'Forbidden',
+        b'Unauthorized'
+    ]
+
+    content_lower = response.content.lower()
+    for indicator in error_indicators:
+        if indicator.lower() in content_lower:
+            logger.warning(f"Found specific error indicator in content: {indicator}")
+            return False
+
+    # Check if content looks like HTML
+    if b'<!DOCTYPE' in content_lower or b'<html' in content_lower:
+        logger.info("Content appears to be HTML")
+        return True
+
+    # Check if content might be compressed
+    if response.headers.get('content-encoding'):
+        logger.info(f"Content is encoded with: {response.headers.get('content-encoding')}")
+
+    # Check for binary content indicators
+    null_bytes = response.content.count(b'\x00')
+    if null_bytes > len(response.content) * 0.1:  # More than 10% null bytes
+        logger.warning(f"High number of null bytes detected: {null_bytes}")
+        return False
+
+    # If we get here, assume it's valid content
+    logger.info("Content appears to be valid")
+    return True
+
+def is_readable_text(text):
+    """Check if text appears to be readable (not garbled)"""
+    if not text or len(text) < 10:
+        return False
+
+    # Count readable characters (letters, numbers, common punctuation)
+    readable_chars = 0
+    total_chars = len(text)
+
+    for char in text:
+        if char.isalnum() or char in ' .,!?;:()[]{}"\'-':
+            readable_chars += 1
+
+    # If less than 60% of characters are readable, likely garbled
+    readability_ratio = readable_chars / total_chars
+    is_readable = readability_ratio > 0.6
+
+    logger.debug(f"Text readability: {readability_ratio:.2f} ({readable_chars}/{total_chars} chars)")
+
+    # Additional check for common garbled patterns
+    garbled_patterns = [
+        'U™ØEUí‡»d@Õ¤',
+        'â€™', 'â€œ', 'â€', 'Ã©', 'Ã¨', 'Ã ',
+        'Ã¡', 'Ã­', 'Ã³', 'Ãº', 'Ã±', 'Ã§',
+        'Ã¶', 'Ã¼', 'Ã¤', 'Ã¥', 'Ã¸', 'Ã¦'
+    ]
+
+    for pattern in garbled_patterns:
+        if pattern in text:
+            logger.debug(f"Found garbled pattern: {pattern}")
+            return False
+
+    return is_readable
+
+def aggressive_text_cleaning(text):
+    """Aggressively clean text to remove encoding artifacts"""
+    if not text:
+        return text
+
+    # Remove all non-printable characters except newlines and tabs
+    import re
+    cleaned = re.sub(r'[^\x20-\x7E\n\r\t]', '', text)
+
+    # Remove excessive whitespace
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+
+    # Remove lines that are just special characters or numbers
+    lines = cleaned.split('\n')
+    cleaned_lines = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Skip lines that are mostly special characters
+        special_char_ratio = len(re.findall(r'[^a-zA-Z0-9\s]', line)) / len(line)
+        if special_char_ratio > 0.8:
+            continue
+
+        # Skip very short lines that are likely garbage
+        if len(line) < 3:
+            continue
+
+        cleaned_lines.append(line)
+
+    return '\n'.join(cleaned_lines)
+
+def clean_extracted_text(text):
+    """Clean and improve extracted text content"""
+    if not text:
+        return text
+
+    # Check for encoding issues (garbled text)
+    if has_encoding_issues(text):
+        logger.warning("Detected potential encoding issues in extracted text")
+        # Try to fix encoding issues
+        text = fix_encoding_issues(text)
+
+    # Remove excessive whitespace and normalize line breaks
+    lines = text.split('\n')
+    cleaned_lines = []
+
+    for line in lines:
+        # Strip whitespace from each line
+        line = line.strip()
+
+        # Skip empty lines or lines with only special characters
+        if not line or line.isspace():
+            continue
+
+        # Skip lines that are likely navigation or utility text
+        if is_navigation_text(line):
+            continue
+
+        cleaned_lines.append(line)
+
+    # Join lines with proper spacing
+    cleaned_text = '\n'.join(cleaned_lines)
+
+    # Remove excessive newlines (more than 2 consecutive)
+    import re
+    cleaned_text = re.sub(r'\n{3,}', '\n\n', cleaned_text)
+
+    return cleaned_text.strip()
+
+def has_encoding_issues(text):
+    """Check if text has encoding issues (garbled characters)"""
+    if not text:
+        return False
+
+    # Count non-printable and unusual characters
+    unusual_chars = 0
+    total_chars = len(text)
+
+    for char in text:
+        # Check for characters that are likely encoding errors
+        if ord(char) > 127 and not char.isprintable():
+            unusual_chars += 1
+        # Check for common garbled character patterns
+        elif char in '™ØEUí‡»d@Õ¤':
+            unusual_chars += 1
+
+    # If more than 10% of characters are unusual, likely has encoding issues
+    if total_chars > 0 and (unusual_chars / total_chars) > 0.1:
+        return True
+
+    # Check for specific garbled patterns
+    garbled_patterns = [
+        'U™ØEUí‡»d@Õ¤',
+        'â€™',  # Common UTF-8 encoding issue
+        'â€œ',  # Common UTF-8 encoding issue
+        'â€',   # Common UTF-8 encoding issue
+        'Ã©',   # Common UTF-8 encoding issue
+        'Ã¨',   # Common UTF-8 encoding issue
+        'Ã ',   # Common UTF-8 encoding issue
+    ]
+
+    for pattern in garbled_patterns:
+        if pattern in text:
+            return True
+
+    return False
+
+def fix_encoding_issues(text):
+    """Attempt to fix common encoding issues"""
+    if not text:
+        return text
+
+    # Common UTF-8 encoding fixes
+    encoding_fixes = {
+        'â€™': "'",  # Right single quotation mark
+        'â€œ': '"',  # Left double quotation mark
+        'â€': '"',   # Right double quotation mark
+        'Ã©': 'é',   # e with acute accent
+        'Ã¨': 'è',   # e with grave accent
+        'Ã ': 'à',   # a with grave accent
+        'Ã¡': 'á',   # a with acute accent
+        'Ã­': 'í',   # i with acute accent
+        'Ã³': 'ó',   # o with acute accent
+        'Ãº': 'ú',   # u with acute accent
+        'Ã±': 'ñ',   # n with tilde
+        'Ã§': 'ç',   # c with cedilla
+        'Ã¶': 'ö',   # o with diaeresis
+        'Ã¼': 'ü',   # u with diaeresis
+        'Ã¤': 'ä',   # a with diaeresis
+        'Ã¥': 'å',   # a with ring above
+        'Ã¸': 'ø',   # o with stroke
+        'Ã¦': 'æ',   # ae ligature
+    }
+
+    # Apply fixes
+    for garbled, correct in encoding_fixes.items():
+        text = text.replace(garbled, correct)
+
+    # Remove any remaining non-printable characters
+    import re
+    text = re.sub(r'[^\x20-\x7E\n\r\t]', '', text)
+
+    return text
+
+def is_navigation_text(text):
+    """Check if text is likely navigation or utility content"""
+    if not text:
+        return True
+
+    # Common navigation/utility patterns
+    navigation_patterns = [
+        r'^\s*(Home|About|Contact|Services|News|Events|Donate|Volunteer)\s*$',
+        r'^\s*(Menu|Search|Login|Sign up|Subscribe|Follow us)\s*$',
+        r'^\s*(Facebook|Twitter|Instagram|YouTube|LinkedIn)\s*$',
+        r'^\s*(Copyright|All rights reserved|Privacy Policy|Terms of Service)\s*$',
+        r'^\s*[0-9]+\s*$',  # Just numbers
+        r'^\s*[A-Z\s]+\s*$',  # All caps text (often navigation)
+    ]
+
+    import re
+    for pattern in navigation_patterns:
+        if re.match(pattern, text, re.IGNORECASE):
+            return True
+
+    # Check for very short text that's likely navigation
+    if len(text.strip()) <= 3 and text.strip().isupper():
+        return True
+
+    return False
+
 # Get all documents from the collection
 try:
     logger.info("Starting to stream documents from 'schemes' collection.")
-    docs_stream = db.collection("schemes").stream()
+
+    # Testing configuration - set to True to only process specific documents
+    TESTING_MODE = False
+    doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
+    # doc_ids = ["Dsq1hv34RYgJGrY5hO6k"]
+
+    if TESTING_MODE:
+        # For testing: only process specific document IDs
+        logger.info(f"Testing mode: Processing only {len(doc_ids)} specific documents")
+
+        # Get only the specified documents instead of streaming all
+        docs_to_process = []
+        for doc_id in doc_ids:
+            try:
+                doc = db.collection("schemes").document(doc_id).get()
+                if doc.exists:
+                    docs_to_process.append(doc)
+                    logger.info(f"Found document {doc_id} for processing")
+                else:
+                    logger.warning(f"Document {doc_id} not found in collection")
+            except Exception as e:
+                logger.error(f"Error fetching document {doc_id}: {e}")
+                continue
+    else:
+        # Production mode: process all documents
+        logger.info("Production mode: Processing all documents in collection")
+        docs_to_process = db.collection("schemes").stream()
 
     # Set the flag to control scraping behavior (No longer used for skipping, but kept for potential future use)
-    skip_if_scraped = True # Consider making this an argument if needed frequently
+    skip_if_scraped = False # Consider making this an argument if needed frequently
 
-    for doc in docs_stream:
+    for doc in docs_to_process:
         doc_ref = db.collection("schemes").document(doc.id)
         doc_data = None # Initialize doc_data
 
@@ -283,7 +849,9 @@ try:
                     continue # Skip to the next document if initialization fails
 
             # Check if scraping should be skipped based on 'scraped_text' field
-            should_skip_scraping = skip_if_scraped and doc_data.get("scraped_text")
+            should_skip_scraping = skip_if_scraped # and doc_data.get("scraped_text")
+            if TESTING_MODE:
+                should_skip_scraping = False
 
             # Check if image field is already populated
             image_already_populated = doc_data.get("image")

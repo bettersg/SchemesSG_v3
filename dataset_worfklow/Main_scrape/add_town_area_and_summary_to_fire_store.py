@@ -2,11 +2,11 @@ import firebase_admin
 import sys
 from firebase_admin import credentials
 from firebase_admin import firestore
-from dataset_worfklow.Main_scrape.extract_fields_from_scraped_text import TextExtract
 from loguru import logger
 import argparse
 import requests
 import random
+import re
 from dotenv import dotenv_values, load_dotenv
 import os
 
@@ -25,27 +25,90 @@ class Config:
         return attr
 
 
+def get_onemap_access_token(email, password):
+    """
+    Obtain OneMap access token using email and password.
+    Returns the access token string or None if failed.
+    """
+    try:
+        url = "https://www.onemap.gov.sg/api/auth/post/getToken"
+
+        payload = {
+            "email": email,
+            "password": password
+        }
+
+        response = requests.post(url, json=payload, timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            access_token = data.get("access_token")
+            expiry_timestamp = data.get("expiry_timestamp")
+
+            if access_token:
+                logger.info(f"Successfully obtained OneMap access token. Expires at: {expiry_timestamp}")
+                return access_token
+            else:
+                logger.error("No access_token found in response")
+                return None
+        else:
+            logger.error(f"Failed to obtain OneMap access token. Status code: {response.status_code}")
+            logger.error(f"Response: {response.text}")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error obtaining OneMap access token: {e}")
+        return None
+
+
+def extract_postal_code(address):
+    """
+    Extract 6-digit postal code from Singapore address string.
+    Returns the postal code string or None if not found.
+    """
+    try:
+        # Pattern to match 6-digit postal codes in Singapore addresses
+        # Matches patterns like: 310005, Singapore 310005, etc.
+        postal_pattern = r'\b(\d{6})\b'
+        match = re.search(postal_pattern, address)
+
+        if match:
+            postal_code = match.group(1)
+            logger.info(f"Extracted postal code: {postal_code} from address: {address}")
+            return postal_code
+        else:
+            logger.warning(f"No postal code found in address: {address}")
+            return None
+    except Exception as e:
+        logger.error(f"Error extracting postal code from address '{address}': {e}")
+        return None
+
+
 def extract_planning_area_from_address(address, token):
     """
     Given an address and OneMap API token, return the planning area name using OneMap public APIs.
+    First tries to extract postal code and use it for search, falls back to full address if needed.
     """
     try:
+        # First, try to extract postal code from the address
+        postal_code = extract_postal_code(address)
+        search_value = postal_code if postal_code else address
+
+        logger.info(f"Using search value: {search_value} (postal code: {postal_code is not None})")
+
         # 1. Geocode
         params = {
-            "searchVal": address,
+            "searchVal": search_value,
             "returnGeom": "Y",
             "getAddrDetails": "Y",
             "pageNum": 1
         }
         geo_resp = requests.get("https://www.onemap.gov.sg/api/common/elastic/search", params=params, timeout=10)
-        # logger.info(f"Geocode request URL: {geo_resp.url}")
-        # logger.info(f"Geocode response status: {geo_resp.status_code}")
-        # logger.info(f"Geocode response text: {geo_resp.text[:500]}")  # log first 500 chars
 
         geo = geo_resp.json()
         results = geo.get("results", [])
         if not results:
-            logger.error(f"No geocode results for address: {address}")
+            logger.error(f"No geocode results for search value: {search_value}")
             return None
         lat = results[0]["LATITUDE"]
         lon = results[0]["LONGITUDE"]
@@ -59,9 +122,6 @@ def extract_planning_area_from_address(address, token):
             headers=headers,
             timeout=10
         )
-        # logger.info(f"Planning area request URL: {pa_resp.url}")
-        # logger.info(f"Planning area response status: {pa_resp.status_code}")
-        # logger.info(f"Planning area response text: {pa_resp.text[:500]}")  # log first 500 chars
 
         pa = pa_resp.json()
         if not pa or not isinstance(pa, list) or not pa[0].get("pln_area_n"):
@@ -73,14 +133,9 @@ def extract_planning_area_from_address(address, token):
         return None
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Generate summary and planning area for each scheme and update Firestore.')
+    parser = argparse.ArgumentParser(description='Generate planning area for each scheme and update Firestore.')
     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
     args = parser.parse_args()
-
-    # One map Access Token expires every 3 days, so need to get a new one if it expires
-    # Contact Eugene to get a new one if it expires
-    config = Config()
-    onemap_token = config.ONEMAP_TOKEN
 
     logger.remove()
     logger.add(
@@ -91,13 +146,34 @@ if __name__ == "__main__":
         backtrace=True,
     )
     logger.info("Logger initialised")
+
+    # Initialize config and get OneMap credentials
+    config = Config()
+    onemap_email = config.ONEMAP_EMAIL
+    onemap_password = config.ONEMAP_EMAIL_PASSWORD
+
+    if not onemap_email or not onemap_password:
+        logger.error("OneMap email or password not found in environment variables")
+        sys.exit(1)
+
+    # Obtain OneMap access token
+    logger.info("Obtaining OneMap access token...")
+    onemap_token = get_onemap_access_token(onemap_email, onemap_password)
+
+    if not onemap_token:
+        logger.error("Failed to obtain OneMap access token. Exiting.")
+        sys.exit(1)
+
     cred = credentials.Certificate(args.creds_file)
     app = firebase_admin.initialize_app(cred)
     db = firestore.client()
-    text_extract = TextExtract()
+
     # Get all documents from the collection
     docs = db.collection("schemes").stream()
     doc_ids = [doc.id for doc in docs]
+
+     # TODO testing doc_ids
+    # doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
 
     # --- For testing: fetch 5 random doc_ids where address is present ---
     # docs_with_address = db.collection("schemes").stream()
@@ -123,56 +199,42 @@ if __name__ == "__main__":
         address = doc_data.get("address")
         updates = {}
 
-        # Check if summary and planning_area are already present
-        summary_already_present = doc_data.get("summary") is not None
+        # Check if planning_area is already present
         planning_area_already_present = doc_data.get("planning_area") is not None
-        if summary_already_present and planning_area_already_present:
-            logger.info(f"Both summary and planning area already present for document {doc_id}, skipping update.")
-            continue
+        logger.info(f"Planning area already present for document {doc_id}, updating.")
+        # if planning_area_already_present:
+        #     logger.info(f"Planning area already present for document {doc_id}, skipping update.")
+        #     continue
 
-        # Check if summary already exists
-        if summary_already_present:
-            logger.info(f"Summary already present for document {doc_id}, skipping generation.")
-            updates["summary"] = doc_data["summary"]
-        else:
-            # Generate summary
-            # Concatenate all fields except 'id' into a single string
-            concat_text = ""
+        # Generate planning area if address exists
+        if address:
             try:
-                concat_text = "\n".join([
-                    f"{k}: {v}" for k, v in doc_data.items() if k != "id" and k != "scraped_text" and v is not None
-                ])
-            except Exception as e:
-                logger.error(f"Error concatenating fields for document {doc_id}: {e}")
-                concat_text = None
-
-            if concat_text:
-                try:
-                    summary = text_extract.generate_summary(concat_text)
-                    updates["summary"] = summary
-                    logger.info(f"Generated summary for document {doc_id}")
-                except Exception as e:
-                    logger.error(f"Error generating summary for document {doc_id}: {e}")
-                    updates["summary"] = None
-            else:
-                logger.info(f"No valid fields found for document {doc_id}, setting summary to None")
-                updates["summary"] = None
-
-        # Check if planning_area already exists
-        if planning_area_already_present:
-            logger.info(f"Planning area already present for document {doc_id}, skipping generation.")
-            updates["planning_area"] = doc_data["planning_area"]
-        elif address:
-            try:
-                planning_area = extract_planning_area_from_address(address, onemap_token)
-                updates["planning_area"] = planning_area
-                logger.info(f"Generated planning area for document {doc_id}")
+                # Handle both single address (string) and multiple addresses (array)
+                if isinstance(address, list):
+                    # Multiple addresses - generate planning area for each
+                    planning_areas = []
+                    for addr in address:
+                        if addr:  # Check if address is not None or empty
+                            planning_area = extract_planning_area_from_address(addr, onemap_token)
+                            planning_areas.append(planning_area if planning_area else "No Location")
+                        else:
+                            planning_areas.append("No Location")
+                    updates["planning_area"] = planning_areas
+                    logger.info(f"Generated planning areas for document {doc_id} with {len(planning_areas)} addresses")
+                else:
+                    # Single address - generate planning area for the string
+                    planning_area = extract_planning_area_from_address(address, onemap_token)
+                    updates["planning_area"] = planning_area if planning_area else "No Location"
+                    logger.info(f"Generated planning area for document {doc_id}")
             except Exception as e:
                 logger.error(f"Error generating planning area for document {doc_id}: {e}")
-                updates["planning_area"] = None
+                if isinstance(address, list):
+                    updates["planning_area"] = ["No Location"] * len(address)
+                else:
+                    updates["planning_area"] = "No Location"
         else:
             logger.info(f"No address found for document {doc_id}, skipping planning area")
-            updates["planning_area"] = None
+            updates["planning_area"] = "No Location"
 
         # Update Firestore
         if updates:
