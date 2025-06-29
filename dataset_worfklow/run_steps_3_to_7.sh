@@ -65,7 +65,7 @@ source dataset_worfklow/venv/bin/activate
 # python -m dataset_worfklow.Main_scrape.add_scraped_fields_to_fire_store "$CREDS_FILE"
 
 # echo "starting step 5b"
-# python -m dataset_worfklow.Main_scrape.add_town_area_and_summary_to_fire_store "$CREDS_FILE"
+# python -m dataset_worfklow.Main_scrape.add_town_area_to_fire_store "$CREDS_FILE"
 
 echo "starting step 6a"
 # step 6a: Run to recompute embeddings and faiss
