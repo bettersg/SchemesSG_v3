@@ -64,16 +64,16 @@ source dataset_worfklow/venv/bin/activate
 # # step 5: Take scraped text from DB, and create new fields
 # python -m dataset_worfklow.Main_scrape.add_scraped_fields_to_fire_store "$CREDS_FILE"
 
-echo "starting step 5b"
-python -m dataset_worfklow.Main_scrape.add_town_area_and_summary_to_fire_store "$CREDS_FILE"
+# echo "starting step 5b"
+# python -m dataset_worfklow.Main_scrape.add_town_area_and_summary_to_fire_store "$CREDS_FILE"
 
-# echo "starting step 6a"
-# # step 6a: Run to recompute embeddings and faiss
-# python -m dataset_worfklow.create_transformer_models "$CREDS_FILE"
+echo "starting step 6a"
+# step 6a: Run to recompute embeddings and faiss
+python -m dataset_worfklow.create_transformer_models "$CREDS_FILE"
 
-# echo "starting step 6b"
-# # step 6b: Test if model artefacts created are valid
-# python -m dataset_worfklow.test_model_artefacts_created "$CREDS_FILE"
+echo "starting step 6b"
+# step 6b: Test if model artefacts created are valid
+python -m dataset_worfklow.test_model_artefacts_created "$CREDS_FILE"
 
 # echo "only run step 7 if you are satisfied with results from steps 6b"
 # # step 7: Upload model artefacts to firebase storage

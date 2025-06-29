@@ -66,6 +66,8 @@ def build_desc_booster(row):
         components.append(str(row['what_it_gives']))
     if pd.notna(row['scheme_type']):
         components.append(str(row['scheme_type']))
+    if pd.notna(row['service_area']):
+        components.append(str(row['service_area']))
 
     # Join all non-null components with spaces
     return ' '.join(components)

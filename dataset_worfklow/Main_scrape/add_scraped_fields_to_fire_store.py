@@ -8,6 +8,28 @@ from loguru import logger
 import argparse
 from datetime import datetime, timezone
 
+def is_valid_scraped_text(scraped_text):
+    """
+    Check if scraped_text is valid for processing.
+    Returns False if text is None, empty, too short, or contains error indicators.
+    """
+    if not scraped_text:
+        return False
+
+    # Convert to string if it's not already
+    scraped_text_str = str(scraped_text).strip()
+
+    # Check if empty or too short (less than 50 characters)
+    if len(scraped_text_str) < 50:
+        return False
+
+    # Check for error indicators
+    error_indicators = ['ERROR', 'HTTP Error', 'HTTP error', 'http error', 'error']
+    if any(indicator in scraped_text_str for indicator in error_indicators):
+        return False
+
+    return True
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
@@ -31,7 +53,7 @@ if __name__ == "__main__":
     doc_ids = [doc.id for doc in docs]
 
     # TODO testing doc_ids
-    doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
+    # doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -46,17 +68,30 @@ if __name__ == "__main__":
         logger.info(f"Document {doc_id} - Last updated (metadata): {update_time}")
 
         # Check if essential fields are already populated
-        # essential_fields = ["llm_description"] # User changed this
-        # fields_populated = all(doc_data.get(field) for field in essential_fields)
+        essential_fields = ["llm_description"] # User changed this
+        fields_populated = all(doc_data.get(field) for field in essential_fields)
 
-        # if fields_populated:
-        #     logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
-        #     continue # Skip to the next document
+        if fields_populated:
+            logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
+            continue # Skip to the next document
 
         scraped_text = doc_data.get("scraped_text")
-        if scraped_text:
+        description = doc_data.get("description")
+
+        # Check if scraped_text is valid, if not use description as fallback
+        if is_valid_scraped_text(scraped_text):
+            text_to_process = scraped_text
+            logger.info(f"Using scraped_text for document {doc_id}")
+        elif description:
+            text_to_process = description
+            logger.info(f"Using description as fallback for document {doc_id} (scraped_text was invalid)")
+        else:
+            text_to_process = None
+            logger.info(f"No valid text found for document {doc_id} (neither scraped_text nor description)")
+
+        if text_to_process:
             try:
-                structured_output = text_extract.extract_text(scraped_text)
+                structured_output = text_extract.extract_text(text_to_process)
 
                 # Transform physical locations to database format
                 db_format = text_extract.transform_to_database_format(structured_output)
@@ -109,8 +144,8 @@ if __name__ == "__main__":
                 doc_ref.update(error_updates) # Update with None for error cases
 
         else:
-            # if no scraped text, continue to add empty fields to prevent NaNs in pandas
-            logger.info(f"No scraped text found for document {doc_id}")
+            # if no valid text found, continue to add empty fields to prevent NaNs in pandas
+            logger.info(f"No valid text found for document {doc_id}")
             # Create empty updates with the expected fields including address, phone, email
             error_updates = {
                 'address': None,

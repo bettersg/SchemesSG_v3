@@ -798,7 +798,7 @@ try:
 
     # Testing configuration - set to True to only process specific documents
     TESTING_MODE = False
-    doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
+    doc_ids = ["4oE8YsKaFqa69HHFsAao", "5uYva3ETk2IQ85yyoD2a", "8tWBA0cWcJaDRuoBLQnj", "9lfZMJ0ZAiLhZeWRXV99", "AFT326wEDwbZtYy1356A", "BBnps4FBmDd4IEehux5i", "BlxfZvWnR4exdhVCLqHx" , "C8uVwKtjc2MwJSK60r4U", "CbwPvFgJ0cf1qgEoLNjy", "ESkFg9BNa2emqHYV3a9h", "FwpZNF9aCe4MfPmKUP4S", "IVTZrp8zeTbuLgec60bG", "IhKLeOTlBTc8tSkAgKEP", "IphFEQwQumWuEyDOiNPS", "LA6CzDU0EhOaHZW40jPL"]
     # doc_ids = ["Dsq1hv34RYgJGrY5hO6k"]
 
     if TESTING_MODE:
@@ -849,7 +849,7 @@ try:
                     continue # Skip to the next document if initialization fails
 
             # Check if scraping should be skipped based on 'scraped_text' field
-            should_skip_scraping = skip_if_scraped # and doc_data.get("scraped_text")
+            should_skip_scraping = skip_if_scraped and bool(doc_data.get("scraped_text"))
             if TESTING_MODE:
                 should_skip_scraping = False
 

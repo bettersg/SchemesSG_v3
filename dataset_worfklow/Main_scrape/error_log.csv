@@ -1,1 +1,17 @@
 doc_id,link,error
+5uYva3ETk2IQ85yyoD2a,https://www.babybonus.msf.gov.sg/Pages/AboutUs.aspx,Request Error: Exceeded 30 redirects.
+5uYva3ETk2IQ85yyoD2a,https://www.babybonus.msf.gov.sg/Pages/AboutUs.aspx,Request Error: Exceeded 30 redirects.
+BBnps4FBmDd4IEehux5i,https://sdsc.org.sg/sdsc_support_program/mediacorp-enable-fund/,Text validation failed (binary/garbled)
+C8uVwKtjc2MwJSK60r4U,https://www.facebook.com/HarpHendersonAgedReachoutProgramme/,HTTP Error: 400
+C8uVwKtjc2MwJSK60r4U,https://www.facebook.com/HarpHendersonAgedReachoutProgramme/,HTTP Error: 400
+CbwPvFgJ0cf1qgEoLNjy,https://www.familylife.sg/PBC_Homepage,Text validation failed (binary/garbled)
+ESkFg9BNa2emqHYV3a9h,https://www.trans.org.sg/services-focus,HTTP Error: 404
+ESkFg9BNa2emqHYV3a9h,https://www.trans.org.sg/services-focus,HTTP Error: 404
+FwpZNF9aCe4MfPmKUP4S,https://www.kdf.org.sg/subsidised-haemodialysis,"Request Error: HTTPSConnectionPool(host='www.kdf.org.sg', port=443): Max retries exceeded with url: /subsidised-haemodialysis (Caused by ResponseError('too many 502 error responses'))"
+FwpZNF9aCe4MfPmKUP4S,https://www.kdf.org.sg/subsidised-haemodialysis,"Request Error: HTTPSConnectionPool(host='www.kdf.org.sg', port=443): Max retries exceeded with url: /subsidised-haemodialysis (Caused by ResponseError('too many 502 error responses'))"
+IVTZrp8zeTbuLgec60bG,https://supportgowhere.life.gov.sg/schemes/COMCARE-INTERIM-ASSISTANCE/comcare-interim-assistance,Text validation failed (binary/garbled)
+IhKLeOTlBTc8tSkAgKEP,https://supportgowhere.life.gov.sg/schemes/COMCARE-LTA/comcare-long-term-assistance-lta,Text validation failed (binary/garbled)
+IphFEQwQumWuEyDOiNPS,https://www.s3.org.sg/outreach-community-health,"Connection Error: HTTPSConnectionPool(host='www.s3.org.sg', port=443): Max retries exceeded with url: /outreach-community-health (Caused by ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
+IphFEQwQumWuEyDOiNPS,https://www.s3.org.sg/outreach-community-health,"Connection Error: HTTPSConnectionPool(host='www.s3.org.sg', port=443): Max retries exceeded with url: /outreach-community-health (Caused by ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
+LA6CzDU0EhOaHZW40jPL,https://www.filos.sg/services-assistance,"Connection Error: HTTPSConnectionPool(host='www.filos.sg', port=443): Max retries exceeded with url: /services-assistance (Caused by ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
+LA6CzDU0EhOaHZW40jPL,https://www.filos.sg/services-assistance,"Connection Error: HTTPSConnectionPool(host='www.filos.sg', port=443): Max retries exceeded with url: /services-assistance (Caused by ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
