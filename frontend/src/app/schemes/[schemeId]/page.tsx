@@ -369,13 +369,13 @@ export default function SchemePage() {
                     )}
                   </div>
                   {/* contacts */}
-                  {scheme.contact && scheme.planningArea && (
+                  {scheme.contact && (
                     <div className="flex flex-col gap-2">
                       <span className="font-bold uppercase text-xs text-slate-500">
                         Contact
                       </span>
                       {/* multiple planning areas */}
-                      {typeof scheme.planningArea == "object" ? (
+                      {scheme.planningArea && typeof scheme.planningArea == "object" ? (
                         <Accordion>
                           {Array.from(new Set(scheme.planningArea)).map((area, index) => (
                             <AccordionItem key={index} title={area}>
