@@ -28,7 +28,7 @@ export type SearchResScheme = {
   query: string;
   similarity: number;
   quintile: number;
-  planningArea: string;
+  planningArea: string | string[];
   summary: string;
 };
 

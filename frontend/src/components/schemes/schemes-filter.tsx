@@ -28,14 +28,20 @@ function SchemesFilter({
   const [showFilter, setShowFilter] = useState(false);
   const allLocations: string[] = useMemo(() => {
     const locationSet = new Set<string>();
+    console.log(schemes);
     schemes.forEach((scheme) => {
       if (scheme.planningArea) {
-        const planningAreaSet = new Set(parseArrayString(scheme.planningArea) as string[]);
-        planningAreaSet.forEach((planningArea) =>
-          locationSet.add(planningArea)
-        );
+        const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
+        planningAreaSet.forEach((planningArea) => {
+          locationSet.add(planningArea);
+        });
       }
     });
+    // Position 'No Location' as the first option in location dropdown
+    if (locationSet.has('No Location')) {
+      locationSet.delete('No Location')
+      return ['No Location', ...Array.from(locationSet).sort()]
+    }
     return Array.from(locationSet).sort();
   }, [schemes]);
 
@@ -53,7 +59,7 @@ function SchemesFilter({
     schemes.forEach((scheme) => {
       // Skip agencies that have no planningArea
       if (!scheme.planningArea) {
-        return
+        return;
       }
       // Keep agencies whose schemes have a planningArea in selectedLocations
       else if (
@@ -69,7 +75,7 @@ function SchemesFilter({
   }, [selectedLocations, allAgencies, schemes]);
 
   // Filter locations based on selected agencies
-  const filteredLocations : string[] = useMemo(() => {
+  const filteredLocations: string[] = useMemo(() => {
     if (selectedAgencies.size === 0) {
       return allLocations;
     }
@@ -77,9 +83,7 @@ function SchemesFilter({
     const locationsSet = new Set<string>();
     schemes.forEach((scheme) => {
       if (selectedAgencies.has(scheme.agency) && scheme.planningArea) {
-        const planningAreaSet = new Set(
-          parseArrayString(scheme.planningArea) as string[]
-        );
+        const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
         planningAreaSet.forEach((planningArea) => {
           locationsSet.add(planningArea);
         });

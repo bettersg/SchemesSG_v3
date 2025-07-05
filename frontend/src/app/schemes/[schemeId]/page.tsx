@@ -18,17 +18,17 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
+  Accordion,
+  AccordionItem,
 } from "@heroui/react";
 import SchemeSkeleton from "@/components/schemes/scheme-skeleton";
 import Markdown from "react-markdown";
-import { MailIcon } from "@/assets/icons/mail-icon";
 import { LinkIcon } from "@/assets/icons/link-icon";
-import { LocationIcon } from "@/assets/icons/location-icon";
-import { PhoneIcon } from "@/assets/icons/phone-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { parseArrayString } from "@/app/utils/helper";
+import SchemeContactCard from "@/components/schemes/scheme-contact-card";
 
 // Type for full scheme properties
 type Scheme = SearchResScheme & {
@@ -42,7 +42,8 @@ type Scheme = SearchResScheme & {
   eligibilityText?: string;
 };
 
-type BranchContact = {
+export type BranchContact = {
+  planningArea?: string;
   phones?: string[];
   emails?: string[];
   address?: string;
@@ -56,7 +57,7 @@ interface FullSchemeData extends RawSchemeData {
   // Additional fields that might be in the API response
   phone?: string[] | undefined;
   email?: string[] | undefined;
-  address?: string | undefined;
+  address?: string[] | undefined;
   how_to_apply?: string;
   eligibility?: string;
 }
@@ -77,9 +78,9 @@ interface ApiSchemeData {
   query?: string;
   similarity?: number;
   quintile?: number;
-  phone?: string;
-  email?: string;
-  address?: string;
+  phone?: string | string[];
+  email?: string | string[];
+  address?: string | string[];
   how_to_apply?: string;
   eligibility?: string;
   last_modified_date?: number;
@@ -87,17 +88,28 @@ interface ApiSchemeData {
 }
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
-  const contactLength = Math.max(
-    rawData.phone?.length || 0,
-    rawData.email?.length || 0,
-    rawData.address?.length || 0
-  );
   const contacts: BranchContact[] = [];
-  for (let i = 0; i < contactLength; i++) {
+  const planningArea = rawData.planning_area && rawData.planning_area != "No location" && parseArrayString(rawData.planning_area)
+  // address field is defined. No of branch is length of address array
+  if (planningArea) {
+    for (let i = 0; i < planningArea.length; i++) {
+      // if phone / email data is type string, display that phone / email for all branches
+      contacts.push({
+        planningArea: planningArea[i],
+        phones:
+          rawData.phone &&
+          rawData.phone[Math.min(i, rawData.phone.length - 1)].split(","),
+        emails:
+          rawData.email &&
+          rawData.email[Math.min(i, rawData.email.length - 1)].split(","),
+        address: rawData.address && rawData.address[i],
+      });
+    }
+  } else {
+    // no physical branch. Group contact details together
     contacts.push({
-      phones: rawData.phone && rawData.phone[i].split(","),
-      emails: rawData.email && rawData.email[i].split(","),
-      address: rawData.address && rawData.address[i],
+      phones: rawData.phone && rawData.phone,
+      emails: rawData.email && rawData.email,
     });
   }
   return {
@@ -183,9 +195,9 @@ export default function SchemePage() {
             ? new Date(schemeData.last_modified_date).toLocaleString()
             : "",
           // Add additional fields from API response directly here instead of later
-          phone: schemeData.phone && parseArrayString(schemeData.phone),
-          email: schemeData.email && parseArrayString(schemeData.email),
-          address: schemeData.address && parseArrayString(schemeData.address),
+          phone: parseArrayString(schemeData.phone),
+          email: parseArrayString(schemeData.email),
+          address: parseArrayString(schemeData.address),
           how_to_apply: schemeData.how_to_apply || "",
           eligibility: schemeData.eligibility || "",
           planning_area: schemeData.planning_area || "",
@@ -334,7 +346,7 @@ export default function SchemePage() {
                   </div>
                 </div>
                 {/* other details */}
-                <div className="flex-1">
+                <div className="flex flex-col flex-1">
                   {/* type */}
                   <div className="flex flex-col gap-2 mb-4">
                     <span className="font-bold uppercase text-xs text-slate-500">
@@ -357,84 +369,35 @@ export default function SchemePage() {
                     )}
                   </div>
                   {/* contacts */}
-                  {scheme.contact && (
-                    <div className="flex flex-col gap-2 ">
+                  {scheme.contact && scheme.planningArea && (
+                    <div className="flex flex-col gap-2">
                       <span className="font-bold uppercase text-xs text-slate-500">
                         Contact
                       </span>
-                      <div className="flex flex-col gap-4">
-                        {scheme.contact.map((contact, index) => (
-                          <Card
-                            className="p-4 flex flex-col gap-2"
-                            key={index}
-                            classNames={{
-                              base: "shadow-md",
-                            }}
-                          >
-                            {contact.phones &&
-                              contact.phones.map((phone, index) => (
-                                <div key={index}>
-                                  <div className="flex gap-2 justify-between">
-                                    <p>{phone}</p>
-                                    <Button
-                                      isIconOnly
-                                      size="sm"
-                                      aria-label="phone"
-                                      color="primary"
-                                      variant="light"
-                                      as={Link}
-                                      href={`tel:${phone}`}
-                                    >
-                                      <PhoneIcon size={20} />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            {contact.emails &&
-                              contact.emails.map((email, index) => (
-                                <div
-                                  key={index}
-                                  className="flex gap-2 justify-between"
-                                >
-                                  <p>{email}</p>
-                                  <Button
-                                    isIconOnly
-                                    size="sm"
-                                    aria-label="email"
-                                    color="primary"
-                                    variant="light"
-                                    as={Link}
-                                    href={`mailto:${email}`}
-                                  >
-                                    <MailIcon size={20} />
-                                  </Button>
-                                </div>
-                              ))}
-                            {contact.address && (
-                              <div
-                                key={index}
-                                className="flex gap-2 justify-between"
-                              >
-                                <p>{contact.address}</p>
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  aria-label="phone"
-                                  color="primary"
-                                  variant="light"
-                                  as={Link}
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                    contact.address
-                                  )}`}
-                                  isExternal
-                                >
-                                  <LocationIcon size={20} />
-                                </Button>
+                      {/* multiple planning areas */}
+                      {typeof scheme.planningArea == "object" ? (
+                        <Accordion>
+                          {Array.from(new Set(scheme.planningArea)).map((area, index) => (
+                            <AccordionItem key={index} title={area}>
+                              <div className="flex flex-col gap-4">
+                                {scheme.contact && scheme.contact.filter(contact => contact.planningArea == area).map((contact, index) => (
+                                  <SchemeContactCard
+                                    contact={contact}
+                                    key={index}
+                                  />
+                                ))}
                               </div>
-                            )}
-                          </Card>
-                        ))}
-                      </div>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      ) : (
+                        // one or no planning areas
+                        <div className="flex flex-col gap-4">
+                          {scheme.contact.map((contact, index) => (
+                            <SchemeContactCard contact={contact} key={index} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
