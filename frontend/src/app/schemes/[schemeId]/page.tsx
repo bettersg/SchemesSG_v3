@@ -346,7 +346,7 @@ export default function SchemePage() {
                   </div>
                 </div>
                 {/* other details */}
-                <div className="flex flex-col flex-1">
+                <div className="flex flex-col flex-1 overflow-y-hidden">
                   {/* type */}
                   <div className="flex flex-col gap-2 mb-4">
                     <span className="font-bold uppercase text-xs text-slate-500">
@@ -392,7 +392,7 @@ export default function SchemePage() {
                         </Accordion>
                       ) : (
                         // one or no planning areas
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 p-1">
                           {scheme.contact.map((contact, index) => (
                             <SchemeContactCard contact={contact} key={index} />
                           ))}
