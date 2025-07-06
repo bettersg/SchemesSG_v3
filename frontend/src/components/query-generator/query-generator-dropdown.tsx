@@ -1,4 +1,4 @@
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
 
 interface QueryGeneratorDropdownProps {
   label: string;
@@ -33,7 +33,7 @@ function QueryGeneratorDropdown({label, value, tags, changeHandler, className}: 
         selectionMode="single"
         onSelectionChange={changeHandler}
         classNames={{
-          base: 'max-h-[300px] overflow-y-scroll'
+          base: 'max-h-[300px] overflow-y-auto'
         }}
       >
         {tags.map((tag) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
+import { Button, Card, CardBody, Input, Textarea } from "@heroui/react";
 import { useState } from "react";
 import { fetchWithAuth } from "@/app/utils/api";
 import clsx from "clsx";

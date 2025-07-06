@@ -1,6 +1,6 @@
 "use client";
-import { Chip } from "@nextui-org/chip";
-import { Accordion, AccordionItem } from "@nextui-org/react";
+import { Chip } from "@heroui/chip";
+import { Accordion, AccordionItem } from "@heroui/react";
 import clsx from "clsx";
 
 export default function AboutPage() {

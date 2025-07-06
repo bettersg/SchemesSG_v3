@@ -9,7 +9,7 @@ import {
   RadioGroup,
   Spinner,
   Textarea,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useState } from "react";
 import { fetchWithAuth } from "@/app/utils/api";
 import clsx from "clsx";

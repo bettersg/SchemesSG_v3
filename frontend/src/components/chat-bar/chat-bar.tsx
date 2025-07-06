@@ -1,4 +1,4 @@
-import { Button, Spinner, Textarea } from "@nextui-org/react";
+import { Button, Spinner, Textarea } from "@heroui/react";
 import { SendIcon } from "../../assets/icons/send-icon";
 import QuerySuggestions from "../query-suggestions/query-suggestions";
 import { useEffect, useRef } from "react";
