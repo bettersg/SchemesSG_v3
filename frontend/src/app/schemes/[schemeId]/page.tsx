@@ -397,7 +397,7 @@ export default function SchemePage() {
                               : []
                           }
                         >
-                          {Array.from(new Set(scheme.planningArea)).map((area, index) => (
+                          {Array.from(new Set(scheme.planningArea)).map((area) => (
                             <AccordionItem key={area} title={area}>
                               <div className="flex flex-col gap-4">
                                 {scheme.contact && scheme.contact.filter(contact => contact.planningArea == area).map((contact, index) => (
