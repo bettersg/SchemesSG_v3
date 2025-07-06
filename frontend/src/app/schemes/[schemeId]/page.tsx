@@ -3,7 +3,6 @@
 import {
   AdditionalInfoType,
   ApplicationType,
-  ContactType,
   EligibilityType,
   RawSchemeData,
 } from "@/app/interfaces/schemes";
@@ -19,44 +18,50 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
+  Accordion,
+  AccordionItem,
 } from "@heroui/react";
 import SchemeSkeleton from "@/components/schemes/scheme-skeleton";
 import Markdown from "react-markdown";
-import { MailIcon } from "@/assets/icons/mail-icon";
 import { LinkIcon } from "@/assets/icons/link-icon";
-import { LocationIcon } from "@/assets/icons/location-icon";
-import { PhoneIcon } from "@/assets/icons/phone-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
+import { parseArrayString } from "@/app/utils/helper";
+import SchemeContactCard from "@/components/schemes/scheme-contact-card";
 
 // Type for full scheme properties
 type Scheme = SearchResScheme & {
   lastUpdated?: string;
   eligibility?: EligibilityType;
   application?: ApplicationType;
-  contact?: ContactType;
+  contact?: BranchContact[];
   additionalInfo?: AdditionalInfoType;
   // Additional fields directly from API
-  phone?: string;
-  email?: string;
-  address?: string;
   howToApply?: string;
   eligibilityText?: string;
+  serviceArea?: string;
+};
+
+export type BranchContact = {
+  planningArea?: string;
+  phones?: string[];
+  emails?: string[];
+  address?: string;
 };
 
 interface FullSchemeData extends RawSchemeData {
   "Last Updated": string;
   Eligibility?: EligibilityType;
   Application?: ApplicationType;
-  Contact?: ContactType;
   "Additional Info"?: AdditionalInfoType;
   // Additional fields that might be in the API response
-  phone?: string;
-  email?: string;
-  address?: string;
+  phone?: string[] | undefined;
+  email?: string[] | undefined;
+  address?: string[] | undefined;
   how_to_apply?: string;
   eligibility?: string;
+  service_area?: string;
 }
 
 interface ApiSchemeData {
@@ -75,15 +80,41 @@ interface ApiSchemeData {
   query?: string;
   similarity?: number;
   quintile?: number;
-  phone?: string;
-  email?: string;
-  address?: string;
+  phone?: string | string[];
+  email?: string | string[];
+  address?: string | string[];
   how_to_apply?: string;
   eligibility?: string;
   last_modified_date?: number;
+  planning_area?: string;
+  service_area?: string;
 }
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
+  const contacts: BranchContact[] = [];
+  const planningArea = rawData.planning_area && rawData.planning_area != "No location" && parseArrayString(rawData.planning_area)
+  // address field is defined. No of branch is length of address array
+  if (planningArea) {
+    for (let i = 0; i < planningArea.length; i++) {
+      // if phone / email data is type string, display that phone / email for all branches
+      contacts.push({
+        planningArea: planningArea[i],
+        phones:
+          rawData.phone &&
+          rawData.phone[Math.min(i, rawData.phone.length - 1)].split(","),
+        emails:
+          rawData.email &&
+          rawData.email[Math.min(i, rawData.email.length - 1)].split(","),
+        address: rawData.address && rawData.address[i],
+      });
+    }
+  } else {
+    // no physical branch. Group contact details together
+    contacts.push({
+      phones: rawData.phone && rawData.phone,
+      emails: rawData.email && rawData.email,
+    });
+  }
   return {
     // Properties from Scheme
     schemeType: rawData["Scheme Type"] || "",
@@ -104,9 +135,7 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     summary: rawData["summary"] || "",
 
     // Direct access to contact fields
-    phone: rawData["phone"] || "",
-    email: rawData["email"] || "",
-    address: rawData["address"] || "",
+    contact: contacts,
     howToApply: rawData["how_to_apply"] || "",
     eligibilityText: rawData["eligibility"] || "",
 
@@ -114,8 +143,9 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     lastUpdated: rawData["Last Updated"] || "",
     eligibility: rawData["Eligibility"] || undefined,
     application: rawData["Application"] || undefined,
-    contact: rawData["Contact"] || undefined,
+    // contact: rawData["Contact"] || undefined,
     additionalInfo: rawData["Additional Info"] || undefined,
+    serviceArea: rawData["service_area"] || "",
   };
 };
 
@@ -149,35 +179,36 @@ export default function SchemePage() {
         const schemeData = res.data as ApiSchemeData;
 
         // Handle the scheme data structure - map to our frontend format
-        const schemeRes = {
-          // Map from our formatted object
-          ...mapToFullScheme({
-            "Scheme Type": schemeData.scheme_type || "",
-            Scheme: schemeData.scheme || "",
-            "Who's it for": schemeData.who_is_it_for || "",
-            Agency: schemeData.agency || "",
-            Description:
-              schemeData.llm_description || schemeData.description || "",
-            scraped_text: schemeData.scraped_text || "",
-            "What it gives": schemeData.what_it_gives || "",
-            Link: schemeData.link || "",
-            Image: schemeData.image || "",
-            "search_booster(WL)": schemeData.search_booster || "",
-            scheme_id: id, // Use the ID from the URL parameter
-            query: "", // No query for single scheme view
-            Similarity: 0, // Not applicable for single scheme view
-            Quintile: 0, // Not applicable for single scheme view
-            "Last Updated": schemeData.last_modified_date
-              ? new Date(schemeData.last_modified_date).toLocaleString()
-              : "",
-            // Add additional fields from API response directly here instead of later
-            phone: schemeData.phone || "",
-            email: schemeData.email || "",
-            address: schemeData.address || "",
-            how_to_apply: schemeData.how_to_apply || "",
-            eligibility: schemeData.eligibility || "",
-          }),
-        } as Scheme; // Use type assertion for the whole object
+        const fullSchemeData: FullSchemeData = {
+          "Scheme Type": schemeData.scheme_type || "",
+          Scheme: schemeData.scheme || "",
+          "Who's it for": schemeData.who_is_it_for || "",
+          Agency: schemeData.agency || "",
+          Description:
+            schemeData.llm_description || schemeData.description || "",
+          scraped_text: schemeData.scraped_text || "",
+          "What it gives": schemeData.what_it_gives || "",
+          Link: schemeData.link || "",
+          Image: schemeData.image || "",
+          "search_booster(WL)": schemeData.search_booster || "",
+          scheme_id: id, // Use the ID from the URL parameter
+          query: "", // No query for single scheme view
+          Similarity: 0, // Not applicable for single scheme view
+          Quintile: 0, // Not applicable for single scheme view
+          "Last Updated": schemeData.last_modified_date
+            ? new Date(schemeData.last_modified_date).toLocaleString()
+            : "",
+                  // Add additional fields from API response directly here instead of later
+        phone: parseArrayString(schemeData.phone),
+        email: parseArrayString(schemeData.email),
+        address: parseArrayString(schemeData.address),
+        how_to_apply: schemeData.how_to_apply || "",
+        eligibility: schemeData.eligibility || "",
+        planning_area: schemeData.planning_area || "",
+        service_area: schemeData.service_area || "",
+        };
+        // Map from our formatted object
+        const schemeRes = mapToFullScheme(fullSchemeData) as Scheme; // Use type assertion for the whole object
 
         console.log("Mapped scheme:", schemeRes); // Debug
         setScheme(schemeRes);
@@ -220,7 +251,7 @@ export default function SchemePage() {
           <div
             className={clsx(
               "text-center sm:text-left gap-4 mb-8",
-              "flex flex-col sm:flex-row items-center",
+              "flex flex-col sm:flex-row items-center"
             )}
           >
             <Image
@@ -231,7 +262,7 @@ export default function SchemePage() {
               className="w-24 h-24 md:w-32 md:h-32 object-contain shadow-lg md:mb-0 mb-4"
               src={scheme.image}
             />
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2 items-center sm:items-start">
               {scheme.agency && (
                 <h1 className="text-3xl font-bold">{scheme.agency}</h1>
               )}
@@ -239,51 +270,19 @@ export default function SchemePage() {
                 <h6 className="text-medium">{scheme.schemeName}</h6>
               )}
               {/* Action Buttons */}
-              <div className="flex justify-center sm:justify-start gap-2 mt-2">
-                {scheme.link && (
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    aria-label="website"
-                    color="primary"
-                    variant="flat"
-                    as={Link}
-                    href={scheme.link}
-                    isExternal
-                  >
-                    <LinkIcon size={20} />
-                  </Button>
-                )}
-                {scheme.email && (
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    aria-label="email"
-                    color="primary"
-                    variant="flat"
-                    as={Link}
-                    href={`mailto:${scheme.email}`}
-                  >
-                    <MailIcon size={20} />
-                  </Button>
-                )}
-                {scheme.phone && (
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    aria-label="phone"
-                    color="primary"
-                    variant="flat"
-                    as={Link}
-                    href={`tel:${scheme.phone.slice(
-                      0,
-                      scheme.phone.indexOf(",")
-                    )}`}
-                  >
-                    <PhoneIcon size={20} />
-                  </Button>
-                )}
-              </div>
+              {scheme.link && (
+                <Button
+                  className="w-min"
+                  color="primary"
+                  endContent={<LinkIcon size={20} />}
+                  variant="light"
+                  as={Link}
+                  href={scheme.link}
+                  isExternal
+                >
+                  Find out more
+                </Button>
+              )}
             </div>
           </div>
 
@@ -312,8 +311,8 @@ export default function SchemePage() {
                 <div className="flex-[2]">
                   <div className="sm:flex gap-5 mb-4">
                     {/* who */}
-                    <div className="flex-1 mb-4">
-                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                    <div className="flex flex-col gap-2 flex-1 mb-4">
+                      <span className="font-bold uppercase text-xs text-slate-500">
                         Who is it for
                       </span>
                       {scheme.targetAudience && (
@@ -325,8 +324,8 @@ export default function SchemePage() {
                       )}
                     </div>
                     {/* what */}
-                    <div className="flex-1">
-                      <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                    <div className="flex flex-col gap-2 flex-1">
+                      <span className="font-bold uppercase text-xs text-slate-500">
                         What it gives
                       </span>
                       {scheme.benefits && (
@@ -338,24 +337,24 @@ export default function SchemePage() {
                       )}
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                  <div className="flex flex-col gap-2 mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500">
                       Who can apply
                     </span>
                     {scheme.eligibilityText && <p>{scheme.eligibilityText}</p>}
                   </div>
-                  <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                  <div className="flex flex-col gap-2 mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500">
                       How to apply
                     </span>
                     {scheme.howToApply && <p>{scheme.howToApply}</p>}
                   </div>
                 </div>
                 {/* other details */}
-                <div className="flex-1">
+                <div className="flex flex-col flex-1 overflow-y-hidden">
                   {/* type */}
-                  <div className="mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500 mb-2">
+                  <div className="flex flex-col gap-2 mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500">
                       Type
                     </span>
                     {scheme.schemeType && (
@@ -374,62 +373,62 @@ export default function SchemePage() {
                       </div>
                     )}
                   </div>
+                  {/* service area */}
+                  {scheme.serviceArea && (
+                    <div className="flex flex-col gap-2 mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500">
+                      Service Area
+                    </span>
+                    <p>{scheme.serviceArea}</p>
+                    </div>
+                  )}
                   {/* contacts */}
-                  <div className="flex flex-col gap-2 mt-6">
-                    {scheme.phone && (
-                      <div>
-                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">
-                          Phone
-                        </p>
-                        <p>{scheme.phone}</p>
-                      </div>
-                    )}
-                    {scheme.email && (
-                      <div>
-                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">
-                          Email
-                        </p>
-                        <p>{scheme.email}</p>
-                      </div>
-                    )}
-                    {scheme.address && (
-                      <div>
-                        <p className="font-bold uppercase text-xs text-slate-500 mb-1">
-                          Location
-                        </p>
-                        {scheme.planningArea && (
-                          <p>
-                            <LocationIcon size={20} />
-                            <span>{scheme.planningArea}</span>
-                          </p>
-                        )}
-                        <p>{scheme.address}</p>
-                      </div>
-                    )}
-                  </div>
+                  {scheme.contact && scheme.planningArea && (
+                    <div className="flex flex-col gap-2">
+                      <span className="font-bold uppercase text-xs text-slate-500">
+                        Contact
+                      </span>
+                      {/* multiple planning areas */}
+                      {typeof scheme.planningArea == "object" ? (
+                        <Accordion
+                          defaultExpandedKeys={
+                            Array.from(new Set(scheme.planningArea)).length === 1
+                              ? Array.from(new Set(scheme.planningArea))
+                              : []
+                          }
+                        >
+                          {Array.from(new Set(scheme.planningArea)).map((area, index) => (
+                            <AccordionItem key={area} title={area}>
+                              <div className="flex flex-col gap-4">
+                                {scheme.contact && scheme.contact.filter(contact => contact.planningArea == area).map((contact, index) => (
+                                  <SchemeContactCard
+                                    contact={contact}
+                                    key={index}
+                                  />
+                                ))}
+                              </div>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      ) : (
+                        // one or no planning areas
+                        <div className="flex flex-col gap-4 p-1">
+                          {scheme.contact.map((contact, index) => (
+                            <SchemeContactCard contact={contact} key={index} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardBody>
-            <CardFooter className="gap-4 justify-center sm:justify-end">
-              {scheme.address && (
-                <Button
-                  color="primary"
-                  endContent={<LocationIcon size={20} />}
-                  variant="ghost"
-                  as={Link}
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    scheme.address
-                  )}`}
-                  isExternal
-                >
-                  Get Directions
-                </Button>
-              )}
+            <CardFooter className="flex flex-wrap gap-4 justify-center sm:justify-end">
               {scheme.link && (
                 <Button
                   color="primary"
                   endContent={<LinkIcon size={20} />}
-                  variant="ghost"
+                  variant="solid"
                   as={Link}
                   href={scheme.link}
                   isExternal

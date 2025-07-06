@@ -11,6 +11,7 @@ import { SearchResponse } from "@/app/interfaces/schemes";
 import { mapToScheme } from "../search-bar";
 import { FilterObjType } from "@/app/interfaces/filter";
 import clsx from "clsx";
+import { parseArrayString } from "@/app/utils/helper";
 // Type for scheme from search results
 export type SearchResScheme = {
   schemeId: string;
@@ -27,7 +28,7 @@ export type SearchResScheme = {
   query: string;
   similarity: number;
   quintile: number;
-  planningArea: string;
+  planningArea: string | string[];
   summary: string;
 };
 
@@ -68,7 +69,7 @@ export default function SchemesList({
     () =>
       schemes.filter((scheme) => {
         if (filterObj.planningArea && filterObj.planningArea.size > 0) {
-          if (!scheme.planningArea || !filterObj.planningArea.has(scheme.planningArea)) {
+          if (!scheme.planningArea || filterObj.planningArea.intersection(new Set(parseArrayString(scheme.planningArea))).size == 0) {
             return false;
           }
         }

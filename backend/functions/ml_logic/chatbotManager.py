@@ -66,18 +66,18 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
         # Handle both uppercase and lowercase column names
         scheme = row.get("scheme", "")
         agency = row.get("agency", "")
-        description = row.get("description", "")
+        description = row.get("llm_description", "")
         link = row.get("link", "")
         phone = row.get("phone", "")
         address = row.get("address", "")
         eligibility = row.get("eligibility", "")
         email = row.get("email", "")
+        what_it_gives = row.get("what_it_gives", "")
         how_to_apply = row.get("how_to_apply", "")
-        scraped_text = row.get("scraped_text", "")
+        service_area = row.get("service_area", "")
 
-        sentence = clean_scraped_text(scraped_text)
 
-        text_summary += f"Scheme Name: {scheme}, Agency: {agency}, Phone: {phone}, Address: {address}, Eligibility: {eligibility}, Email: {email}, How to Apply: {how_to_apply}, Description: {description}, Link: {link}, Scraped Text from website: {sentence}\n"
+        text_summary += f"Scheme Name: {scheme}, Agency: {agency}, Phone: {phone}, Address: {address}, Service Area: {service_area}, Eligibility: {eligibility}, Email: {email}, How to Apply: {how_to_apply}, What it Gives: {what_it_gives}, Description: {description}, Link: {link} \n"
     return text_summary
 
 

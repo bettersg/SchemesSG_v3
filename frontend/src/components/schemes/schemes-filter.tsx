@@ -4,6 +4,7 @@ import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
 import { FilterIcon } from "@/assets/icons/filter-icon";
 import clsx from "clsx";
+import { parseArrayString } from "@/app/utils/helper";
 
 interface SchemesFilterProps {
   schemes: SearchResScheme[];
@@ -25,17 +26,24 @@ function SchemesFilter({
   resetFilters,
 }: SchemesFilterProps) {
   const [showFilter, setShowFilter] = useState(false);
-  const allLocations = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          schemes
-            .filter((scheme) => scheme.planningArea)
-            .map((scheme) => scheme.planningArea)
-        )
-      ).sort(),
-    [schemes]
-  );
+  const allLocations: string[] = useMemo(() => {
+    const locationSet = new Set<string>();
+    console.log(schemes);
+    schemes.forEach((scheme) => {
+      if (scheme.planningArea) {
+        const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
+        planningAreaSet.forEach((planningArea) => {
+          locationSet.add(planningArea);
+        });
+      }
+    });
+    // Position 'No Location' as the first option in location dropdown
+    if (locationSet.has('No Location')) {
+      locationSet.delete('No Location')
+      return ['No Location', ...Array.from(locationSet).sort()]
+    }
+    return Array.from(locationSet).sort();
+  }, [schemes]);
 
   const allAgencies = useMemo(
     () => Array.from(new Set(schemes.map((scheme) => scheme.agency))).sort(),
@@ -47,10 +55,19 @@ function SchemesFilter({
     if (selectedLocations.size === 0) {
       return allAgencies;
     }
-    // Keep agencies whose schemes have a planningArea in selectedLocations
     const agenciesSet = new Set<string>();
     schemes.forEach((scheme) => {
-      if (selectedLocations.has(scheme.planningArea) && scheme.agency) {
+      // Skip agencies that have no planningArea
+      if (!scheme.planningArea) {
+        return;
+      }
+      // Keep agencies whose schemes have a planningArea in selectedLocations
+      else if (
+        selectedLocations.intersection(
+          new Set(parseArrayString(scheme.planningArea))
+        ).size > 0 &&
+        scheme.agency
+      ) {
         agenciesSet.add(scheme.agency);
       }
     });
@@ -58,7 +75,7 @@ function SchemesFilter({
   }, [selectedLocations, allAgencies, schemes]);
 
   // Filter locations based on selected agencies
-  const filteredLocations = useMemo(() => {
+  const filteredLocations: string[] = useMemo(() => {
     if (selectedAgencies.size === 0) {
       return allLocations;
     }
@@ -66,7 +83,10 @@ function SchemesFilter({
     const locationsSet = new Set<string>();
     schemes.forEach((scheme) => {
       if (selectedAgencies.has(scheme.agency) && scheme.planningArea) {
-        locationsSet.add(scheme.planningArea);
+        const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
+        planningAreaSet.forEach((planningArea) => {
+          locationsSet.add(planningArea);
+        });
       }
     });
     return Array.from(locationsSet).sort();
@@ -86,8 +106,7 @@ function SchemesFilter({
   };
 
   return (
-    <div className="w-full flex gap-2 flex-wrap relative items-center xl:justify-end"
-    >
+    <div className="w-full flex gap-2 flex-wrap relative items-center xl:justify-end">
       <Button
         color="primary"
         isIconOnly
