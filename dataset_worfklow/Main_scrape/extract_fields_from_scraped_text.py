@@ -62,7 +62,7 @@ class SchemesStructuredOutput(BaseModel):
     )
     llm_description: Optional[str] = Field(
         default=None,
-        description="Concise description of the scheme extracted from the scraped website text, summarizing key details for quick understanding. Aim for under 200 words. Use simple markdown.",
+        description="Concise description of the scheme extracted from the scraped website text, summarizing key details for quick understanding. Aim for under 200 words. Use simple markdown. Do not use forward slash n (/n) to indicate next line. Only use back slash n.",
     )
     eligibility: Optional[str] = Field(
         default=None,

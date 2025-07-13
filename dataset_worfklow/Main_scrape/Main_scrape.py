@@ -798,8 +798,28 @@ try:
 
     # Testing configuration - set to True to only process specific documents
     TESTING_MODE = False
-    doc_ids = ["4oE8YsKaFqa69HHFsAao", "5uYva3ETk2IQ85yyoD2a", "8tWBA0cWcJaDRuoBLQnj", "9lfZMJ0ZAiLhZeWRXV99", "AFT326wEDwbZtYy1356A", "BBnps4FBmDd4IEehux5i", "BlxfZvWnR4exdhVCLqHx" , "C8uVwKtjc2MwJSK60r4U", "CbwPvFgJ0cf1qgEoLNjy", "ESkFg9BNa2emqHYV3a9h", "FwpZNF9aCe4MfPmKUP4S", "IVTZrp8zeTbuLgec60bG", "IhKLeOTlBTc8tSkAgKEP", "IphFEQwQumWuEyDOiNPS", "LA6CzDU0EhOaHZW40jPL"]
+    # doc_ids = ["4oE8YsKaFqa69HHFsAao", "5uYva3ETk2IQ85yyoD2a", "8tWBA0cWcJaDRuoBLQnj", "9lfZMJ0ZAiLhZeWRXV99", "AFT326wEDwbZtYy1356A", "BBnps4FBmDd4IEehux5i", "BlxfZvWnR4exdhVCLqHx" , "C8uVwKtjc2MwJSK60r4U", "CbwPvFgJ0cf1qgEoLNjy", "ESkFg9BNa2emqHYV3a9h", "FwpZNF9aCe4MfPmKUP4S", "IVTZrp8zeTbuLgec60bG", "IhKLeOTlBTc8tSkAgKEP", "IphFEQwQumWuEyDOiNPS", "LA6CzDU0EhOaHZW40jPL"]
     # doc_ids = ["Dsq1hv34RYgJGrY5hO6k"]
+    # doc_ids = [
+    # "ZnaaI9wPZ0M4bKxzqz7Z",
+    # "mzq9kSFYoa9nJRSjo8mi",
+    # "ke29dhM9VP7exsyMHBdR",
+    # "5eAVPDSsy8G2CXE6YDzX",
+    # "QEF7t67nTnTkYmPrcA5X",
+    # "QMeMEyQ79DmOcbtN2ucH",
+    # "WtqBqKnnniJyAhNjbA83",
+    # "ZoPSL37hjD98SzoeL3oE",
+    # "c5A5qMjY4GRzbnfbFEeQ",
+    # "l8CmX6ZKXxQi1V8nFDZ4",
+    # "mzq9kSFYoa9nJRSjo8mi",
+    # "n1JVQhzmWsrqRAxg93nA",
+    # "o937Z2wTY4kn1Js7VH0L",
+    # "rCWgF4B65MCBsvt7JHSI",
+    # "uL9vy6RlHcjBGkXqYn39",
+    # "vFNkWq8MQBcLrK9cTdPk"
+    # ]
+    #Doc ids for new schemes from carecorner - 13 July
+    # doc_ids = ["S6easrpcSTJOmXhCvG9F", "BcXpy7bOUjDyOrkB3WmU", "yZtyMYNs7xsVu4ilHOmM", "r0cZr6LdA4Ha2abPr4aG", "Q49szphEOJPmsqT2DXP5"]
 
     if TESTING_MODE:
         # For testing: only process specific document IDs

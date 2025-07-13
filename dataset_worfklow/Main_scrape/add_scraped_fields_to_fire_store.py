@@ -54,6 +54,27 @@ if __name__ == "__main__":
 
     # TODO testing doc_ids
     # doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
+    # doc_ids = [
+    # "ZnaaI9wPZ0M4bKxzqz7Z",
+    # "mzq9kSFYoa9nJRSjo8mi",
+    # "ke29dhM9VP7exsyMHBdR",
+    # "5eAVPDSsy8G2CXE6YDzX",
+    # "QEF7t67nTnTkYmPrcA5X",
+    # "QMeMEyQ79DmOcbtN2ucH",
+    # "WtqBqKnnniJyAhNjbA83",
+    # "ZoPSL37hjD98SzoeL3oE",
+    # "c5A5qMjY4GRzbnfbFEeQ",
+    # "l8CmX6ZKXxQi1V8nFDZ4",
+    # "mzq9kSFYoa9nJRSjo8mi",
+    # "n1JVQhzmWsrqRAxg93nA",
+    # "o937Z2wTY4kn1Js7VH0L",
+    # "rCWgF4B65MCBsvt7JHSI",
+    # "uL9vy6RlHcjBGkXqYn39",
+    # "vFNkWq8MQBcLrK9cTdPk"
+    # ]
+
+    #Doc ids for new schemes from carecorner - 13 July
+    # doc_ids = ["S6easrpcSTJOmXhCvG9F", "BcXpy7bOUjDyOrkB3WmU", "yZtyMYNs7xsVu4ilHOmM", "r0cZr6LdA4Ha2abPr4aG", "Q49szphEOJPmsqT2DXP5"]
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -71,9 +92,9 @@ if __name__ == "__main__":
         essential_fields = ["llm_description"] # User changed this
         fields_populated = all(doc_data.get(field) for field in essential_fields)
 
-        if fields_populated:
-            logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
-            continue # Skip to the next document
+        # if fields_populated:
+        #     logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
+        #     continue # Skip to the next document
 
         scraped_text = doc_data.get("scraped_text")
         description = doc_data.get("description")

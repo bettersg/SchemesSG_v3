@@ -35,7 +35,7 @@ async function importCSV(filePath) {
   const collectionRef = db.collection('schemes');
 
   // Clear the collection first
-  await clearCollection(collectionRef);
+  // await clearCollection(collectionRef);
 
   const rows = [];
   let hasError = false;
@@ -47,11 +47,15 @@ async function importCSV(filePath) {
         rows.push(row); // Keep track of rows processed
         if (hasError) return; // Skip further rows if an error occurred
 
-        collectionRef.add(row).catch(error => {
-          console.error('Error adding document:', row, error);
-          hasError = true; // Flag error
-          reject(new Error(`Processing stopped due to error with row: ${JSON.stringify(row)}. Error: ${error.message}`));
-        });
+        collectionRef.add(row)
+          .then((docRef) => {
+            console.log(`Document added with ID: ${docRef.id}`);
+          })
+          .catch(error => {
+            console.error('Error adding document:', row, error);
+            hasError = true; // Flag error
+            reject(new Error(`Processing stopped due to error with row: ${JSON.stringify(row)}. Error: ${error.message}`));
+          });
       })
       .on('end', () => {
         if (!hasError) {
@@ -67,7 +71,7 @@ async function importCSV(filePath) {
 }
 
 // Change 'path/to/your-file.csv' to your actual CSV file path
-const csvFilePath = '../schemesv3_schemes_20Apr subset 400.csv';
+const csvFilePath = '../schemesv3_schemes_13Jul add CareCorner.csv';
 importCSV(csvFilePath)
   .then(() => console.log('Import completed successfully'))
   .catch((error) => {
