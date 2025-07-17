@@ -40,6 +40,7 @@ type Scheme = SearchResScheme & {
   // Additional fields directly from API
   howToApply?: string;
   eligibilityText?: string;
+  serviceArea?: string;
 };
 
 export type BranchContact = {
@@ -60,6 +61,7 @@ interface FullSchemeData extends RawSchemeData {
   address?: string[] | undefined;
   how_to_apply?: string;
   eligibility?: string;
+  service_area?: string;
 }
 
 interface ApiSchemeData {
@@ -85,6 +87,7 @@ interface ApiSchemeData {
   eligibility?: string;
   last_modified_date?: number;
   planning_area?: string;
+  service_area?: string;
 }
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
@@ -142,6 +145,7 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     application: rawData["Application"] || undefined,
     // contact: rawData["Contact"] || undefined,
     additionalInfo: rawData["Additional Info"] || undefined,
+    serviceArea: rawData["service_area"] || "",
   };
 };
 
@@ -194,13 +198,14 @@ export default function SchemePage() {
           "Last Updated": schemeData.last_modified_date
             ? new Date(schemeData.last_modified_date).toLocaleString()
             : "",
-          // Add additional fields from API response directly here instead of later
-          phone: parseArrayString(schemeData.phone),
-          email: parseArrayString(schemeData.email),
-          address: parseArrayString(schemeData.address),
-          how_to_apply: schemeData.how_to_apply || "",
-          eligibility: schemeData.eligibility || "",
-          planning_area: schemeData.planning_area || "",
+                  // Add additional fields from API response directly here instead of later
+        phone: parseArrayString(schemeData.phone),
+        email: parseArrayString(schemeData.email),
+        address: parseArrayString(schemeData.address),
+        how_to_apply: schemeData.how_to_apply || "",
+        eligibility: schemeData.eligibility || "",
+        planning_area: schemeData.planning_area || "",
+        service_area: schemeData.service_area || "",
         };
         // Map from our formatted object
         const schemeRes = mapToFullScheme(fullSchemeData) as Scheme; // Use type assertion for the whole object
@@ -368,6 +373,15 @@ export default function SchemePage() {
                       </div>
                     )}
                   </div>
+                  {/* service area */}
+                  {scheme.serviceArea && (
+                    <div className="flex flex-col gap-2 mb-4">
+                    <span className="font-bold uppercase text-xs text-slate-500">
+                      Service Area
+                    </span>
+                    <p>{scheme.serviceArea}</p>
+                    </div>
+                  )}
                   {/* contacts */}
                   {scheme.contact && (
                     <div className="flex flex-col gap-2">
@@ -375,10 +389,16 @@ export default function SchemePage() {
                         Contact
                       </span>
                       {/* multiple planning areas */}
-                      {scheme.planningArea && typeof scheme.planningArea == "object" ? (
-                        <Accordion>
-                          {Array.from(new Set(scheme.planningArea)).map((area, index) => (
-                            <AccordionItem key={index} title={area}>
+                      {typeof scheme.planningArea == "object" ? (
+                        <Accordion
+                          defaultExpandedKeys={
+                            Array.from(new Set(scheme.planningArea)).length === 1
+                              ? Array.from(new Set(scheme.planningArea))
+                              : []
+                          }
+                        >
+                          {Array.from(new Set(scheme.planningArea)).map((area) => (
+                            <AccordionItem key={area} title={area}>
                               <div className="flex flex-col gap-4">
                                 {scheme.contact && scheme.contact.filter(contact => contact.planningArea == area).map((contact, index) => (
                                   <SchemeContactCard

@@ -62,7 +62,7 @@ export default function SchemeContactCard({contact}: SchemeContactCardProps) {
             key={index}
             className="flex gap-2 justify-between"
           >
-            <p>{email}</p>
+            <p className="break-all max-w-[180px] sm:max-w-none">{email}</p>
             <Button
               isIconOnly
               size="sm"
