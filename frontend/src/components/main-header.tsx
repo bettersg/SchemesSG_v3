@@ -1,8 +1,6 @@
 "use client";
-import { SendIcon } from "@/assets/icons/send-icon";
 import logoImg from "@/assets/logo.jpg";
 import {
-  Button,
   Navbar,
   NavbarBrand,
   NavbarContent,
@@ -100,7 +98,7 @@ export default function MainHeader() {
 
       <NavbarContent justify="end">
         {/* Telegram Bot Button - Desktop */}
-        <NavbarItem className="hidden md:flex">
+        {/* <NavbarItem className="hidden md:flex">
           <Button
             as={Link}
             href="https://t.me/SchemesSGBot"
@@ -111,10 +109,10 @@ export default function MainHeader() {
             <SendIcon className="text-blue-500 group-hover:text-white transition-colors" />
             <span className="ml-0 font-semibold">SchemesSGBot</span>
           </Button>
-        </NavbarItem>
+        </NavbarItem> */}
 
         {/* Telegram Bot Button - Mobile */}
-        <NavbarItem className="md:hidden">
+        {/* <NavbarItem className="md:hidden">
           <Link
             href="https://t.me/SchemesSGBot"
             target="_blank"
@@ -129,7 +127,7 @@ export default function MainHeader() {
               <span className="ml-0 font-semibold">SchemesSGBot</span>
             </Button>
           </Link>
-        </NavbarItem>
+        </NavbarItem> */}
 
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
