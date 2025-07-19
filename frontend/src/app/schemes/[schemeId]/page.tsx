@@ -383,7 +383,7 @@ export default function SchemePage() {
                     </div>
                   )}
                   {/* contacts */}
-                  {scheme.contact && scheme.planningArea && (
+                  {scheme.contact && (
                     <div className="flex flex-col gap-2">
                       <span className="font-bold uppercase text-xs text-slate-500">
                         Contact

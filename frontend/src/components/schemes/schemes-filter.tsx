@@ -152,7 +152,7 @@ function SchemesFilter({
           className="w-full min-w-[150px]"
           classNames={{
             trigger: "bg-schemes-lightblue",
-            popoverContent: "w-max",
+            popoverContent: "w-max max-w-[300px] absolute right-0",
           }}
           selectedKeys={selectedAgencies}
           onSelectionChange={(keys) =>
