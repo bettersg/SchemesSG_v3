@@ -11,7 +11,6 @@ import React, {
 } from "react";
 import { analytics } from "./firebaseConfig"; // Adjust path as needed
 
-
 // Chat Context
 export type Message = {
   type: "user" | "bot";
@@ -31,6 +30,32 @@ type ChatContextType = {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
+// parse item stored in local storage as value
+// function retrieveLocalStorage(key: string) {
+//   const item = localStorage.getItem(key);
+//   if (item) {
+//     try {
+//       const { value, expiration } = JSON.parse(item);
+//       if (value && Date.now() < expiration) {
+//         return value;
+//       }
+//     } catch (error) {
+//       console.error("Error loading from localStorage:", error);
+//     }
+//   }
+//   return null;
+// }
+
+// function storeLocalStorage(key: string, value: unknown) {
+//   localStorage.setItem(
+//     key,
+//     JSON.stringify({
+//       value: value,
+//       expiration: Date.now() + 12 * 60 * 60 * 1000,
+//     })
+//   );
+// }
+
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
@@ -38,14 +63,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [userQuery, setUserQuery] = useState("");
 
-  // Load data from localStorage on mount
+  // Load data from sessionStorage on mount
   useEffect(() => {
     if (!isInitialized) {
       try {
-        const storedSchemes = localStorage.getItem("schemes");
-        const storedMessages = localStorage.getItem("userMessages");
-        const storedSessionId = localStorage.getItem("sessionID");
-        const storedUserQuery = localStorage.getItem("userQuery");
+        const storedSchemes = sessionStorage.getItem("schemes");
+        const storedMessages = sessionStorage.getItem("userMessages");
+        const storedSessionId = sessionStorage.getItem("sessionID");
+        const storedUserQuery = sessionStorage.getItem("userQuery");
 
         if (storedSchemes) {
           const parsedSchemes = JSON.parse(storedSchemes);
@@ -63,7 +88,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         }
         setIsInitialized(true);
       } catch (error) {
-        console.error("Error loading from localStorage:", error);
+        console.error("Error loading from sessionStorage:", error);
       }
     }
   }, [isInitialized]);
@@ -71,9 +96,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isInitialized) {
       try {
-        localStorage.setItem("schemes", JSON.stringify(schemes));
+        sessionStorage.setItem("schemes", JSON.stringify(schemes));
       } catch (error) {
-        console.error("Error saving schemes to localStorage:", error);
+        console.error("Error saving schemes to sessionStorage:", error);
       }
     }
   }, [schemes, isInitialized]);
@@ -81,9 +106,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isInitialized) {
       try {
-        localStorage.setItem("userMessages", JSON.stringify(messages));
+        sessionStorage.setItem("userMessages", JSON.stringify(messages));
       } catch (error) {
-        console.error("Error saving messages to localStorage:", error);
+        console.error("Error saving messages to sessionStorage:", error);
       }
     }
   }, [messages, isInitialized]);
@@ -91,9 +116,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (isInitialized && sessionId) {
       try {
-        localStorage.setItem("sessionID", sessionId);
+        sessionStorage.setItem("sessionID", JSON.stringify(sessionId));
       } catch (error) {
-        console.error("Error saving sessionId to localStorage:", error);
+        console.error("Error saving sessionId to sessionStorage:", error);
       }
     }
   }, [sessionId, isInitialized]);
@@ -102,12 +127,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     if (isInitialized) {
       try {
         if (userQuery) {
-          localStorage.setItem("userQuery", userQuery);
+          sessionStorage.setItem("userQuery", JSON.stringify(userQuery));
         } else {
-          localStorage.removeItem("userQuery");
+          sessionStorage.removeItem("userQuery");
         }
       } catch (error) {
-        console.error("Error saving userQuery to localStorage:", error);
+        console.error("Error saving userQuery to sessionStorage:", error);
       }
     }
   }, [userQuery, isInitialized]);

@@ -1,27 +1,14 @@
-export const SearchIcon = (props) => (
+export const SearchIcon = ({size=24, ...props}) => (
     <svg
       aria-hidden="true"
-      fill="none"
+      fill="currentColor"
       focusable="false"
-      height="1em"
+      width={size}
+      height={size}
       role="presentation"
-      viewBox="0 0 24 24"
-      width="1em"
+      viewBox="0 0 16 16"
       {...props}
     >
-      <path
-        d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z"
-        stroke="white"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
-      <path
-        d="M22 22L20 20"
-        stroke="white"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-      />
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
     </svg>
   );

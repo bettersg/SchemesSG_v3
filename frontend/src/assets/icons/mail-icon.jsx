@@ -1,18 +1,12 @@
-export const MailIcon = ({ size, ...props }) => (
+export const MailIcon = ({ size=24, ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    height={size || 24}
-    viewBox="0 0 24 24"
-    width={size || 24}
-    strokeWidth={1.5}
-    stroke="currentColor"
+    fill="currentColor"
+    height={size}
+    viewBox="0 0 16 16"
+    width={size}
     {...props}
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-    />
+    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
   </svg>
 );

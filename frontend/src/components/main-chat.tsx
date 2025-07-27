@@ -12,42 +12,26 @@ import clsx from "clsx";
 import { MinimizeIcon } from "@/assets/icons/minimize-icon";
 
 type MainChatProps = {
-  sessionId: string;
   filterObj: FilterObjType;
   resetFilters: () => void;
   setIsExpanded?: Dispatch<SetStateAction<boolean>>;
 };
 
 export default function MainChat({
-  sessionId,
   filterObj,
   resetFilters,
   setIsExpanded,
 }: MainChatProps) {
-  const { messages, setMessages } = useChat();
+  const { messages, setMessages, sessionId } = useChat();
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
   const scrollableDivRef = useRef<HTMLDivElement>(null);
 
-  const [botMessageAdded, setBotMessageAdded] = useState(false);
-
   useEffect(() => {
-    const storedQuery = localStorage.getItem("userQuery");
-    const storedMessages = localStorage.getItem("userMessages");
-
-    // Parse storedMessages safely
-    const parsedMessages =
-      storedMessages && storedMessages !== "[]"
-        ? JSON.parse(storedMessages)
-        : [];
-
     // Append bot message only once
     if (
-      storedQuery &&
-      parsedMessages.length === 0 && // No stored messages
-      !botMessageAdded && // Bot message has not been added
       messages.length === 1 // User message exists
     ) {
       setMessages([
@@ -57,9 +41,8 @@ export default function MainChat({
           text: "You can see the search results on the right. Please ask me any further questions about the schemes.",
         },
       ]);
-      setBotMessageAdded(true); // Mark bot message as added
     }
-  }, [botMessageAdded, setMessages, messages]); // Minimal dependency array
+  }, [setMessages, messages]); // Minimal dependency array
 
   useEffect(() => {
     handleScrollToBottom();
@@ -156,44 +139,48 @@ export default function MainChat({
   };
 
   return (
-    <div
-      className={clsx(
-        "w-full h-full",
-        "flex flex-col",
-        "bg-schemes-lightgray rounded-2xl",
-        "mx-auto px-8 py-2 sm:p-[0.8rem]"
-      )}
-    >
-      <UserQuery resetFilters={resetFilters} />
-      <ChatList
-        messages={messages}
-        streamingMessage={currentStreamingMessage}
-        scrollableDivRef={scrollableDivRef}
-      />
+    <>
       <div
         className={clsx(
-          "flex justify-between items-center",
-          "bg-transparent border-b",
-          "mt-auto border-gray-100"
+          "w-full h-full",
+          "flex flex-col",
+          "bg-schemes-lightgray rounded-2xl",
+          "mx-auto px-8 py-2 sm:p-[0.8rem]"
         )}
       >
-        {setIsExpanded && <Button
-          isIconOnly
-          color="primary"
-          variant="solid"
-          onPress={() => setIsExpanded(false)}
-          className="z-10 ml-auto"
+        <UserQuery resetFilters={resetFilters} />
+        <ChatList
+          messages={messages}
+          streamingMessage={currentStreamingMessage}
+          scrollableDivRef={scrollableDivRef}
+        />
+        <div
+          className={clsx(
+            "flex justify-between items-center",
+            "bg-transparent border-b",
+            "mt-auto border-gray-100"
+          )}
         >
-          <MinimizeIcon />
-        </Button>}
+          {setIsExpanded && (
+            <Button
+              isIconOnly
+              color="primary"
+              variant="solid"
+              onPress={() => setIsExpanded(false)}
+              className="z-10 ml-auto"
+            >
+              <MinimizeIcon size={16} />
+            </Button>
+          )}
+        </div>
+        <Spacer y={4} />
+        <ChatBar
+          userInput={userInput}
+          setUserInput={setUserInput}
+          handleUserInput={handleUserInput}
+          isBotResponseGenerating={isBotResponseGenerating}
+        />
       </div>
-      <Spacer y={4} />
-      <ChatBar
-        userInput={userInput}
-        setUserInput={setUserInput}
-        handleUserInput={handleUserInput}
-        isBotResponseGenerating={isBotResponseGenerating}
-      />
-    </div>
+    </>
   );
 }

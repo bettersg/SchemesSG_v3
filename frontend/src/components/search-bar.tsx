@@ -17,18 +17,67 @@ export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
     benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
     link: rawData["link"] || rawData["Link"] || "",
     image: rawData["image"] || rawData["Image"] || "",
-    searchBooster: rawData["search_booster"] || rawData["search_booster(WL)"] || "",
+    searchBooster:
+      rawData["search_booster"] || rawData["search_booster(WL)"] || "",
     schemeId: rawData["scheme_id"] || "",
     query: rawData["query"] || "",
     similarity: rawData["Similarity"] || 0,
     quintile: rawData["Quintile"] || 0,
     planningArea: rawData["planning_area"] || "",
-    summary: rawData["summary"] || ""
+    summary: rawData["summary"] || "",
   };
 };
 
+export const getSchemes = async (userQuery: string) => {
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
+
+    const requestBody = {
+      query: userQuery,
+      top_k: 50,
+      similarity_threshold: 0,
+    };
+
+    try {
+      const response = await fetchWithAuth(url, {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = (await response.json()) as SearchResponse;
+      console.log("Search response:", res); // Debug
+
+      const sessionId: string = res["sessionID"] || "";
+
+      // Check if data exists in the response
+      if (res.data) {
+        let schemesData;
+
+        // Handle both array and single object responses
+        if (Array.isArray(res.data)) {
+          schemesData = res.data;
+        } else {
+          // If it's a single object, convert to array
+          schemesData = [res.data];
+        }
+
+        const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
+        console.log("Mapped schemes:", schemesRes); // Debug
+        return { schemesRes, sessionId };
+      } else {
+        console.error("Unexpected response format:", res);
+        return { schemesRes: [], sessionId };
+      }
+    } catch (error) {
+      console.error("Error making POST request:", error);
+      return { schemesRes: [], sessionId: "" };
+    }
+  };
+
 interface SearchBarProps {
-  setSessionId: (val: string) => void;
   selectedSupportProvided: string | null;
   selectedForWho: string | null;
   // selectedOrganisation: string | null;
@@ -41,7 +90,6 @@ interface SearchBarProps {
   onSendQuery?: () => void;
 }
 export default function SearchBar({
-  setSessionId,
   selectedSupportProvided,
   selectedForWho,
   // selectedOrganisation,
@@ -50,8 +98,7 @@ export default function SearchBar({
   setSelectedForWho,
   setSelectedSchemeType,
 }: SearchBarProps) {
-  const { setMessages, userQuery, setUserQuery, setSchemes } = useChat();
-  // const [userInput, setUserInput] = useState("");
+  const { setMessages, userQuery, setUserQuery, setSchemes, setSessionId } = useChat();
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
 
@@ -82,81 +129,28 @@ export default function SearchBar({
 
     // Default to empty if it's just the basic phrase
     setUserQuery(query === "I am" ? "" : query);
-  }, [selectedForWho, selectedSchemeType, selectedSupportProvided, setUserQuery]);
-
-  const handleUserQuery = (input: string) => {
-    setMessages([
-      {
-        type: "user",
-        text: input,
-      },
-    ]);
-    // Make sure input is a string
-    if (typeof input === "string") {
-      setUserQuery(input);
-    }
-    setUserQuery("");
-  };
-
-  const getSchemes = async () => {
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
-
-    const requestBody = {
-      query: userQuery,
-      top_k: 50,
-      similarity_threshold: 0,
-    };
-
-    try {
-      setIsBotResponseGenerating(true);
-      const response = await fetchWithAuth(url, {
-        method: "POST",
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const res = await response.json() as SearchResponse;
-      console.log("Search response:", res); // Debug
-
-      const sessionId: string = res["sessionID"] || "";
-      setIsBotResponseGenerating(false);
-
-      // Check if data exists in the response
-      if (res.data) {
-        let schemesData;
-
-        // Handle both array and single object responses
-        if (Array.isArray(res.data)) {
-          schemesData = res.data;
-        } else {
-          // If it's a single object, convert to array
-          schemesData = [res.data];
-        }
-
-        const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
-        console.log("Mapped schemes:", schemesRes); // Debug
-        return { schemesRes, sessionId };
-      } else {
-        console.error("Unexpected response format:", res);
-        return { schemesRes: [], sessionId };
-      }
-    } catch (error) {
-      console.error("Error making POST request:", error);
-      setIsBotResponseGenerating(false);
-      return { schemesRes: [], sessionId: "" };
-    }
-  };
+  }, [
+    selectedForWho,
+    selectedSchemeType,
+    selectedSupportProvided,
+    setUserQuery,
+  ]);
 
   const handleSend = async () => {
     if (userQuery.trim()) {
-      const { schemesRes, sessionId } = await getSchemes();
+      setIsBotResponseGenerating(true);
+      const { schemesRes, sessionId } = await getSchemes(userQuery);
+      setIsBotResponseGenerating(false);
       if (schemesRes.length > 0 && sessionId !== "") {
         schemesRes && setSchemes(schemesRes);
         setSessionId(sessionId);
-        handleUserQuery(userQuery);
+        setMessages([
+          {
+            type: "user",
+            text: userQuery,
+          },
+        ]);
+        setUserQuery("");
       }
 
       // Reset the filters
@@ -179,7 +173,7 @@ export default function SearchBar({
         }}
         className="max-w-[35rem] mx-auto"
         classNames={{
-          input: 'placeholder:italic placeholder:text-black/20'
+          input: "placeholder:italic placeholder:text-black/20",
         }}
         type="text"
         size="md"
@@ -196,7 +190,7 @@ export default function SearchBar({
                 <span className="text-xs text-gray-500 whitespace-nowrap">
                   Finding schemes...
                 </span>
-                <Spinner size="sm" className="mt-auto"/>
+                <Spinner size="sm" className="mt-auto" />
               </>
             ) : (
               <Button
@@ -205,9 +199,9 @@ export default function SearchBar({
                 size="sm"
                 radius="full"
                 onPress={async () => await handleSend()}
-                 className="mt-auto"
+                className="mt-auto"
               >
-                <SearchIcon />
+                <SearchIcon size={16} />
               </Button>
             )}
           </div>
