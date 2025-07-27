@@ -1,9 +1,14 @@
 import { useChat } from "@/app/providers";
 import { ResetIcon } from "@/assets/icons/reset-icon";
-import { Card, CardBody, CardHeader } from "@heroui/react";
+import { EditIcon } from "@/assets/icons/edit-icon";
+import { ConfirmIcon } from "@/assets/icons/confirm-icon";
+import { CancelIcon } from "@/assets/icons/cancel-icon";
+import { ButtonGroup, Card, CardBody, CardHeader, Input } from "@heroui/react";
 import { Button, Tooltip, useDisclosure } from "@heroui/react";
 import ResetQueryModal from "./reset-query-modal";
 import clsx from "clsx";
+import { useRef, useState } from "react";
+import { getSchemes } from "./search-bar";
 
 export default function UserQuery({
   resetFilters,
@@ -14,16 +19,41 @@ export default function UserQuery({
     useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isEdit, setIsEdit] = useState(false);
   const handleReset = () => {
-    localStorage.removeItem("schemes");
-    localStorage.removeItem("userMessages");
-    localStorage.removeItem("sessionID");
-    localStorage.removeItem("userQuery");
+    sessionStorage.removeItem("schemes");
+    sessionStorage.removeItem("userMessages");
+    sessionStorage.removeItem("sessionID");
+    sessionStorage.removeItem("userQuery");
     setSchemes([]);
     setMessages([]);
     setSessionId("");
     setUserQuery("");
     resetFilters();
+  };
+  const handleQueryChange = async () => {
+    if (inputRef?.current?.value) {
+      const queryValue = inputRef.current.value;
+      const query = queryValue.trim();
+      if (query != firstMessage) {
+        const { schemesRes, sessionId } = await getSchemes(query);
+        if (schemesRes.length > 0 && sessionId !== "") {
+          schemesRes && setSchemes(schemesRes);
+          setSessionId(sessionId);
+          setMessages([
+            {
+              type: "user",
+              text: query,
+            },
+          ]);
+          setUserQuery(query);
+          resetFilters();
+        }
+      }
+    }
+    setIsEdit(false);
   };
 
   return (
@@ -41,17 +71,33 @@ export default function UserQuery({
         <h4 className="text-small leading-none text-default-600">
           Your query is:
         </h4>
-        <Tooltip content="Reset Query" offset={-7}>
-          <Button
-            onPress={onOpen}
-            isIconOnly
-            radius="full"
-            size="sm"
-            className="bg-transparent w-6 h-6"
-          >
-            <ResetIcon />
-          </Button>
-        </Tooltip>
+        {!isEdit ? (
+          <ButtonGroup variant="light" color="primary">
+            <Tooltip content="Reset Query" offset={8}>
+              <Button onPress={onOpen} isIconOnly radius="full">
+                <ResetIcon size={16} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Edit Query" offset={8}>
+              <Button onPress={() => setIsEdit(true)} isIconOnly radius="full">
+                <EditIcon size={16} />
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
+        ) : (
+          <ButtonGroup variant="light" color="primary">
+            <Tooltip content="Confirm" offset={8}>
+              <Button onPress={handleQueryChange} isIconOnly radius="full">
+                <ConfirmIcon size={16} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Cancel" offset={8}>
+              <Button onPress={() => setIsEdit(false)} isIconOnly radius="full">
+                <CancelIcon size={16} />
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
+        )}
         <ResetQueryModal
           isOpen={isOpen}
           onOpenChange={onOpenChange}
@@ -59,7 +105,22 @@ export default function UserQuery({
         />
       </CardHeader>
       <CardBody className="px-2 py-1">
-        <b>{firstMessage}</b>
+        {isEdit ? (
+          <Input
+            variant="bordered"
+            defaultValue={firstMessage}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                await handleQueryChange();
+              }
+            }}
+            ref={inputRef}
+            autoFocus
+          />
+        ) : (
+          <b>{firstMessage}</b>
+        )}
       </CardBody>
     </Card>
   );

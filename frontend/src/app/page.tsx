@@ -15,7 +15,7 @@ import { FilterObjType } from "./interfaces/filter";
 import clsx from "clsx";
 
 export default function Home() {
-  const { schemes, setSchemes, sessionId, setSessionId } = useChat();
+  const { schemes, setSchemes } = useChat();
   const [isExpanded, setIsExpanded] = useState(false);
   const [nextCursor, setNextCursor] = useState("");
   const [selectedSupportProvided, setSelectedSupportProvided] = useState<
@@ -62,7 +62,6 @@ export default function Home() {
             </div>
             <div className="hidden md:flex">
               <MainChat
-                sessionId={sessionId}
                 filterObj={filterObj}
                 resetFilters={resetFilters}
               />
@@ -95,7 +94,6 @@ export default function Home() {
               )}
             >
               {isExpanded && <MainChat
-                sessionId={sessionId}
                 filterObj={filterObj}
                 resetFilters={resetFilters}
                 setIsExpanded={setIsExpanded}
@@ -143,7 +141,6 @@ export default function Home() {
           </div>
           <div className="flex flex-col justify-center items-center my-8">
             <QueryGenerator
-              // setSessionId={setSessionId}
               setSelectedSupportProvided={setSelectedSupportProvided}
               setSelectedForWho={setSelectedForWho}
               // setSelectedOrganisation={setSelectedOrganisation}
@@ -152,7 +149,6 @@ export default function Home() {
             />
           </div>
           <SearchBar
-            setSessionId={setSessionId}
             selectedSupportProvided={selectedSupportProvided}
             selectedForWho={selectedForWho}
             // selectedOrganisation={selectedOrganisation}

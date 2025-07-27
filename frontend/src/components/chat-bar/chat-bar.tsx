@@ -35,49 +35,47 @@ export default function ChatBar({
   }, []);
 
   return (
-    <>
-      <Textarea
-        ref={inputRef}
-        value={userInput}
-        onChange={(e) => setUserInput(e.target.value)}
-        onKeyDown={async (e) => {
-          if (e.key === "Enter" && !isBotResponseGenerating) {
-            e.preventDefault();
-            handleSend();
-          }
-        }}
-        className="z-10 border-solid border-2 border-primary-100 rounded-2xl"
-        classNames={{
-          input: "py-[0.3rem] placeholder:italic placeholder:text-black/20",
-        }}
-        type="text"
-        size="md"
-        radius="lg"
-        color="primary"
-        labelPlacement="outside"
-        placeholder="Please type your question"
-        startContent={
-          <div className="flex items-center">
-            <QuerySuggestions setUserInput={handleSetInput} />
-          </div>
+    <Textarea
+      ref={inputRef}
+      value={userInput}
+      onChange={(e) => setUserInput(e.target.value)}
+      onKeyDown={async (e) => {
+        if (e.key === "Enter" && !isBotResponseGenerating) {
+          e.preventDefault();
+          handleSend();
         }
-        endContent={
-          isBotResponseGenerating ? (
-            <Spinner className="mt-auto" size="sm" />
-          ) : (
-            <Button
-              className="mt-auto"
-              color="primary"
-              isIconOnly
-              size="sm"
-              radius="full"
-              onPress={handleSend}
-            >
-              <SendIcon />
-            </Button>
-          )
-        }
-      />
-    </>
+      }}
+      className="z-10 border-solid border-2 border-primary-100 rounded-2xl"
+      classNames={{
+        input: "py-[0.3rem] placeholder:italic placeholder:text-black/20",
+      }}
+      type="text"
+      size="md"
+      radius="lg"
+      color="primary"
+      labelPlacement="outside"
+      placeholder="Please type your follow-up question"
+      startContent={
+        <div className="flex items-center">
+          <QuerySuggestions setUserInput={handleSetInput} />
+        </div>
+      }
+      endContent={
+        isBotResponseGenerating ? (
+          <Spinner className="mt-auto" size="sm" />
+        ) : (
+          <Button
+            className="mt-auto"
+            color="primary"
+            isIconOnly
+            size="md"
+            radius="full"
+            onPress={handleSend}
+          >
+            <SendIcon size={16} />
+          </Button>
+        )
+      }
+    />
   );
 }

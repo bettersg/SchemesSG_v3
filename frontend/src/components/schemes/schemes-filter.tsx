@@ -114,7 +114,7 @@ function SchemesFilter({
         className="xl:hidden"
         onPress={() => setShowFilter(!showFilter)}
       >
-        <FilterIcon size={32} />
+        <FilterIcon/>
       </Button>
       <div
         className={clsx(
