@@ -15,6 +15,7 @@ export default function ChatList({
   streamingMessage,
   scrollableDivRef,
 }: ChatListProps) {
+
   return (
     <div
       className={clsx(

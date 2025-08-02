@@ -30,7 +30,7 @@ const QuerySuggestions = ({ setUserInput }: QuerySuggestionsProps) => {
           variant="light"
           className="text-schemes-darkgray hover:text-schemes-darkblue"
         >
-          <InfoIcon size={16} />
+          <InfoIcon />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] rounded-xl shadow-md">

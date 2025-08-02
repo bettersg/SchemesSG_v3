@@ -40,7 +40,7 @@ export default function MiniChatBar({
                 variant="light"
                 className="text-schemes-darkgray hover:text-schemes-darkblue"
               >
-                <InfoIcon size={16} />
+                <InfoIcon />
               </Button>
             </div>
           }

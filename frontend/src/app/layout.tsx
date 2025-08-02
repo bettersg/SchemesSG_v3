@@ -37,7 +37,7 @@ export default function RootLayout({
                 <MainHeader />
                 <div
                   className={clsx(
-                    "h-[calc(100vh-64px)] sm:h-[calc(100vh-96px)]",
+                    "h-[calc(100vh-64px)] md:h-[calc(100vh-96px)]",
                     "flex justify-center"
                   )}
                 >
