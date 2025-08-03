@@ -8,14 +8,18 @@ import { Button, Tooltip, useDisclosure } from "@heroui/react";
 import ResetQueryModal from "./reset-query-modal";
 import clsx from "clsx";
 import { useRef, useState } from "react";
-import { getSchemes } from "./search-bar";
+import { getSchemes } from "./main-chat";
+
+interface userQueryProps {
+  resetFilters: () => void;
+  setIsLoadingSchemes: (value: boolean) => void;
+}
 
 export default function UserQuery({
   resetFilters,
-}: {
-  resetFilters: () => void;
-}) {
-  const { setSchemes, messages, setMessages, setSessionId, setUserQuery } =
+  setIsLoadingSchemes,
+}: userQueryProps) {
+  const { setSchemes, messages, setMessages, setSessionId, userQuery, setUserQuery } =
     useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
@@ -38,22 +42,24 @@ export default function UserQuery({
       const queryValue = inputRef.current.value;
       const query = queryValue.trim();
       if (query != firstMessage) {
+        setIsEdit(false);
+        setUserQuery(query);
+        setMessages([
+          {
+            type: "user",
+            text: query,
+          },
+        ]);
+        setIsLoadingSchemes(true);
         const { schemesRes, sessionId } = await getSchemes(query);
         if (schemesRes.length > 0 && sessionId !== "") {
           schemesRes && setSchemes(schemesRes);
           setSessionId(sessionId);
-          setMessages([
-            {
-              type: "user",
-              text: query,
-            },
-          ]);
-          setUserQuery(query);
           resetFilters();
         }
+        setIsLoadingSchemes(false);
       }
     }
-    setIsEdit(false);
   };
 
   return (
@@ -75,12 +81,12 @@ export default function UserQuery({
           <ButtonGroup variant="light" color="primary">
             <Tooltip content="Reset Query" offset={8}>
               <Button onPress={onOpen} isIconOnly radius="full">
-                <ResetIcon size={16} />
+                <ResetIcon />
               </Button>
             </Tooltip>
             <Tooltip content="Edit Query" offset={8}>
               <Button onPress={() => setIsEdit(true)} isIconOnly radius="full">
-                <EditIcon size={16} />
+                <EditIcon />
               </Button>
             </Tooltip>
           </ButtonGroup>
@@ -88,12 +94,12 @@ export default function UserQuery({
           <ButtonGroup variant="light" color="primary">
             <Tooltip content="Confirm" offset={8}>
               <Button onPress={handleQueryChange} isIconOnly radius="full">
-                <ConfirmIcon size={16} />
+                <ConfirmIcon />
               </Button>
             </Tooltip>
             <Tooltip content="Cancel" offset={8}>
               <Button onPress={() => setIsEdit(false)} isIconOnly radius="full">
-                <CancelIcon size={16} />
+                <CancelIcon />
               </Button>
             </Tooltip>
           </ButtonGroup>
@@ -119,7 +125,7 @@ export default function UserQuery({
             autoFocus
           />
         ) : (
-          <b>{firstMessage}</b>
+          <b>{userQuery}</b>
         )}
       </CardBody>
     </Card>

@@ -3,15 +3,22 @@
 import { Spacer, Spinner } from "@heroui/react";
 import SchemeCard from "./scheme-card";
 import SchemesFilter from "./schemes-filter";
-import { Dispatch, SetStateAction, useEffect, useRef, useState, useMemo } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
 import { useInView } from "framer-motion";
 import { useChat } from "@/app/providers";
-import { fetchWithAuth } from "@/app/utils/api";
-import { SearchResponse } from "@/app/interfaces/schemes";
-import { mapToScheme } from "../search-bar";
 import { FilterObjType } from "@/app/interfaces/filter";
 import clsx from "clsx";
 import { parseArrayString } from "@/app/utils/helper";
+import { fetchWithAuth } from "@/app/utils/api";
+import { SearchResponse } from "@/app/interfaces/schemes";
+import { mapToScheme } from "../main-chat";
 // Type for scheme from search results
 export type SearchResScheme = {
   schemeId: string;
@@ -35,6 +42,7 @@ export type SearchResScheme = {
 interface SchemesListProps {
   schemes: SearchResScheme[];
   setSchemes: Dispatch<SetStateAction<SearchResScheme[]>>;
+  isLoadingSchemes: boolean;
   filterObj: FilterObjType;
   setFilterObj: Dispatch<SetStateAction<FilterObjType>>;
   nextCursor: string;
@@ -49,6 +57,7 @@ interface SchemesListProps {
 export default function SchemesList({
   schemes,
   setSchemes,
+  isLoadingSchemes,
   filterObj,
   setFilterObj,
   nextCursor,
@@ -61,7 +70,7 @@ export default function SchemesList({
 }: SchemesListProps) {
   const listBottomRef = useRef(null);
   const bottomReached = useInView(listBottomRef);
-  const [isLoadingSchemes, setIsLoadingSchemes] = useState(false);
+  const [isLoadingMoreSchemes, setIsLoadingMoreSchemes] = useState(false);
   const { userQuery } = useChat();
 
   // Compute filtered schemes once per render
@@ -69,7 +78,12 @@ export default function SchemesList({
     () =>
       schemes.filter((scheme) => {
         if (filterObj.planningArea && filterObj.planningArea.size > 0) {
-          if (!scheme.planningArea || filterObj.planningArea.intersection(new Set(parseArrayString(scheme.planningArea))).size == 0) {
+          if (
+            !scheme.planningArea ||
+            filterObj.planningArea.intersection(
+              new Set(parseArrayString(scheme.planningArea))
+            ).size == 0
+          ) {
             return false;
           }
         }
@@ -85,10 +99,10 @@ export default function SchemesList({
 
   useEffect(() => {
     if (bottomReached && nextCursor) {
-      console.log('loading');
-      loadMoreSchemes();
+      console.log("loading");
+      loadMoreSchemes
     }
-  });
+  }, [bottomReached]);
 
   const loadMoreSchemes = async () => {
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
@@ -100,7 +114,7 @@ export default function SchemesList({
       cursor: nextCursor,
     };
     try {
-      setIsLoadingSchemes(true);
+      setIsLoadingMoreSchemes(true);
       const response = await fetchWithAuth(url, {
         method: "POST",
         body: JSON.stringify(requestBody),
@@ -110,14 +124,14 @@ export default function SchemesList({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const res = await response.json() as SearchResponse;
+      const res = (await response.json()) as SearchResponse;
       console.log("Search response:", res); // Debug
 
-      setIsLoadingSchemes(false)
+      setIsLoadingMoreSchemes(false);
 
       // Check if there is more data to be paginated
       if (res.has_more && res.next_cursor) {
-        setNextCursor(res.has_more ? res.next_cursor : '')
+        setNextCursor(res.has_more ? res.next_cursor : "");
       }
 
       // Check if data exists in the response
@@ -134,16 +148,16 @@ export default function SchemesList({
 
         const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
         console.log("Mapped schemes:", schemesRes); // Debug
-        setSchemes(prevSchemes => [...prevSchemes, ...schemesRes])
+        setSchemes((prevSchemes) => [...prevSchemes, ...schemesRes]);
       }
     } catch (error) {
       console.error("Error making POST request:", error);
-      setIsLoadingSchemes(false);
+      setIsLoadingMoreSchemes(false);
       return { schemesRes: [], sessionId: "" };
     }
   };
   return (
-    <div className="h-full flex flex-col">
+    <div className="overflow-y-hidden flex flex-col relative">
       <div className="flex gap-2 justify-between">
         <div className="flex flex-col gap-1 shrink-0 p-2">
           <p className="text-base font-semibold">Search Results</p>
@@ -166,19 +180,34 @@ export default function SchemesList({
 
       <div
         className={clsx(
-          "p-2",
-          "gap-2 grid grid-cols-1 lg:grid-cols-2",
-          "overflow-x-hidden overflow-y-auto",
+          "p-2 overflow-x-hidden overflow-y-auto",
+          "grid grid-cols-1 lg:grid-cols-2 gap-2",
         )}
       >
         {filteredSchemes.map((scheme) => (
           <SchemeCard key={scheme.schemeId} scheme={scheme} />
         ))}
+        <div
+          className={clsx(
+            "p-2 flex justify-center",
+            "col-span-1 lg:col-span-2"
+          )}
+          ref={listBottomRef}
+        >
+          {isLoadingMoreSchemes && <Spinner />}
+        </div>
       </div>
-
-      <div ref={listBottomRef}>
-        {isLoadingSchemes && <Spinner />}
-      </div>
+      {isLoadingSchemes && (
+        <div
+          className={clsx(
+            "w-full h-full p-2 z-50",
+            "absolute bg-white/70",
+            "flex justify-center items-center"
+          )}
+        >
+          <Spinner size="lg" />
+        </div>
+      )}
     </div>
   );
 }
