@@ -473,7 +473,7 @@ class SearchModel:
         # Return the paginated results
         results_json = {
             "sessionID": session_id,
-            "results": page_results,
+            "data": page_results,
             "total_count": total_count,
             "next_cursor": next_cursor,
             "has_more": has_more,

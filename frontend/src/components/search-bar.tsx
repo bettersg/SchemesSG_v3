@@ -26,7 +26,7 @@ export default function SearchBar({
   setSelectedForWho,
   setSelectedSchemeType,
 }: SearchBarProps) {
-  const { setMessages, userQuery, setUserQuery, setSchemes, setSessionId } = useChat();
+  const { setMessages, userQuery, setUserQuery, setSchemes, setSessionId, setTotalCount, setNextCursor } = useChat();
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
 
@@ -67,7 +67,9 @@ export default function SearchBar({
   const handleSend = async () => {
     if (userQuery.trim()) {
       setIsBotResponseGenerating(true);
-      const { schemesRes, sessionId } = await getSchemes(userQuery);
+      const { schemesRes, sessionId, totalCount, nextCursor } = await getSchemes(userQuery);
+      setTotalCount(totalCount)
+      setNextCursor(nextCursor)
       setUserQuery(userQuery);
       setIsBotResponseGenerating(false);
       if (schemesRes.length > 0 && sessionId !== "") {

@@ -15,7 +15,7 @@ import { FilterObjType } from "./interfaces/filter";
 import clsx from "clsx";
 
 export default function Home() {
-  const { schemes, setSchemes } = useChat();
+  const { schemes } = useChat();
   const [isLoadingSchemes, setIsLoadingSchemes] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false);
   const [nextCursor, setNextCursor] = useState("");
@@ -71,8 +71,6 @@ export default function Home() {
               />
             </div>
             <SchemesList
-              schemes={schemes}
-              setSchemes={setSchemes}
               isLoadingSchemes={isLoadingSchemes}
               filterObj={filterObj}
               setFilterObj={setFilterObj}
