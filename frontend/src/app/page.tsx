@@ -15,7 +15,8 @@ import { FilterObjType } from "./interfaces/filter";
 import clsx from "clsx";
 
 export default function Home() {
-  const { schemes, setSchemes, sessionId, setSessionId } = useChat();
+  const { schemes, setSchemes } = useChat();
+  const [isLoadingSchemes, setIsLoadingSchemes] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false);
   const [nextCursor, setNextCursor] = useState("");
   const [selectedSupportProvided, setSelectedSupportProvided] = useState<
@@ -25,10 +26,9 @@ export default function Home() {
   const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(
     null
   );
-  const [filterObj, setFilterObj] = useState<FilterObjType>({});
-  // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
 
-  // LIFTED filter state
+  // filter states
+  const [filterObj, setFilterObj] = useState<FilterObjType>({});
   const [selectedLocations, setSelectedLocations] = useState(new Set(""));
   const [selectedAgencies, setSelectedAgencies] = useState(new Set(""));
   const resetFilters = () => {
@@ -58,18 +58,22 @@ export default function Home() {
             )}
           >
             <div className="flex md:hidden">
-              <UserQuery resetFilters={resetFilters} />
+              <UserQuery
+                resetFilters={resetFilters}
+                setIsLoadingSchemes={setIsLoadingSchemes}
+              />
             </div>
             <div className="hidden md:flex">
               <MainChat
-                sessionId={sessionId}
                 filterObj={filterObj}
                 resetFilters={resetFilters}
+                setIsLoadingSchemes={setIsLoadingSchemes}
               />
             </div>
             <SchemesList
               schemes={schemes}
               setSchemes={setSchemes}
+              isLoadingSchemes={isLoadingSchemes}
               filterObj={filterObj}
               setFilterObj={setFilterObj}
               nextCursor={nextCursor}
@@ -94,12 +98,14 @@ export default function Home() {
                 !isExpanded && "pointer-events-none"
               )}
             >
-              {isExpanded && <MainChat
-                sessionId={sessionId}
-                filterObj={filterObj}
-                resetFilters={resetFilters}
-                setIsExpanded={setIsExpanded}
-              />}
+              {isExpanded && (
+                <MainChat
+                  filterObj={filterObj}
+                  resetFilters={resetFilters}
+                  setIsExpanded={setIsExpanded}
+                  setIsLoadingSchemes={setIsLoadingSchemes}
+                />
+              )}
             </div>
             <MiniChatBar
               onExpand={() => setIsExpanded(true)}
@@ -143,7 +149,6 @@ export default function Home() {
           </div>
           <div className="flex flex-col justify-center items-center my-8">
             <QueryGenerator
-              // setSessionId={setSessionId}
               setSelectedSupportProvided={setSelectedSupportProvided}
               setSelectedForWho={setSelectedForWho}
               // setSelectedOrganisation={setSelectedOrganisation}
@@ -152,7 +157,6 @@ export default function Home() {
             />
           </div>
           <SearchBar
-            setSessionId={setSessionId}
             selectedSupportProvided={selectedSupportProvided}
             selectedForWho={selectedForWho}
             // selectedOrganisation={selectedOrganisation}

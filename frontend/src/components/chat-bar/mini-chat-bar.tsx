@@ -22,7 +22,7 @@ export default function MiniChatBar({
         <Textarea
           readOnly
           onClick={onExpand}
-          className="z-10 mt-auto"
+          className="z-10 mt-auto border-solid border-2 border-primary-100 rounded-2xl"
           classNames={{
             input: "py-[0.3rem] placeholder:italic placeholder:text-black/20",
           }}
@@ -31,9 +31,9 @@ export default function MiniChatBar({
           radius="lg"
           color="primary"
           labelPlacement="outside"
-          placeholder="Please type your question"
+          placeholder="Please type your follow-up question"
           startContent={
-            <div className="flex items-center">
+            <div className="flex items-center invisible">
               <Button
                 isIconOnly
                 size="sm"
@@ -49,10 +49,10 @@ export default function MiniChatBar({
               className="mt-auto"
               color="primary"
               isIconOnly
-              size="sm"
+              size="md"
               radius="full"
             >
-              <SendIcon />
+              <SendIcon size={16}/>
             </Button>
           }
         />

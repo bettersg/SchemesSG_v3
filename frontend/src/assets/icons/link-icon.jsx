@@ -1,18 +1,13 @@
-export const LinkIcon = ({ size, ...props }) => (
+export const LinkIcon = ({ size=24, ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    height={size || 24}
-    width={size || 24}
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
+    fill="currentColor"
+    height={size}
+    width={size}
+    viewBox="0 0 16 16"
     {...props}
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-    />
+  <path fillRule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/>
+  <path fillRule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/>
   </svg>
 );

@@ -38,4 +38,4 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     console.error("Error in fetchWithAuth:", error);
     throw error;
   }
-} 
+}

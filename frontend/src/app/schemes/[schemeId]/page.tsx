@@ -92,7 +92,7 @@ interface ApiSchemeData {
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
   const contacts: BranchContact[] = [];
-  const planningArea = rawData.planning_area && rawData.planning_area != "No location" && parseArrayString(rawData.planning_area)
+  const planningArea = rawData.planning_area && rawData.planning_area !== "No Location" && parseArrayString(rawData.planning_area)
   // address field is defined. No of branch is length of address array
   if (planningArea) {
     for (let i = 0; i < planningArea.length; i++) {
@@ -110,10 +110,12 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     }
   } else {
     // no physical branch. Group contact details together
-    contacts.push({
-      phones: rawData.phone && rawData.phone,
-      emails: rawData.email && rawData.email,
-    });
+    if (rawData.phone || rawData.email) {
+      contacts.push({
+        phones: rawData.phone && rawData.phone,
+        emails: rawData.email && rawData.email,
+      });
+    }
   }
   return {
     // Properties from Scheme
@@ -383,7 +385,7 @@ export default function SchemePage() {
                     </div>
                   )}
                   {/* contacts */}
-                  {scheme.contact && (
+                  {scheme.contact && scheme.contact.length > 0 && (
                     <div className="flex flex-col gap-2">
                       <span className="font-bold uppercase text-xs text-slate-500">
                         Contact
