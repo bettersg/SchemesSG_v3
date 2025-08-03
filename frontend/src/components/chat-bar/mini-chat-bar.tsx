@@ -1,6 +1,7 @@
-import { SearchIcon } from "@/assets/icons/search-icon";
-import { Button, Textarea } from "@nextui-org/react";
-import classes from "./chat-bar.module.css";
+import { InfoIcon } from "@/assets/icons/info-icon";
+import { SendIcon } from "@/assets/icons/send-icon";
+import { Button, Textarea } from "@heroui/react";
+import clsx from "clsx";
 interface MiniChatBarProps {
   onExpand: () => void;
   isExpanded: boolean;
@@ -12,29 +13,46 @@ export default function MiniChatBar({
 }: MiniChatBarProps) {
   return (
     <div
-      className={`absolute bottom-0 left-0 right-0 bg-none
-        ${isExpanded ? "hidden" : "block"}`}
+      className={clsx(
+        "absolute bottom-0 left-0 right-0 bg-none",
+        isExpanded ? "hidden" : "block"
+      )}
     >
       <div className="py-2 px-8">
         <Textarea
           readOnly
           onClick={onExpand}
-          placeholder="Please type your question"
-          size="sm"
+          className="z-10 mt-auto border-solid border-2 border-primary-100 rounded-2xl"
+          classNames={{
+            input: "py-[0.3rem] placeholder:italic placeholder:text-black/20",
+          }}
+          type="text"
+          size="md"
           radius="lg"
           color="primary"
           labelPlacement="outside"
-          className={classes.chatBar}
+          placeholder="Please type your follow-up question"
+          startContent={
+            <div className="flex items-center invisible">
+              <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                className="text-schemes-darkgray hover:text-schemes-darkblue"
+              >
+                <InfoIcon />
+              </Button>
+            </div>
+          }
           endContent={
             <Button
-              isIconOnly
+              className="mt-auto"
               color="primary"
-              size="sm"
+              isIconOnly
+              size="md"
               radius="full"
-              onClick={onExpand}
-              className="min-w-unit-8 w-unit-8 h-unit-8 self-end"
             >
-              <SearchIcon />
+              <SendIcon size={16}/>
             </Button>
           }
         />

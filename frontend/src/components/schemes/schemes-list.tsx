@@ -1,80 +1,213 @@
 "use client";
 
-import { Card, CardBody, CardHeader, Image, Spacer } from "@nextui-org/react";
-import Link from "next/link";
+import { Spacer, Spinner } from "@heroui/react";
+import SchemeCard from "./scheme-card";
+import SchemesFilter from "./schemes-filter";
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
+import { useInView } from "framer-motion";
+import { useChat } from "@/app/providers";
+import { FilterObjType } from "@/app/interfaces/filter";
+import clsx from "clsx";
+import { parseArrayString } from "@/app/utils/helper";
+import { fetchWithAuth } from "@/app/utils/api";
+import { SearchResponse } from "@/app/interfaces/schemes";
+import { mapToScheme } from "../main-chat";
 // Type for scheme from search results
 export type SearchResScheme = {
+  schemeId: string;
   schemeType: string;
   schemeName: string;
-  targetAudience: string;
   agency: string;
   description: string;
+  targetAudience: string;
   scrapedText: string;
   benefits: string;
   link: string;
   image: string;
   searchBooster: string;
-  schemeId: string;
   query: string;
   similarity: number;
   quintile: number;
+  planningArea: string | string[];
+  summary: string;
 };
 
 interface SchemesListProps {
   schemes: SearchResScheme[];
+  setSchemes: Dispatch<SetStateAction<SearchResScheme[]>>;
+  isLoadingSchemes: boolean;
+  filterObj: FilterObjType;
+  setFilterObj: Dispatch<SetStateAction<FilterObjType>>;
+  nextCursor: string;
+  setNextCursor: (val: string) => void;
+  selectedLocations: Set<string>;
+  setSelectedLocations: Dispatch<SetStateAction<Set<string>>>;
+  selectedAgencies: Set<string>;
+  setSelectedAgencies: Dispatch<SetStateAction<Set<string>>>;
+  resetFilters: () => void;
 }
 
-export default function SchemesList({ schemes }: SchemesListProps) {
+export default function SchemesList({
+  schemes,
+  setSchemes,
+  isLoadingSchemes,
+  filterObj,
+  setFilterObj,
+  nextCursor,
+  setNextCursor,
+  selectedLocations,
+  setSelectedLocations,
+  selectedAgencies,
+  setSelectedAgencies,
+  resetFilters,
+}: SchemesListProps) {
+  const listBottomRef = useRef(null);
+  const bottomReached = useInView(listBottomRef);
+  const [isLoadingMoreSchemes, setIsLoadingMoreSchemes] = useState(false);
+  const { userQuery } = useChat();
+
+  // Compute filtered schemes once per render
+  const filteredSchemes = useMemo(
+    () =>
+      schemes.filter((scheme) => {
+        if (filterObj.planningArea && filterObj.planningArea.size > 0) {
+          if (
+            !scheme.planningArea ||
+            filterObj.planningArea.intersection(
+              new Set(parseArrayString(scheme.planningArea))
+            ).size == 0
+          ) {
+            return false;
+          }
+        }
+        if (filterObj.agency && filterObj.agency.size > 0) {
+          if (!scheme.agency || !filterObj.agency.has(scheme.agency)) {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [schemes, filterObj]
+  );
+
+  useEffect(() => {
+    if (bottomReached && nextCursor) {
+      console.log("loading");
+      loadMoreSchemes
+    }
+  }, [bottomReached]);
+
+  const loadMoreSchemes = async () => {
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
+    const requestBody = {
+      query: userQuery,
+      limit: 20,
+      top_k: 50,
+      similarity_threshold: 0,
+      cursor: nextCursor,
+    };
+    try {
+      setIsLoadingMoreSchemes(true);
+      const response = await fetchWithAuth(url, {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const res = (await response.json()) as SearchResponse;
+      console.log("Search response:", res); // Debug
+
+      setIsLoadingMoreSchemes(false);
+
+      // Check if there is more data to be paginated
+      if (res.has_more && res.next_cursor) {
+        setNextCursor(res.has_more ? res.next_cursor : "");
+      }
+
+      // Check if data exists in the response
+      if (res.data) {
+        let schemesData;
+
+        // Handle both array and single object responses
+        if (Array.isArray(res.data)) {
+          schemesData = res.data;
+        } else {
+          // If it's a single object, convert to array
+          schemesData = [res.data];
+        }
+
+        const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
+        console.log("Mapped schemes:", schemesRes); // Debug
+        setSchemes((prevSchemes) => [...prevSchemes, ...schemesRes]);
+      }
+    } catch (error) {
+      console.error("Error making POST request:", error);
+      setIsLoadingMoreSchemes(false);
+      return { schemesRes: [], sessionId: "" };
+    }
+  };
   return (
-    <div>
-      <div>
-        <p className="text-base font-semibold">Search Results</p>
-        <p className="text-xs text-slate-500">
-          Showing {schemes.length} schemes
-        </p>
+    <div className="overflow-y-hidden flex flex-col relative">
+      <div className="flex gap-2 justify-between">
+        <div className="flex flex-col gap-1 shrink-0 p-2">
+          <p className="text-base font-semibold">Search Results</p>
+          <p className="text-xs text-slate-500">
+            Showing {filteredSchemes.length} schemes
+          </p>
+        </div>
+        <SchemesFilter
+          schemes={schemes}
+          setFilterObj={setFilterObj}
+          selectedLocations={selectedLocations}
+          setSelectedLocations={setSelectedLocations}
+          selectedAgencies={selectedAgencies}
+          setSelectedAgencies={setSelectedAgencies}
+          resetFilters={resetFilters}
+        />
       </div>
 
       <Spacer y={3} />
 
       <div
-        className="gap-2 grid grid-cols-1 sm:grid-cols-2"
-        style={{
-          overflowX: "hidden",
-          overflowY: "auto",
-          maxHeight: "85vh",
-          padding: "0.5rem",
-        }}
+        className={clsx(
+          "p-2 overflow-x-hidden overflow-y-auto",
+          "grid grid-cols-1 lg:grid-cols-2 gap-2",
+        )}
       >
-        {schemes.map((scheme) => (
-          <Link
-            key={scheme.schemeId}
-            href={`/schemes/${scheme.schemeId}`}
-            className="w-full"
-            target="_blank"
-          >
-            <Card shadow="sm" className="w-full" isHoverable>
-              <CardHeader className="flex gap-3 font-semibold">
-                <Image
-                  alt={`${scheme.agency} logo`}
-                  height={60}
-                  radius="sm"
-                  src={scheme.image}
-                  width={60}
-                />
-                <div className="flex flex-col">
-                  <p className="text-md">{scheme.schemeName}</p>
-                  <p className="text-small text-default-500">{scheme.agency}</p>
-                </div>
-              </CardHeader>
-              <CardBody>
-                <p className="text-small">
-                  {scheme.description.substring(0, 250) + "..."}
-                </p>
-              </CardBody>
-            </Card>
-          </Link>
+        {filteredSchemes.map((scheme) => (
+          <SchemeCard key={scheme.schemeId} scheme={scheme} />
         ))}
+        <div
+          className={clsx(
+            "p-2 flex justify-center",
+            "col-span-1 lg:col-span-2"
+          )}
+          ref={listBottomRef}
+        >
+          {isLoadingMoreSchemes && <Spinner />}
+        </div>
       </div>
+      {isLoadingSchemes && (
+        <div
+          className={clsx(
+            "w-full h-full p-2 z-50",
+            "absolute bg-white/70",
+            "flex justify-center items-center"
+          )}
+        >
+          <Spinner size="lg" />
+        </div>
+      )}
     </div>
   );
 }

@@ -169,7 +169,7 @@ class SearchModel:
 
     def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
         """
-        Fetch multiple scheme documents from Firestore using their IDs
+        Fetch multiple schemes, batching to respect Firestore's 30-item 'in' limit, and remove 'scraped_text' field if present.
 
         Args:
             scheme_ids (List[str]): List of scheme IDs to fetch
@@ -178,6 +178,7 @@ class SearchModel:
             List[Dict]: List of scheme details as dictionaries
         """
 
+        """"""
         # Create a cache key based on the scheme IDs
         scheme_cache_key = tuple(scheme_ids)
 
@@ -186,27 +187,26 @@ class SearchModel:
             logger.info("Returning cached scheme details.")
             return self.query_cache[scheme_cache_key]
 
-        # Process in batches of 30 documents (Firestore 'in' operator limit)
-        BATCH_SIZE = 30
-        all_scheme_details = []
+        # Helper to chunk scheme_ids into batches of 30
+        def chunk_list(lst, n):
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
 
-        # Process scheme_ids in batches
-        for i in range(0, len(scheme_ids), BATCH_SIZE):
-            batch_ids = scheme_ids[i : i + BATCH_SIZE]
-
-            # Get documents for this batch
-            docs = self.__class__.db.collection("schemes").where("__name__", "in", batch_ids).get()
-
-            # Process results from this batch
+        scheme_details = []
+        for batch in chunk_list(scheme_ids, 30):
+            docs = self.__class__.db.collection("schemes").where("__name__", "in", batch).get()
             for doc in docs:
                 scheme_data = doc.to_dict()
                 scheme_data["scheme_id"] = doc.id
-                all_scheme_details.append(scheme_data)
+                # Remove 'scraped_text' field if present
+                if "scraped_text" in scheme_data:
+                    del scheme_data["scraped_text"]
+                scheme_details.append(scheme_data)
 
         # Store the results in the cache
-        self.query_cache[scheme_cache_key] = all_scheme_details
+        self.query_cache[scheme_cache_key] = scheme_details
 
-        return all_scheme_details
+        return scheme_details
 
     def __new__(cls, firebase_manager: FirebaseManager):
         """Implementation of singleton pattern (returns initialised instance)"""

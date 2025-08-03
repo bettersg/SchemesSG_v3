@@ -64,20 +64,20 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
     text_summary = ""
     for _, row in df.iterrows():
         # Handle both uppercase and lowercase column names
-        scheme = row.get("Scheme", row.get("scheme", ""))
-        agency = row.get("Agency", row.get("agency", ""))
-        description = row.get("Description", row.get("description", ""))
-        link = row.get("Link", row.get("link", ""))
-        phone = row.get("Phone", row.get("phone", ""))
-        address = row.get("Address", row.get("address", ""))
-        eligibility = row.get("Eligibility", row.get("eligibility", ""))
-        email = row.get("Email", row.get("email", ""))
-        how_to_apply = row.get("How to Apply", row.get("how_to_apply", ""))
-        scraped_text = row.get("scraped_text", "")
+        scheme = row.get("scheme", "")
+        agency = row.get("agency", "")
+        description = row.get("llm_description", "")
+        link = row.get("link", "")
+        phone = row.get("phone", "")
+        address = row.get("address", "")
+        eligibility = row.get("eligibility", "")
+        email = row.get("email", "")
+        what_it_gives = row.get("what_it_gives", "")
+        how_to_apply = row.get("how_to_apply", "")
+        service_area = row.get("service_area", "")
 
-        sentence = clean_scraped_text(scraped_text)
 
-        text_summary += f"Scheme Name: {scheme}, Agency: {agency}, Phone: {phone}, Address: {address}, Eligibility: {eligibility}, Email: {email}, How to Apply: {how_to_apply}, Description: {description}, Link: {link}, Scraped Text from website: {sentence}\n"
+        text_summary += f"Scheme Name: {scheme}, Agency: {agency}, Phone: {phone}, Address: {address}, Service Area: {service_area}, Eligibility: {eligibility}, Email: {email}, How to Apply: {how_to_apply}, What it Gives: {what_it_gives}, Description: {description}, Link: {link} \n"
     return text_summary
 
 

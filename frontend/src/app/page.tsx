@@ -1,23 +1,24 @@
 "use client";
-import { MinimizeIcon } from "@/assets/icons/minimize-icon";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
-import MainChat from "@/components/main-chat/main-chat";
+import MainChat from "@/components/main-chat";
 import QueryGenerator from "@/components/query-generator/query-generator";
 import SchemesList from "@/components/schemes/schemes-list";
-import SearchBar from "@/components/search-bar/search-bar";
-import UserQuery from "@/components/user-query/user-query";
-import { Button } from "@nextui-org/react";
+import SearchBar from "@/components/search-bar";
+import UserQuery from "@/components/user-query";
 import { useState } from "react";
-import classes from "../components/main-layout/main-layout.module.css";
 import { useChat } from "./providers";
 import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
 import backgroundImageTwo from "@/assets/bg2.png";
-import Partners from "@/components/partners/partners";
+import Partners from "@/components/partners";
+import { FilterObjType } from "./interfaces/filter";
+import clsx from "clsx";
 
 export default function Home() {
-  const { schemes, sessionId, setSessionId } = useChat();
+  const { schemes, setSchemes } = useChat();
+  const [isLoadingSchemes, setIsLoadingSchemes] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false);
+  const [nextCursor, setNextCursor] = useState("");
   const [selectedSupportProvided, setSelectedSupportProvided] = useState<
     string | null
   >(null);
@@ -25,21 +26,64 @@ export default function Home() {
   const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(
     null
   );
-  // const [selectedOrganisation, setSelectedOrganisation] = useState<string | null>(null);
+
+  // filter states
+  const [filterObj, setFilterObj] = useState<FilterObjType>({});
+  const [selectedLocations, setSelectedLocations] = useState(new Set(""));
+  const [selectedAgencies, setSelectedAgencies] = useState(new Set(""));
+  const resetFilters = () => {
+    setSelectedLocations(new Set(""));
+    setSelectedAgencies(new Set(""));
+    setFilterObj({});
+  };
 
   return (
-    <main className={classes.homePage}>
+    <main
+      className={clsx(
+        "max-w-[1500px] h-full",
+        "relative z-10",
+        "flex flex-col items-center",
+        "p-4 sm:py-2 md:px-8 lg:px-16",
+        "xl:mx-auto"
+      )}
+    >
       {schemes.length > 0 ? (
         <>
           {/* Desktop Layout */}
-          <div className={classes.mainLayout}>
+          <div
+            className={clsx(
+              "overflow-hidden",
+              "max-md:flex flex-col h-full",
+              "md:grid gap-2 grid-rows-1 grid-cols-2 lg:grid-cols-[2fr_3fr]"
+            )}
+          >
             <div className="flex md:hidden">
-              <UserQuery />
+              <UserQuery
+                resetFilters={resetFilters}
+                setIsLoadingSchemes={setIsLoadingSchemes}
+              />
             </div>
             <div className="hidden md:flex">
-              <MainChat sessionId={sessionId} />
+              <MainChat
+                filterObj={filterObj}
+                resetFilters={resetFilters}
+                setIsLoadingSchemes={setIsLoadingSchemes}
+              />
             </div>
-            <SchemesList schemes={schemes} />
+            <SchemesList
+              schemes={schemes}
+              setSchemes={setSchemes}
+              isLoadingSchemes={isLoadingSchemes}
+              filterObj={filterObj}
+              setFilterObj={setFilterObj}
+              nextCursor={nextCursor}
+              setNextCursor={setNextCursor}
+              selectedLocations={selectedLocations}
+              setSelectedLocations={setSelectedLocations}
+              selectedAgencies={selectedAgencies}
+              setSelectedAgencies={setSelectedAgencies}
+              resetFilters={resetFilters}
+            />
           </div>
 
           {/* Mobile Layout */}
@@ -48,26 +92,20 @@ export default function Home() {
             ${isExpanded ? "h-full" : "h-0"}`}
           >
             <div
-              className={`absolute top-0 left-0 right-0 flex justify-between items-center p-2 bg-white border-b
-              ${isExpanded ? "border-gray-100" : "border-none"}`}
+              className={clsx(
+                "w-full h-full",
+                "transition-opacity duration-300 pt-12",
+                !isExpanded && "pointer-events-none"
+              )}
             >
               {isExpanded && (
-                <span className="text-sm font-medium px-2">Chat</span>
+                <MainChat
+                  filterObj={filterObj}
+                  resetFilters={resetFilters}
+                  setIsExpanded={setIsExpanded}
+                  setIsLoadingSchemes={setIsLoadingSchemes}
+                />
               )}
-              <Button
-                isIconOnly
-                variant="light"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="z-10 ml-auto"
-              >
-                {isExpanded && <MinimizeIcon />}
-              </Button>
-            </div>
-            <div
-              className={`w-full h-full transition-opacity duration-300 pt-12
-              ${isExpanded ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            >
-              <MainChat sessionId={sessionId} />
             </div>
             <MiniChatBar
               onExpand={() => setIsExpanded(true)}
@@ -76,15 +114,17 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center h-full">
-          <div className={classes.welcomeMsg}>
+        <div className="flex flex-col items-center">
+          <div className="max-w-[35rem] p-4">
             {/* Desktop*/}
             <div className="hidden md:block">
               <h1 className="text-center text-4xl font-bold">
-                <span className="text-[#171347]">Welcome to Schemes</span>
-                <span className="text-[#008AFF]">SG</span>
+                <span className="text-schemes-darkblue">
+                  Welcome to Schemes
+                </span>
+                <span className="text-schemes-blue">SG</span>
               </h1>
-              <p className="text-[#171347] text-center mt-6 text-lg">
+              <p className="text-schemes-darkblue text-center mt-6 text-lg">
                 This is an AI-supported search engine for public social
                 assistance schemes in Singapore.
               </p>
@@ -93,30 +133,30 @@ export default function Home() {
             {/* Mobile*/}
             <div className="block md:hidden">
               <h1 className="text-[32px] font-bold leading-tight">
-                <div className="text-[#171347] text-center">Welcome to</div>
+                <div className="text-schemes-darkblue text-center">
+                  Welcome to
+                </div>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-[#171347]">Schemes</span>
-                  <span className="text-[#008AFF]">SG</span>
+                  <span className="text-schemes-darkblue">Schemes</span>
+                  <span className="text-schemes-blue">SG</span>
                 </div>
               </h1>
-              <p className="text-[#171347] mt-4 text-center leading-snug text-base">
+              <p className="text-schemes-darkblue mt-4 text-center leading-snug text-base">
                 This is an AI-supported search engine for public social
                 assistance schemes in Singapore.
               </p>
             </div>
           </div>
-          <div className={classes.centered}>
+          <div className="flex flex-col justify-center items-center my-8">
             <QueryGenerator
-              // setSessionId={setSessionId}
               setSelectedSupportProvided={setSelectedSupportProvided}
               setSelectedForWho={setSelectedForWho}
               // setSelectedOrganisation={setSelectedOrganisation}
               setSelectedSchemeType={setSelectedSchemeType}
-              onSendQuery={() => { }}
+              onSendQuery={() => {}}
             />
           </div>
           <SearchBar
-            setSessionId={setSessionId}
             selectedSupportProvided={selectedSupportProvided}
             selectedForWho={selectedForWho}
             // selectedOrganisation={selectedOrganisation}
@@ -129,14 +169,14 @@ export default function Home() {
           <Image
             src={backgroundImageOne}
             alt="background image one"
-            className={classes.bgOne}
+            className="absolute w-[35%] top-[10%] left-0 -z-10"
             unoptimized
             priority
           />
           <Image
             src={backgroundImageTwo}
             alt="background image two"
-            className={classes.bgTwo}
+            className="absolute w-[35%] top-0 right-0 -z-10"
             unoptimized
             priority
           />

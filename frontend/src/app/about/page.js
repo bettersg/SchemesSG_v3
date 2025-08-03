@@ -1,6 +1,7 @@
 "use client";
-import { Chip } from "@nextui-org/chip";
-import { Accordion, AccordionItem } from "@nextui-org/react";
+import { Chip } from "@heroui/chip";
+import { Accordion, AccordionItem } from "@heroui/react";
+import clsx from "clsx";
 
 export default function AboutPage() {
   const accordionItems = [
@@ -239,23 +240,28 @@ export default function AboutPage() {
           </p>
           <p>
             Some resources used include{" "}
-            <a href="https://sbert.net"
+            <a
+              href="https://sbert.net"
               target="_blank"
-              className="text-blue-500 hover:text-blue-600">
+              className="text-blue-500 hover:text-blue-600"
+            >
               this
-            </a>
-            {" "} and {" "}
+            </a>{" "}
+            and{" "}
             <a
               href="https://www.kaggle.com/datasets/devendra45/movies-similarity"
               target="_blank"
               className="text-blue-500 hover:text-blue-600"
             >
               this
-            </a> {" "}
+            </a>{" "}
             . We are still improving the natural language feature, and if you
             have engineering expertise or insights to offer, reach out via the{" "}
-            <a href="https://schemes.sg/feedback" target="_blank"
-             className="text-blue-500 hover:text-blue-600">
+            <a
+              href="https://schemes.sg/feedback"
+              target="_blank"
+              className="text-blue-500 hover:text-blue-600"
+            >
               &quot;Feedback&quot;
             </a>{" "}
             form.
@@ -285,21 +291,25 @@ export default function AboutPage() {
       ),
       content: (
         <>
+          <p className="mb-4">We are honored to be mentioned in local media:</p>
           <p className="mb-4">
-            We are honored to be mentioned in local media:
-          </p>
-          <p className="mb-4">
-            1. {" "}
-            <a href="https://www.channelnewsasia.com/today/big-read/social-services-technology-burnout-challenges-4847736"
+            1.{" "}
+            <a
+              href="https://www.channelnewsasia.com/today/big-read/social-services-technology-burnout-challenges-4847736"
               target="_blank"
-              className="text-blue-500 hover:text-blue-600">
-              Tech is easing the workload of burnt out social workers, but the challenges of emotional labour remain
+              className="text-blue-500 hover:text-blue-600"
+            >
+              Tech is easing the workload of burnt out social workers, but the
+              challenges of emotional labour remain
             </a>
           </p>
           <p>
-            2. <a href="https://www.zaobao.com.sg/news/singapore/story20250112-5721639"
+            2.{" "}
+            <a
+              href="https://www.zaobao.com.sg/news/singapore/story20250112-5721639"
               target="_blank"
-              className="text-blue-500 hover:text-blue-600">
+              className="text-blue-500 hover:text-blue-600"
+            >
               公务员开发应用 助查询援助计划
             </a>
           </p>
@@ -309,10 +319,16 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="w-full overflow-x-hidden min-h-[90vh]">
-      <section className="w-full bg-[#171347]">
+    <div className="w-full h-full overflow-x-hidden">
+      <section className="w-full bg-schemes-darkblue">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold font-nunito text-white pt-16 md:pt-24">
+          <h1
+            className={clsx(
+              "text-3xl md:text-4xl lg:text-5xl",
+              "font-semibold text-white",
+              "pt-16 md:pt-24"
+            )}
+          >
             About
           </h1>
           <h2 className="text-base md:text-lg text-white font-light mt-4 mb-8">
@@ -336,7 +352,7 @@ export default function AboutPage() {
           Our vision
         </Chip>
 
-        <p className="text-lg md:text-xl text-[rgb(21,44,91)] leading-relaxed mb-8 font-semibold">
+        <p className="text-lg md:text-xl text-schemes-darkblue leading-relaxed mb-8 font-semibold">
           Our vision is to empower social workers, volunteers, and in the long
           run self-help users, to obtain relevant information on social
           assistance in Singapore quickly, easily and accurately. We tap on the
@@ -351,9 +367,9 @@ export default function AboutPage() {
               aria-label={item.ariaLabel}
               title={item.title}
               startContent={item.startContent}
-              className="text-[rgb(21,44,91)]"
+              className="text-schemes-darkblue"
             >
-              <div className="text-[rgb(113,128,150)]">{item.content}</div>
+              <div>{item.content}</div>
             </AccordionItem>
           ))}
         </Accordion>
