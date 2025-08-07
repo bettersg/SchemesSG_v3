@@ -4,7 +4,7 @@ This is the main file for the Firebase Functions.
 The following endpoints are available:
 
 1. Search and Retrieval:
-   - schemes_search: Search for schemes based on user query
+   - schemes_search: Search for schemes based on user query with pagination support
    - schemes: Get details of a specific scheme
    - retrieve_search_queries: Get search history for a session
 

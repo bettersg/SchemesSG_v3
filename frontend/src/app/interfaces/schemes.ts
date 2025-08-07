@@ -74,8 +74,8 @@ export interface SearchResponse {
   sessionID?: string;
   data?: Array<RawSchemeData> | RawSchemeData;
   total_count?: number;
-  has_more?: boolean;
   next_cursor?: string;
+  has_more?: boolean;
 }
 
 // export interface SearchResponse {

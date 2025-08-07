@@ -197,6 +197,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.prod
 
 # npm debug logs
 npm-debug.log*
@@ -222,8 +223,13 @@ pnpm-lock.yaml
 #dataset_workflow
 node_modules/
 creds.json
-frontend/env.development
-frontend/env.staging
+creds.prod.json
+frontend/.env.development
+frontend/.env.staging
 dataset_worfklow/dev-creds.json
 dataset_worfklow/prod-creds.json
 dataset_worfklow/schemes-dev-firestore-structure.json
+
+generate_token.sh
+test_*.sh
+jwt_token.txt

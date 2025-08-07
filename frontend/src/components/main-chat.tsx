@@ -35,13 +35,23 @@ export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
   };
 };
 
-export const getSchemes = async (userQuery: string) => {
+export const getSchemes = async (
+  userQuery: string,
+  nextCursor = ""
+): Promise<{
+  schemesRes: SearchResScheme[];
+  sessionId: string;
+  totalCount: number;
+  nextCursor: string;
+}> => {
   const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
 
   const requestBody = {
     query: userQuery,
+    limit: 20,
     top_k: 50,
     similarity_threshold: 0,
+    cursor: nextCursor,
   };
 
   try {
@@ -57,7 +67,10 @@ export const getSchemes = async (userQuery: string) => {
     const res = (await response.json()) as SearchResponse;
     console.log("Search response:", res); // Debug
 
-    const sessionId: string = res["sessionID"] || "";
+    const sessionId: string = res.sessionID || "";
+    const totalCount: number = res.total_count || 0;
+    const hasMore: boolean = res.has_more || false;
+    const nextCursor: string = res.next_cursor && hasMore ? res.next_cursor : '';
 
     // Check if data exists in the response
     if (res.data) {
@@ -72,14 +85,14 @@ export const getSchemes = async (userQuery: string) => {
 
       const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
       console.log("Mapped schemes:", schemesRes); // Debug
-      return { schemesRes, sessionId };
+      return { schemesRes, sessionId, totalCount, nextCursor };
     } else {
       console.error("Unexpected response format:", res);
-      return { schemesRes: [], sessionId };
+      return { schemesRes: [], sessionId, totalCount, nextCursor };
     }
   } catch (error) {
     console.error("Error making POST request:", error);
-    return { schemesRes: [], sessionId: "" };
+    return { schemesRes: [], sessionId: "", totalCount: 0, nextCursor: "" };
   }
 };
 

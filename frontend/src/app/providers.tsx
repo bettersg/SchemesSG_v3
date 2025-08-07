@@ -22,6 +22,10 @@ type ChatContextType = {
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   sessionId: string;
   setSessionId: React.Dispatch<React.SetStateAction<string>>;
+  totalCount: number;
+  setTotalCount: React.Dispatch<React.SetStateAction<number>>;
+  nextCursor: string;
+  setNextCursor: React.Dispatch<React.SetStateAction<string>>;
   schemes: SearchResScheme[];
   setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
   userQuery: string;
@@ -60,6 +64,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
   const [sessionId, setSessionId] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextCursor, setNextCursor] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
   const [userQuery, setUserQuery] = useState("");
 
@@ -146,6 +152,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setSchemes,
         sessionId,
         setSessionId,
+        totalCount,
+        setTotalCount,
+        nextCursor,
+        setNextCursor,
         userQuery,
         setUserQuery,
       }}
