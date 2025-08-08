@@ -8,7 +8,6 @@ This module provides utilities for:
 
 The scheduled warmup task runs every 4 minutes and keeps the following endpoints warm:
 - schemes_search: POST endpoint for searching schemes
-- schemes_search_paginated: POST endpoint for paginated scheme search 
 - schemes: GET endpoint for retrieving individual schemes
 - chat_message: POST endpoint for chat interactions
 - feedback: POST endpoint for user feedback
@@ -22,7 +21,7 @@ load during warmup requests.
 For GET endpoints (schemes, search_queries), the warmup parameter is passed as a URL query:
   ?is_warmup=true
 
-For POST endpoints (schemes_search, schemes_search_paginated, chat_message, feedback, update_scheme), the warmup
+For POST endpoints (schemes_search, chat_message, feedback, update_scheme), the warmup
 parameter is included in the request body:
   { "is_warmup": true }
 
@@ -45,9 +44,9 @@ import os
 from typing import Dict, Optional
 
 import requests
+from firebase_admin import auth
 from firebase_functions import options, scheduler_fn
 from loguru import logger
-from firebase_admin import auth
 
 
 def get_endpoint_url(function_name: str) -> str:
@@ -95,7 +94,7 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
 
         # Exchange custom token for ID token
         response = requests.post(
-            f"https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
             params={"key": os.getenv("FB_API_KEY")},
             json={"token": custom_token.decode(), "returnSecureToken": True},
         )
@@ -167,17 +166,6 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
                 "data": {
                     "query": "education",
                     "top_k": 1,
-                    "similarity_threshold": 0,
-                    "is_warmup": True,  # Endpoint will return 200 immediately
-                },
-            },
-            {
-                "name": "schemes_search_paginated",
-                "method": "POST",
-                "url": get_endpoint_url("schemes_search_paginated"),
-                "data": {
-                    "query": "education",
-                    "limit": 5,
                     "similarity_threshold": 0,
                     "is_warmup": True,  # Endpoint will return 200 immediately
                 },
