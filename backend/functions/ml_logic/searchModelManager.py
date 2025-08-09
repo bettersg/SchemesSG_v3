@@ -1,9 +1,9 @@
+import json
 import os
 import re
-import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 from uuid import uuid1
 
 import faiss
@@ -13,13 +13,13 @@ import spacy
 import torch
 import torch.nn.functional as F
 from fb_manager.firebaseManager import FirebaseManager
+from google.cloud import firestore
 from loguru import logger
 from pydantic import BaseModel
+from utils.pagination import decode_cursor, get_paginated_results
 
 from transformers import AutoModel, AutoTokenizer
 from transformers.modeling_outputs import BaseModelOutputWithPooling
-
-from google.cloud import firestore
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -39,6 +39,18 @@ class PredictParams(BaseModel):
     top_k: Optional[int] = 20
     similarity_threshold: Optional[int] = 0
     is_warmup: Optional[bool] = False  # Add flag for warmup requests
+
+
+class PaginatedSearchParams(BaseModel):
+    """Parameters for paginated search (sent by client)"""
+
+    query: str
+    limit: Optional[int] = 20
+    cursor: Optional[str] = None
+    similarity_threshold: Optional[int] = 0
+    is_warmup: Optional[bool] = False
+    top_k: Optional[int] = 100  # Number of items to retrieve from FAISS index
+    filters: Optional[Dict[str, List[str]]] = {}
 
 
 class SearchPreprocessor:
@@ -156,7 +168,17 @@ class SearchModel:
         logger.info("Search Model initialised!")
 
     def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
-        """Fetch multiple schemes, batching to respect Firestore's 30-item 'in' limit, and remove 'scraped_text' field if present."""
+        """
+        Fetch multiple schemes, batching to respect Firestore's 30-item 'in' limit, and remove 'scraped_text' field if present.
+
+        Args:
+            scheme_ids (List[str]): List of scheme IDs to fetch
+
+        Returns:
+            List[Dict]: List of scheme details as dictionaries
+        """
+
+        """"""
         # Create a cache key based on the scheme IDs
         scheme_cache_key = tuple(scheme_ids)
 
@@ -394,5 +416,67 @@ class SearchModel:
             self.save_user_query(params.query, session_id, results_dict)
 
         results_json = {"sessionID": session_id, "data": results_dict, "mh": 0.7}
+
+        return results_json
+
+    def predict_paginated(self, params: PaginatedSearchParams) -> dict[str, any]:
+        """
+        Method for paginated search results
+
+        Args:
+            params (PaginatedSearchParams): parameters given by user
+
+        Returns:
+            dict[str, any]: response containing paginated results
+        """
+
+        # Use the top_k parameter for FAISS index search
+        internal_top_k = params.top_k
+
+        # Check if we have a cursor and extract session_id from it
+        session_id = None
+        if params.cursor:
+            cursor_data = decode_cursor(params.cursor)
+            if cursor_data and "session_id" in cursor_data:
+                session_id = cursor_data.get("session_id")
+
+        # Generate a new session ID if this is a fresh search
+        if not session_id:
+            session_id = str(uuid1())
+
+        # Split search query into different requirements by the user
+        split_needs = self.__class__.preprocessor.split_query_into_needs(params.query)
+
+        # Get complete results first (using top_k)
+        complete_results = self.combine_and_aggregate_results(
+            split_needs, params.query, internal_top_k, params.similarity_threshold
+        )
+
+        filters = params.filters
+        if filters:
+            for field, criteria in filters.items():
+                complete_results = complete_results[complete_results[field].isin(criteria)]
+
+        # Convert to dict records for pagination
+        complete_results_dict = complete_results.to_dict(orient="records")
+
+        # Get paginated results with session ID
+        page_results, next_cursor, has_more, total_count = get_paginated_results(
+            complete_results_dict, limit=params.limit, cursor=params.cursor, session_id=session_id
+        )
+
+        # Skip saving to Firestore if this is a warmup request or there are no results
+        # Only save for first page to avoid redundant writes
+        if not params.is_warmup and page_results and params.cursor is None:
+            self.save_user_query(params.query, session_id, page_results)
+
+        # Return the paginated results
+        results_json = {
+            "sessionID": session_id,
+            "data": page_results,
+            "total_count": total_count,
+            "next_cursor": next_cursor,
+            "has_more": has_more,
+        }
 
         return results_json

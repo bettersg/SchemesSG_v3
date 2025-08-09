@@ -44,9 +44,9 @@ import os
 from typing import Dict, Optional
 
 import requests
+from firebase_admin import auth
 from firebase_functions import options, scheduler_fn
 from loguru import logger
-from firebase_admin import auth
 
 
 def get_endpoint_url(function_name: str) -> str:
@@ -94,7 +94,7 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
 
         # Exchange custom token for ID token
         response = requests.post(
-            f"https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
+            "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
             params={"key": os.getenv("FB_API_KEY")},
             json={"token": custom_token.decode(), "returnSecureToken": True},
         )

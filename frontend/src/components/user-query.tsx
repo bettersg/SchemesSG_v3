@@ -19,7 +19,7 @@ export default function UserQuery({
   resetFilters,
   setIsLoadingSchemes,
 }: userQueryProps) {
-  const { setSchemes, messages, setMessages, setSessionId, userQuery, setUserQuery } =
+  const { setSchemes, messages, setMessages, setSessionId, setTotalCount, setNextCursor, userQuery, setUserQuery } =
     useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
@@ -51,7 +51,9 @@ export default function UserQuery({
           },
         ]);
         setIsLoadingSchemes(true);
-        const { schemesRes, sessionId } = await getSchemes(query);
+        const { schemesRes, sessionId, totalCount, nextCursor } = await getSchemes(query);
+        setTotalCount(totalCount)
+        setNextCursor(nextCursor)
         if (schemesRes.length > 0 && sessionId !== "") {
           schemesRes && setSchemes(schemesRes);
           setSessionId(sessionId);
