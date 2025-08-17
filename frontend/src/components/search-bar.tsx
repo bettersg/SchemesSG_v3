@@ -72,8 +72,9 @@ export default function SearchBar({
       setNextCursor(nextCursor)
       setUserQuery(userQuery);
       setIsBotResponseGenerating(false);
-      if (schemesRes.length > 0 && sessionId !== "") {
-        schemesRes && setSchemes(schemesRes);
+      
+      // Always set sessionId if it exists, regardless of results
+      if (sessionId !== "") {
         setSessionId(sessionId);
         setMessages([
           {
@@ -81,6 +82,14 @@ export default function SearchBar({
             text: userQuery,
           },
         ]);
+      }
+      
+      // Set schemes if we have results
+      if (schemesRes.length > 0) {
+        setSchemes(schemesRes);
+      } else {
+        // Clear schemes if no results but keep sessionId for chat
+        setSchemes([]);
       }
 
       // Reset the filters

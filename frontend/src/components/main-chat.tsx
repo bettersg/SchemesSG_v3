@@ -51,7 +51,7 @@ export const getSchemes = async (
     limit: 20,
     top_k: 50,
     similarity_threshold: 0,
-    cursor: nextCursor,
+    cursor: nextCursor || null, // Send null instead of empty string
   };
 
   try {
@@ -153,6 +153,15 @@ export default function MainChat({
   const fetchBotResponse = async (userMessage: string) => {
     setIsBotResponseGenerating(true);
     setCurrentStreamingMessage("");
+    
+    // Prevent chat if no valid sessionId exists
+    if (!sessionId || sessionId.trim() === "") {
+      handleBotResponse("Please perform a search first before asking questions about the schemes.");
+      setIsBotResponseGenerating(false);
+      setCurrentStreamingMessage("");
+      return;
+    }
+    
     try {
       const bodyParams: { [key: string]: string | string[] | boolean } = {
         message: userMessage,
