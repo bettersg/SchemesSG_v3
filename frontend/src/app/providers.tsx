@@ -86,8 +86,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           const parsedMessages = JSON.parse(storedMessages);
           setMessages(parsedMessages);
         }
-        if (storedSessionId) {
-          setSessionId(storedSessionId);
+        if (storedSessionId && storedSessionId.trim() !== "") {
+          const parsedSessionId = JSON.parse(storedSessionId);
+          // Only restore sessionId if it looks like a valid UUID
+          if (parsedSessionId && typeof parsedSessionId === 'string' && parsedSessionId.length > 10) {
+            setSessionId(parsedSessionId);
+          }
         }
         if (storedUserQuery) {
           setUserQuery(storedUserQuery);

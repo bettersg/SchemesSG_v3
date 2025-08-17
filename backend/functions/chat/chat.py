@@ -118,28 +118,40 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     if not doc.exists:
         logger.warning(f"[{datetime.now()}] Session ID {session_id} not found")
         return https_fn.Response(
-            response=json.dumps({"error": "Search query with sessionID does not exist"}),
+            response=json.dumps(
+                {"error": "Search query with sessionID does not exist. Please perform a search first."}
+            ),
             status=404,
             mimetype="application/json",
             headers=headers,
         )
+    else:
+        try:
+            doc_dict = doc.to_dict()
+            query_text = doc_dict.get("query_text", "")
+            df = pd.DataFrame(doc_dict["schemes_response"])
 
+            # --- New filtering logic for agency and planning_area ---
+            agency = data.get("agency")
+            planning_area = data.get("planning_area")
+            if agency is not None and isinstance(agency, list) and len(agency) > 0:
+                df = df[df["agency"].isin(agency)]
+            if planning_area is not None and isinstance(planning_area, list) and len(planning_area) > 0:
+                df = df[df["planning_area"].isin(planning_area)]
+            # --- End filtering logic ---
+
+            top_schemes_text = dataframe_to_text(df)
+        except Exception as e:
+            logger.exception("Error processing existing session data", e)
+            return https_fn.Response(
+                response=json.dumps({"error": "Error processing session data"}),
+                status=500,
+                mimetype="application/json",
+                headers=headers,
+            )
+
+    # Now execute the chatbot logic with the determined context
     try:
-        doc_dict = doc.to_dict()
-        query_text = doc_dict.get("query_text", "")
-        df = pd.DataFrame(doc_dict["schemes_response"])
-
-        # --- New filtering logic for agency and planning_area ---
-        agency = data.get("agency")
-        planning_area = data.get("planning_area")
-        if agency is not None and isinstance(agency, list) and len(agency) > 0:
-            df = df[df["agency"].isin(agency)]
-        if planning_area is not None and isinstance(planning_area, list) and len(planning_area) > 0:
-            df = df[df["planning_area"].isin(planning_area)]
-        # --- End filtering logic ---
-
-        top_schemes_text = dataframe_to_text(df)
-
         if stream:
 
             def generate():

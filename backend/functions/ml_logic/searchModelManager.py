@@ -190,7 +190,7 @@ class SearchModel:
         # Helper to chunk scheme_ids into batches of 30
         def chunk_list(lst, n):
             for i in range(0, len(lst), n):
-                yield lst[i:i + n]
+                yield lst[i : i + n]
 
         scheme_details = []
         for batch in chunk_list(scheme_ids, 30):
@@ -386,8 +386,15 @@ class SearchModel:
             "session_id": session_id,
         }
 
-        # Add to 'userQuery' collection in firestore with document name = session_id
-        self.__class__.firebase_manager.firestore_client.collection("userQuery").document(session_id).set(user_query)
+        try:
+            # Add to 'userQuery' collection in firestore with document name = session_id
+            self.__class__.firebase_manager.firestore_client.collection("userQuery").document(session_id).set(
+                user_query
+            )
+            logger.info(f"Successfully saved session {session_id} to Firestore")
+        except Exception as e:
+            logger.exception(f"Failed to save session {session_id} to Firestore", e)
+            raise e  # Re-raise to ensure the calling code knows about the failure
 
     def predict(self, params: PredictParams) -> dict[str, any]:
         """
@@ -465,10 +472,12 @@ class SearchModel:
             complete_results_dict, limit=params.limit, cursor=params.cursor, session_id=session_id
         )
 
-        # Skip saving to Firestore if this is a warmup request or there are no results
-        # Only save for first page to avoid redundant writes
-        if not params.is_warmup and page_results and params.cursor is None:
-            self.save_user_query(params.query, session_id, page_results)
+        # Skip saving to Firestore if this is a warmup request
+        # Only save for first page to avoid redundant writes, but always save if it's a new session
+        if not params.is_warmup and params.cursor is None:
+            # Save session even if no results to ensure chat functionality works
+            results_to_save = page_results if page_results else []
+            self.save_user_query(params.query, session_id, results_to_save)
 
         # Return the paginated results
         results_json = {
