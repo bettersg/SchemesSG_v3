@@ -54,10 +54,19 @@ export default function UserQuery({
         const { schemesRes, sessionId, totalCount, nextCursor } = await getSchemes(query);
         setTotalCount(totalCount)
         setNextCursor(nextCursor)
-        if (schemesRes.length > 0 && sessionId !== "") {
-          schemesRes && setSchemes(schemesRes);
+        
+        // Always set sessionId if it exists, regardless of results
+        if (sessionId !== "") {
           setSessionId(sessionId);
+        }
+        
+        // Set schemes and reset filters if we have results
+        if (schemesRes.length > 0) {
+          setSchemes(schemesRes);
           resetFilters();
+        } else {
+          // Clear schemes if no results but keep sessionId for chat
+          setSchemes([]);
         }
         setIsLoadingSchemes(false);
       }
