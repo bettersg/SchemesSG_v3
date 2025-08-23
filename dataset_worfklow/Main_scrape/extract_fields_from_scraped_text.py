@@ -9,7 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_text_splitters import TokenTextSplitter
 from langchain_core.caches import InMemoryCache
 import hashlib
-from dataset_worfklow.constants import (
+from constants import (
     WHAT_IT_GIVES,
     WHO_IS_IT_FOR,
     SCHEME_TYPE,

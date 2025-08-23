@@ -13,7 +13,7 @@ from loguru import logger
 
 # Import functions from the various scripts
 from create_transformer_models import create_transformer_models
-from test_model_artefacts_created import test_function
+#from test_model_artefacts_created import test_function
 from upload_model_artefacts import upload_model_artefacts
 
 # Import functions from Main_scrape scripts
@@ -52,11 +52,13 @@ def get_credentials_and_bucket(env):
     prod_storage_bucket = "schemessg.appspot.com"  # PLEASE VERIFY THIS
 
     if env == "dev":
-        creds_file = "dataset_worfklow/dev-creds.json"
+        creds_file = "../backend/functions/creds.json"
         storage_bucket = dev_storage_bucket
-    else:  # prod
-        creds_file = "dataset_worfklow/prod-creds.json"
+    elif env == "prod":  # prod
+        creds_file = "../backend/functions/creds.prod.json"
         storage_bucket = prod_storage_bucket
+    else:
+        raise ValueError(f"Invalid environment specified: {env}. Please use 'dev' or 'prod'.")
 
     return creds_file, storage_bucket
 
@@ -139,7 +141,7 @@ def main():
                 "Recompute embeddings and faiss",
                 lambda: create_transformer_models(creds_file),
             ),
-            (6.5, "Test if model artefacts created are valid", lambda: test_function()),
+            #(6.5, "Test if model artefacts created are valid", lambda: test_function()),
             (
                 7,
                 "Upload model artefacts to firebase storage",

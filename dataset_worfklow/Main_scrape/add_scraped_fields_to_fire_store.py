@@ -1,9 +1,8 @@
 import firebase_admin
 import sys
-import pandas as pd
 from firebase_admin import credentials
 from firebase_admin import firestore
-from dataset_worfklow.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
+from Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
 from loguru import logger
 import argparse
 from datetime import datetime, timezone
