@@ -30,11 +30,8 @@ def is_valid_scraped_text(scraped_text):
 
     return True
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
 
+def add_scraped_fields_to_fire_store(creds_file):
     logger.remove()
     logger.add(
         sys.stdout,
@@ -51,30 +48,6 @@ if __name__ == "__main__":
     # Get all documents from the collection
     docs = db.collection("schemes").stream()
     doc_ids = [doc.id for doc in docs]
-
-    # TODO testing doc_ids
-    # doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
-    # doc_ids = [
-    # "ZnaaI9wPZ0M4bKxzqz7Z",
-    # "mzq9kSFYoa9nJRSjo8mi",
-    # "ke29dhM9VP7exsyMHBdR",
-    # "5eAVPDSsy8G2CXE6YDzX",
-    # "QEF7t67nTnTkYmPrcA5X",
-    # "QMeMEyQ79DmOcbtN2ucH",
-    # "WtqBqKnnniJyAhNjbA83",
-    # "ZoPSL37hjD98SzoeL3oE",
-    # "c5A5qMjY4GRzbnfbFEeQ",
-    # "l8CmX6ZKXxQi1V8nFDZ4",
-    # "mzq9kSFYoa9nJRSjo8mi",
-    # "n1JVQhzmWsrqRAxg93nA",
-    # "o937Z2wTY4kn1Js7VH0L",
-    # "rCWgF4B65MCBsvt7JHSI",
-    # "uL9vy6RlHcjBGkXqYn39",
-    # "vFNkWq8MQBcLrK9cTdPk"
-    # ]
-
-    #Doc ids for new schemes from carecorner - 13 July
-    # doc_ids = ["S6easrpcSTJOmXhCvG9F", "BcXpy7bOUjDyOrkB3WmU", "yZtyMYNs7xsVu4ilHOmM", "r0cZr6LdA4Ha2abPr4aG", "Q49szphEOJPmsqT2DXP5"]
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -183,3 +156,11 @@ if __name__ == "__main__":
                 'service_area': None
             }
             doc_ref.update(error_updates) # Update with None for error cases
+    
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
+    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    args = parser.parse_args()
+
+    add_scraped_fields_to_fire_store(args.creds_file)

@@ -5,7 +5,6 @@ from firebase_admin import firestore
 from loguru import logger
 import argparse
 import requests
-import random
 import re
 from dotenv import dotenv_values, load_dotenv
 import os
@@ -131,12 +130,8 @@ def extract_planning_area_from_address(address, token):
     except Exception as e:
         logger.error(f"Error in extract_planning_area_from_address: {e}")
         return None
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Generate planning area for each scheme and update Firestore.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
-
+    
+def add_town_areas(creds_file):
     logger.remove()
     logger.add(
         sys.stdout,
@@ -164,48 +159,13 @@ if __name__ == "__main__":
         logger.error("Failed to obtain OneMap access token. Exiting.")
         sys.exit(1)
 
-    cred = credentials.Certificate(args.creds_file)
+    cred = credentials.Certificate(creds_file)
     app = firebase_admin.initialize_app(cred)
     db = firestore.client()
 
     # Get all documents from the collection
     docs = db.collection("schemes").stream()
     doc_ids = [doc.id for doc in docs]
-
-     # TODO testing doc_ids
-    # doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
-    # doc_ids = [
-    # "ZnaaI9wPZ0M4bKxzqz7Z",
-    # "mzq9kSFYoa9nJRSjo8mi",
-    # "ke29dhM9VP7exsyMHBdR",
-    # "5eAVPDSsy8G2CXE6YDzX",
-    # "QEF7t67nTnTkYmPrcA5X",
-    # "QMeMEyQ79DmOcbtN2ucH",
-    # "WtqBqKnnniJyAhNjbA83",
-    # "ZoPSL37hjD98SzoeL3oE",
-    # "c5A5qMjY4GRzbnfbFEeQ",
-    # "l8CmX6ZKXxQi1V8nFDZ4",
-    # "mzq9kSFYoa9nJRSjo8mi",
-    # "n1JVQhzmWsrqRAxg93nA",
-    # "o937Z2wTY4kn1Js7VH0L",
-    # "rCWgF4B65MCBsvt7JHSI",
-    # "uL9vy6RlHcjBGkXqYn39",
-    # "vFNkWq8MQBcLrK9cTdPk"
-    # ]
-
-    #Doc ids for new schemes from carecorner - 13 July
-    # doc_ids = ["S6easrpcSTJOmXhCvG9F", "BcXpy7bOUjDyOrkB3WmU", "yZtyMYNs7xsVu4ilHOmM", "r0cZr6LdA4Ha2abPr4aG", "Q49szphEOJPmsqT2DXP5"]
-
-    # --- For testing: fetch 5 random doc_ids where address is present ---
-    # docs_with_address = db.collection("schemes").stream()
-    # doc_ids_with_address = [doc.id for doc in docs_with_address if doc.to_dict().get("address")]
-    # if len(doc_ids_with_address) > 5:
-    #     sample_doc_ids_with_address = random.sample(doc_ids_with_address, 5)
-    # else:
-    #     sample_doc_ids_with_address = doc_ids_with_address
-    # logger.info(f"Sample doc_ids with address: {sample_doc_ids_with_address}")
-    # doc_ids = sample_doc_ids_with_address
-    # --- End testing logic ---
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -262,3 +222,11 @@ if __name__ == "__main__":
             doc_ref.update(updates)
             logger.info(f"Updated document {doc_id} with keys: {', '.join(updates.keys())}")
             logger.info(f"Updates: {updates}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate planning area for each scheme and update Firestore.')
+    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    args = parser.parse_args()
+    add_town_areas(args.creds_file)
+
+    
