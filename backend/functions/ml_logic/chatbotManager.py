@@ -1,23 +1,24 @@
 import hashlib
 import os
-import re
 import sys
 import threading
 from datetime import datetime, timezone
 
-import pandas as pd
-from dotenv import dotenv_values, load_dotenv
 from fb_manager.firebaseManager import FirebaseManager
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.caches import InMemoryCache
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_openai import AzureChatOpenAI
+from langchain.chat_models import init_chat_model
 from loguru import logger
 
+from .config import ChatbotConfig, PROVIDER_MODEL_NAME
 from .prompt import SYSTEM_TEMPLATE, AI_MESSAGE
 
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 # Remove default handler
 logger.remove()
 
@@ -29,23 +30,6 @@ logger.add(
     backtrace=False,  # Disable traceback for better performance
     diagnose=False,  # Disable diagnosis for better performance
 )
-
-
-# TODO: get config from firebase
-class Config:
-    """Config class for loading .env file with chatbot API information"""
-
-    def __init__(self):
-        load_dotenv()
-
-        for key, value in dotenv_values().items():
-            setattr(self, key.lower(), value)
-
-    def __getattr__(self, item):
-        attr = os.getenv(item.upper())
-        if attr:
-            setattr(self, item.lower(), attr)
-        return attr
 
 
 class Chatbot:
@@ -70,21 +54,13 @@ class Chatbot:
 
         cls.db = cls.firebase_manager.firestore_client
 
-        config = Config()
+        chatbot_config = ChatbotConfig()
 
         try:
-            cls.llm = AzureChatOpenAI(
-                deployment_name=config.deployment,
-                azure_endpoint=config.endpoint,
-                openai_api_version=config.version,
-                openai_api_key=config.apikey,
-                openai_api_type=config.type,
-                model_name=config.model,
-                temperature=0.1,
-                top_p=0.9,
-                presence_penalty=0.2,
-                frequency_penalty=0.2,
-                max_tokens=512,
+            cls.llm = init_chat_model(
+                PROVIDER_MODEL_NAME,
+                azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+                **chatbot_config.__dict__,
             )
             logger.info("Chatbot initialised")
         except Exception as e:  # TODO: logger
@@ -184,6 +160,7 @@ class Chatbot:
         llm_string = "azure_openai_chatbot"
 
         # Generate hashed cache key
+        # ! The logic here is that this caching doesn't take into account message history
         cache_key = self._generate_cache_key(query_text, input_text)
         cached_response = self.cache.lookup(llm_string, cache_key)
         if cached_response:
