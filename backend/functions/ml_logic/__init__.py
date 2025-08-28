@@ -1,2 +1,3 @@
-from .chatbotManager import Chatbot, dataframe_to_text
+from .chatbotManager import Chatbot
+from .text_utils import dataframe_to_text
 from .searchModelManager import PredictParams, PaginatedSearchParams, SearchModel

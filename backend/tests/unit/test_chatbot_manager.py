@@ -2,7 +2,8 @@
 
 import pandas as pd
 import pytest
-from ml_logic.chatbotManager import clean_scraped_text, dataframe_to_text, Config, Chatbot
+from ml_logic.chatbotManager import Config, Chatbot
+from ml_logic.text_utils import clean_scraped_text, dataframe_to_text
 
 
 def test_clean_scraped_text():
