@@ -31,10 +31,14 @@ export default function UserQuery({
     sessionStorage.removeItem("userMessages");
     sessionStorage.removeItem("sessionID");
     sessionStorage.removeItem("userQuery");
+    sessionStorage.removeItem("totalCount");
+    sessionStorage.removeItem("nextCursor");
     setSchemes([]);
     setMessages([]);
     setSessionId("");
     setUserQuery("");
+    setTotalCount(0);
+    setNextCursor("");
     resetFilters();
   };
   const handleQueryChange = async () => {
@@ -77,7 +81,7 @@ export default function UserQuery({
     <Card
       className={clsx(
         "w-full sm:w-[95%] p-[3px] my-2 sm:mx-2",
-        "rounded-2xl text-sm",
+        "rounded-2xl text-sm shrink-0",
         "bg-white"
       )}
       fullWidth={false}
