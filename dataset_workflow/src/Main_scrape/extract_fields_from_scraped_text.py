@@ -9,7 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_text_splitters import TokenTextSplitter
 from langchain_core.caches import InMemoryCache
 import hashlib
-from constants import (
+from src.constants import (
     WHAT_IT_GIVES,
     WHO_IS_IT_FOR,
     SCHEME_TYPE,
@@ -199,7 +199,6 @@ class TextExtract:
         if cached_response:
             print(f"Cache hit for text extraction (key: {cache_key[:8]}...)")
             return cached_response
-
         structured_llm = self.open_ai_client.with_structured_output(
             SchemesStructuredOutput
         )

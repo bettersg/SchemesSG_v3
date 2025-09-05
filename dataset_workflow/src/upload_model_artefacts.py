@@ -21,7 +21,7 @@ def zip_folder(folder_path, output_zip_path):
 def upload_model_artefacts(creds_file, storage_bucket):
     zip_path = f"{int(time.time())}_models.zip"
 
-    zip_folder(folder_path="./dataset_worfklow/models", output_zip_path=zip_path)
+    zip_folder(folder_path="dataset_worfklow/models", output_zip_path=zip_path)
 
     cred = credentials.Certificate(creds_file)
     firebase_admin.initialize_app(cred, {

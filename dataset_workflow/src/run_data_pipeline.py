@@ -8,20 +8,23 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from dotenv import load_dotenv
 from loguru import logger
 
+# Add the current directory to Python path so we can import src modules
+current_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(current_dir))
+
 # Import functions from the various scripts
-from create_transformer_models import create_transformer_models
+from src.create_transformer_models import create_transformer_models
 #from test_model_artefacts_created import test_function
-from upload_model_artefacts import upload_model_artefacts
+from src.upload_model_artefacts import upload_model_artefacts
 
 # Import functions from Main_scrape scripts
-from Main_scrape.Main_scrape import run_scraping_for_links
-from Main_scrape.add_scraped_fields_to_fire_store import (
+from src.Main_scrape.Main_scrape import run_scraping_for_links
+from src.Main_scrape.add_scraped_fields_to_fire_store import (
     add_scraped_fields_to_fire_store,
 )
-from Main_scrape.add_town_area_to_fire_store import add_town_areas
+from src.Main_scrape.add_town_area_to_fire_store import add_town_areas
 
 
 def setup_logging():
@@ -50,32 +53,16 @@ def get_credentials_and_bucket(env):
     # Define bucket names
     dev_storage_bucket = "schemessg-v3-dev.firebasestorage.app"
     prod_storage_bucket = "schemessg.appspot.com"  # PLEASE VERIFY THIS
+    creds_file = "/dataset_workflow/creds.json"
 
     if env == "dev":
-        creds_file = "../backend/functions/creds.json"
         storage_bucket = dev_storage_bucket
     elif env == "prod":  # prod
-        creds_file = "../backend/functions/creds.prod.json"
         storage_bucket = prod_storage_bucket
     else:
         raise ValueError(f"Invalid environment specified: {env}. Please use 'dev' or 'prod'.")
 
     return creds_file, storage_bucket
-
-
-def check_environment_file():
-    """Check if .env file exists and load it"""
-    env_file = Path("dataset_worfklow/.env")
-    if not env_file.exists():
-        raise FileNotFoundError(
-            f"Environment file '{env_file}' not found. "
-            f"Please ensure your .env file is located at {env_file.absolute()}"
-        )
-
-    # Load environment variables from .env file
-    load_dotenv(env_file)
-    logger.info(f"Loaded environment variables from {env_file}")
-
 
 def main():
     """Main function to run the workflow"""
@@ -115,26 +102,23 @@ def main():
         logger.info(f"Using credentials file: {creds_file}")
         logger.info(f"Using storage bucket: {storage_bucket}")
 
-        # Check if we're in the right directory and load environment
-        check_environment_file()
-
         # Define the steps to run with direct function calls
         steps = [
-            (
-                3,
-                "Run Main_scrape.py to get scraped data in DB",
-                lambda: run_scraping_for_links(creds_file),
-            ),
-            (
-                4,
-                "Get logos from website via scraping",
-                lambda: logger.info("Logo scraping handled in step 3"),
-            ),
-            (
-                5,
-                "Take scraped text from DB and create new fields",
-                lambda: add_scraped_fields_to_fire_store(creds_file),
-            ),
+            # (
+            #     3,
+            #     "Run Main_scrape.py to get scraped data in DB",
+            #     lambda: run_scraping_for_links(creds_file),
+            # ),
+            # (
+            #     4,
+            #     "Get logos from website via scraping",
+            #     lambda: logger.info("Logo scraping handled in step 3"),
+            # ),
+            # (
+            #     5,
+            #     "Take scraped text from DB and create new fields",
+            #     lambda: add_scraped_fields_to_fire_store(creds_file),
+            # ),
             (5.5, "Add town area to fire store", lambda: add_town_areas(creds_file)),
             (
                 6,

@@ -2,7 +2,7 @@ import firebase_admin
 import sys
 from firebase_admin import credentials
 from firebase_admin import firestore
-from Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
+from src.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
 from loguru import logger
 import argparse
 from datetime import datetime, timezone
@@ -40,7 +40,7 @@ def add_scraped_fields_to_fire_store(creds_file):
         backtrace=True,
     )
     logger.info("Logger initialised")
-    cred = credentials.Certificate(args.creds_file)
+    cred = credentials.Certificate(creds_file)
     app = firebase_admin.initialize_app(cred)
     db = firestore.client()
     text_extract = TextExtract()
@@ -84,6 +84,7 @@ def add_scraped_fields_to_fire_store(creds_file):
 
         if text_to_process:
             try:
+
                 structured_output = text_extract.extract_text(text_to_process)
 
                 # Transform physical locations to database format
@@ -102,11 +103,11 @@ def add_scraped_fields_to_fire_store(creds_file):
                     should_update = True
                     # Conditionally update only if the key is in the specified set AND the existing value is missing or empty
                     # TODO Skip checks for conditional update for testing
-                    # if key in keys_to_conditionally_update:
-                    #     existing_value = doc_data.get(key)
-                    #     if existing_value:  # Checks if value exists and is not None, empty string, empty list, etc.
-                    #         should_update = False
-                    #         logger.info(f"Skipping update for key '{key}' in document {doc_id} as it already has value: {existing_value}")
+                    if key in keys_to_conditionally_update:
+                        existing_value = doc_data.get(key)
+                        if existing_value:  # Checks if value exists and is not None, empty string, empty list, etc.
+                            should_update = False
+                            logger.info(f"Skipping update for key '{key}' in document {doc_id} as it already has value: {existing_value}")
 
                     if should_update:
                         # Add the update to the dictionary

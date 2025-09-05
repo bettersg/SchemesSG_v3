@@ -12,7 +12,7 @@ import os
 
 class Config:
     def __init__(self):
-        load_dotenv("dataset_workflow/.env")
+        load_dotenv("/dataset_workflow/.env")
 
         for key, value in dotenv_values().items():
             setattr(self, key.lower(), value)
@@ -149,6 +149,7 @@ def add_town_areas(creds_file):
 
     if not onemap_email or not onemap_password:
         logger.error("OneMap email or password not found in environment variables")
+        breakpoint()
         sys.exit(1)
 
     # Obtain OneMap access token
