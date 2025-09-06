@@ -6,7 +6,6 @@ __pycache__/
 *$py.class
 *.env*
 *creds*
-*json*
 # C extensions
 *.so
 

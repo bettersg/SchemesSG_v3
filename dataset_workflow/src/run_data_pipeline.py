@@ -104,21 +104,21 @@ def main():
 
         # Define the steps to run with direct function calls
         steps = [
-            # (
-            #     3,
-            #     "Run Main_scrape.py to get scraped data in DB",
-            #     lambda: run_scraping_for_links(creds_file),
-            # ),
-            # (
-            #     4,
-            #     "Get logos from website via scraping",
-            #     lambda: logger.info("Logo scraping handled in step 3"),
-            # ),
-            # (
-            #     5,
-            #     "Take scraped text from DB and create new fields",
-            #     lambda: add_scraped_fields_to_fire_store(creds_file),
-            # ),
+            (
+                3,
+                "Run Main_scrape.py to get scraped data in DB",
+                lambda: run_scraping_for_links(creds_file),
+            ),
+            (
+                4,
+                "Get logos from website via scraping",
+                lambda: logger.info("Logo scraping handled in step 3"),
+            ),
+            (
+                5,
+                "Take scraped text from DB and create new fields",
+                lambda: add_scraped_fields_to_fire_store(creds_file),
+            ),
             (5.5, "Add town area to fire store", lambda: add_town_areas(creds_file)),
             (
                 6,
