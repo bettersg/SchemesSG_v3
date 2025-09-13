@@ -77,6 +77,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         const storedMessages = sessionStorage.getItem("userMessages");
         const storedSessionId = sessionStorage.getItem("sessionID");
         const storedUserQuery = sessionStorage.getItem("userQuery");
+        const storedTotalCount = sessionStorage.getItem("totalCount");
+        const storedNextCursor = sessionStorage.getItem("nextCursor");
 
         if (storedSchemes) {
           const parsedSchemes = JSON.parse(storedSchemes);
@@ -89,12 +91,32 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         if (storedSessionId && storedSessionId.trim() !== "") {
           const parsedSessionId = JSON.parse(storedSessionId);
           // Only restore sessionId if it looks like a valid UUID
-          if (parsedSessionId && typeof parsedSessionId === 'string' && parsedSessionId.length > 10) {
+          if (
+            parsedSessionId &&
+            typeof parsedSessionId === "string" &&
+            parsedSessionId.length > 10
+          ) {
             setSessionId(parsedSessionId);
           }
         }
         if (storedUserQuery) {
-          setUserQuery(storedUserQuery);
+          const parsedUserQuery = JSON.parse(storedUserQuery);
+          setUserQuery(parsedUserQuery);
+        }
+        if (storedTotalCount) {
+          const parsedTotalCount = JSON.parse(storedTotalCount);
+          setTotalCount(parsedTotalCount);
+        }
+        if (storedNextCursor && storedNextCursor.trim() !== "") {
+          const parsedNextCursor = JSON.parse(storedNextCursor);
+          // Only restore sessionId if it looks like a valid UUID
+          if (
+            parsedNextCursor &&
+            typeof parsedNextCursor === "string" &&
+            parsedNextCursor.length > 10
+          ) {
+            setNextCursor(parsedNextCursor);
+          }
         }
         setIsInitialized(true);
       } catch (error) {
@@ -147,6 +169,26 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userQuery, isInitialized]);
 
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        sessionStorage.setItem("totalCount", JSON.stringify(totalCount));
+      } catch (error) {
+        console.error("Error saving totalCount to sessionStorage:", error);
+      }
+    }
+  }, [totalCount, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        sessionStorage.setItem("nextCursor", JSON.stringify(nextCursor));
+      } catch (error) {
+        console.error("Error saving nextCursor to sessionStorage:", error);
+      }
+    }
+  }, [nextCursor, isInitialized]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -169,7 +211,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useChat = () => {
+export const useChat = (): ChatContextType => {
   const context = useContext(ChatContext);
   if (!context) {
     throw new Error("useChat must be used within a ChatProvider");
