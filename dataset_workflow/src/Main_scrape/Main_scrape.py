@@ -734,6 +734,16 @@ def is_navigation_text(text):
 
     return False
 
+def log_error_to_csv(doc_id, link, error_message):
+    # Ensure error_message is a string
+    error_message_str = str(error_message)
+    # Also log the error using the main logger
+    logger.error(f"Logging error for doc_id '{doc_id}' (Link: {link}): {error_message_str}")
+    with open(error_log_file, mode="a", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow([doc_id, link, error_message_str])
+
+
 def run_scraping_for_links(creds_file):
     # Initialize Logger
     logger.remove()
@@ -779,7 +789,7 @@ def run_scraping_for_links(creds_file):
 
         # Set the flag to control scraping behavior (No longer used for skipping, but kept for potential future use)
         skip_if_scraped = False # Consider making this an argument if needed frequently
-
+        docs_to_process = docs_to_process[:5]
         for doc in docs_to_process:
             doc_ref = db.collection("schemes").document(doc.id)
             doc_data = None # Initialize doc_data
@@ -798,7 +808,8 @@ def run_scraping_for_links(creds_file):
                         doc_data["scraped_text"] = "" # Update local dict as well
                     except Exception as e_init:
                         error_message = f"Error initializing 'scraped_text': {e_init}"
-                        logger.error(f"{error_message} for document {doc.id}") # Covered by log_error_to_csv
+                        logger.error(f"{error_message} for document {doc.id}")
+                        log_error_to_csv(doc.id, doc_data.get("link", "N/A"), error_message) # Covered by log_error_to_csv
                         continue # Skip to the next document if initialization fails
 
                 # Check if scraping should be skipped based on 'scraped_text' field
@@ -835,6 +846,7 @@ def run_scraping_for_links(creds_file):
                                 logger.warning(f"Scraped content for {doc.id} ({url_to_scrape}) failed validation (likely binary or garbled). Storing empty string.")
                                 # Log the failure but store empty string instead of bad data
                                 logger.error(f"Text validation failed (binary/garbled) for {doc.id} ({url_to_scrape})")
+                                log_error_to_csv(doc.id, url_to_scrape, "Text validation failed (binary/garbled)")
                                 scraped_content = "" # Set to empty string to avoid storing bad data
                             else:
                                 logger.info(f"Text validation passed for {doc.id}.")
@@ -843,17 +855,21 @@ def run_scraping_for_links(creds_file):
                             is_error = True
                             error_message_scrape = scraped_content if isinstance(scraped_content, str) else "Unknown scraping error"
                             logger.error(f"Scraping error for {doc.id} ({url_to_scrape}): {error_message_scrape}")
+                            log_error_to_csv(doc.id, url_to_scrape, error_message_scrape)
                             scraped_content = "" # Ensure we store empty string on error
 
                     if is_error:
                         # Log the scraping error
                         logger.error(f"Scraping error for document {doc.id} ({url_to_scrape}): {error_message_scrape}")
+                        log_error_to_csv(doc.id, url_to_scrape, error_message_scrape)
                         # Update Firestore with the error status (optional, but can be useful)
                         try:
                             doc_ref.update({"scraped_text": f"ERROR: {error_message_scrape}"})
                             logger.info(f"Updated document {doc.id} with scraping error status.")
                         except Exception as e_update_err:
                             logger.error(f"Failed to update document {doc.id} with error status: {e_update_err}")
+                            # Log this secondary error to CSV as well
+                            log_error_to_csv(doc.id, url_to_scrape, f"Failed to update doc with primary error: {e_update_err}")
 
                         # Do not attempt logo finding if scraping failed
                     else:
@@ -884,6 +900,7 @@ def run_scraping_for_links(creds_file):
                             elif not is_error: # Don't log missing logo if there was a scrape error anyway
                                 # Log only if logo finding failed and we expected to find one
                                 logger.error(f"Logo not found for {doc.id} ({url_to_scrape})")
+                                log_error_to_csv(doc.id, url_to_scrape, "Logo not found")
 
                         # Update scraped_text only if it wasn't skipped and no error occurred during scraping
                         if not should_skip_scraping and not is_error and scraped_content is not None:
@@ -901,31 +918,38 @@ def run_scraping_for_links(creds_file):
                             except Exception as e_update:
                                 error_message = f"Error updating document {doc.id} after processing: {e_update}"
                                 logger.error(error_message)
+                                log_error_to_csv(doc.id, url_to_scrape, error_message)
                         elif not should_skip_scraping and scraped_content is None:
                             # Handle case where scrape function might return None unexpectedly and wasn't skipped
                             error_message = f"Scraping returned None unexpectedly for document {doc.id} ({url_to_scrape})"
                             logger.error(error_message)
+                            log_error_to_csv(doc.id, url_to_scrape, error_message)
                         elif not update_data:
                             logger.info(f"No update needed for document {doc.id} (already scraped/populated or no logo found).")
 
                 else:
                     error_message = f"Document {doc.id} does not have a 'link' field."
                     logger.error(error_message) # Covered by log_error_to_csv
+                    log_error_to_csv(doc.id, "N/A", error_message)
 
             except Exception as e_doc:
                 # Catch errors during processing of a single document (reading, updating, etc.)
                 error_message = f"Error processing document {doc.id}: {e_doc}"
                 logger.exception(error_message) # Use logger.exception to include traceback, covered by log_error_to_csv
+                link = doc_data.get("link", "N/A") if doc_data else "N/A"
+                log_error_to_csv(doc.id, link, error_message)
                 continue # Continue to the next document
 
     except google_exceptions.DeadlineExceeded as e_deadline:
         error_message = f"Firestore deadline exceeded during stream iteration: {e_deadline}"
         logger.critical(error_message) # Covered by log_error_to_csv
+        log_error_to_csv("N/A", "N/A", error_message)
         logger.critical("Stopping script due to Firestore DeadlineExceeded error.")
     except Exception as e_main:
         # Catch any other unexpected errors in the main script execution
         error_message = f"An unexpected error occurred in the main script: {e_main}"
         logger.critical(error_message, exc_info=True) # Use critical and include traceback, covered by log_error_to_csv
+        log_error_to_csv("N/A", "N/A", error_message)
         logger.critical("Stopping script due to an unexpected main error.", exc_info=True)
 
     logger.info("Script finished.")
