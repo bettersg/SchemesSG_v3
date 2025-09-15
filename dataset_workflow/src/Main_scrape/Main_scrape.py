@@ -20,6 +20,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from requests.exceptions import ConnectionError # Import ConnectionError specifically
 from pypdf import PdfReader # Import PdfReader
+from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 
 # More comprehensive headers
 HEADERS = {
@@ -931,6 +932,7 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                         if not should_skip_scraping and not is_error and scraped_content is not None:
                             logger.info(f"Preparing to update 'scraped_text' for doc {doc.id} (Length: {len(scraped_content)})")
                             update_data["scraped_text"] = scraped_content
+                            update_data["last_scraped_update"] = SERVER_TIMESTAMP
 
                         # Update Firestore only if there's something to update
                         if update_data:
