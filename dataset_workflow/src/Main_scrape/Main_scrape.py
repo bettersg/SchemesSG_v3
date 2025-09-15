@@ -1,12 +1,13 @@
 import os
 import csv
 import re
+import json
 import chardet
 import argparse  # Import argparse
 import sys  # Import sys for logger output
 from urllib.parse import urljoin, urlparse # Import urljoin and urlparse for handling relative URLs
 import io # Import io for handling byte streams
-
+from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -29,6 +30,7 @@ HEADERS = {
     'DNT': '1', # Do Not Track Request Header
     'Upgrade-Insecure-Requests': '1'
 }
+
 # Function to initialize the CSV file (always overwrite)
 def initialize_csv(file_path):
     # Ensure the directory exists before trying to open the file
@@ -41,6 +43,10 @@ def initialize_csv(file_path):
         writer = csv.writer(file)
         writer.writerow(["doc_id", "link", "error"])  # Write the header
     logger.info(f"Error log CSV initialized at: {file_path}")
+
+now = datetime.now()
+error_log_file = f"error_log_{now.strftime('%Y-%m-%d_%H:%M:%S')}.csv"
+initialize_csv(error_log_file)
 
 # Function to find logo URL
 def find_logo_url(soup, base_url):
@@ -744,7 +750,10 @@ def log_error_to_csv(doc_id, link, error_message):
         writer.writerow([doc_id, link, error_message_str])
 
 
-def run_scraping_for_links(creds_file):
+def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], production_run=False):
+    
+    if not process_specific_doc_ids and not production_run:
+        raise ValueError(f"If process_specific_doc_ids is empty, set production_run to True")
     # Initialize Logger
     logger.remove()
     logger.add(
@@ -779,17 +788,33 @@ def run_scraping_for_links(creds_file):
     session.mount("http://", adapter)
     # Initialize the CSV file (this will now reset it)
     # Define the CSV file path
-    error_log_file = "dataset_worfklow/Main_scrape/error_log.csv"
-    initialize_csv(error_log_file)
     # Get all documents from the collection
     try:
         logger.info("Starting to stream documents from 'schemes' collection.")
-        logger.info("Production mode: Processing all documents in collection")
-        docs_to_process = db.collection("schemes").stream()
+        if len(process_specific_doc_ids) > 0:
+            # For testing: only process specific document IDs
+            logger.info(f"Testing mode: Processing only {len(process_specific_doc_ids)} specific documents")
+
+            # Get only the specified documents instead of streaming all
+            docs_to_process = []
+            for doc_id in process_specific_doc_ids:
+                try:
+                    doc = db.collection("schemes").document(doc_id).get()
+                    if doc.exists:
+                        docs_to_process.append(doc)
+                        logger.info(f"Found document {doc_id} for processing")
+                    else:
+                        logger.warning(f"Document {doc_id} not found in collection")
+                except Exception as e:
+                    logger.error(f"Error fetching document {doc_id}: {e}")
+                    continue
+        else:
+            # Production mode: process all documents
+            logger.info("Production mode: Processing all documents in collection")
+            docs_to_process = db.collection("schemes").stream()
 
         # Set the flag to control scraping behavior (No longer used for skipping, but kept for potential future use)
         skip_if_scraped = False # Consider making this an argument if needed frequently
-        docs_to_process = docs_to_process[:5]
         for doc in docs_to_process:
             doc_ref = db.collection("schemes").document(doc.id)
             doc_data = None # Initialize doc_data
@@ -954,9 +979,21 @@ def run_scraping_for_links(creds_file):
 
     logger.info("Script finished.")
 
+def parse_json_list(arg):
+    try:
+        return json.loads(arg)
+    except json.JSONDecodeError as e:
+        raise argparse.ArgumentTypeError(f"Invalid JSON list: {e}")
+
 if __name__ == "__main__":
     # Set up argument parser
     parser = argparse.ArgumentParser(description='Scrape website text and update Firestore.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    parser.add_argument('--creds_file', help='Path to the Firebase credentials file.')
+    parser.add_argument(
+    '--doc_ids',
+    type=parse_json_list,
+    required=True,
+    help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
+    )
     args = parser.parse_args()
-    run_scraping_for_links(args.creds_file)
+    run_scraping_for_links(args.creds_file, process_specific_doc_ids=args.doc_ids)
