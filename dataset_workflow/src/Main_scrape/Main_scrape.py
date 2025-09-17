@@ -750,6 +750,16 @@ def log_error_to_csv(doc_id, link, error_message):
         writer = csv.writer(file)
         writer.writerow([doc_id, link, error_message_str])
 
+def check_if_scraped_require_refresh(firestore_dt):
+    # Current time in UTC
+    now = datetime.now(timezone.utc)
+
+    # One month from now
+    one_month_from_now = now - relativedelta(months=1)
+
+    # Comparison
+    is_more_than_a_month = firestore_dt > one_month_from_now
+    return is_more_than_a_month
 
 def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], production_run=False):
     
@@ -837,10 +847,15 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                         logger.error(f"{error_message} for document {doc.id}")
                         log_error_to_csv(doc.id, doc_data.get("link", "N/A"), error_message) # Covered by log_error_to_csv
                         continue # Skip to the next document if initialization fails
-
+                
+                if 'last_scraped_update' in doc_data:
+                    require_refresh = check_if_scraped_require_refresh(firestore_dt)
+                else:
+                    require_refresh = True
                 # Check if scraping should be skipped based on 'scraped_text' field
-                should_skip_scraping = skip_if_scraped and bool(doc_data.get("scraped_text"))
+                should_skip_scraping = skip_if_scraped and bool(doc_data.get("scraped_text")) and not require_refresh
                 # Check if image field is already populated
+                breakpoint()
                 image_already_populated = doc_data.get("image")
 
                 # Skip if both text is scraped AND image is populated (and skip_if_scraped is True)
@@ -994,8 +1009,15 @@ if __name__ == "__main__":
     parser.add_argument(
     '--doc_ids',
     type=parse_json_list,
-    required=True,
+    required=False,
+    default='[]',
+    help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
+    )
+    parser.add_argument(
+    '--production_run',
+    type=bool,
+    default=False,
     help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
     )
     args = parser.parse_args()
-    run_scraping_for_links(args.creds_file, process_specific_doc_ids=args.doc_ids)
+    run_scraping_for_links(args.creds_file, process_specific_doc_ids=args.doc_ids, production_run=args.production_run)
