@@ -9,6 +9,9 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_text_splitters import TokenTextSplitter
 from langchain_core.caches import InMemoryCache
 import hashlib
+from loguru import logger
+from datetime import datetime
+from logging_config import ensure_logging_setup
 from src.constants import (
     WHAT_IT_GIVES,
     WHO_IS_IT_FOR,
@@ -35,6 +38,90 @@ class Config:
         if attr:
             setattr(self, item.lower(), attr)
         return attr
+
+
+class TokenCostTracker:
+    """Utility class for tracking token usage and costs for Azure OpenAI models."""
+
+    # Azure OpenAI pricing per 1000 tokens (as of 2024)
+    # These are approximate rates - actual rates may vary
+    PRICING = {
+        "gpt-4.1": {
+            "input": 0.40,  # $0.40 per 1000 input tokens
+            "output": 1.60  # $1.60 per 1000 output tokens
+        },
+        "gpt-4.1-mini": {
+            "input": 0.30,  # $0.30 per 1000 input tokens
+            "output": 1.20  # $1.20 per 1000 output tokens
+        },
+        "gpt-5": {
+            "input": 0.50,  # $0.50 per 1000 input tokens
+            "output": 2.00  # $2.00 per 1000 output tokens
+        },
+        "gpt-5-nano": {
+            "input": 0.40,  # $0.40 per 1000 input tokens
+            "output": 1.60  # $1.60 per 1000 output tokens
+        },
+        # Legacy models for backward compatibility
+        "gpt-4": {
+            "input": 0.03,  # $0.03 per 1000 input tokens
+            "output": 0.06  # $0.06 per 1000 output tokens
+        },
+        "gpt-4-32k": {
+            "input": 0.06,  # $0.06 per 1000 input tokens
+            "output": 0.12  # $0.12 per 1000 output tokens
+        },
+        "gpt-3.5-turbo": {
+            "input": 0.0015,  # $0.0015 per 1000 input tokens
+            "output": 0.002   # $0.002 per 1000 output tokens
+        }
+    }
+
+    @staticmethod
+    def estimate_tokens(text: str) -> int:
+        """Rough estimation of token count based on text length.
+        This is an approximation - actual tokenization may vary."""
+        # Rough estimation: 1 token ≈ 4 characters for English text
+        return max(1, len(text) // 4)
+
+    @staticmethod
+    def calculate_cost(model_name: str, input_tokens: int, output_tokens: int) -> float:
+        """Calculate the cost based on token usage and model pricing."""
+        if model_name not in TokenCostTracker.PRICING:
+            # Default to GPT-4.1-mini pricing if model not found
+            model_name = "gpt-4.1-mini"
+
+        pricing = TokenCostTracker.PRICING[model_name]
+        input_cost = (input_tokens / 1000) * pricing["input"]
+        output_cost = (output_tokens / 1000) * pricing["output"]
+        return input_cost + output_cost
+
+    @staticmethod
+    def log_llm_usage(operation: str, model_name: str, input_text: str, output_text: str = None):
+        """Log token usage and cost for an LLM operation."""
+        input_tokens = TokenCostTracker.estimate_tokens(input_text)
+        output_tokens = TokenCostTracker.estimate_tokens(output_text) if output_text else 0
+        total_tokens = input_tokens + output_tokens
+        cost = TokenCostTracker.calculate_cost(model_name, input_tokens, output_tokens)
+
+        logger.info(
+            f"LLM Usage - {operation} | "
+            f"Model: {model_name} | "
+            f"Input tokens: {input_tokens} | "
+            f"Output tokens: {output_tokens} | "
+            f"Total tokens: {total_tokens} | "
+            f"Estimated cost: ${cost:.6f}"
+        )
+
+        return {
+            "operation": operation,
+            "model": model_name,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
+            "cost": cost,
+            "timestamp": datetime.now().isoformat()
+        }
 
 
 class PhysicalLocation(BaseModel):
@@ -154,7 +241,27 @@ class TextExtract:
         )
         prompt = prompt_template.invoke({"text": text})
         messages = prompt.to_messages()
-        return self.open_ai_client.invoke(messages).content
+
+        # Log token usage and cost before making the call
+        input_text = str(messages)
+        TokenCostTracker.log_llm_usage(
+            operation="reformat_llm_description",
+            model_name=self.open_ai_client.model_name,
+            input_text=input_text
+        )
+
+        response = self.open_ai_client.invoke(messages)
+
+        # Log the output tokens and cost after getting the response
+        output_text = response.content
+        TokenCostTracker.log_llm_usage(
+            operation="reformat_llm_description_output",
+            model_name=self.open_ai_client.model_name,
+            input_text="",  # No input for output logging
+            output_text=output_text
+        )
+
+        return output_text
 
     def transform_to_database_format(self, data_model: SchemesStructuredOutput):
         """Transform the structured output to database format based on the 3 scenarios"""
@@ -230,19 +337,75 @@ class TextExtract:
             # if length of text exceeds max tokens, split the text into chunks to run extraction over it
             texts = self.text_splitter.split_text(text)
             data_models = []
-            for text in texts:
-                prompt = prompt_template.invoke({"text": text})
+            total_input_tokens = 0
+            total_output_tokens = 0
+            total_cost = 0.0
+
+            for i, text_chunk in enumerate(texts):
+                prompt = prompt_template.invoke({"text": text_chunk})
                 messages = prompt.to_messages()
-                data_model = structured_llm.invoke(
-                    self.no_valuable_text_examples + messages
+                full_messages = self.no_valuable_text_examples + messages
+
+                # Log token usage for each chunk
+                input_text = str(full_messages)
+                usage_info = TokenCostTracker.log_llm_usage(
+                    operation=f"extract_text_chunk_{i+1}",
+                    model_name=self.open_ai_client.model_name,
+                    input_text=input_text
                 )
+                total_input_tokens += usage_info["input_tokens"]
+
+                data_model = structured_llm.invoke(full_messages)
                 data_models.append(data_model)
+
+                # Log output tokens for this chunk
+                output_text = str(data_model.dict())
+                output_usage_info = TokenCostTracker.log_llm_usage(
+                    operation=f"extract_text_chunk_{i+1}_output",
+                    model_name=self.open_ai_client.model_name,
+                    input_text="",
+                    output_text=output_text
+                )
+                total_output_tokens += output_usage_info["output_tokens"]
+                total_cost += output_usage_info["cost"]
+
+            # Log total usage for chunked processing
+            logger.info(
+                f"LLM Usage - extract_text_chunked_total | "
+                f"Model: {self.open_ai_client.model_name} | "
+                f"Total input tokens: {total_input_tokens} | "
+                f"Total output tokens: {total_output_tokens} | "
+                f"Total tokens: {total_input_tokens + total_output_tokens} | "
+                f"Total estimated cost: ${total_cost:.6f} | "
+                f"Chunks processed: {len(texts)}"
+            )
+
             # combine extraction results into one model
             data_model = self.merge_models_concat(data_models)
         else:
             prompt = prompt_template.invoke({"text": text})
             messages = prompt.to_messages()
-            data_model = structured_llm.invoke(self.no_valuable_text_examples + messages)
+            full_messages = self.no_valuable_text_examples + messages
+
+            # Log token usage for single text processing
+            input_text = str(full_messages)
+            TokenCostTracker.log_llm_usage(
+                operation="extract_text_single",
+                model_name=self.open_ai_client.model_name,
+                input_text=input_text
+            )
+
+            data_model = structured_llm.invoke(full_messages)
+
+            # Log output tokens
+            output_text = str(data_model.dict())
+            TokenCostTracker.log_llm_usage(
+                operation="extract_text_single_output",
+                model_name=self.open_ai_client.model_name,
+                input_text="",
+                output_text=output_text
+            )
+
         # format llm description into something that is more readable
         data_model.llm_description = self.reformat_llm_description(data_model.llm_description)
 

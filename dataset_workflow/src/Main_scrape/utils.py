@@ -3,6 +3,10 @@ from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 
 def check_if_scraped_require_refresh(firestore_dt):
+    # If firestore_dt is None, we need to refresh (return True)
+    if firestore_dt is None:
+        return True
+
     # Current time in UTC
     now = datetime.now(timezone.utc)
 

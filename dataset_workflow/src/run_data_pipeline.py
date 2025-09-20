@@ -8,7 +8,9 @@ import os
 import sys
 import argparse
 from pathlib import Path
+from datetime import datetime
 from loguru import logger
+from logging_config import setup_logging
 
 # Add the current directory to Python path so we can import src modules
 current_dir = Path(__file__).parent.parent
@@ -26,16 +28,7 @@ from src.Main_scrape.add_scraped_fields_to_fire_store import (
 from src.Main_scrape.add_town_area_to_fire_store import add_town_areas
 
 
-def setup_logging():
-    """Setup logging configuration"""
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-        colorize=True,
-        backtrace=True,
-    )
+# setup_logging function is now imported from logging_config module
 
 
 def validate_environment(env):
@@ -123,6 +116,7 @@ def main():
             doc_ids = [doc_id.strip() for doc_id in doc_ids]
         else:
             logger.info("Processing all doc ids")
+            doc_ids = []
 
         # Get credentials and bucket
         creds_file, storage_bucket = get_credentials_and_bucket(env)
@@ -144,7 +138,7 @@ def main():
             (
                 1,
                 "Run Main_scrape.py to get scraped data in DB",
-                lambda: run_scraping_for_links(db, process_specific_doc_ids=doc_ids),
+                lambda: run_scraping_for_links(db, process_specific_doc_ids=doc_ids, skip_if_scraped=True),
             ),
             (
                 2,

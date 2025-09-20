@@ -71,7 +71,7 @@ async function importCSV(filePath) {
 }
 
 // Change 'path/to/your-file.csv' to your actual CSV file path
-const csvFilePath = '../schemesv3_schemes_13Jul add CareCorner.csv';
+const csvFilePath = './schemesv3-add-20sep.csv';
 importCSV(csvFilePath)
   .then(() => console.log('Import completed successfully'))
   .catch((error) => {

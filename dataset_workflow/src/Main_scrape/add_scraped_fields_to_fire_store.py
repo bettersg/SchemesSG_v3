@@ -5,8 +5,8 @@ from firebase_admin import firestore
 from .utils import check_if_scraped_require_refresh
 from src.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
 from loguru import logger
-import argparse
-from datetime import datetime, timezone
+from google.cloud.firestore_v1 import SERVER_TIMESTAMP
+from logging_config import ensure_logging_setup
 
 def is_valid_scraped_text(scraped_text):
     """
@@ -32,18 +32,12 @@ def is_valid_scraped_text(scraped_text):
 
 
 def add_scraped_fields_to_fire_store(db, doc_ids=None):
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-        colorize=True,
-        backtrace=True,
-    )
+    # Ensure logging is set up (will use existing setup if already initialized)
+    ensure_logging_setup()
     logger.info("Logger initialised")
     text_extract = TextExtract()
     # Get documents to process
-    if doc_ids is None:
+    if doc_ids is None or len(doc_ids)==0:
         # Get all documents from the collection
         docs = db.collection("schemes").stream()
         doc_ids = [doc.id for doc in docs]
@@ -69,8 +63,8 @@ def add_scraped_fields_to_fire_store(db, doc_ids=None):
         fields_populated = all(doc_data.get(field) for field in essential_fields)
 
         # last scraped updated
-        last_scraped_update = doc_data.get("last_scraped_update")
-        require_refresh = check_if_scraped_require_refresh(last_scraped_update)
+        last_llm_processed_update = doc_data.get("last_llm_processed_update")
+        require_refresh = check_if_scraped_require_refresh(last_llm_processed_update)
 
 
         if fields_populated and not require_refresh:
@@ -124,6 +118,9 @@ def add_scraped_fields_to_fire_store(db, doc_ids=None):
 
                 # Perform a single update operation if there are any changes
                 if updates:
+                    updates["last_llm_processed_update"] = SERVER_TIMESTAMP
+                    logger.info(f"Added 'last_llm_processed_update' field to update_data for doc {doc_ref.id}")
+
                     doc_ref.update(updates)
                     logger.info(f"Updated document {doc_id} with keys: {', '.join(updates.keys())}")
 

@@ -9,6 +9,7 @@ import requests
 import re
 from dotenv import dotenv_values, load_dotenv
 import os
+from logging_config import ensure_logging_setup
 
 
 class Config:
@@ -136,14 +137,8 @@ def extract_planning_area_from_address(address, token):
         return None
 
 def add_town_areas(db, doc_ids=None):
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-        colorize=True,
-        backtrace=True,
-    )
+    # Ensure logging is set up (will use existing setup if already initialized)
+    ensure_logging_setup()
     logger.info("Logger initialised")
 
     # Initialize config and get OneMap credentials
@@ -165,7 +160,7 @@ def add_town_areas(db, doc_ids=None):
         sys.exit(1)
 
     # Get documents to process
-    if doc_ids is None:
+    if doc_ids is None or len(doc_ids)==0:
         # Get all documents from the collection
         docs = db.collection("schemes").stream()
         doc_ids = [doc.id for doc in docs]
@@ -191,8 +186,8 @@ def add_town_areas(db, doc_ids=None):
         current_planning_area = doc_data.get("planning_area")
         planning_area_already_present = current_planning_area is not None and current_planning_area != "No Location"
          # last scraped updated
-        last_scraped_update = doc_data.get("last_scraped_update")
-        require_refresh = check_if_scraped_require_refresh(last_scraped_update)
+        last_llm_processed_update = doc_data.get("last_llm_processed_update")
+        require_refresh = check_if_scraped_require_refresh(last_llm_processed_update)
 
         if planning_area_already_present and not require_refresh:
             logger.info(f"Skipping extraction for document {doc_id} as planning area is present")

@@ -12,6 +12,7 @@ import argparse
 import sys
 from loguru import logger
 from tqdm import tqdm  # Added tqdm for progress bar
+from logging_config import ensure_logging_setup
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -21,15 +22,8 @@ from firebase_admin import firestore
 
 
 
-# Setup logger
-logger.remove()
-logger.add(
-    sys.stdout,
-    level="INFO",
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-    colorize=True,
-    backtrace=True,
-)
+# Ensure logging is set up (will use existing setup if already initialized)
+ensure_logging_setup()
 logger.info("Logger initialised")
 
 model_save_path = './models/schemesv2-torch-allmpp-model'

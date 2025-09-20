@@ -7,6 +7,7 @@ import argparse
 import sys
 from loguru import logger
 from uuid import uuid4
+from logging_config import ensure_logging_setup
 
 def zip_folder(folder_path, output_zip_path):
     with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -19,6 +20,9 @@ def zip_folder(folder_path, output_zip_path):
     logger.info(f"Zipped folder '{folder_path}' into '{output_zip_path}'")
 
 def upload_model_artefacts(creds_file, storage_bucket):
+    # Ensure logging is set up (will use existing setup if already initialized)
+    ensure_logging_setup()
+
     zip_path = f"{int(time.time())}_models.zip"
 
     zip_folder(folder_path="models", output_zip_path=zip_path)

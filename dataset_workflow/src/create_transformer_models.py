@@ -17,6 +17,7 @@ import faiss
 import numpy as np
 from loguru import logger
 import argparse # Import argparse
+from logging_config import ensure_logging_setup
 
 NLP = spacy.load("en_core_web_sm")
 
@@ -81,14 +82,8 @@ def create_transformer_models(db):
     import time
     start_time = time.time()
 
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-        colorize=True,
-        backtrace=True,
-    )
+    # Ensure logging is set up (will use existing setup if already initialized)
+    ensure_logging_setup()
 
     logger.info("Starting create_transformer_models process...")
     logger.info("Using provided Firebase database connection")

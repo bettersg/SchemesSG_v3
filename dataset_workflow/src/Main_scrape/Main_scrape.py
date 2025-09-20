@@ -16,6 +16,7 @@ from google.api_core import exceptions as google_exceptions  # Import google exc
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger # Import loguru
+from logging_config import ensure_logging_setup
 # Add imports for retry mechanism
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -857,19 +858,10 @@ def log_error_to_csv(doc_id, link, error_message):
         writer = csv.writer(file)
         writer.writerow([doc_id, link, error_message_str])
 
-def run_scraping_for_links(db, process_specific_doc_ids: list = [], production_run=False):
+def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scraped=False):
 
-    if not process_specific_doc_ids and not production_run:
-        raise ValueError(f"If process_specific_doc_ids is empty, set production_run to True")
-    # Initialize Logger
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-        colorize=True,
-        backtrace=True,
-    )
+    # Ensure logging is set up (will use existing setup if already initialized)
+    ensure_logging_setup()
     logger.info("Logger initialised")
     logger.info("Using provided Firebase database connection")
 
@@ -922,7 +914,7 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], production_r
             docs_to_process = db.collection("schemes").stream()
 
         # Set the flag to control scraping behavior (No longer used for skipping, but kept for potential future use)
-        skip_if_scraped = False # Consider making this an argument if needed frequently
+
         for doc in docs_to_process:
             doc_ref = db.collection("schemes").document(doc.id)
             doc_data = None # Initialize doc_data
