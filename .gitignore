@@ -227,3 +227,13 @@ dataset_worfklow/schemes-dev-firestore-structure.json
 dataset_worfklow/user-chat-export.csv
 dataset_worfklow/models/
 modelfiles.zip
+dataset_worfklow/src/models/
+dataset_workflow/src/models/index_to_scheme_id.json
+dataset_workflow/src/models/schemesv2-your_embeddings.npy
+dataset_workflow/src/models/schemesv2-your_index.faiss
+dataset_workflow/src/models/schemesv2-torch-allmpp-model/config.json
+dataset_workflow/src/models/schemesv2-torch-allmpp-model/model.safetensors
+dataset_workflow/src/models/schemesv2-torch-allmpp-tokenizer/special_tokens_map.json
+dataset_workflow/src/models/schemesv2-torch-allmpp-tokenizer/tokenizer_config.json
+dataset_workflow/src/models/schemesv2-torch-allmpp-tokenizer/tokenizer.json
+dataset_workflow/src/models/schemesv2-torch-allmpp-tokenizer/vocab.txt

@@ -21,7 +21,7 @@ def zip_folder(folder_path, output_zip_path):
 def upload_model_artefacts(creds_file, storage_bucket):
     zip_path = f"{int(time.time())}_models.zip"
 
-    zip_folder(folder_path="dataset_worfklow/models", output_zip_path=zip_path)
+    zip_folder(folder_path="models", output_zip_path=zip_path)
 
     cred = credentials.Certificate(creds_file)
     firebase_admin.initialize_app(cred, {
@@ -38,26 +38,26 @@ def upload_model_artefacts(creds_file, storage_bucket):
     # Set metadata to blob - make sure to convert UUID to string
     blob.metadata = metadata
 
-    logger.info(f"Starting upload of {zip_path} to bucket {args.storage_bucket}...")
+    logger.info(f"Starting upload of {zip_path} to bucket {storage_bucket}...")
     # Add content_type and ensure metadata is uploaded
     blob.upload_from_filename(zip_path, timeout=300, content_type='application/zip')
     logger.info(f"Successfully uploaded {zip_path}")
 
 
-if __name__ == "__main__":
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level="INFO",
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
-        colorize=True,
-        backtrace=True,
-    )
-    logger.info("Logger initialised")
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Zip model artefacts and upload to Firebase Storage.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    parser.add_argument('storage_bucket', help='Name of the Firebase Storage bucket.')
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     logger.remove()
+#     logger.add(
+#         sys.stdout,
+#         level="INFO",
+#         format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
+#         colorize=True,
+#         backtrace=True,
+#     )
+#     logger.info("Logger initialised")
+#     # Set up argument parser
+#     parser = argparse.ArgumentParser(description='Zip model artefacts and upload to Firebase Storage.')
+#     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+#     parser.add_argument('storage_bucket', help='Name of the Firebase Storage bucket.')
+#     args = parser.parse_args()
 
-    upload_model_artefacts(args.creds_file, args.storage_bucket)
+#     upload_model_artefacts(args.creds_file, args.storage_bucket)

@@ -16,9 +16,8 @@ sys.path.insert(0, str(current_dir))
 
 # Import functions from the various scripts
 from src.create_transformer_models import create_transformer_models
-#from test_model_artefacts_created import test_function
 from src.upload_model_artefacts import upload_model_artefacts
-
+from src.test_model_artefacts_created import test_function
 # Import functions from Main_scrape scripts
 from src.Main_scrape.Main_scrape import run_scraping_for_links
 from src.Main_scrape.add_scraped_fields_to_fire_store import (
@@ -53,12 +52,14 @@ def get_credentials_and_bucket(env):
     # Define bucket names
     dev_storage_bucket = "schemessg-v3-dev.firebasestorage.app"
     prod_storage_bucket = "schemessg.appspot.com"  # PLEASE VERIFY THIS
-    creds_file = "/dataset_workflow/creds.json"
+
 
     if env == "dev":
         storage_bucket = dev_storage_bucket
+        creds_file = str(Path(__file__).parent.parent / "dev-creds.json")
     elif env == "prod":  # prod
         storage_bucket = prod_storage_bucket
+        creds_file = str(Path(__file__).parent.parent / "prod-creds.json")
     else:
         raise ValueError(f"Invalid environment specified: {env}. Please use 'dev' or 'prod'.")
 
@@ -67,12 +68,18 @@ def get_credentials_and_bucket(env):
 def main():
     """Main function to run the workflow"""
     parser = argparse.ArgumentParser(
-        description="Run steps 3-7 of the SchemesSG workflow using Python functions"
+        description="Run steps 1-7 of the SchemesSG workflow using Python functions"
     )
     parser.add_argument(
         "environment",
         choices=["dev", "prod"],
-        help="Environment to run in (dev or prod)",
+        help="Environment to run in (dev or prod) - REQUIRED",
+    )
+    parser.add_argument(
+        "--doc_ids",
+        nargs="+",
+        type=str,
+        help="Doc ids to process (e.g., --doc_ids 00uFr8EP5kJsqgh7G33h 00uFr8EP5kJsqgh7G33h)",
     )
     parser.add_argument(
         "--skip-steps",
@@ -84,10 +91,23 @@ def main():
         "--run-only",
         nargs="+",
         type=int,
-        help="Only run specific steps (e.g., --run-only 6a 6b)",
+        help="Only run specific steps (e.g., --run-only 6)",
     )
 
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        # This happens when argparse encounters an error (like missing required args)
+        print("\n" + "="*60)
+        print("USAGE EXAMPLES:")
+        print("="*60)
+        print("python run_data_pipeline.py dev")
+        print("python run_data_pipeline.py prod")
+        print("python run_data_pipeline.py dev --run-only 1 2 3")
+        print("python run_data_pipeline.py prod --skip-steps 4 5")
+        print("python run_data_pipeline.py dev --doc_ids 00uFr8EP5kJsqgh7G33h")
+        print("="*60)
+        sys.exit(1)
 
     try:
         # Setup logging
@@ -97,35 +117,60 @@ def main():
         env = validate_environment(args.environment)
         logger.info(f"Running in {env} environment")
 
+        doc_ids = args.doc_ids
+        if doc_ids:
+            logger.info(f"Processing doc ids: {doc_ids}")
+            doc_ids = [doc_id.strip() for doc_id in doc_ids]
+        else:
+            logger.info("Processing all doc ids")
+
         # Get credentials and bucket
         creds_file, storage_bucket = get_credentials_and_bucket(env)
         logger.info(f"Using credentials file: {creds_file}")
         logger.info(f"Using storage bucket: {storage_bucket}")
 
+        # Initialize Firebase once
+        logger.info("Initializing Firebase...")
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+
+        cred = credentials.Certificate(creds_file)
+        app = firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        logger.info("Firebase initialized successfully")
+
         # Define the steps to run with direct function calls
         steps = [
             (
-                3,
+                1,
                 "Run Main_scrape.py to get scraped data in DB",
-                lambda: run_scraping_for_links(creds_file),
+                lambda: run_scraping_for_links(db, process_specific_doc_ids=doc_ids),
+            ),
+            (
+                2,
+                "Get logos from website via scraping",
+                lambda: logger.info("Logo scraping handled in step 2"),
+            ),
+            (
+                3,
+                "Take scraped text from DB and create new fields",
+                lambda: add_scraped_fields_to_fire_store(db, doc_ids),
             ),
             (
                 4,
-                "Get logos from website via scraping",
-                lambda: logger.info("Logo scraping handled in step 3"),
+                "Add town area to fire store",
+                lambda: add_town_areas(db, doc_ids),
             ),
             (
                 5,
-                "Take scraped text from DB and create new fields",
-                lambda: add_scraped_fields_to_fire_store(creds_file),
+                "Recompute embeddings and faiss",
+                lambda: create_transformer_models(db),
             ),
-            (5.5, "Add town area to fire store", lambda: add_town_areas(creds_file)),
             (
                 6,
-                "Recompute embeddings and faiss",
-                lambda: create_transformer_models(creds_file),
+                "Test if model artefacts created are valid",
+                lambda: test_function(db),
             ),
-            #(6.5, "Test if model artefacts created are valid", lambda: test_function()),
             (
                 7,
                 "Upload model artefacts to firebase storage",
@@ -135,24 +180,10 @@ def main():
 
         # Filter steps based on arguments
         if args.run_only:
-            # Convert step numbers to handle both integers and floats (6a -> 6, 6b -> 6.5)
-            run_only_steps = []
-            for step in args.run_only:
-                if step == 6:
-                    run_only_steps.extend([6, 6.5])  # Include both 6a and 6b
-                else:
-                    run_only_steps.append(step)
-            steps = [s for s in steps if s[0] in run_only_steps]
+            steps = [s for s in steps if s[0] in args.run_only]
 
         if args.skip_steps:
-            # Convert step numbers to handle both integers and floats
-            skip_steps = []
-            for step in args.skip_steps:
-                if step == 6:
-                    skip_steps.extend([6, 6.5])  # Skip both 6a and 6b
-                else:
-                    skip_steps.append(step)
-            steps = [s for s in steps if s[0] not in skip_steps]
+            steps = [s for s in steps if s[0] not in args.skip_steps]
 
         # Run the selected steps
         logger.info(f"Running {len(steps)} steps")

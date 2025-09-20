@@ -2,6 +2,7 @@ import firebase_admin
 import sys
 from firebase_admin import credentials
 from firebase_admin import firestore
+from .utils import check_if_scraped_require_refresh
 from loguru import logger
 import argparse
 import requests
@@ -12,7 +13,10 @@ import os
 
 class Config:
     def __init__(self):
-        load_dotenv("/dataset_workflow/.env")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        env_path = os.path.join(script_dir, "..", "..", ".env")
+        load_dotenv(env_path)
+
 
         for key, value in dotenv_values().items():
             setattr(self, key.lower(), value)
@@ -130,8 +134,8 @@ def extract_planning_area_from_address(address, token):
     except Exception as e:
         logger.error(f"Error in extract_planning_area_from_address: {e}")
         return None
-    
-def add_town_areas(creds_file):
+
+def add_town_areas(db, doc_ids=None):
     logger.remove()
     logger.add(
         sys.stdout,
@@ -160,13 +164,15 @@ def add_town_areas(creds_file):
         logger.error("Failed to obtain OneMap access token. Exiting.")
         sys.exit(1)
 
-    cred = credentials.Certificate(creds_file)
-    app = firebase_admin.initialize_app(cred)
-    db = firestore.client()
-
-    # Get all documents from the collection
-    docs = db.collection("schemes").stream()
-    doc_ids = [doc.id for doc in docs]
+    # Get documents to process
+    if doc_ids is None:
+        # Get all documents from the collection
+        docs = db.collection("schemes").stream()
+        doc_ids = [doc.id for doc in docs]
+    else:
+        # Use provided doc_ids, ensuring they are strings
+        doc_ids = [str(doc_id) for doc_id in doc_ids]
+        logger.info(f"Processing specific doc_ids: {doc_ids}")
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -182,11 +188,15 @@ def add_town_areas(creds_file):
         updates = {}
 
         # Check if planning_area is already present
-        planning_area_already_present = doc_data.get("planning_area") is not None
-        logger.info(f"Planning area already present for document {doc_id}, updating.")
-        # if planning_area_already_present:
-        #     logger.info(f"Planning area already present for document {doc_id}, skipping update.")
-        #     continue
+        current_planning_area = doc_data.get("planning_area")
+        planning_area_already_present = current_planning_area is not None and current_planning_area != "No Location"
+         # last scraped updated
+        last_scraped_update = doc_data.get("last_scraped_update")
+        require_refresh = check_if_scraped_require_refresh(last_scraped_update)
+
+        if planning_area_already_present and not require_refresh:
+            logger.info(f"Skipping extraction for document {doc_id} as planning area is present")
+            continue # Skip to the next document
 
         # Generate planning area if address exists
         if address:
@@ -224,10 +234,8 @@ def add_town_areas(creds_file):
             logger.info(f"Updated document {doc_id} with keys: {', '.join(updates.keys())}")
             logger.info(f"Updates: {updates}")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Generate planning area for each scheme and update Firestore.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
-    add_town_areas(args.creds_file)
-
-    
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Generate planning area for each scheme and update Firestore.')
+#     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+#     args = parser.parse_args()
+#     add_town_areas(args.creds_file)

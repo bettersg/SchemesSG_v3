@@ -7,7 +7,8 @@ import argparse  # Import argparse
 import sys  # Import sys for logger output
 from urllib.parse import urljoin, urlparse # Import urljoin and urlparse for handling relative URLs
 import io # Import io for handling byte streams
-from datetime import datetime
+from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -21,16 +22,84 @@ from urllib3.util.retry import Retry
 from requests.exceptions import ConnectionError # Import ConnectionError specifically
 from pypdf import PdfReader # Import PdfReader
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
+from .utils import check_if_scraped_require_refresh
 
-# More comprehensive headers
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',  # Explicitly accept Brotli compression
-    'DNT': '1', # Do Not Track Request Header
-    'Upgrade-Insecure-Requests': '1'
-}
+# More comprehensive headers with multiple User-Agent options
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+]
+
+def get_headers():
+    """Get headers with random User-Agent to avoid detection"""
+    import random
+    return {
+        'User-Agent': random.choice(USER_AGENTS),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive'
+    }
+
+def _get_mobile_headers():
+    """Get mobile headers to bypass some blocking mechanisms"""
+    return {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+
+def _get_minimal_headers():
+    """Get minimal headers to avoid detection"""
+    return {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    }
+
+def _get_headers_with_referer(link):
+    """Get headers with referer to mimic coming from the same domain"""
+    from urllib.parse import urlparse
+    parsed_url = urlparse(link)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    headers = get_headers()
+    headers['Referer'] = base_url
+    return headers
+
+def _make_request(link, session, headers, use_head=True):
+    """Make a request with the given strategy"""
+    import time
+
+    # Add small delay to avoid rate limiting
+    time.sleep(0.5)
+
+    if use_head:
+        # Perform a HEAD request first to check content type
+        head_response = session.head(link, verify=False, timeout=15, headers=headers, allow_redirects=True)
+        head_response.raise_for_status()
+        content_type = head_response.headers.get('Content-Type', '').lower()
+        is_pdf = content_type.startswith('application/pdf') or link.lower().endswith('.pdf')
+    else:
+        is_pdf = link.lower().endswith('.pdf')
+
+    # Now perform GET request to fetch content
+    response = session.get(link, verify=False, timeout=30, headers=headers, allow_redirects=True)
+    response.raise_for_status()
+
+    return response, is_pdf
 
 # Function to initialize the CSV file (always overwrite)
 def initialize_csv(file_path):
@@ -229,18 +298,41 @@ def is_valid_text(text, bad_char_threshold=0.2):
         return True
 
 # Function to scrape text and get soup object from a URL
-def scrape_content(link, session, headers=HEADERS):
+def scrape_content(link, session, headers=None):
+    if headers is None:
+        headers = get_headers()
     mod_security_error_signature = "Not Acceptable!An appropriate representation of the requested resource could not be found on this server. This error was generated by Mod_Security."
-    try:
-        # Perform a HEAD request first to check content type without downloading full body
-        head_response = session.head(link, verify=False, timeout=15, headers=headers, allow_redirects=True)
-        head_response.raise_for_status()
-        content_type = head_response.headers.get('Content-Type', '').lower()
-        is_pdf = content_type.startswith('application/pdf') or link.lower().endswith('.pdf')
 
-        # Now perform GET request to fetch content
-        response = session.get(link, verify=False, timeout=30, headers=headers)
-        response.raise_for_status()
+    # Try multiple strategies to bypass blocking
+    strategies = [
+        # Strategy 1: Standard request
+        lambda: _make_request(link, session, headers, use_head=True),
+        # Strategy 2: Direct GET without HEAD (some sites block HEAD requests)
+        lambda: _make_request(link, session, headers, use_head=False),
+        # Strategy 3: Different headers (mobile user agent)
+        lambda: _make_request(link, session, _get_mobile_headers(), use_head=False),
+        # Strategy 4: Minimal headers
+        lambda: _make_request(link, session, _get_minimal_headers(), use_head=False),
+        # Strategy 5: Add referer header
+        lambda: _make_request(link, session, _get_headers_with_referer(link), use_head=False)
+    ]
+
+    for i, strategy in enumerate(strategies, 1):
+        try:
+            logger.info(f"Trying scraping strategy {i} for {link}")
+            response, is_pdf = strategy()
+            if response and response.status_code == 200:
+                logger.info(f"Strategy {i} successful for {link}")
+                break
+        except Exception as e:
+            logger.warning(f"Strategy {i} failed for {link}: {e}")
+            if i == len(strategies):
+                raise e
+            continue
+    else:
+        raise Exception("All scraping strategies failed")
+
+    try:
 
         # Ensure content is properly decompressed
         if response.headers.get('content-encoding'):
@@ -280,6 +372,10 @@ def scrape_content(link, session, headers=HEADERS):
             logger.info(f"Response status: {response.status_code}")
             logger.info(f"Content-Type header: {response.headers.get('content-type', 'Not set')}")
             logger.info(f"Content length: {len(response.content)} bytes")
+
+            # Debug: Print first 300 characters of content
+            # content_preview = response.content[:300].decode('utf-8', errors='ignore')
+            # logger.info(f"Content preview (first 300 chars): {content_preview}")
 
             # Check if response content looks valid
             if not check_response_content(response):
@@ -505,10 +601,21 @@ def check_response_content(response):
         b'<title>401</title>',
         b'<title>400</title>',
         b'HTTP Error',
-        b'Page Not Found',
-        b'Access Denied',
-        b'Forbidden',
-        b'Unauthorized'
+        b'<h1>Page Not Found</h1>',
+        b'<h2>Page Not Found</h2>',
+        b'<title>Page Not Found</title>',
+        b'<h1>Access Denied</h1>',
+        b'<h2>Access Denied</h2>',
+        b'<title>Access Denied</title>',
+        b'<h1>Forbidden</h1>',
+        b'<h2>Forbidden</h2>',
+        b'<title>Forbidden</title>',
+        b'<h1>Unauthorized</h1>',
+        b'<h2>Unauthorized</h2>',
+        b'<title>Unauthorized</title>',
+        b'403 Forbidden',
+        b'401 Unauthorized',
+        b'404 Not Found'
     ]
 
     content_lower = response.content.lower()
@@ -750,19 +857,8 @@ def log_error_to_csv(doc_id, link, error_message):
         writer = csv.writer(file)
         writer.writerow([doc_id, link, error_message_str])
 
-def check_if_scraped_require_refresh(firestore_dt):
-    # Current time in UTC
-    now = datetime.now(timezone.utc)
+def run_scraping_for_links(db, process_specific_doc_ids: list = [], production_run=False):
 
-    # One month from now
-    one_month_from_now = now - relativedelta(months=1)
-
-    # Comparison
-    is_more_than_a_month = firestore_dt > one_month_from_now
-    return is_more_than_a_month
-
-def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], production_run=False):
-    
     if not process_specific_doc_ids and not production_run:
         raise ValueError(f"If process_specific_doc_ids is empty, set production_run to True")
     # Initialize Logger
@@ -775,13 +871,7 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
         backtrace=True,
     )
     logger.info("Logger initialised")
-
-    # Use a service account to connect to firestore.
-    cred = credentials.Certificate(creds_file) # Use the path from arguments
-
-    app = firebase_admin.initialize_app(cred)
-
-    db = firestore.client()
+    logger.info("Using provided Firebase database connection")
 
     # Configure Retry Strategy
     retry_strategy = Retry(
@@ -797,6 +887,13 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
     session = requests.Session()
     session.mount("https://", adapter)
     session.mount("http://", adapter)
+
+    # Additional session configuration to bypass blocking
+    session.headers.update(get_headers())
+
+    # Disable SSL verification warnings (some sites have certificate issues)
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     # Initialize the CSV file (this will now reset it)
     # Define the CSV file path
     # Get all documents from the collection
@@ -847,15 +944,15 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                         logger.error(f"{error_message} for document {doc.id}")
                         log_error_to_csv(doc.id, doc_data.get("link", "N/A"), error_message) # Covered by log_error_to_csv
                         continue # Skip to the next document if initialization fails
-                
+
                 if 'last_scraped_update' in doc_data:
+                    firestore_dt = doc_data['last_scraped_update']
                     require_refresh = check_if_scraped_require_refresh(firestore_dt)
                 else:
                     require_refresh = True
                 # Check if scraping should be skipped based on 'scraped_text' field
                 should_skip_scraping = skip_if_scraped and bool(doc_data.get("scraped_text")) and not require_refresh
                 # Check if image field is already populated
-                breakpoint()
                 image_already_populated = doc_data.get("image")
 
                 # Skip if both text is scraped AND image is populated (and skip_if_scraped is True)
@@ -882,7 +979,7 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                         scraped_content, soup = scrape_content(url_to_scrape, session)
 
                         # Validate scraped content
-                        if isinstance(scraped_content, str) and not scraped_content.startswith("HTTP Error:") and not scraped_content.startswith("Connection Error:") and not scraped_content.startswith("Request Error:") and not scraped_content.startswith("Unexpected Scraping Error:") and not scraped_content.startswith("PDF Processing Error:") and not scraped_content == "Blocked by Mod_Security":
+                        if isinstance(scraped_content, str) and not scraped_content.startswith("HTTP Error:") and not scraped_content.startswith("Connection Error:") and not scraped_content.startswith("Request Error:") and not scraped_content.startswith("Unexpected Scraping Error:") and not scraped_content.startswith("PDF Processing Error:") and not scraped_content == "Blocked by Mod_Security" and not scraped_content.startswith("Invalid Response"):
                             if not is_valid_text(scraped_content):
                                 logger.warning(f"Scraped content for {doc.id} ({url_to_scrape}) failed validation (likely binary or garbled). Storing empty string.")
                                 # Log the failure but store empty string instead of bad data
@@ -900,9 +997,6 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                             scraped_content = "" # Ensure we store empty string on error
 
                     if is_error:
-                        # Log the scraping error
-                        logger.error(f"Scraping error for document {doc.id} ({url_to_scrape}): {error_message_scrape}")
-                        log_error_to_csv(doc.id, url_to_scrape, error_message_scrape)
                         # Update Firestore with the error status (optional, but can be useful)
                         try:
                             doc_ref.update({"scraped_text": f"ERROR: {error_message_scrape}"})
@@ -948,6 +1042,7 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                             logger.info(f"Preparing to update 'scraped_text' for doc {doc.id} (Length: {len(scraped_content)})")
                             update_data["scraped_text"] = scraped_content
                             update_data["last_scraped_update"] = SERVER_TIMESTAMP
+                            logger.info(f"Added 'last_scraped_update' field to update_data for doc {doc.id}")
 
                         # Update Firestore only if there's something to update
                         if update_data:
@@ -1002,22 +1097,26 @@ def parse_json_list(arg):
     except json.JSONDecodeError as e:
         raise argparse.ArgumentTypeError(f"Invalid JSON list: {e}")
 
-if __name__ == "__main__":
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Scrape website text and update Firestore.')
-    parser.add_argument('--creds_file', help='Path to the Firebase credentials file.')
-    parser.add_argument(
-    '--doc_ids',
-    type=parse_json_list,
-    required=False,
-    default='[]',
-    help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
-    )
-    parser.add_argument(
-    '--production_run',
-    type=bool,
-    default=False,
-    help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
-    )
-    args = parser.parse_args()
-    run_scraping_for_links(args.creds_file, process_specific_doc_ids=args.doc_ids, production_run=args.production_run)
+# if __name__ == "__main__":
+#     # Set up argument parser
+#     parser = argparse.ArgumentParser(description='Scrape website text and update Firestore.')
+#     parser.add_argument(
+#         '--creds_file',
+#         help='Path to the Firebase credentials file.',
+#         required=True,
+#     )
+#     parser.add_argument(
+#         '--doc_ids',
+#         type=parse_json_list,
+#         required=False,
+#         default='[]',
+#         help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
+#     )
+#     parser.add_argument(
+#         '--production_run',
+#         type=bool,
+#         default=False,
+#         help='A JSON-formatted list of doc ids, e.g. \'["Dsq1hv34RYgJGrY5hO6k"]\''
+#     )
+#     args = parser.parse_args()
+#     run_scraping_for_links(args.creds_file, process_specific_doc_ids=args.doc_ids, production_run=args.production_run)

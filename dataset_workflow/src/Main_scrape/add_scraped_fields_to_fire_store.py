@@ -2,6 +2,7 @@ import firebase_admin
 import sys
 from firebase_admin import credentials
 from firebase_admin import firestore
+from .utils import check_if_scraped_require_refresh
 from src.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
 from loguru import logger
 import argparse
@@ -30,7 +31,7 @@ def is_valid_scraped_text(scraped_text):
     return True
 
 
-def add_scraped_fields_to_fire_store(creds_file):
+def add_scraped_fields_to_fire_store(db, doc_ids=None):
     logger.remove()
     logger.add(
         sys.stdout,
@@ -40,13 +41,16 @@ def add_scraped_fields_to_fire_store(creds_file):
         backtrace=True,
     )
     logger.info("Logger initialised")
-    cred = credentials.Certificate(creds_file)
-    app = firebase_admin.initialize_app(cred)
-    db = firestore.client()
     text_extract = TextExtract()
-    # Get all documents from the collection
-    docs = db.collection("schemes").stream()
-    doc_ids = [doc.id for doc in docs]
+    # Get documents to process
+    if doc_ids is None:
+        # Get all documents from the collection
+        docs = db.collection("schemes").stream()
+        doc_ids = [doc.id for doc in docs]
+    else:
+        # Use provided doc_ids, ensuring they are strings
+        doc_ids = [str(doc_id) for doc_id in doc_ids]
+        logger.info(f"Processing specific doc_ids: {doc_ids}")
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -64,9 +68,14 @@ def add_scraped_fields_to_fire_store(creds_file):
         essential_fields = ["llm_description"] # User changed this
         fields_populated = all(doc_data.get(field) for field in essential_fields)
 
-        # if fields_populated:
-        #     logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
-        #     continue # Skip to the next document
+        # last scraped updated
+        last_scraped_update = doc_data.get("last_scraped_update")
+        require_refresh = check_if_scraped_require_refresh(last_scraped_update)
+
+
+        if fields_populated and not require_refresh:
+            logger.info(f"Skipping extraction for document {doc_id} as essential fields are already populated.")
+            continue # Skip to the next document
 
         scraped_text = doc_data.get("scraped_text")
         description = doc_data.get("description")
@@ -156,11 +165,11 @@ def add_scraped_fields_to_fire_store(creds_file):
                 'service_area': None
             }
             doc_ref.update(error_updates) # Update with None for error cases
-    
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
 
-    add_scraped_fields_to_fire_store(args.creds_file)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
+#     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+#     args = parser.parse_args()
+
+#     add_scraped_fields_to_fire_store(args.creds_file)

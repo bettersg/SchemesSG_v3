@@ -20,12 +20,17 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 class Config:
     def __init__(self):
-        load_dotenv("dataset_workflow/.env")
+        # Get the path to the .env file relative to this script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        env_path = os.path.join(script_dir, "..", "..", ".env")
+        load_dotenv(env_path)
 
+        # Load all environment variables from .env file
         for key, value in dotenv_values().items():
             setattr(self, key.lower(), value)
 
     def __getattr__(self, item):
+        # Direct environment variable lookup using standard Azure OpenAI names
         attr = os.getenv(item.upper())
         if attr:
             setattr(self, item.lower(), attr)
@@ -111,12 +116,12 @@ class TextExtract:
     def init_chatbot(self):
         config = Config()
         return AzureChatOpenAI(
-            deployment_name=config.deployment41,
-            azure_endpoint=config.endpoint,
-            openai_api_version=config.version,
-            openai_api_key=config.apikey,
-            openai_api_type=config.type,
-            model_name=config.model41,
+            deployment_name=config.azure_openai_chat_deployment,
+            azure_endpoint=config.azure_openai_endpoint,
+            openai_api_version=config.openai_api_version,
+            openai_api_key=config.azure_openai_api_key,
+            openai_api_type=config.azure_openai_type,
+            model_name=config.azure_openai_chat_deployment,
             temperature=0,
         )
 
@@ -207,11 +212,16 @@ class TextExtract:
                 (
                     "system",
                     "You are an expert extraction algorithm. "
-                    "Only extract relevant information from the text. "
-                    "If you do not know the value of an attribute asked to extract, "
-                    "return null for the attribute's value. "
-                    "For physical locations, carefully identify if there are multiple distinct locations "
-                    "or if there are multiple contact methods for the same location.",
+                    "Your goal is to extract the requested attributes as accurately and faithfully as possible "
+                    "from the given website text. "
+                    "Use wording, definitions, and phrases that stay close to the original text so the extracted "
+                    "results can be trusted as reflecting the website accurately. "
+                    "At the same time, ensure compliance with copyright and content rules: "
+                    "reproduce only short, necessary snippets or factual values, not large verbatim portions of text. "
+                    "If the value of an attribute cannot be confidently determined, return null. "
+                    "For physical locations, be careful to distinguish between multiple distinct locations versus "
+                    "multiple contact methods at a single location. "
+                    "Do not infer, hallucinate, or summarize beyond what is explicitly written in the provided text."
                 ),
                 ("human", "{text}"),
             ]

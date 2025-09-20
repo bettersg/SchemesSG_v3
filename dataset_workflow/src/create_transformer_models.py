@@ -77,7 +77,10 @@ def mean_pooling(model_output, attention_mask):
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
-def create_transformer_models(creds_file):
+def create_transformer_models(db):
+    import time
+    start_time = time.time()
+
     logger.remove()
     logger.add(
         sys.stdout,
@@ -86,79 +89,136 @@ def create_transformer_models(creds_file):
         colorize=True,
         backtrace=True,
     )
-    # Use a service account to connect to firestore.
-    cred = credentials.Certificate(creds_file) # Use the path from arguments
 
-    app = firebase_admin.initialize_app(cred, name="create_transformer_models")
-
-    db = firestore.client()
+    logger.info("Starting create_transformer_models process...")
+    logger.info("Using provided Firebase database connection")
 
     # Get all documents from the collection
+    logger.info("Fetching documents from Firestore...")
     docs = db.collection("schemes").stream()
     schemes_df = pd.DataFrame([{**scheme.to_dict(), "scheme_id": scheme.id} for scheme in docs])
     df = schemes_df
+    logger.info(f"Retrieved {len(df)} documents from Firestore")
+
+    logger.info("Building desc_booster field...")
     df['desc_booster'] = df.apply(build_desc_booster, axis=1)
+
     # Get rows where desc_booster is NA
     na_rows = df[df['desc_booster'].isna()]
-    print("Full rows where desc_booster is NA:")
+    logger.info(f"Found {len(na_rows)} rows where desc_booster is NA")
+    if len(na_rows) > 0:
+        logger.warning("Full rows where desc_booster is NA:")
+        print(na_rows)
 
+    logger.info("Loading tokenizer and model...")
     tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-mpnet-base-v2')
     model = AutoModel.from_pretrained('sentence-transformers/all-mpnet-base-v2')
+    logger.info("Tokenizer and model loaded successfully")
 
-    # Tokenize sentences
-    encoded_input = tokenizer(df['desc_booster'].tolist(), padding=True, truncation=True, return_tensors='pt')
+    # Process in batches to avoid memory issues
+    batch_size = 32  # Adjust based on your memory constraints
+    total_docs = len(df)
+    logger.info(f"Processing {total_docs} documents in batches of {batch_size}")
 
-    # Compute token embeddings
-    with torch.no_grad():
-        model_output = model(**encoded_input)
+    all_embeddings = []
 
-    # Perform pooling
-    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+    for i in range(0, total_docs, batch_size):
+        batch_start = i
+        batch_end = min(i + batch_size, total_docs)
+        batch_docs = df.iloc[batch_start:batch_end]
 
-    # Normalize embeddings
-    sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
-    embeddings = sentence_embeddings
-    # Convert embeddings to np.float32 as required by FAISS
-    embeddings = np.array(embeddings).astype('float32')
+        logger.info(f"Processing batch {i//batch_size + 1}/{(total_docs + batch_size - 1)//batch_size} (documents {batch_start}-{batch_end-1})")
+
+        # Tokenize current batch
+        batch_texts = batch_docs['desc_booster'].tolist()
+        logger.info(f"Tokenizing batch of {len(batch_texts)} documents...")
+        encoded_input = tokenizer(batch_texts, padding=True, truncation=True, return_tensors='pt')
+
+        # Compute token embeddings for current batch
+        logger.info(f"Computing embeddings for batch...")
+        with torch.no_grad():
+            model_output = model(**encoded_input)
+
+        # Perform pooling
+        logger.info(f"Performing mean pooling for batch...")
+        sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+
+        # Normalize embeddings
+        sentence_embeddings = F.normalize(sentence_embeddings, p=2, dim=1)
+
+        # Convert to numpy and add to all_embeddings
+        batch_embeddings = sentence_embeddings.cpu().numpy().astype('float32')
+        all_embeddings.append(batch_embeddings)
+
+        logger.info(f"Completed batch {i//batch_size + 1}/{(total_docs + batch_size - 1)//batch_size}")
+
+        # Clear GPU memory if using CUDA
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    # Concatenate all embeddings
+    logger.info("Concatenating all batch embeddings...")
+    embeddings = np.vstack(all_embeddings)
+    logger.info(f"Final embeddings shape: {embeddings.shape}")
 
     # Create a FAISS index
+    logger.info("Creating FAISS index...")
     dimension = embeddings.shape[1]  # Dimension of the embeddings
     index = faiss.IndexFlatL2(dimension)  # Using the L2 distance for similarity
     index.add(embeddings)
+    logger.info("FAISS index created and populated")
+
     # Create a mapping between FAISS index and `scheme_id`
     index_to_scheme_id = dict(enumerate(df['scheme_id']))
+    logger.info(f"Created index mapping for {len(index_to_scheme_id)} schemes")
 
-    # Assuming `model` is your PyTorch model and `tokenizer` is the Hugging Face tokenizer
-    if not os.path.exists('/dataset_workflow/models'):
-        os.makedirs('/dataset_workflow/models')
+    # Create models directory - use relative path from current working directory
+    # The script is run from dataset_workflow directory, so models will be in dataset_workflow/models
+    models_dir = 'models'
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
+        logger.info(f"Created models directory: {os.path.abspath(models_dir)}")
 
-    with open('./dataset_workflow/models/index_to_scheme_id.json', 'w') as f:
+    # Save index mapping
+    index_mapping_path = os.path.join(models_dir, 'index_to_scheme_id.json')
+    with open(index_mapping_path, 'w') as f:
         json.dump(index_to_scheme_id, f)
-        logger.info("Index to scheme id saved")
+    logger.info(f"Index to scheme id saved to {os.path.abspath(index_mapping_path)}")
 
-    model_save_path = '/dataset_workflow/models/schemesv2-torch-allmpp-model'
-    tokenizer_save_path = '/dataset_workflow/models/schemesv2-torch-allmpp-tokenizer'
-    embeddings_save_name = '/dataset_workflow/models/schemesv2-your_embeddings.npy'
-    index_save_name = '/dataset_workflow/models/schemesv2-your_index.faiss'
-
+    # Define save paths - all relative to current working directory
+    model_save_path = os.path.join(models_dir, 'schemesv2-torch-allmpp-model')
+    tokenizer_save_path = os.path.join(models_dir, 'schemesv2-torch-allmpp-tokenizer')
+    embeddings_save_name = os.path.join(models_dir, 'schemesv2-your_embeddings.npy')
+    index_save_name = os.path.join(models_dir, 'schemesv2-your_index.faiss')
 
     # Save the embeddings and index to disk
+    logger.info("Saving embeddings...")
     np.save(embeddings_save_name, embeddings)
-    logger.info("Embeddings saved")
+    logger.info(f"Embeddings saved to {os.path.abspath(embeddings_save_name)}")
+
+    logger.info("Saving FAISS index...")
     faiss.write_index(index, index_save_name)
-    logger.info("Index saved")
+    logger.info(f"Index saved to {os.path.abspath(index_save_name)}")
+
     # Save model
+    logger.info("Saving model...")
     model.save_pretrained(model_save_path)
-    logger.info("Model saved")
+    logger.info(f"Model saved to {os.path.abspath(model_save_path)}")
+
     # Save tokenizer
+    logger.info("Saving tokenizer...")
     tokenizer.save_pretrained(tokenizer_save_path)
-    logger.info("Tokenizer saved")
+    logger.info(f"Tokenizer saved to {os.path.abspath(tokenizer_save_path)}")
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    logger.info(f"Process completed successfully in {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
 
 
-if __name__ == "__main__":
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Create transformer models and FAISS index.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     # Set up argument parser
+#     parser = argparse.ArgumentParser(description='Create transformer models and FAISS index.')
+#     parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+#     args = parser.parse_args()
 
-    create_transformer_models(args.creds_file)
+#     create_transformer_models(args.creds_file)

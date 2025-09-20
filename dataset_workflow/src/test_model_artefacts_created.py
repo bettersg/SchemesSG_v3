@@ -19,10 +19,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 
-# Set up argument parser
-parser = argparse.ArgumentParser(description='Test model artefacts and perform similarity search.')
-parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-args = parser.parse_args()
+
 
 # Setup logger
 logger.remove()
@@ -35,35 +32,12 @@ logger.add(
 )
 logger.info("Logger initialised")
 
-model_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-model'
-tokenizer_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-tokenizer'
-embeddings_save_name = './dataset_worfklow/models/schemesv2-your_embeddings.npy'
-index_save_name = './dataset_worfklow/models/schemesv2-your_index.faiss'
+model_save_path = './models/schemesv2-torch-allmpp-model'
+tokenizer_save_path = './models/schemesv2-torch-allmpp-tokenizer'
+embeddings_save_name = './models/schemesv2-your_embeddings.npy'
+index_save_name = './models/schemesv2-your_index.faiss'
 
-# Use a service account to connect to firestore.
-cred = credentials.Certificate(args.creds_file)
-nlp = spacy.load("en_core_web_sm")
-
-app = firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-# Load the FAISS index-to-scheme_id mapping
-logger.info("Loading FAISS index-to-scheme_id mapping...")
-with open('./dataset_worfklow/models/index_to_scheme_id.json', 'r') as f:
-    index_to_scheme_id = json.load(f)
-logger.info("Mapping loaded.")
-
-# Load model and tokenizer at startup
-logger.info("Loading model and tokenizer...")
-model = AutoModel.from_pretrained(model_save_path)
-tokenizer = AutoTokenizer.from_pretrained(tokenizer_save_path)
-logger.info("Model and tokenizer loaded.")
-
-# Load the embeddings and index
-logger.info("Loading embeddings and FAISS index...")
-embeddings = np.load(embeddings_save_name)
-index = faiss.read_index(index_save_name)
-logger.info("Embeddings and index loaded.")
+# Global variables will be initialized in test_function
 
 #Mean Pooling - Take attention mask into account for correct averaging
 def mean_pooling(model_output, attention_mask):
@@ -72,7 +46,7 @@ def mean_pooling(model_output, attention_mask):
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
 # Now, you can use `index` for similarity searches with new user queries
-def search_similar_items(query_text, full_query, top_k=10):
+def search_similar_items(query_text, full_query, model, tokenizer, index, index_to_scheme_id, db, top_k=10):
 
     # preproc = preprocessing(query_text)
     preproc = query_text
@@ -141,7 +115,7 @@ def search_similar_items(query_text, full_query, top_k=10):
 
 
 
-def combine_and_aggregate_results(needs, user_query):
+def combine_and_aggregate_results(needs, user_query, model, tokenizer, index, index_to_scheme_id, db):
     # DataFrame to store combined results
     combined_results = pd.DataFrame(columns=['scheme', 'agency', 'description', 'Similarity', 'query'])
 
@@ -150,7 +124,7 @@ def combine_and_aggregate_results(needs, user_query):
     for need in tqdm(needs, desc="Processing needs"):
         # Get the results for the current need
         logger.debug(f"Searching for need: {need}")
-        current_results = search_similar_items(need, user_query)
+        current_results = search_similar_items(need, user_query, model, tokenizer, index, index_to_scheme_id, db)
         # Combine with the overall results
         combined_results = pd.concat([combined_results, current_results], ignore_index=True)
     logger.info("Finished processing needs.")
@@ -167,7 +141,7 @@ def combine_and_aggregate_results(needs, user_query):
 
 
 
-def extract_needs_based_on_conjunctions(sentence):
+def extract_needs_based_on_conjunctions(sentence, nlp):
     """Extract distinct needs based on coordinating conjunctions."""
     doc = nlp(sentence)
     needs = []
@@ -189,23 +163,23 @@ def extract_needs_based_on_conjunctions(sentence):
 
     return needs
 
-def split_query_into_needs(query):
+def split_query_into_needs(query, nlp):
     """Split the query into sentences and then extract needs focusing on conjunctions."""
-    sentences = split_into_sentences(query)
+    sentences = split_into_sentences(query, nlp)
     all_needs = []
     for sentence in sentences:
-        needs_in_sentence = extract_needs_based_on_conjunctions(sentence)
+        needs_in_sentence = extract_needs_based_on_conjunctions(sentence, nlp)
         all_needs.extend(needs_in_sentence)
     return all_needs
 
 # Helper function to split the query into sentences
-def split_into_sentences(text):
+def split_into_sentences(text, nlp):
     doc = nlp(text)
     return [sent.text.strip() for sent in doc.sents]
 
 
 # Load spaCy English model
-def preprocessing(sentence):
+def preprocessing(sentence, nlp):
     # Text cleaning steps from spacy_tokenizer
     sentence = re.sub('\'', '', sentence)  # Remove distracting single quotes
     sentence = re.sub(' +', ' ', sentence)  # Replace extra spaces
@@ -233,23 +207,53 @@ def preprocessing(sentence):
 
     return processed_text
 
-def test_function():
+def test_function(db):
+    logger.info("Starting test function...")
+    logger.info("Using provided Firebase database connection")
+
+    # Load the FAISS index-to-scheme_id mapping
+    logger.info("Loading FAISS index-to-scheme_id mapping...")
+    with open('./models/index_to_scheme_id.json', 'r') as f:
+        index_to_scheme_id = json.load(f)
+    logger.info("Mapping loaded.")
+
+    # Load model and tokenizer at startup
+    logger.info("Loading model and tokenizer...")
+    model = AutoModel.from_pretrained(model_save_path)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_save_path)
+    logger.info("Model and tokenizer loaded.")
+
+    # Load embeddings and FAISS index
+    logger.info("Loading embeddings and FAISS index...")
+    embeddings = np.load(embeddings_save_name)
+    index = faiss.read_index(index_save_name)
+    logger.info("Embeddings and index loaded.")
+
+    # Load spaCy model
+    nlp = spacy.load("en_core_web_sm")
+
     query = "my client needs a blood pressure monitor"
     logger.info(f"Testing with query: {query}")
-    distinct_needs = split_query_into_needs(query)
+    distinct_needs = split_query_into_needs(query, nlp)
     logger.info(f"Distinct needs: {distinct_needs}")
 
-    logger.info(f"Distinct needs preproc : {[preprocessing(x) for x in distinct_needs]}")
+    logger.info(f"Distinct needs preproc : {[preprocessing(x, nlp) for x in distinct_needs]}")
 
     user_query = "I am pregnant teen suffering from depression and family abuse"
     # user_query = "My client needs assistance as a dialysis patient. She is also in need of a job and financial support after COVID 19 has caused her to be retrenched"
     logger.info(f"Testing with user query: {user_query}")
 
-    split_query = split_query_into_needs(user_query)
+    split_query = split_query_into_needs(user_query, nlp)
     # split_query = split_query_into_needs("I am a 31 year old married with one kid in need of more money")
     logger.info(f"Split query into needs: {split_query}")
-    final_results = combine_and_aggregate_results(split_query, user_query)
+    final_results = combine_and_aggregate_results(split_query, user_query, model, tokenizer, index, index_to_scheme_id, db)
 
     logger.info(f"Final aggregated results:\n{final_results}")
+    logger.info("Test function completed successfully")
 
-test_function()
+# if __name__ == "__main__":
+    # Set up argument parser
+    # parser = argparse.ArgumentParser(description='Test model artefacts and perform similarity search.')
+    # parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    # args = parser.parse_args()
+    # test_function(args.creds_file)
