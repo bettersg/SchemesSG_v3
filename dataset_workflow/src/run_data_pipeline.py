@@ -16,7 +16,7 @@ sys.path.insert(0, str(current_dir))
 
 # Import functions from the various scripts
 from src.create_transformer_models import create_transformer_models
-#from test_model_artefacts_created import test_function
+from test_model_artefacts_created import test_function
 from src.upload_model_artefacts import upload_model_artefacts
 
 # Import functions from Main_scrape scripts
@@ -66,6 +66,7 @@ def get_credentials_and_bucket(env):
 
 def main():
     """Main function to run the workflow"""
+    breakpoint()
     parser = argparse.ArgumentParser(
         description="Run steps 3-7 of the SchemesSG workflow using Python functions"
     )
@@ -109,28 +110,28 @@ def main():
                 "Run Main_scrape.py to get scraped data in DB",
                 lambda: run_scraping_for_links(creds_file),
             ),
-            (
-                4,
-                "Get logos from website via scraping",
-                lambda: logger.info("Logo scraping handled in step 3"),
-            ),
-            (
-                5,
-                "Take scraped text from DB and create new fields",
-                lambda: add_scraped_fields_to_fire_store(creds_file),
-            ),
-            (5.5, "Add town area to fire store", lambda: add_town_areas(creds_file)),
-            (
-                6,
-                "Recompute embeddings and faiss",
-                lambda: create_transformer_models(creds_file),
-            ),
-            #(6.5, "Test if model artefacts created are valid", lambda: test_function()),
-            (
-                7,
-                "Upload model artefacts to firebase storage",
-                lambda: upload_model_artefacts(creds_file, storage_bucket),
-            ),
+            # (
+            #     4,
+            #     "Get logos from website via scraping",
+            #     lambda: logger.info("Logo scraping handled in step 3"),
+            # ),
+            # (
+            #     5,
+            #     "Take scraped text from DB and create new fields",
+            #     lambda: add_scraped_fields_to_fire_store(creds_file),
+            # ),
+            # (5.5, "Add town area to fire store", lambda: add_town_areas(creds_file)),
+            # (
+            #     6,
+            #     "Recompute embeddings and faiss",
+            #     lambda: create_transformer_models(creds_file),
+            # ),
+            # #(6.5, "Test if model artefacts created are valid", lambda: test_function()),
+            # (
+            #     7,
+            #     "Upload model artefacts to firebase storage",
+            #     lambda: upload_model_artefacts(creds_file, storage_bucket),
+            # ),
         ]
 
         # Filter steps based on arguments
@@ -174,3 +175,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# 1. Special handling for failed IDs. Don't re-run scraping and extraction for successful IDs.
+    # - add back the running of error_log csv
+    # - add handling of duration between last update (1 month)
+    # - add back a separate argument for passing in doc ids
+# 4. Add triggering of pipeline to a cloud function that can run on cron or be triggered by API call
+# 2. How do we store logs of the failed IDs when this is run in an automated way?
+    # - adding a function to write the error log to database
+# 3. How do we notify the team of the IDs failed?
