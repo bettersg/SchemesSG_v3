@@ -849,13 +849,13 @@ def run_scraping_for_links(creds_file, process_specific_doc_ids: list = [], prod
                         continue # Skip to the next document if initialization fails
                 
                 if 'last_scraped_update' in doc_data:
+                    firestore_dt = doc_data["last_scraped_update"]
                     require_refresh = check_if_scraped_require_refresh(firestore_dt)
                 else:
                     require_refresh = True
                 # Check if scraping should be skipped based on 'scraped_text' field
                 should_skip_scraping = skip_if_scraped and bool(doc_data.get("scraped_text")) and not require_refresh
                 # Check if image field is already populated
-                breakpoint()
                 image_already_populated = doc_data.get("image")
 
                 # Skip if both text is scraped AND image is populated (and skip_if_scraped is True)
