@@ -48,9 +48,9 @@ Import structure to production
 
 ## Regular Maintenance Workflow
 
-### Automated Steps with `run_steps_3_to_7.sh`
+### Automated Steps with `dataset_workflow/src/run_data_pipeline.py`
 
-The `run_steps_3_to_7.sh` script automates several key steps in the data processing and model deployment pipeline.
+The `dataset_workflow/src/run_data_pipeline.py` script automates several key steps in the data processing and model deployment pipeline.
 
 **Purpose:**
 To streamline the process from data scraping (optional, currently commented out) through model generation, testing, and uploading artefacts to Firebase Storage.
@@ -72,11 +72,32 @@ To streamline the process from data scraping (optional, currently commented out)
 **Usage:**
 Navigate to the project root directory (one level above `dataset_worfklow`) and run:
 ```bash
-./dataset_worfklow/run_steps_3_to_7.sh <environment>
-# Example for development:
-./dataset_worfklow/run_steps_3_to_7.sh dev
-# Example for production:
-./dataset_worfklow/run_steps_3_to_7.sh prod
+cd dataset_workflow
+
+# build docker image
+docker build . -t dataset_workflow
+
+# set path to firebase credentials
+export FIRE_BASE_CREDS_JSON=dev-creds.json
+
+# set path to to env variables
+export ENV_VARS=backend/functions/.env
+
+# run docker container for dev
+docker run \
+    -it \
+    --mount type=bind,source=$FIRE_BASE_CREDS_JSON,target=/dataset_workflow/creds.json \
+    --mount type=bind,source=$ENV_VARS,target=/dataset_workflow/.env \
+    dataset_workflow \
+    dev
+
+# run docker container for prod
+docker run \
+    -it \
+    --mount type=bind,source=$FIRE_BASE_CREDS_JSON,target=/dataset_workflow/creds.json \
+    --mount type=bind,source=$ENV_VARS,target=/dataset_workflow/.env \
+    dataset_workflow \
+    prod
 ```
 **Note:** Ensure the Python virtual environment and necessary dependencies (see `requirements.txt`) are set up first. Steps 3-6b are currently commented out in the script; uncomment them if needed.
 

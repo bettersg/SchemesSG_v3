@@ -77,12 +77,7 @@ def mean_pooling(model_output, attention_mask):
     input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
-if __name__ == "__main__":
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Create transformer models and FAISS index.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
-
+def create_transformer_models(creds_file):
     logger.remove()
     logger.add(
         sys.stdout,
@@ -92,9 +87,9 @@ if __name__ == "__main__":
         backtrace=True,
     )
     # Use a service account to connect to firestore.
-    cred = credentials.Certificate(args.creds_file) # Use the path from arguments
+    cred = credentials.Certificate(creds_file) # Use the path from arguments
 
-    app = firebase_admin.initialize_app(cred)
+    app = firebase_admin.initialize_app(cred, name="create_transformer_models")
 
     db = firestore.client()
 
@@ -133,20 +128,18 @@ if __name__ == "__main__":
     # Create a mapping between FAISS index and `scheme_id`
     index_to_scheme_id = dict(enumerate(df['scheme_id']))
 
-
-
     # Assuming `model` is your PyTorch model and `tokenizer` is the Hugging Face tokenizer
-    if not os.path.exists('./dataset_worfklow/models'):
-        os.makedirs('./dataset_worfklow/models')
+    if not os.path.exists('/dataset_workflow/models'):
+        os.makedirs('/dataset_workflow/models')
 
-    with open('./dataset_worfklow/models/index_to_scheme_id.json', 'w') as f:
+    with open('./dataset_workflow/models/index_to_scheme_id.json', 'w') as f:
         json.dump(index_to_scheme_id, f)
         logger.info("Index to scheme id saved")
 
-    model_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-model'
-    tokenizer_save_path = './dataset_worfklow/models/schemesv2-torch-allmpp-tokenizer'
-    embeddings_save_name = './dataset_worfklow/models/schemesv2-your_embeddings.npy'
-    index_save_name = './dataset_worfklow/models/schemesv2-your_index.faiss'
+    model_save_path = '/dataset_workflow/models/schemesv2-torch-allmpp-model'
+    tokenizer_save_path = '/dataset_workflow/models/schemesv2-torch-allmpp-tokenizer'
+    embeddings_save_name = '/dataset_workflow/models/schemesv2-your_embeddings.npy'
+    index_save_name = '/dataset_workflow/models/schemesv2-your_index.faiss'
 
 
     # Save the embeddings and index to disk
@@ -160,3 +153,12 @@ if __name__ == "__main__":
     # Save tokenizer
     tokenizer.save_pretrained(tokenizer_save_path)
     logger.info("Tokenizer saved")
+
+
+if __name__ == "__main__":
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Create transformer models and FAISS index.')
+    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    args = parser.parse_args()
+
+    create_transformer_models(args.creds_file)

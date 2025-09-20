@@ -1,9 +1,8 @@
 import firebase_admin
 import sys
-import pandas as pd
 from firebase_admin import credentials
 from firebase_admin import firestore
-from dataset_worfklow.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
+from src.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
 from loguru import logger
 import argparse
 from datetime import datetime, timezone
@@ -30,11 +29,8 @@ def is_valid_scraped_text(scraped_text):
 
     return True
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
-    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
-    args = parser.parse_args()
 
+def add_scraped_fields_to_fire_store(creds_file):
     logger.remove()
     logger.add(
         sys.stdout,
@@ -44,37 +40,13 @@ if __name__ == "__main__":
         backtrace=True,
     )
     logger.info("Logger initialised")
-    cred = credentials.Certificate(args.creds_file)
+    cred = credentials.Certificate(creds_file)
     app = firebase_admin.initialize_app(cred)
     db = firestore.client()
     text_extract = TextExtract()
     # Get all documents from the collection
     docs = db.collection("schemes").stream()
     doc_ids = [doc.id for doc in docs]
-
-    # TODO testing doc_ids
-    # doc_ids = ["gTqKpMFAHbJ3UwJXK2Hy", "rOQ6toQIRE8bOhlGFB26", "29mbx9mnlLNh634LFRHP", "Dsq1hv34RYgJGrY5hO6k" ]
-    # doc_ids = [
-    # "ZnaaI9wPZ0M4bKxzqz7Z",
-    # "mzq9kSFYoa9nJRSjo8mi",
-    # "ke29dhM9VP7exsyMHBdR",
-    # "5eAVPDSsy8G2CXE6YDzX",
-    # "QEF7t67nTnTkYmPrcA5X",
-    # "QMeMEyQ79DmOcbtN2ucH",
-    # "WtqBqKnnniJyAhNjbA83",
-    # "ZoPSL37hjD98SzoeL3oE",
-    # "c5A5qMjY4GRzbnfbFEeQ",
-    # "l8CmX6ZKXxQi1V8nFDZ4",
-    # "mzq9kSFYoa9nJRSjo8mi",
-    # "n1JVQhzmWsrqRAxg93nA",
-    # "o937Z2wTY4kn1Js7VH0L",
-    # "rCWgF4B65MCBsvt7JHSI",
-    # "uL9vy6RlHcjBGkXqYn39",
-    # "vFNkWq8MQBcLrK9cTdPk"
-    # ]
-
-    #Doc ids for new schemes from carecorner - 13 July
-    # doc_ids = ["S6easrpcSTJOmXhCvG9F", "BcXpy7bOUjDyOrkB3WmU", "yZtyMYNs7xsVu4ilHOmM", "r0cZr6LdA4Ha2abPr4aG", "Q49szphEOJPmsqT2DXP5"]
 
     for doc_id in doc_ids:
         doc_ref = db.collection("schemes").document(doc_id)
@@ -112,6 +84,7 @@ if __name__ == "__main__":
 
         if text_to_process:
             try:
+
                 structured_output = text_extract.extract_text(text_to_process)
 
                 # Transform physical locations to database format
@@ -130,11 +103,11 @@ if __name__ == "__main__":
                     should_update = True
                     # Conditionally update only if the key is in the specified set AND the existing value is missing or empty
                     # TODO Skip checks for conditional update for testing
-                    # if key in keys_to_conditionally_update:
-                    #     existing_value = doc_data.get(key)
-                    #     if existing_value:  # Checks if value exists and is not None, empty string, empty list, etc.
-                    #         should_update = False
-                    #         logger.info(f"Skipping update for key '{key}' in document {doc_id} as it already has value: {existing_value}")
+                    if key in keys_to_conditionally_update:
+                        existing_value = doc_data.get(key)
+                        if existing_value:  # Checks if value exists and is not None, empty string, empty list, etc.
+                            should_update = False
+                            logger.info(f"Skipping update for key '{key}' in document {doc_id} as it already has value: {existing_value}")
 
                     if should_update:
                         # Add the update to the dictionary
@@ -183,3 +156,11 @@ if __name__ == "__main__":
                 'service_area': None
             }
             doc_ref.update(error_updates) # Update with None for error cases
+    
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Extract fields from scraped text and update Firestore.')
+    parser.add_argument('creds_file', help='Path to the Firebase credentials file.')
+    args = parser.parse_args()
+
+    add_scraped_fields_to_fire_store(args.creds_file)
