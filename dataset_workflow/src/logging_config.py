@@ -83,6 +83,11 @@ def ensure_logging_setup():
     """
     Ensure logging is set up. If not initialized, set it up with default settings.
     This is useful for modules that might be imported before logging is explicitly set up.
+    If logging is already initialized, do nothing to avoid creating duplicate log files.
     """
-    if not _logging_initialized:
-        setup_logging()
+    # Check if logging is already initialized by checking if there are any handlers
+    if _logging_initialized or len(logger._core.handlers) > 0:
+        # Logging is already set up, do nothing to avoid creating duplicate log files
+        return
+
+    setup_logging()

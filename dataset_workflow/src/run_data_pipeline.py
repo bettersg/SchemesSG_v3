@@ -129,7 +129,9 @@ def main():
         from firebase_admin import credentials, firestore
 
         cred = credentials.Certificate(creds_file)
-        app = firebase_admin.initialize_app(cred)
+        app = firebase_admin.initialize_app(cred, {
+            'storageBucket': storage_bucket
+        })
         db = firestore.client()
         logger.info("Firebase initialized successfully")
 
@@ -168,7 +170,7 @@ def main():
             (
                 7,
                 "Upload model artefacts to firebase storage",
-                lambda: upload_model_artefacts(creds_file, storage_bucket),
+                lambda: upload_model_artefacts(app, storage_bucket),
             ),
         ]
 

@@ -6,7 +6,7 @@ from .utils import check_if_scraped_require_refresh
 from src.Main_scrape.extract_fields_from_scraped_text import TextExtract, SchemesStructuredOutput
 from loguru import logger
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
-from logging_config import ensure_logging_setup
+# Logging is handled by the main pipeline
 
 def is_valid_scraped_text(scraped_text):
     """
@@ -32,8 +32,7 @@ def is_valid_scraped_text(scraped_text):
 
 
 def add_scraped_fields_to_fire_store(db, doc_ids=None):
-    # Ensure logging is set up (will use existing setup if already initialized)
-    ensure_logging_setup()
+    # Logging is already set up by the main pipeline
     logger.info("Logger initialised")
     text_extract = TextExtract()
     # Get documents to process

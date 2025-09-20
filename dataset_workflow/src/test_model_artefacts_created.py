@@ -12,7 +12,7 @@ import argparse
 import sys
 from loguru import logger
 from tqdm import tqdm  # Added tqdm for progress bar
-from logging_config import ensure_logging_setup
+# Logging is handled by the main pipeline
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -22,8 +22,7 @@ from firebase_admin import firestore
 
 
 
-# Ensure logging is set up (will use existing setup if already initialized)
-ensure_logging_setup()
+# Logging is already set up by the main pipeline
 logger.info("Logger initialised")
 
 model_save_path = './models/schemesv2-torch-allmpp-model'

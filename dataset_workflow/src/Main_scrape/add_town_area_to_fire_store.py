@@ -9,7 +9,7 @@ import requests
 import re
 from dotenv import dotenv_values, load_dotenv
 import os
-from logging_config import ensure_logging_setup
+# Logging is handled by the main pipeline
 
 
 class Config:
@@ -137,8 +137,7 @@ def extract_planning_area_from_address(address, token):
         return None
 
 def add_town_areas(db, doc_ids=None):
-    # Ensure logging is set up (will use existing setup if already initialized)
-    ensure_logging_setup()
+    # Logging is already set up by the main pipeline
     logger.info("Logger initialised")
 
     # Initialize config and get OneMap credentials

@@ -16,7 +16,6 @@ from google.api_core import exceptions as google_exceptions  # Import google exc
 import requests
 from bs4 import BeautifulSoup
 from loguru import logger # Import loguru
-from logging_config import ensure_logging_setup
 # Add imports for retry mechanism
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -860,8 +859,7 @@ def log_error_to_csv(doc_id, link, error_message):
 
 def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scraped=False):
 
-    # Ensure logging is set up (will use existing setup if already initialized)
-    ensure_logging_setup()
+    # Logging should already be set up by the main pipeline
     logger.info("Logger initialised")
     logger.info("Using provided Firebase database connection")
 
@@ -911,15 +909,30 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scra
         else:
             # Production mode: process all documents
             logger.info("Production mode: Processing all documents in collection")
-            docs_to_process = db.collection("schemes").stream()
+            try:
+                # Use get() instead of stream() to avoid streaming issues
+                docs_snapshot = db.collection("schemes").get()
+                docs_to_process = docs_snapshot
+                logger.info(f"Retrieved {len(docs_snapshot)} documents for processing")
+            except Exception as e_stream:
+                logger.error(f"Error retrieving documents: {e_stream}")
+                # Fallback to streaming if get() fails
+                logger.info("Falling back to streaming mode")
+                docs_to_process = db.collection("schemes").stream()
 
         # Set the flag to control scraping behavior (No longer used for skipping, but kept for potential future use)
 
+        processed_count = 0
+        total_docs = len(docs_to_process) if hasattr(docs_to_process, '__len__') else "unknown"
+        logger.info(f"Starting to process documents. Total: {total_docs}")
+
         for doc in docs_to_process:
+            processed_count += 1
             doc_ref = db.collection("schemes").document(doc.id)
             doc_data = None # Initialize doc_data
 
             try:
+                logger.debug(f"Processing document {processed_count}/{total_docs}: {doc.id}")
                 # Convert the document to a dictionary to check for fields
                 doc_data = doc.to_dict()
                 if doc_data is None:
@@ -950,6 +963,12 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scra
                 # Skip if both text is scraped AND image is populated (and skip_if_scraped is True)
                 if should_skip_scraping and image_already_populated:
                     logger.info(f"Skipping doc {doc.id}: 'scraped_text' exists and 'image' is populated.")
+                    # Still add timestamp even when skipping
+                    try:
+                        doc_ref.update({"last_scraped_update": SERVER_TIMESTAMP})
+                        logger.info(f"Updated document {doc.id} with last_scraped_update timestamp despite being skipped.")
+                    except Exception as e_update_skip:
+                        logger.error(f"Failed to update document {doc.id} with timestamp despite being skipped: {e_update_skip}")
                     continue
                 elif should_skip_scraping:
                     logger.info(f"Skipping text scraping for doc {doc.id} ('scraped_text' exists), but will check for logo.")
@@ -989,10 +1008,14 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scra
                             scraped_content = "" # Ensure we store empty string on error
 
                     if is_error:
-                        # Update Firestore with the error status (optional, but can be useful)
+                        # Update Firestore with empty scraped_text and last_scraped_update timestamp
                         try:
-                            doc_ref.update({"scraped_text": f"ERROR: {error_message_scrape}"})
-                            logger.info(f"Updated document {doc.id} with scraping error status.")
+                            update_data = {
+                                "scraped_text": "",  # Keep empty on error
+                                "last_scraped_update": SERVER_TIMESTAMP
+                            }
+                            doc_ref.update(update_data)
+                            logger.info(f"Updated document {doc.id} with empty scraped_text and last_scraped_update timestamp due to scraping error.")
                         except Exception as e_update_err:
                             logger.error(f"Failed to update document {doc.id} with error status: {e_update_err}")
                             # Log this secondary error to CSV as well
@@ -1029,20 +1052,31 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scra
                                 logger.error(f"Logo not found for {doc.id} ({url_to_scrape})")
                                 log_error_to_csv(doc.id, url_to_scrape, "Logo not found")
 
+                        # Always add last_scraped_update timestamp
+                        update_data["last_scraped_update"] = SERVER_TIMESTAMP
+                        logger.info(f"Added 'last_scraped_update' field to update_data for doc {doc.id}")
+
                         # Update scraped_text only if it wasn't skipped and no error occurred during scraping
                         if not should_skip_scraping and not is_error and scraped_content is not None:
                             logger.info(f"Preparing to update 'scraped_text' for doc {doc.id} (Length: {len(scraped_content)})")
                             update_data["scraped_text"] = scraped_content
-                            update_data["last_scraped_update"] = SERVER_TIMESTAMP
-                            logger.info(f"Added 'last_scraped_update' field to update_data for doc {doc.id}")
+                        elif not should_skip_scraping and is_error:
+                            # Ensure scraped_text is empty when there's an error
+                            update_data["scraped_text"] = ""
+                            logger.info(f"Set 'scraped_text' to empty string for doc {doc.id} due to scraping error")
 
                         # Update Firestore only if there's something to update
                         if update_data:
                             try:
                                 doc_ref.update(update_data)
                                 log_parts = []
-                                if "scraped_text" in update_data: log_parts.append("scraped text")
+                                if "scraped_text" in update_data:
+                                    if update_data["scraped_text"]:
+                                        log_parts.append("scraped text")
+                                    else:
+                                        log_parts.append("empty scraped text")
                                 if "image" in update_data: log_parts.append("found logo")
+                                log_parts.append("last_scraped_update timestamp")
                                 logger.success(f"Successfully updated document {doc.id} ({', '.join(log_parts)}).")
                             except Exception as e_update:
                                 error_message = f"Error updating document {doc.id} after processing: {e_update}"
@@ -1060,6 +1094,15 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scra
                     error_message = f"Document {doc.id} does not have a 'link' field."
                     logger.error(error_message) # Covered by log_error_to_csv
                     log_error_to_csv(doc.id, "N/A", error_message)
+                    # Still add timestamp even when there's no link
+                    try:
+                        doc_ref.update({
+                            "last_scraped_update": SERVER_TIMESTAMP,
+                            "scraped_text": ""
+                        })
+                        logger.info(f"Updated document {doc.id} with last_scraped_update timestamp despite missing link field.")
+                    except Exception as e_update_no_link:
+                        logger.error(f"Failed to update document {doc.id} with timestamp despite missing link: {e_update_no_link}")
 
             except Exception as e_doc:
                 # Catch errors during processing of a single document (reading, updating, etc.)
@@ -1067,13 +1110,30 @@ def run_scraping_for_links(db, process_specific_doc_ids: list = [], skip_if_scra
                 logger.exception(error_message) # Use logger.exception to include traceback, covered by log_error_to_csv
                 link = doc_data.get("link", "N/A") if doc_data else "N/A"
                 log_error_to_csv(doc.id, link, error_message)
+                # Still try to add timestamp even when there's an exception
+                try:
+                    doc_ref.update({
+                        "last_scraped_update": SERVER_TIMESTAMP,
+                        "scraped_text": ""
+                    })
+                    logger.info(f"Updated document {doc.id} with last_scraped_update timestamp despite processing error.")
+                except Exception as e_update_exception:
+                    logger.error(f"Failed to update document {doc.id} with timestamp despite processing error: {e_update_exception}")
                 continue # Continue to the next document
+
+        logger.info(f"Completed processing {processed_count} documents")
 
     except google_exceptions.DeadlineExceeded as e_deadline:
         error_message = f"Firestore deadline exceeded during stream iteration: {e_deadline}"
         logger.critical(error_message) # Covered by log_error_to_csv
         log_error_to_csv("N/A", "N/A", error_message)
         logger.critical("Stopping script due to Firestore DeadlineExceeded error.")
+    except AttributeError as e_attr:
+        # Handle the specific '_UnaryStreamMultiCallable' object has no attribute '_retry' error
+        error_message = f"Firestore streaming attribute error: {e_attr}"
+        logger.critical(error_message, exc_info=True)
+        log_error_to_csv("N/A", "N/A", error_message)
+        logger.critical("This is likely a Firestore client version compatibility issue. Consider updating firebase-admin or using get() instead of stream().")
     except Exception as e_main:
         # Catch any other unexpected errors in the main script execution
         error_message = f"An unexpected error occurred in the main script: {e_main}"
