@@ -20,7 +20,6 @@ from langgraph.checkpoint.base import (
     CheckpointTuple,
     PendingWrite,
 )
-from loguru import logger
 from utils.logging_setup import setup_logging
 
 from .prompt import AI_MESSAGE
