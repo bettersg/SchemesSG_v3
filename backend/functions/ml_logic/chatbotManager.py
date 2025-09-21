@@ -1,35 +1,27 @@
-import hashlib
+"""
+Query text not included in the context.
+LLM unable to answer questions like which scheme is suitable for me.
+"""
+
 import os
-import sys
-import threading
-from datetime import datetime, timezone
 
+from dotenv import find_dotenv, load_dotenv
 from fb_manager.firebaseManager import FirebaseManager
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.caches import InMemoryCache
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain.chat_models import init_chat_model
-from loguru import logger
+from langchain_core.messages import SystemMessage
+from langgraph.graph import END, START, StateGraph
+from langgraph.types import CachePolicy
+from utils.logging_setup import setup_logging
 
-from .config import ChatbotConfig, PROVIDER_MODEL_NAME
-from .prompt import SYSTEM_TEMPLATE, AI_MESSAGE
-
-from dotenv import load_dotenv, find_dotenv
+from .cache import InMemoryCacheWithMaxsize, generate_cache_key
+from .config import PROVIDER_MODEL_NAME, ChatbotConfig
+from .firestore_saver import FirestoreChatSaver
+from .prompt import SYSTEM_TEMPLATE
+from .states import ChatbotState
 
 load_dotenv(find_dotenv())
-# Remove default handler
-logger.remove()
 
-# Add custom handler with async writing
-logger.add(
-    sys.stderr,
-    level="INFO",  # Set to "DEBUG" in development
-    enqueue=True,  # Enable async logging
-    backtrace=False,  # Disable traceback for better performance
-    diagnose=False,  # Disable diagnosis for better performance
-)
+logger = setup_logging()
 
 
 class Chatbot:
@@ -38,8 +30,6 @@ class Chatbot:
     _instance = None
 
     llm = None
-
-    _lock = threading.Lock()
 
     firebase_manager = None
 
@@ -83,60 +73,22 @@ class Chatbot:
             self.__class__.initialise()
 
         # Initialize cache with a conservative size
-        self.cache = InMemoryCache(maxsize=1000)  # Start with 1000 entries
+        # ! Should the cache be a global cache?
+        self.cache = InMemoryCacheWithMaxsize(maxsize=1000)
+        self.initialise_graph()
 
-    def get_session_history(self, session_id: str) -> ChatMessageHistory:
-        """
-        Method to get session history of a conversation from Firestore.
+    def initialise_graph(self):
+        graph_builder = StateGraph(ChatbotState)
+        memory = FirestoreChatSaver(client=self.db)
+        graph_builder.add_node("chatbot", self.call_chat_llm, cache_policy=CachePolicy(key_func=generate_cache_key))
+        graph_builder.add_edge(START, "chatbot")
+        graph_builder.add_edge("chatbot", END)
+        self.graph = graph_builder.compile(checkpointer=memory, cache=self.cache)
 
-        Args:
-            session_id (str): session ID of conversation (same session id as original schemes search query)
-
-        Returns:
-            ChatMessageHistory: history of conversation
-        """
-
-        db = self.__class__.firebase_manager.firestore_client
-        ref = db.collection("chatHistory").document(session_id)
-
-        with self.__class__._lock:
-            try:
-                doc = ref.get()
-                if doc.exists:
-                    raw_data = doc.to_dict()
-                    raw_messages = raw_data.get("messages", [])
-
-                    messages = []
-                    for msg in raw_messages:
-                        if isinstance(msg, dict) and "role" in msg and "content" in msg:
-                            if msg["role"] == "user":
-                                messages.append(HumanMessage(content=msg["content"]))
-                            elif msg["role"] == "assistant":
-                                messages.append(AIMessage(content=msg["content"]))
-                        elif isinstance(msg, str):
-                            messages.append(AIMessage(content=msg))
-
-                    return ChatMessageHistory(messages=messages)
-
-                else:
-                    initial_history = ChatMessageHistory(messages=[AIMessage(AI_MESSAGE)])
-                    current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-                    ref.set(
-                        {
-                            "messages": [{"role": "assistant", "content": AI_MESSAGE}],
-                            "last_updated": current_timestamp + " UTC",
-                        }
-                    )
-                    return initial_history
-
-            except Exception as e:
-                logger.exception("Error fetching chat history from Firestore", e)
-                return ChatMessageHistory(messages=[AIMessage(AI_MESSAGE)])
-
-    def _generate_cache_key(self, query_text: str, input_text: str) -> str:
-        """Generate a hashed cache key from query_text and input_text."""
-        combined_text = f"{query_text}:{input_text}"
-        return hashlib.sha256(combined_text.encode()).hexdigest()
+    def call_chat_llm(self, state: ChatbotState) -> dict:
+        system_message = SystemMessage(content=SYSTEM_TEMPLATE.format(top_schemes=state["top_schemes_text"]))
+        response = self.llm.invoke([{"role": "system", "content": system_message.content}] + state["messages"])
+        return {"messages": [response]}
 
     def chatbot(
         self, top_schemes_text: str, input_text: str, session_id: str, query_text: str
@@ -156,122 +108,72 @@ class Chatbot:
 
         logger.info(f"Starting chatbot method for session {session_id}")
 
-        # Define the LLM string identifier
-        llm_string = "azure_openai_chatbot"
+        config = self._create_configurable(session_id)
 
-        # Generate hashed cache key
-        # ! The logic here is that this caching doesn't take into account message history
-        cache_key = self._generate_cache_key(query_text, input_text)
-        cached_response = self.cache.lookup(llm_string, cache_key)
-        if cached_response:
-            logger.info(f"Cache hit for query combination (key: {cache_key[:8]}...)")
-            return {"response": True, "message": cached_response}
+        try:
+            response = self.graph.invoke(
+                {
+                    "messages": [{"role": "user", "content": input_text}],
+                    "top_schemes_text": top_schemes_text,
+                    "query_text": query_text,
+                },
+                config=config,
+                stream_mode="updates",
+            )
+            message_content = response[0]["chatbot"]["messages"][0].content
+            results_json = {"response": True, "message": message_content}
 
-        template_text = SYSTEM_TEMPLATE.format(top_schemes=top_schemes_text)
-
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", template_text),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{query}"),
-            ]
-        )
-
-        chain = prompt_template | self.__class__.llm
-        chain_with_history = RunnableWithMessageHistory(
-            chain, self.get_session_history, input_messages_key="query", history_messages_key="history"
-        )
-
-        config = {"configurable": {"session_id": session_id}}
-        message = chain_with_history.invoke({"query": input_text}, config=config)
-
-        if message and message.content:
-            # Cache the response with hashed key
-            self.cache.update(llm_string, cache_key, message.content)
-            results_json = {"response": True, "message": message.content}
-
-            try:
-                db = self.__class__.firebase_manager.firestore_client
-                ref = db.collection("chatHistory").document(session_id)
-                doc = ref.get()
-
-                current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-
-                if doc.exists:
-                    chat_history = doc.to_dict().get("messages", [])
-                    chat_history.append({"role": "user", "content": input_text})
-                    chat_history.append({"role": "assistant", "content": message.content})
-                    ref.set({"messages": chat_history, "last_updated": current_timestamp + " UTC"})
-                else:
-                    chat_history = [
-                        {"role": "user", "content": input_text},
-                        {"role": "assistant", "content": message.content},
-                    ]
-                    ref.set({"messages": chat_history, "last_updated": current_timestamp})
-            except Exception as e:
-                logger.exception("Error updating chat history in Firestore", e)
-
-        else:
+        except Exception as e:
+            logger.exception("Error in chatbot invocation", e)
             results_json = {"response": False, "message": "No response from the chatbot."}
 
         return results_json
 
     def chatbot_stream(self, top_schemes_text: str, input_text: str, session_id: str, query_text: str):
         logger.info(f"Starting chatbot_stream method for session {session_id}")
-
-        # Define the LLM string identifier
-        llm_string = "azure_openai_chatbot"
-
-        # Generate hashed cache key
-        cache_key = self._generate_cache_key(query_text, input_text)
-        cached_response = self.cache.lookup(llm_string, cache_key)
-        if cached_response:
-            logger.info(f"Cache hit for query combination (key: {cache_key[:8]}...)")
-            yield cached_response
-            return
-
-        template_text = SYSTEM_TEMPLATE.format(top_schemes=top_schemes_text)
-
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                ("system", template_text),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{query}"),
-            ]
+        config = self._create_configurable(session_id)
+        stream = self.graph.stream(
+            {
+                "messages": [{"role": "user", "content": input_text}],
+                "top_schemes_text": top_schemes_text,
+                "query_text": query_text,
+            },
+            config=config,
+            stream_mode=["messages", "updates"],
         )
+        cached = True
+        saved_updates = None
+        for mode, data in stream:
+            if mode == "messages":
+                cached = False
+                message_chunk, _ = data
+                yield message_chunk.content
+            else:
+                saved_updates = data
 
-        chain = prompt_template | self.__class__.llm
-        chain_with_history = RunnableWithMessageHistory(
-            chain, self.get_session_history, input_messages_key="query", history_messages_key="history"
-        )
+        if cached:
+            for token in self._replay_cached_tokens(saved_updates):
+                yield token
 
-        config = {"configurable": {"session_id": session_id}}
+    def _create_configurable(self, session_id: str) -> dict:
+        return {"configurable": {"thread_id": session_id}}
 
-        full_response = ""  # Initialize full_response to accumulate streamed content
+    @staticmethod
+    def _replay_cached_tokens(saved_updates: dict):
+        """To imitate streaming from cached tokens with the
+        same output format as the messages stream"""
 
-        # Use streaming
-        for chunk in chain_with_history.stream({"query": input_text}, config=config):
-            if hasattr(chunk, "content"):
-                full_response += chunk.content  # Accumulate the content
-                yield chunk.content
+        message = saved_updates["chatbot"]["messages"][0].content
+        lines = message.splitlines(keepends=True)  # Preserve line breaks
 
-        # After streaming is complete, update chat history and cache
-        try:
-            db = self.__class__.firebase_manager.firestore_client
-            ref = db.collection("chatHistory").document(session_id)
-            doc = ref.get()
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                yield "\n"
+                continue
 
-            current_timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-
-            if doc.exists:
-                chat_history = doc.to_dict().get("messages", [])
-                chat_history.append({"role": "user", "content": input_text})
-                chat_history.append({"role": "assistant", "content": full_response})
-                ref.set({"messages": chat_history, "last_updated": current_timestamp + " UTC"})
-
-            # Cache the full response with hashed key
-            self.cache.update(llm_string, cache_key, full_response)
-            logger.info(f"Cached response with key: {cache_key[:8]}...")
-
-        except Exception as e:
-            logger.exception("Error updating chat history in Firestore", e)
+            words = stripped.split()
+            yield words[0]
+            for w in words[1:]:
+                yield " " + w
+            yield "\n"
