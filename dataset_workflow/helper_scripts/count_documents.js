@@ -17,6 +17,7 @@ async function countDocuments() {
     // Check for missing last_llm_processed_update field
     const docsWithoutLastLlmProcessed = [];
     const docsWithoutLastScraped = [];
+    const docsWithoutScrapedText = [];
 
     snapshot.forEach(doc => {
       const data = doc.data();
@@ -25,6 +26,9 @@ async function countDocuments() {
       }
       if (!data.last_scraped_update) {
         docsWithoutLastScraped.push(doc.id);
+      }
+      if (!data.scraped_text) {
+        docsWithoutScrapedText.push(doc.id);
       }
     });
 
@@ -38,6 +42,12 @@ async function countDocuments() {
     if (docsWithoutLastScraped.length > 0) {
       console.log('Document IDs missing last_scraped_update:');
       docsWithoutLastScraped.forEach(id => console.log(`  - ${id}`));
+    }
+
+    console.log(`\nDocuments missing 'scraped_text' field: ${docsWithoutScrapedText.length}`);
+    if (docsWithoutScrapedText.length > 0) {
+      console.log('Document IDs missing scraped_text:');
+      docsWithoutScrapedText.forEach(id => console.log(`  - ${id}`));
     }
 
     // Clean up: Set scraped_text to empty string for documents without last_scraped_update
