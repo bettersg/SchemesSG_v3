@@ -1,8 +1,3 @@
-"""
-Query text not included in the context.
-LLM unable to answer questions like which scheme is suitable for me.
-"""
-
 import os
 
 from dotenv import find_dotenv, load_dotenv
@@ -87,7 +82,10 @@ class Chatbot:
 
     def call_chat_llm(self, state: ChatbotState) -> dict:
         system_message = SystemMessage(content=SYSTEM_TEMPLATE.format(top_schemes=state["top_schemes_text"]))
-        response = self.llm.invoke([{"role": "system", "content": system_message.content}] + state["messages"])
+        response = self.llm.invoke(
+            [{"role": "system", "content": system_message.content}, {"role": "user", "content": state["query_text"]}]
+            + state["messages"]
+        )
         return {"messages": [response]}
 
     def chatbot(
