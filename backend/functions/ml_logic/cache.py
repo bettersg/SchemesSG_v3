@@ -81,7 +81,10 @@ def generate_cache_key(state: ChatbotState) -> str:
     query_text = state["query_text"]
     input_text = state["top_schemes_text"]
     if isinstance(state["messages"], list):
-        message_content = state["messages"][-1].content
+        if len(state["messages"]) > 0:
+            message_content = state["messages"][-1].content
+        else:
+            message_content = "<empty>"
     else:
         message_content = state["messages"].content if state["messages"] else ""
     combined_text = f"{query_text}:{input_text}:{message_content}"
