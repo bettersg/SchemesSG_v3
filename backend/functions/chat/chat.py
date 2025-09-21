@@ -12,21 +12,11 @@ from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger
 from ml_logic import Chatbot, dataframe_to_text
-from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.auth import verify_auth_token
+from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.logging_setup import setup_logging
 
-
-# Remove default handler
-logger.remove()
-
-# Add custom handler with async writing
-logger.add(
-    sys.stderr,
-    level="INFO",  # Set to "DEBUG" in development
-    enqueue=True,  # Enable async logging
-    backtrace=False,  # Disable traceback for better performance
-    diagnose=False,  # Disable diagnosis for better performance
-)
+logger = setup_logging()
 
 
 def create_chatbot():
