@@ -14,6 +14,7 @@ from loguru import logger
 from ml_logic import Chatbot, dataframe_to_text
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.auth import verify_auth_token
+from utils.json_utils import safe_json_dumps
 
 
 # Remove default handler
@@ -109,7 +110,7 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Unable to fetch user query from firestore", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error, unable to fetch user query from firestore"}),
+            response=safe_json_dumps({"error": "Internal server error, unable to fetch user query from firestore"}),
             status=500,
             mimetype="application/json",
             headers=headers,
@@ -185,10 +186,10 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Error with chatbot", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error"}),
+            response=safe_json_dumps({"error": "Internal server error"}),
             status=500,
             mimetype="application/json",
             headers=headers,
         )
 
-    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json", headers=headers)
+    return https_fn.Response(response=safe_json_dumps(results), status=200, mimetype="application/json", headers=headers)
