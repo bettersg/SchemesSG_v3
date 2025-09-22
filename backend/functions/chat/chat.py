@@ -19,17 +19,7 @@ from utils.json_utils import safe_json_dumps
 from utils.logging_setup import setup_logging
 
 
-# Remove default handler
-logger.remove()
-
-# Add custom handler with async writing
-logger.add(
-    sys.stderr,
-    level="INFO",  # Set to "DEBUG" in development
-    enqueue=True,  # Enable async logging
-    backtrace=False,  # Disable traceback for better performance
-    diagnose=False,  # Disable diagnosis for better performance
-)
+logger = setup_logging()
 
 
 def create_chatbot():
@@ -194,4 +184,6 @@ def chat_message(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
-    return https_fn.Response(response=safe_json_dumps(results), status=200, mimetype="application/json", headers=headers)
+    return https_fn.Response(
+        response=safe_json_dumps(results), status=200, mimetype="application/json", headers=headers
+    )
