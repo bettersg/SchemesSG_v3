@@ -18,8 +18,8 @@ from src.constants import (
     SCHEME_TYPE,
     SEARCH_BOOSTER,
 )
-from langchain_core.messages import HumanMessage, SystemMessage
 
+from langchain_core.messages import HumanMessage, SystemMessage
 
 class Config:
     def __init__(self):
@@ -38,7 +38,6 @@ class Config:
         if attr:
             setattr(self, item.lower(), attr)
         return attr
-
 
 class TokenCostTracker:
     """Utility class for tracking token usage and costs for Azure OpenAI models."""
@@ -73,7 +72,7 @@ class TokenCostTracker:
         },
         "gpt-3.5-turbo": {
             "input": 0.0015,  # $0.0015 per 1000 input tokens
-            "output": 0.002   # $0.002 per 1000 output tokens
+            "output": 0.002  # $0.002 per 1000 output tokens
         }
     }
 
@@ -123,27 +122,27 @@ class TokenCostTracker:
             "timestamp": datetime.now().isoformat()
         }
 
-
 class PhysicalLocation(BaseModel):
     """Represents a physical location with its contact information."""
-
     location_name: Optional[str] = Field(
         default=None,
         description="Name or identifier for this location (e.g., 'Main Office', 'Branch Office', 'Service Center'). If no specific name is given, use a descriptive name based on the address or context.",
     )
+
     address: Optional[str] = Field(
         default=None,
         description="Full Singapore address for this location. Examples: '123 Orchard Road, #05-67, Singapore 238888', 'Blk 456 Ang Mo Kio Ave 10, #01-789, Singapore 560456'.",
     )
+
     phone: Optional[str] = Field(
         default=None,
         description="Phone number for this specific location. Examples: '+65 6123 4567', '61234567', '8765 4321'. If multiple phones for same location, separate with commas.",
     )
+
     email: Optional[str] = Field(
         default=None,
         description="Email address for this specific location. Example: 'contact_us@agency.gov.sg'. If multiple emails for same location, separate with commas.",
     )
-
 
 class SchemesStructuredOutput(BaseModel):
     """Extract information from the description of the scheme."""
@@ -152,43 +151,51 @@ class SchemesStructuredOutput(BaseModel):
         default=None,
         description="List of physical locations with their contact information. For single location schemes, create one location object. For multiple locations, create separate objects for each location. Each location should have its associated phone and email.",
     )
+
     llm_description: Optional[str] = Field(
         default=None,
-        description="Concise description of the scheme extracted from the scraped website text, summarizing key details for quick understanding. Aim for under 200 words. Use simple markdown. Do not use forward slash n (/n) to indicate next line. Only use back slash n.",
+        description="Concise description of the scheme extracted from the scraped website text, summarizing key details for quick understanding. Aim for under 200 words. Use simple markdown formatting. For line breaks, use standard newline characters (\\n) naturally without any escape sequences or special symbols.",
     )
+
     eligibility: Optional[str] = Field(
         default=None,
         description="Extract all eligibility criteria mentioned in the scraped text, including any specific requirements or necessary documents.",
     )
+
     how_to_apply: Optional[str] = Field(
         default=None,
         description="Extract the step-by-step application process described in the scraped text. Include details on where or how to apply.",
     )
+
     who_is_it_for: Optional[str] = Field(
         default=None,
         description=f"Who is this scheme for as explained in the scraped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHO_IS_IT_FOR}",
     )
+
     what_it_gives: Optional[str] = Field(
         default=None,
         description=f"What does this scheme give as explained in the scraped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {WHAT_IT_GIVES}",
     )
+
     scheme_type: Optional[str] = Field(
         default=None,
         description=f"What is this scheme type as explained in the scraped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {SCHEME_TYPE}",
     )
+
     search_booster: Optional[str] = Field(
         default=None,
         description=f"How would people search for this scheme, infer from scaped text? Must belong to one or many of this list, and separate by commas if there are multiple values: {SEARCH_BOOSTER}",
     )
+
     service_area: Optional[str] = Field(
         default=None,
         description="Service area boundaries for this scheme. If the scheme has specific service boundaries (e.g., only residents of certain towns can apply), list the town names separated by commas (e.g., 'Toa Payoh, Novena, Marsiling'). If there are no service boundaries and the scheme is available to all Singapore residents, return 'No Service Boundaries'.",
     )
+
     summary: Optional[str] = Field(
         default=None,
         description="A single-sentence summary of the scheme, extracted from the scraped text. Should concisely capture the essence of the scheme in one sentence. Maximum 10 words.",
     )
-
 
 class TextExtract:
     _instance = None
@@ -197,7 +204,6 @@ class TextExtract:
         if cls._instance is None:
             cls._instance = super(TextExtract, cls).__new__(cls)
             cls._instance._initialize_app()
-
         return cls._instance
 
     def init_chatbot(self):
@@ -225,20 +231,51 @@ class TextExtract:
         """Generate a hashed cache key from the input text."""
         return hashlib.sha256(text.encode()).hexdigest()
 
+    def clean_llm_description_text(self, text: str) -> str:
+        """Clean llm_description text by removing forward slash n symbols and other formatting issues."""
+        if not text:
+            return text
+
+        # Remove forward slash n patterns: /n, \n, \/n etc.
+        import re
+
+        # Replace various forward slash n patterns with proper newlines
+        text = re.sub(r'/n', '\n', text)  # Replace /n with \n
+        text = re.sub(r'\\/n', '\n', text)  # Replace \/n with \n
+        text = re.sub(r'\\n', '\n', text)  # Replace \\n with \n
+
+        # Remove carriage return symbols and other invisible characters
+        text = text.replace('\r', '').replace('\t', ' ')
+
+        # Clean up multiple consecutive newlines
+        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
+
+        # Clean up extra whitespace
+        text = re.sub(r'[ ]+', ' ', text)  # Multiple spaces to single space
+        text = text.strip()
+
+        return text
+
     def reformat_llm_description(self, text):
         """Use the LLM to re-format the description"""
         if text is None:
             return None
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You are an expert formatter for UI and frontend websites."
-                    "You are able to format text using '/n' in the best ways"
-                ),
-                ("human", "Format the following in the best way to render on UI:{text}"),
-            ]
-        )
+
+        # First clean the text using our cleaning function
+        text = self.clean_llm_description_text(text)
+
+        prompt_template = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                "You are an expert formatter for UI and frontend websites. "
+                "You format text for clear readability using proper newline characters. "
+                "Use standard newline characters (\\n) naturally for line breaks. "
+                "Do not use forward slashes with n (/n) or any escape sequences. "
+                "Focus on clean, readable formatting suitable for web display."
+            ),
+            ("human", "Format the following text for optimal UI display:\n\n{text}"),
+        ])
+
         prompt = prompt_template.invoke({"text": text})
         messages = prompt.to_messages()
 
@@ -261,7 +298,10 @@ class TextExtract:
             output_text=output_text
         )
 
-        return output_text
+        # Clean the response again to ensure no formatting issues remain
+        cleaned_output = self.clean_llm_description_text(output_text)
+
+        return cleaned_output
 
     def transform_to_database_format(self, data_model: SchemesStructuredOutput):
         """Transform the structured output to database format based on the 3 scenarios"""
@@ -311,28 +351,30 @@ class TextExtract:
         if cached_response:
             print(f"Cache hit for text extraction (key: {cache_key[:8]}...)")
             return cached_response
+
         structured_llm = self.open_ai_client.with_structured_output(
             SchemesStructuredOutput
         )
-        prompt_template = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    "You are an expert extraction algorithm. "
-                    "Your goal is to extract the requested attributes as accurately and faithfully as possible "
-                    "from the given website text. "
-                    "Use wording, definitions, and phrases that stay close to the original text so the extracted "
-                    "results can be trusted as reflecting the website accurately. "
-                    "At the same time, ensure compliance with copyright and content rules: "
-                    "reproduce only short, necessary snippets or factual values, not large verbatim portions of text. "
-                    "If the value of an attribute cannot be confidently determined, return null. "
-                    "For physical locations, be careful to distinguish between multiple distinct locations versus "
-                    "multiple contact methods at a single location. "
-                    "Do not infer, hallucinate, or summarize beyond what is explicitly written in the provided text."
-                ),
-                ("human", "{text}"),
-            ]
-        )
+
+        prompt_template = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                "You are an expert extraction algorithm. "
+                "Your goal is to extract the requested attributes as accurately and faithfully as possible "
+                "from the given website text. "
+                "Use wording, definitions, and phrases that stay close to the original text so the extracted "
+                "results can be trusted as reflecting the website accurately. "
+                "At the same time, ensure compliance with copyright and content rules: "
+                "reproduce only short, necessary snippets or factual values, not large verbatim portions of text. "
+                "If the value of an attribute cannot be confidently determined, return null. "
+                "For physical locations, be careful to distinguish between multiple distinct locations versus "
+                "multiple contact methods at a single location. "
+                "For text formatting, use natural newline characters without escape sequences or special symbols. "
+                "Do not infer, hallucinate, or summarize beyond what is explicitly written in the provided text."
+            ),
+            ("human", "{text}"),
+        ])
+
         if len(text) > self.max_tokens:
             # if length of text exceeds max tokens, split the text into chunks to run extraction over it
             texts = self.text_splitter.split_text(text)
@@ -431,13 +473,14 @@ class TextExtract:
                 "ERROR: HTTP Error: 403.",
                 SchemesStructuredOutput(),
             ),
-
         ]
+
         for txt, tool_call in examples:
             tool_output = "Detected no structured output."
             messages.extend(
                 tool_example_to_messages(txt, [tool_call], tool_outputs=[tool_output])
             )
+
         return messages
 
     def _init_text_splitter(self):
@@ -467,10 +510,12 @@ class TextExtract:
         for field in SchemesStructuredOutput.__fields__:
             if field == 'physical_locations':
                 continue  # Already handled above
+
             parts = [
                 getattr(instance, field)
                 for instance in instances
                 if getattr(instance, field) is not None
             ]
             merged_data[field] = ",".join(parts) if parts else None
+
         return SchemesStructuredOutput(**merged_data)
