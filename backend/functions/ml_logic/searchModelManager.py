@@ -10,17 +10,14 @@ import faiss
 import numpy as np
 import pandas as pd
 import spacy
-import torch
-import torch.nn.functional as F
 from fb_manager.firebaseManager import FirebaseManager
 from google.cloud import firestore
 from loguru import logger
 from pydantic import BaseModel
 from utils.pagination import decode_cursor, get_paginated_results
 
-from transformers import AutoModel, AutoTokenizer
-from transformers.modeling_outputs import BaseModelOutputWithPooling
-
+from langchain_openai import AzureOpenAIEmbeddings
+from ml_logic.chatbotManager import Config
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
@@ -37,7 +34,7 @@ class PredictParams(BaseModel):
 
     query: str
     top_k: Optional[int] = 20
-    similarity_threshold: Optional[int] = 0
+    similarity_threshold: Optional[int] = None
     is_warmup: Optional[bool] = False  # Add flag for warmup requests
 
 
@@ -47,7 +44,7 @@ class PaginatedSearchParams(BaseModel):
     query: str
     limit: Optional[int] = 20
     cursor: Optional[str] = None
-    similarity_threshold: Optional[int] = 0
+    similarity_threshold: Optional[int] = None
     is_warmup: Optional[bool] = False
     top_k: Optional[int] = 100  # Number of items to retrieve from FAISS index
     filters: Optional[Dict[str, List[str]]] = {}
@@ -133,9 +130,7 @@ class SearchModel:
 
     db = None
     preprocessor = None
-
-    model = None
-    tokenizer = None
+    _uses_ip = None  # Whether the FAISS index uses Inner Product (cosine/IP) or L2 metric
     embeddings = None
     index = None
     index_to_scheme_id = None
@@ -156,16 +151,37 @@ class SearchModel:
 
         cls.db = cls.firebase_manager.firestore_client
         cls.preprocessor = SearchPreprocessor()
-        cls.model = AutoModel.from_pretrained(model_path)
-        cls.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-        cls.embeddings = np.load(embeddings_path)
-        cls.index = faiss.read_index(str(index_path))  # Seems that faiss does not support pathlib
-        # Load the FAISS index-to-scheme_id mapping
+        config = Config()
+        # In SearchModel.initialise() method
+        cls.embeddings = AzureOpenAIEmbeddings(
+            azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
+            api_key=config.AZURE_OPENAI_API_KEY,
+            api_version=config.OPENAI_API_VERSION,
+            model='text-embedding-3-large',
+            dimensions=768,  # Match the FAISS index dimension
+        )
+        
+        # Probe dimension from live deployment
+        probe = cls.embeddings.embed_query("dim_probe")
+        embed_dim = len(probe)
+
+        # Load FAISS + id map
+        cls.index = faiss.read_index(str(index_path))
         with open(index_to_scheme_path, "r") as f:
             cls.index_to_scheme_id = json.load(f)
-        cls.initialised = True
 
-        logger.info("Search Model initialised!")
+        # Metric hint (IndexFlatIP → cosine/IP, IndexFlatL2 → L2)
+        cls._uses_ip = isinstance(cls.index, faiss.IndexFlatIP)
+
+        # HARD check: FAISS dim must match embedding dim
+        if cls.index.d != embed_dim:
+            raise RuntimeError(
+                f"FAISS index dim={cls.index.d} != Azure embedding dim={embed_dim}. "
+                f"Rebuild the index with the SAME Azure deployment used at runtime."
+            )
+
+        logger.info(f"Search Model initialised (index_dim={cls.index.d}, uses_ip={cls._uses_ip})")
+        cls.initialised = True
 
     def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
         """
@@ -223,23 +239,6 @@ class SearchModel:
             self.__class__.firebase_manager = firebase_manager
             self.__class__.initialise()
 
-    @staticmethod
-    def mean_pooling(model_output: BaseModelOutputWithPooling, attention_mask: torch.Tensor) -> torch.Tensor:
-        """
-        Mean Pooling - Take attention mask into account for correct averaging
-
-        Args:
-            model_output (BaseModelOutputWithPooling): embeddings of the query
-            attention_mask (Tensor): attention mask used for mean pooling
-
-        Returns:
-            Tensor: mean-pooled tensor
-        """
-
-        token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-
     # Now, you can use `index` for similarity searches with new user queries
     def search_similar_items(self, query_text: str, full_query: str, top_k: int) -> pd.DataFrame:
         """
@@ -261,55 +260,40 @@ class SearchModel:
         if query_cache_key in self.query_cache:
             logger.info("Returning cached results for query.")
             return self.query_cache[query_cache_key]
+        
+        # Embed
+        vec = self.__class__.embeddings.embed_query(query_text)
+        q = np.asarray([vec], dtype="float32")
 
-        preproc = query_text
+        # Extra guard (useful during migrations)
+        if q.shape[1] != self.__class__.index.d:
+            raise RuntimeError(f"Query dim={q.shape[1]} != index dim={self.__class__.index.d}")
 
-        # Tokenize text
-        encoded_input = self.__class__.tokenizer([preproc], padding=True, truncation=True, return_tensors="pt")
+        # If using IP for cosine, normalize query (assumes corpus was normalized when building)
+        if self.__class__._uses_ip:
+            faiss.normalize_L2(q)
 
-        # Compute token embeddings
-        with torch.no_grad():
-            model_output = self.__class__.model(**encoded_input)
+        # Search
+        distances, indices = self.__class__.index.search(q, top_k)
 
-        # Perform pooling
-        query_embedding = SearchModel.mean_pooling(model_output, encoded_input["attention_mask"])
+        # Convert to a monotonic "Similarity" (higher=better)
+        similarity = distances[0] if self.__class__._uses_ip else -distances[0]
 
-        # Normalize embeddings
-        query_embedding = F.normalize(query_embedding, p=2, dim=1)
-
-        query_embedding = np.array(query_embedding).astype("float32")
-
-        # Perform the search
-        distances, indices = self.__class__.index.search(query_embedding, top_k)
-
-        similarity_scores = np.exp(-distances)
-        # similar_items = pd.DataFrame([df.iloc[indices[0]], distances[0], similarity_scores[0]])
-
-        # Retrieve the scheme_ids using the FAISS indices
-        retrieved_scheme_ids = [self.__class__.index_to_scheme_id[str(idx)] for idx in indices[0]]
-
-        try:
-            scheme_details = self.fetch_schemes_batch(retrieved_scheme_ids)
-        except Exception as e:
-            logger.error(f"Error fetching schemes: {e}")
-            raise
-
-        # Convert to DataFrame
-        scheme_df = pd.DataFrame(scheme_details)
+        # Map ids → docs
+        retrieved_ids = [self.__class__.index_to_scheme_id[str(i)] for i in indices[0]]
+        scheme_details = self.fetch_schemes_batch(retrieved_ids)
+        df = pd.DataFrame(scheme_details)
 
         # Add similarity scores to the DataFrame
-        results = pd.concat(
-            [
-                scheme_df.reset_index(drop=True),
-                pd.DataFrame(similarity_scores[0], columns=["Similarity"]).reset_index(drop=True),
-            ],
-            axis=1,
+        results = (
+            pd.concat(
+                [df.reset_index(drop=True),
+                pd.DataFrame(similarity, columns=["Similarity"]).reset_index(drop=True)],
+                axis=1,
+            )
+            .assign(query=full_query)
+            .sort_values("Similarity", ascending=False if not self.__class__._uses_ip else False)
         )
-        # Add the query to the results and sort by similarity
-        results["query"] = full_query
-        results = results.sort_values(["Similarity"], ascending=False)
-
-        # Store the results in the cache
         self.query_cache[query_cache_key] = results
 
         return results
@@ -353,8 +337,9 @@ class SearchModel:
             subset=["scheme"]
         )
 
-        # Filter by similarity threshold
-        aggregated_results = aggregated_results[aggregated_results["Similarity"] >= similarity_threshold]
+        # Only filter if caller provided a threshold
+        if similarity_threshold is not None:
+            aggregated_results = aggregated_results[aggregated_results["Similarity"] >= similarity_threshold]
 
         # Create quintiles only if we have enough unique similarity scores
         unique_similarities = aggregated_results["Similarity"].nunique()
