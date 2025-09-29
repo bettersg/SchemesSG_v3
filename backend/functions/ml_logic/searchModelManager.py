@@ -154,13 +154,13 @@ class SearchModel:
         config = Config()
         # In SearchModel.initialise() method
         cls.embeddings = AzureOpenAIEmbeddings(
-            azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
-            api_key=config.AZURE_OPENAI_API_KEY,
-            api_version=config.OPENAI_API_VERSION,
-            model='text-embedding-3-large',
+            azure_endpoint=config.AZURE_OPENAI_EMBEDDING_ENDPOINT,
+            api_key=config.AZURE_OPENAI_EMBEDDING_API_KEY,
+            api_version=config.OPENAI_EMBEDDING_API_VERSION,
+            model=config.AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME,
             dimensions=768,  # Match the FAISS index dimension
         )
-        
+
         # Probe dimension from live deployment
         probe = cls.embeddings.embed_query("dim_probe")
         embed_dim = len(probe)
@@ -260,7 +260,7 @@ class SearchModel:
         if query_cache_key in self.query_cache:
             logger.info("Returning cached results for query.")
             return self.query_cache[query_cache_key]
-        
+
         # Embed
         vec = self.__class__.embeddings.embed_query(query_text)
         q = np.asarray([vec], dtype="float32")
@@ -276,24 +276,35 @@ class SearchModel:
         # Search
         distances, indices = self.__class__.index.search(q, top_k)
 
-        # Convert to a monotonic "Similarity" (higher=better)
-        similarity = distances[0] if self.__class__._uses_ip else -distances[0]
+        similarity_scores = np.exp(-distances)
+        # similar_items = pd.DataFrame([df.iloc[indices[0]], distances[0], similarity_scores[0]])
 
-        # Map ids → docs
-        retrieved_ids = [self.__class__.index_to_scheme_id[str(i)] for i in indices[0]]
-        scheme_details = self.fetch_schemes_batch(retrieved_ids)
-        df = pd.DataFrame(scheme_details)
+        # Retrieve the scheme_ids using the FAISS indices
+        retrieved_scheme_ids = [self.__class__.index_to_scheme_id[str(idx)] for idx in indices[0]]
+
+        try:
+            scheme_details = self.fetch_schemes_batch(retrieved_scheme_ids)
+        except Exception as e:
+            logger.error(f"Error fetching schemes: {e}")
+            raise
+
+        # Convert to DataFrame
+        scheme_df = pd.DataFrame(scheme_details)
 
         # Add similarity scores to the DataFrame
-        results = (
-            pd.concat(
-                [df.reset_index(drop=True),
-                pd.DataFrame(similarity, columns=["Similarity"]).reset_index(drop=True)],
-                axis=1,
-            )
-            .assign(query=full_query)
-            .sort_values("Similarity", ascending=False if not self.__class__._uses_ip else False)
+        results = pd.concat(
+            [
+                scheme_df.reset_index(drop=True),
+                pd.DataFrame(similarity_scores[0], columns=["Similarity"]).reset_index(drop=True),
+            ],
+            axis=1,
         )
+
+        # Add the query to the results and sort by similarity
+        results["query"] = full_query
+        results = results.sort_values(["Similarity"], ascending=False)
+
+        # Store the results in the cache
         self.query_cache[query_cache_key] = results
 
         return results
@@ -337,9 +348,8 @@ class SearchModel:
             subset=["scheme"]
         )
 
-        # Only filter if caller provided a threshold
-        if similarity_threshold is not None:
-            aggregated_results = aggregated_results[aggregated_results["Similarity"] >= similarity_threshold]
+        # Filter by similarity threshold
+        aggregated_results = aggregated_results[aggregated_results["Similarity"] >= similarity_threshold]
 
         # Create quintiles only if we have enough unique similarity scores
         unique_similarities = aggregated_results["Similarity"].nunique()
@@ -351,7 +361,6 @@ class SearchModel:
             # If we have less than 5 unique values, just rank them ordinally
             aggregated_results["Quintile"] = pd.Series(range(1, len(aggregated_results) + 1)).astype(str)
 
-        # Return top_k results
         return aggregated_results.head(top_k)
 
     def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
@@ -472,5 +481,17 @@ class SearchModel:
             "next_cursor": next_cursor,
             "has_more": has_more,
         }
+
+                # Convert any Timestamp objects in results_json to strings
+        def convert_timestamps_to_strings(obj):
+            if isinstance(obj, dict):
+                return {k: convert_timestamps_to_strings(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_timestamps_to_strings(elem) for elem in obj]
+            elif isinstance(obj, datetime):
+                return obj.isoformat()
+            return obj
+
+        results_json = convert_timestamps_to_strings(results_json)
 
         return results_json
