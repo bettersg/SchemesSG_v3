@@ -136,7 +136,25 @@ class SearchModel:
             self.__class__.initialise()
 
     def search(self, query_text: str, top_k: int) -> pd.DataFrame:
-        """Embed query, search in vector index, and return merged DataFrame with metadata."""
+        """
+        Embed the input query, search the vector index for the most similar schemes,
+        and return a merged DataFrame containing scheme metadata and similarity scores.
+
+        Args:
+            query_text (str): The user's search query.
+            top_k (int): Maximum number of top-matching schemes to retrieve.
+
+        Returns:
+            pd.DataFrame: A DataFrame with columns:
+                - scheme_id: Unique identifier of the scheme.
+                - vec_similarity_score: Normalized vector similarity score (0–1).
+                - query: The original query text.
+                - Additional scheme metadata fetched from Firestore.
+
+        Raises:
+            Exception: Propagates any exception encountered while fetching scheme details,
+                       after logging the error.
+        """
         vec = self.__class__.embeddings.embed_query(query_text)
         results = self.__class__.index.query(query_embeddings=vec, n_results=top_k)
 
@@ -160,7 +178,30 @@ class SearchModel:
         return merged
 
     def rank(self, query_text: str, results: pd.DataFrame) -> pd.DataFrame:
-        """Apply BM25 ranking and compute combined scores."""
+        """
+        Apply BM25 ranking to the provided search results and compute combined scores.
+
+        This method re-ranks the input results using the BM25 algorithm based on the
+        textual content in the 'search_booster' column. It then merges the BM25 scores
+        with the existing vector similarity scores, applying a weighted combination
+        (70 % vector similarity, 30 % BM25) to produce a final ranking.
+
+        NOTE: weighted combination
+        is arbitrary and may need to be adjusted based on further explorations.
+
+        Args:
+            query_text (str): The user's search query used for BM25 relevance scoring.
+            results (pd.DataFrame): A DataFrame containing at least:
+                - 'scheme_id': Unique identifier for each scheme.
+                - 'search_booster': Text content used for BM25 ranking.
+                - 'vec_similarity_score': Pre-computed vector similarity score.
+
+        Returns:
+            pd.DataFrame: A new DataFrame sorted by 'combined_scores' in descending order,
+                containing the original columns plus:
+                - 'bm25_score': Computed BM25 relevance score (0–1).
+                - 'combined_scores': Weighted sum of vector and BM25 scores.
+        """
         docs = [
             Document(page_content=content, metadata={"id": sid})
             for sid, content in zip(results["scheme_id"], results["search_booster"])
