@@ -222,7 +222,27 @@ class SearchModel:
     def aggregate_and_rank_results(
         self, query_text: str, top_k: int, similarity_threshold: Optional[int]
     ) -> pd.DataFrame:
-        """Hybrid vector + BM25 retrieval with caching."""
+        """
+        Perform hybrid vector + BM25 retrieval with caching.
+
+        This method combines vector similarity search and BM25 text ranking to produce
+        a ranked list of schemes. Results are cached by query and top_k to avoid
+        redundant computation.
+
+        Args:
+            query_text (str): The user's search query.
+            top_k (int): Maximum number of top-matching schemes to return.
+            similarity_threshold (Optional[int]): Minimum similarity score required
+                (currently unused; reserved for future filtering).
+
+        Returns:
+            pd.DataFrame: A DataFrame with at most `top_k` unique schemes, sorted by
+                combined vector and BM25 scores in descending order.
+
+        Notes:
+            - The `similarity_threshold` parameter is accepted but not yet implemented.
+            - Caching is keyed by `(query_text, top_k)` tuple.
+        """
         cache_key = (query_text, top_k)
         if cache_key in self.query_cache:
             logger.debug("Cache hit for query '%s'", query_text)
