@@ -1,11 +1,10 @@
 "use client";
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat";
-import QueryGenerator from "@/components/query-generator/query-generator";
 import SchemesList from "@/components/schemes/schemes-list";
 import SearchBar from "@/components/search-bar";
 import UserQuery from "@/components/user-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useChat } from "./providers";
 import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
@@ -13,19 +12,20 @@ import backgroundImageTwo from "@/assets/bg2.png";
 import Partners from "@/components/partners";
 import { FilterObjType } from "./interfaces/filter";
 import clsx from "clsx";
+import QueryPrompts from "@/components/query-prompts";
 
 export default function Home() {
   const { schemes } = useChat();
-  const [isLoadingSchemes, setIsLoadingSchemes] = useState(false)
+  const [isLoadingSchemes, setIsLoadingSchemes] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [nextCursor, setNextCursor] = useState("");
-  const [selectedSupportProvided, setSelectedSupportProvided] = useState<
-    string | null
-  >(null);
-  const [selectedForWho, setSelectedForWho] = useState<string | null>(null);
-  const [selectedSchemeType, setSelectedSchemeType] = useState<string | null>(
-    null
-  );
+
+  const searchbarRef = useRef<HTMLTextAreaElement | null>(null);
+  const focusSearchbar = () => {
+    if (searchbarRef.current) {
+      searchbarRef.current.focus();
+    }
+  };
 
   // filter states
   const [filterObj, setFilterObj] = useState<FilterObjType>({});
@@ -112,7 +112,7 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center gap-4">
           <div className="max-w-[35rem] p-4">
             {/* Desktop*/}
             <div className="hidden md:block">
@@ -145,24 +145,10 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="flex flex-col justify-center items-center my-8">
-            <QueryGenerator
-              setSelectedSupportProvided={setSelectedSupportProvided}
-              setSelectedForWho={setSelectedForWho}
-              // setSelectedOrganisation={setSelectedOrganisation}
-              setSelectedSchemeType={setSelectedSchemeType}
-              onSendQuery={() => {}}
-            />
-          </div>
           <SearchBar
-            selectedSupportProvided={selectedSupportProvided}
-            selectedForWho={selectedForWho}
-            // selectedOrganisation={selectedOrganisation}
-            selectedSchemeType={selectedSchemeType}
-            setSelectedSupportProvided={setSelectedSupportProvided}
-            setSelectedForWho={setSelectedForWho}
-            setSelectedSchemeType={setSelectedSchemeType}
+            searchbarRef={searchbarRef}
           />
+          <QueryPrompts focusSearchbar={focusSearchbar} />
           <Partners />
           <Image
             src={backgroundImageOne}
