@@ -1,3 +1,4 @@
+chromadb==1.1.0
 firebase_functions~=0.1.0
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 faiss-cpu==1.9.0
@@ -13,6 +14,7 @@ numpy==1.26.2
 pandas==2.2.2
 pydantic==2.9.2
 python-dotenv==1.0.1
+rank_bm25==0.2.2
 spacy==3.7.5
 torch==2.3.0
 transformers==4.44.0
