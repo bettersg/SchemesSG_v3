@@ -1,16 +1,16 @@
-import firebase_admin
-from firebase_admin import credentials, storage
-import zipfile
 import os
 import time
-import argparse
-import sys
-from loguru import logger
+import zipfile
 from uuid import uuid4
+
+from firebase_admin import storage
+from loguru import logger
+
 # Logging is handled by the main pipeline
 
+
 def zip_folder(folder_path, output_zip_path):
-    with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -18,6 +18,7 @@ def zip_folder(folder_path, output_zip_path):
                 arcname = os.path.relpath(file_path, folder_path)
                 zipf.write(file_path, arcname)
     logger.info(f"Zipped folder '{folder_path}' into '{output_zip_path}'")
+
 
 def upload_model_artefacts(app, storage_bucket):
     # Logging is already set up by the main pipeline
@@ -42,7 +43,7 @@ def upload_model_artefacts(app, storage_bucket):
 
     logger.info(f"Starting upload of {zip_path} to bucket {storage_bucket}...")
     # Add content_type and ensure metadata is uploaded
-    blob.upload_from_filename(zip_path, timeout=300, content_type='application/zip')
+    blob.upload_from_filename(zip_path, timeout=300, content_type="application/zip")
     logger.info(f"Successfully uploaded {zip_path}")
 
 

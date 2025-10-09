@@ -67,7 +67,7 @@ def create_chroma_db_artefacts(db):
 
     # Create persistence ChromaDB vector store
     logger.info("Creating ChromaDB vector store...")
-    chroma_dir = "vector_store"
+    chroma_dir = "models/vector_store"
     if not os.path.exists(chroma_dir):
         os.makedirs(chroma_dir)
         logger.info(f"Created directory {chroma_dir}")
