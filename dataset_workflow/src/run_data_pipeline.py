@@ -4,29 +4,28 @@ Python version of run_steps_3_to_7.sh that imports and uses functions directly
 instead of running scripts via subprocess.
 """
 
-import os
-import sys
 import argparse
+import sys
 from pathlib import Path
-from datetime import datetime
-from loguru import logger
+
 from logging_config import setup_logging
+from loguru import logger
 
 # Add the current directory to Python path so we can import src modules
 current_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(current_dir))
 
 # Import functions from the various scripts
-from src.create_transformer_models import create_transformer_models
-from src.upload_model_artefacts import upload_model_artefacts
-from src.test_model_artefacts_created import test_function
-# Import functions from Main_scrape scripts
-from src.Main_scrape.Main_scrape import run_scraping_for_links
+from src.create_chroma_db_artefacts import create_chroma_db_artefacts
 from src.Main_scrape.add_scraped_fields_to_fire_store import (
     add_scraped_fields_to_fire_store,
 )
 from src.Main_scrape.add_town_area_to_fire_store import add_town_areas
 
+# Import functions from Main_scrape scripts
+from src.Main_scrape.Main_scrape import run_scraping_for_links
+from src.test_model_artefacts_created import test_function
+from src.upload_model_artefacts import upload_model_artefacts
 
 # setup_logging function is now imported from logging_config module
 
@@ -46,7 +45,6 @@ def get_credentials_and_bucket(env):
     dev_storage_bucket = "schemessg-v3-dev.firebasestorage.app"
     prod_storage_bucket = "schemessg.appspot.com"  # PLEASE VERIFY THIS
 
-
     if env == "dev":
         storage_bucket = dev_storage_bucket
         creds_file = str(Path(__file__).parent.parent / "dev-creds.json")
@@ -54,9 +52,12 @@ def get_credentials_and_bucket(env):
         storage_bucket = prod_storage_bucket
         creds_file = str(Path(__file__).parent.parent / "prod-creds.json")
     else:
-        raise ValueError(f"Invalid environment specified: {env}. Please use 'dev' or 'prod'.")
+        raise ValueError(
+            f"Invalid environment specified: {env}. Please use 'dev' or 'prod'."
+        )
 
     return creds_file, storage_bucket
+
 
 def main():
     """Main function to run the workflow"""
@@ -91,15 +92,15 @@ def main():
         args = parser.parse_args()
     except SystemExit:
         # This happens when argparse encounters an error (like missing required args)
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("USAGE EXAMPLES:")
-        print("="*60)
+        print("=" * 60)
         print("python run_data_pipeline.py dev")
         print("python run_data_pipeline.py prod")
         print("python run_data_pipeline.py dev --run-only 1 2 3")
         print("python run_data_pipeline.py prod --skip-steps 4 5")
         print("python run_data_pipeline.py dev --doc_ids 00uFr8EP5kJsqgh7G33h")
-        print("="*60)
+        print("=" * 60)
         sys.exit(1)
 
     try:
@@ -129,9 +130,7 @@ def main():
         from firebase_admin import credentials, firestore
 
         cred = credentials.Certificate(creds_file)
-        app = firebase_admin.initialize_app(cred, {
-            'storageBucket': storage_bucket
-        })
+        app = firebase_admin.initialize_app(cred, {"storageBucket": storage_bucket})
         db = firestore.client()
         logger.info("Firebase initialized successfully")
 
@@ -140,7 +139,9 @@ def main():
             (
                 1,
                 "Run Main_scrape.py to get scraped data in DB",
-                lambda: run_scraping_for_links(db, process_specific_doc_ids=doc_ids, skip_if_scraped=True),
+                lambda: run_scraping_for_links(
+                    db, process_specific_doc_ids=doc_ids, skip_if_scraped=True
+                ),
             ),
             (
                 2,
@@ -159,8 +160,8 @@ def main():
             ),
             (
                 5,
-                "Recompute embeddings and faiss",
-                lambda: create_transformer_models(db),
+                "Recompute embeddings and chroma db",
+                lambda: create_chroma_db_artefacts(db),
             ),
             (
                 6,
