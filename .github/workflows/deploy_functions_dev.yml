@@ -76,4 +76,4 @@ jobs:
         working-directory: backend
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcloud.json
-        run: npx firebase-tools deploy --only functions --project schemessg-v3-dev --debug --token "${{ secrets.FIREBASE_TOKEN_DEV }}"
+        run: npx firebase-tools deploy --only functions --project schemessg-v3-dev --token "${{ secrets.FIREBASE_TOKEN_DEV }}"
