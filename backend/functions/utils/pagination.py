@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import json
 import os
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 from loguru import logger
 
@@ -71,7 +71,7 @@ def decode_cursor(cursor_token: str) -> Optional[Dict[str, Any]]:
         received_signature = token_data.get("signature")
 
         if not cursor_data or not received_signature:
-            logger.warning(f"Invalid cursor format: missing data or signature")
+            logger.warning("Invalid cursor format: missing data or signature")
             return None
 
         # Verify signature
@@ -79,7 +79,7 @@ def decode_cursor(cursor_token: str) -> Optional[Dict[str, Any]]:
         expected_signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
 
         if not hmac.compare_digest(received_signature, expected_signature):
-            logger.warning(f"Invalid cursor signature")
+            logger.warning("Invalid cursor signature")
             return None
 
         return cursor_data
@@ -128,22 +128,22 @@ def get_paginated_results(
             cursor_similarity = cursor_data.get("similarity_score")
 
             if cursor_scheme_id is None or cursor_similarity is None:
-                logger.warning(f"Invalid cursor data: missing scheme_id or similarity_score")
+                logger.warning("Invalid cursor data: missing scheme_id or similarity_score")
             else:
                 # Find the first item with lower similarity than the cursor
                 # or the same similarity but different ID
                 for i, item in enumerate(results):
                     # Check if required keys are in the item
-                    if "Similarity" not in item:
-                        logger.warning(f"Missing 'Similarity' key in search result item at index {i}")
+                    if "combined_scores" not in item:
+                        logger.warning(f"Missing 'combined_scores' key in search result item at index {i}")
                         continue
 
                     if "scheme_id" not in item:
                         logger.warning(f"Missing 'scheme_id' key in search result item at index {i}")
                         continue
 
-                    if item["Similarity"] < cursor_similarity or (
-                        item["Similarity"] == cursor_similarity and item["scheme_id"] > cursor_scheme_id
+                    if item["combined_scores"] < cursor_similarity or (
+                        item["combined_scores"] == cursor_similarity and item["scheme_id"] > cursor_scheme_id
                     ):
                         start_index = i
                         break
@@ -168,12 +168,12 @@ def get_paginated_results(
         else:
             scheme_id = last_item["scheme_id"]
 
-        if "Similarity" not in last_item:
-            logger.error(f"Missing 'Similarity' key in last result item: {last_item}")
+        if "combined_scores" not in last_item:
+            logger.error(f"Missing 'combined_scores' key in last result item: {last_item}")
             # Use fallback value
             similarity = 0.0
         else:
-            similarity = last_item["Similarity"]
+            similarity = last_item["combined_scores"]
 
         next_cursor = encode_cursor(scheme_id, similarity, session_id)
 
