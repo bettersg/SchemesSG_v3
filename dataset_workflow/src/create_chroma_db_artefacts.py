@@ -71,9 +71,10 @@ def create_chroma_db_artefacts(db):
     if not os.path.exists(chroma_dir):
         os.makedirs(chroma_dir)
         logger.info(f"Created directory {chroma_dir}")
+
     client = chromadb.PersistentClient(path=chroma_dir)
     # Ensure collection names aligned with searchModelManager's usage of vector collection
-    collection = client.create_collection(
+    collection = client.get_or_create_collection(
         name="schemes",
         embedding_function=OpenAIEmbeddingFunction(
             api_key=os.getenv("AZURE_OPENAI_EMBEDDING_API_KEY"),

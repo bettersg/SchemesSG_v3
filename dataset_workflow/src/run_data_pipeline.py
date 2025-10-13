@@ -21,10 +21,8 @@ from src.Main_scrape.add_scraped_fields_to_fire_store import (
     add_scraped_fields_to_fire_store,
 )
 from src.Main_scrape.add_town_area_to_fire_store import add_town_areas
-
-# Import functions from Main_scrape scripts
 from src.Main_scrape.Main_scrape import run_scraping_for_links
-from src.test_model_artefacts_created import test_function
+from src.test_chroma_db_artefacts_created import test_chroma_pipeline
 from src.upload_model_artefacts import upload_model_artefacts
 
 # setup_logging function is now imported from logging_config module
@@ -166,7 +164,7 @@ def main():
             (
                 6,
                 "Test if model artefacts created are valid",
-                lambda: test_function(db),
+                lambda: test_chroma_pipeline(db),
             ),
             (
                 7,
