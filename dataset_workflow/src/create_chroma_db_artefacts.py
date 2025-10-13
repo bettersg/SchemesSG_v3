@@ -90,7 +90,7 @@ def create_chroma_db_artefacts(db):
     descriptions = df["desc_booster"].tolist()
 
     logger.info("Adding documents to ChromaDB...")
-    collection.add(ids=scheme_ids, documents=descriptions)
+    collection.upsert(ids=scheme_ids, documents=descriptions)
 
     end_time = time.time()
     total_time = end_time - start_time
