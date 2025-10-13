@@ -1,3 +1,4 @@
+import math
 import os
 import time
 from pathlib import Path
@@ -50,7 +51,7 @@ def test_chroma_pipeline(db):
 
     ids = result["ids"][0]
     distances = result.get("distances", [[0.0] * len(ids)])[0]
-    similarities = [round(float(pow(2.71828, -d)), 5) for d in distances]
+    similarities = [round(math.exp(-d), 5) for d in distances]
 
     logger.info(f"Top {len(ids)} results:")
     for scheme_id, score in zip(ids, similarities):
