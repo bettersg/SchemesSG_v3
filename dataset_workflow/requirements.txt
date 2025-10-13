@@ -1,4 +1,5 @@
 firebase_functions~=0.1.0
+chromadb==1.1.1
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 faiss-cpu==1.9.0
 flask==3.0.3
