@@ -38,7 +38,7 @@ class PaginatedSearchParams(BaseModel):
     cursor: Optional[str] = None
     similarity_threshold: Optional[int] = None
     is_warmup: Optional[bool] = False
-    top_k: Optional[int] = 100  # Number of items to retrieve from FAISS index
+    top_k: Optional[int] = 100  # Number of items to retrieve from ChromaDB vector store
     filters: Optional[Dict[str, List[str]]] = {}
 
 
@@ -317,7 +317,7 @@ class SearchModel:
             dict[str, any]: response containing paginated results
         """
 
-        # Use the top_k parameter for FAISS index search
+        # Use the top_k parameter for ChromaDB index search
         internal_top_k = params.top_k
 
         # Check if we have a cursor and extract session_id from it
