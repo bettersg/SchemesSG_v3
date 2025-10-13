@@ -112,8 +112,8 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center gap-4">
-          <div className="max-w-[35rem] p-4">
+        <div className="max-w-[35rem] flex flex-col items-center gap-4">
+          <div className="p-4">
             {/* Desktop*/}
             <div className="hidden md:block">
               <h1 className="text-center text-4xl font-bold">
@@ -123,8 +123,8 @@ export default function Home() {
                 <span className="text-schemes-blue">SG</span>
               </h1>
               <p className="text-schemes-darkblue text-center mt-6 text-lg">
-                This is an AI-supported search engine for public social
-                assistance schemes in Singapore.
+                An AI-supported search engine for public social assistance
+                schemes in Singapore.
               </p>
             </div>
 
@@ -145,9 +145,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <SearchBar
-            searchbarRef={searchbarRef}
-          />
+          <SearchBar searchbarRef={searchbarRef} />
           <QueryPrompts focusSearchbar={focusSearchbar} />
           <Partners />
           <Image

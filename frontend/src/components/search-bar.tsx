@@ -75,7 +75,6 @@ export default function SearchBar({ searchbarRef }: SearchBarProps) {
             await handleSend();
           }
         }}
-        className="max-w-[35rem]"
         ref={searchbarRef}
         classNames={{
           input: "placeholder:italic placeholder:text-black/20",

@@ -24,7 +24,7 @@ export default function QueryPrompts({ focusSearchbar }: queryPromptsProps) {
     focusSearchbar();
   };
   return (
-    <div className="max-w-[35rem] flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2">
       {Object.keys(prompts).map((prompt, index) => {
         const value = prompts[prompt as Prompt];
         return (
