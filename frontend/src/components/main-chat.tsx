@@ -70,7 +70,8 @@ export const getSchemes = async (
     const sessionId: string = res.sessionID || "";
     const totalCount: number = res.total_count || 0;
     const hasMore: boolean = res.has_more || false;
-    const nextCursor: string = res.next_cursor && hasMore ? res.next_cursor : '';
+    const nextCursor: string =
+      res.next_cursor && hasMore ? res.next_cursor : "";
 
     // Check if data exists in the response
     if (res.data) {
@@ -116,19 +117,13 @@ export default function MainChat({
   const scrollableDivRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Append bot message only once
+    // Generate a bot response on first user message
     if (
       messages.length === 1 // User message exists
     ) {
-      setMessages([
-        ...messages, // Existing user messages
-        {
-          type: "bot",
-          text: "You can see the search results on the right. Please ask me any further questions about the schemes.",
-        },
-      ]);
+      fetchBotResponse(messages[0].text);
     }
-  }, [setMessages, messages]); // Minimal dependency array
+  }, [messages]); // Minimal dependency array
 
   useEffect(() => {
     handleScrollToBottom();
@@ -143,25 +138,31 @@ export default function MainChat({
     await fetchBotResponse(input);
   };
 
+  // update messages state only when the latest message is by the user
   const handleBotResponse = (response: string) => {
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { type: "bot", text: response },
-    ]);
+    setMessages((prevMessages) => {
+      const lastMsg = prevMessages[prevMessages.length - 1];
+      if (lastMsg.type == "user") {
+        return [...prevMessages, { type: "bot", text: response }];
+      }
+      return prevMessages;
+    });
   };
 
   const fetchBotResponse = async (userMessage: string) => {
     setIsBotResponseGenerating(true);
     setCurrentStreamingMessage("");
-    
+
     // Prevent chat if no valid sessionId exists
     if (!sessionId || sessionId.trim() === "") {
-      handleBotResponse("Please perform a search first before asking questions about the schemes.");
+      handleBotResponse(
+        "Please perform a search first before asking questions about the schemes."
+      );
       setIsBotResponseGenerating(false);
       setCurrentStreamingMessage("");
       return;
     }
-    
+
     try {
       const bodyParams: { [key: string]: string | string[] | boolean } = {
         message: userMessage,

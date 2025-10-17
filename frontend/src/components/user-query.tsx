@@ -73,6 +73,8 @@ export default function UserQuery({
           setSchemes([]);
         }
         setIsLoadingSchemes(false);
+      } else {
+        setIsEdit(false)
       }
     }
   };

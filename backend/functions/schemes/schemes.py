@@ -10,6 +10,7 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.auth import verify_auth_token
+from utils.json_utils import safe_json_dumps
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -67,7 +68,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
 
     if not schemes_id:
         return https_fn.Response(
-            response=json.dumps({"error": "Invalid path parameters, please provide schemes id"}),
+            response=safe_json_dumps({"error": "Invalid path parameters, please provide schemes id"}),
             status=400,
             mimetype="application/json",
             headers=headers,
@@ -76,7 +77,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
     # For warmup requests, return success immediately without querying Firestore
     if is_warmup:
         return https_fn.Response(
-            response=json.dumps({"message": "Warmup request successful"}),
+            response=safe_json_dumps({"message": "Warmup request successful"}),
             status=200,
             mimetype="application/json",
             headers=headers,
@@ -88,7 +89,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Unable to fetch scheme from firestore", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
+            response=safe_json_dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
             status=500,
             mimetype="application/json",
             headers=headers,
@@ -96,7 +97,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
 
     if not doc.exists:
         return https_fn.Response(
-            response=json.dumps({"error": "Scheme with provided id does not exist"}),
+            response=safe_json_dumps({"error": "Scheme with provided id does not exist"}),
             status=404,
             mimetype="application/json",
             headers=headers,
@@ -104,7 +105,7 @@ def schemes(req: https_fn.Request) -> https_fn.Response:
 
     results = {"data": doc.to_dict()}
     return https_fn.Response(
-        response=json.dumps(results),
+        response=safe_json_dumps(results),
         status=200,
         mimetype="application/json",
         headers=headers,

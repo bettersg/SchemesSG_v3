@@ -168,7 +168,7 @@ tags
 # ruff
 .ruff_cache
 
-
+# ml files
 backend/.env
 backend/ml_logic/schemesv2-torch-allmpp-model
 backend/ml_logic/schemesv2-torch-allmpp-model/config.json
@@ -181,6 +181,7 @@ backend/ml_logic/schemesv2-torch-allmpp-tokenizer/vocab.txt
 backend/ml_logic/schemesv2-your_embeddings.npy
 backend/ml_logic/schemesv2-your_index.faiss
 backend/functions/ml_logic/index_to_scheme_id.json
+backend/functions/ml_logic/vector_store
 
 __pycache__/
 .env
@@ -198,6 +199,7 @@ out/
 .env.test.local
 .env.production.local
 .env.prod
+!.env.example
 
 # npm debug logs
 npm-debug.log*

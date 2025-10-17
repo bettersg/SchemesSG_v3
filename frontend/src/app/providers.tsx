@@ -29,7 +29,7 @@ type ChatContextType = {
   schemes: SearchResScheme[];
   setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
   userQuery: string;
-  setUserQuery: (query: string) => void;
+  setUserQuery: React.Dispatch<React.SetStateAction<string>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);

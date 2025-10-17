@@ -11,6 +11,7 @@ from loguru import logger
 from ml_logic import PaginatedSearchParams, SearchModel
 from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.json_utils import safe_json_dumps
 
 
 def create_search_model() -> SearchModel:
@@ -42,7 +43,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
     is_valid, auth_message = verify_auth_token(req)
     if not is_valid:
         return https_fn.Response(
-            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
+            response=safe_json_dumps({"error": f"Authentication failed: {auth_message}"}),
             status=401,
             mimetype="application/json",
             headers=headers,
@@ -52,7 +53,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
 
     if not req.method == "POST":
         return https_fn.Response(
-            response=json.dumps({"error": "Invalid request method; only POST is supported"}),
+            response=safe_json_dumps({"error": "Invalid request method; only POST is supported"}),
             status=405,
             mimetype="application/json",
             headers=headers,
@@ -69,7 +70,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         filters = body.get("filters", None)
     except Exception:
         return https_fn.Response(
-            response=json.dumps({"error": "Invalid request body"}),
+            response=safe_json_dumps({"error": "Invalid request body"}),
             status=400,
             mimetype="application/json",
             headers=headers,
@@ -77,7 +78,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
 
     if query is None:
         return https_fn.Response(
-            response=json.dumps({"error": "Parameter 'query' in body is required"}),
+            response=safe_json_dumps({"error": "Parameter 'query' in body is required"}),
             status=400,
             mimetype="application/json",
             headers=headers,
@@ -96,7 +97,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
     try:
         results = search_model.predict_paginated(params)
         return https_fn.Response(
-            response=json.dumps(results),
+            response=safe_json_dumps(results),
             status=200,
             mimetype="application/json",
             headers=headers,
@@ -104,7 +105,7 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Error searching schemes", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error searching schemes"}),
+            response=safe_json_dumps({"error": "Internal server error searching schemes"}),
             status=500,
             mimetype="application/json",
             headers=headers,

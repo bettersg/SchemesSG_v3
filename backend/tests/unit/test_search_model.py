@@ -1,11 +1,8 @@
-"""Unit tests for SearchModel."""
+"""Unit tests for updated SearchModel."""
 
-import numpy as np
 import pandas as pd
 import pytest
-import torch
-import torch.nn.functional as F
-from ml_logic import SearchModel, PredictParams
+from ml_logic import PaginatedSearchParams, PredictParams, SearchModel
 
 
 @pytest.fixture(autouse=True)
@@ -13,114 +10,169 @@ def reset_search_model():
     """Reset SearchModel singleton state before each test."""
     SearchModel._instance = None
     SearchModel.initialised = False
+    SearchModel.query_cache = {}
     yield
 
 
-def test_search_model_initialization(mock_firebase_manager):
-    """Test SearchModel initialization."""
+@pytest.fixture
+def mock_firebase_manager(mocker):
+    """Create a fake FirebaseManager with Firestore client mocks."""
+    mock_firestore = mocker.MagicMock()
+    mock_firebase = mocker.MagicMock()
+    mock_firebase.firestore_client = mock_firestore
+    return mock_firebase
+
+
+def test_search_model_initialization(mock_firebase_manager, mocker):
+    """Ensure SearchModel initializes with embeddings and index."""
+    # Patch inside searchModelManager (correct import path)
+    mock_embeddings = mocker.patch("ml_logic.searchModelManager.AzureOpenAIEmbeddings", autospec=True)
+    mock_chroma_client = mocker.patch("ml_logic.searchModelManager.chromadb.PersistentClient", autospec=True)
+    mock_collection = mocker.MagicMock()
+    mock_chroma_client.return_value.get_collection.return_value = mock_collection
+
     model = SearchModel(mock_firebase_manager)
+
+    mock_embeddings.assert_called_once()
+    mock_chroma_client.assert_called_once()
     assert model.firebase_manager == mock_firebase_manager
+    assert SearchModel.index == mock_collection
+    assert SearchModel.initialised
 
 
-def test_search_model_predict(mocker, mock_firebase_manager):
-    """Test predict method."""
+def test_search_method_success(mocker, mock_firebase_manager):
+    """Test the vector search and Firestore fetch process."""
     model = SearchModel(mock_firebase_manager)
 
-    # Valid parameters
-    valid_params = PredictParams(query="test query")
+    # Mock embeddings output
+    mock_embedder = mocker.patch.object(SearchModel, "embeddings")
+    mock_embedder.embed_query.return_value = [0.1, 0.2, 0.3]
 
-    # Mock preprocessor
-    model.preprocessor = mocker.MagicMock()
-    model.preprocessor.split_query_into_needs.return_value = ["test query"]
+    # Mock Chroma index results
+    mock_index = mocker.patch.object(SearchModel, "index")
+    mock_index.query.return_value = {
+        "distances": [[0.1, 0.3]],
+        "ids": [["scheme1", "scheme2"]],
+    }
 
-    # Create a mock DataFrame with the expected structure
-    mock_df = pd.DataFrame(
+    # Mock fetch_schemes_batch
+    schemes = [
+        {"scheme_id": "scheme1", "search_booster": "Housing support grant"},
+        {"scheme_id": "scheme2", "search_booster": "Education bursary"},
+    ]
+    mocker.patch.object(model, "fetch_schemes_batch", return_value=schemes)
+
+    df = model.search("housing grant", top_k=2)
+
+    assert isinstance(df, pd.DataFrame)
+    assert "scheme_id" in df.columns
+    assert "vec_similarity_score" in df.columns
+    assert all(df["scheme_id"].isin(["scheme1", "scheme2"]))
+    assert (df["query"] == "housing grant").all()
+
+
+def test_rank_method_combines_scores(mocker, mock_firebase_manager):
+    """Ensure rank() produces valid combined_scores column."""
+    model = SearchModel(mock_firebase_manager)
+
+    data = pd.DataFrame(
         {
-            "id": [1, 2],
-            "title": ["Test Scheme 1", "Test Scheme 2"],
-            "Similarity": [0.9, 0.8],
-            "query": ["test query", "test query"],
+            "scheme_id": ["s1", "s2"],
+            "search_booster": ["Education support", "Housing grant"],
+            "vec_similarity_score": [0.8, 0.5],
         }
     )
 
-    # Mock combine_and_aggregate_results to return the DataFrame
-    model.combine_and_aggregate_results = mocker.MagicMock(return_value=mock_df)
+    mock_retriever = mocker.patch("ml_logic.searchModelManager.BM25Retriever.from_documents")
+    retriever_instance = mocker.MagicMock()
+    retriever_instance.k = 2
+    retriever_instance.get_relevant_documents.return_value = [
+        mocker.MagicMock(metadata={"id": "s1"}),
+        mocker.MagicMock(metadata={"id": "s2"}),
+    ]
+    mock_retriever.return_value = retriever_instance
 
-    result = model.predict(valid_params)
+    ranked = model.rank("education", data)
+
+    assert "bm25_score" in ranked.columns
+    assert "combined_scores" in ranked.columns
+    assert ranked["combined_scores"].max() <= 1.0
+
+
+def test_aggregate_and_rank_results_caching(mocker, mock_firebase_manager):
+    """Test that results are cached and reused."""
+    model = SearchModel(mock_firebase_manager)
+    mock_search = mocker.patch.object(model, "search")
+    mock_rank = mocker.patch.object(model, "rank")
+
+    mock_search.return_value = pd.DataFrame(
+        {"scheme_id": ["1"], "vec_similarity_score": [1.0], "search_booster": ["abc"]}
+    )
+    mock_rank.return_value = pd.DataFrame({"scheme_id": ["1"], "combined_scores": [0.9]})
+
+    # First call populates cache
+    res1 = model.aggregate_and_rank_results("abc", 5, None)
+    assert not res1.empty
+
+    # Second call uses cache (search/rank not re-invoked)
+    res2 = model.aggregate_and_rank_results("abc", 5, None)
+    mock_search.assert_called_once()
+    mock_rank.assert_called_once()
+    assert res2.equals(res1)
+
+
+def test_predict_method_saves_to_firestore(mocker, mock_firebase_manager):
+    """Test predict() returns session and triggers Firestore save."""
+    model = SearchModel(mock_firebase_manager)
+
+    # Mock aggregate_and_rank_results
+    mock_df = pd.DataFrame(
+        {
+            "scheme_id": ["s1", "s2"],
+            "combined_scores": [0.8, 0.7],
+            "query": ["education", "education"],
+        }
+    )
+    mocker.patch.object(model, "aggregate_and_rank_results", return_value=mock_df)
+
+    save_mock = mocker.patch.object(model, "save_user_query")
+
+    params = PredictParams(query="education")
+    result = model.predict(params)
 
     assert "sessionID" in result
     assert "data" in result
-    assert isinstance(result["data"], list)
     assert len(result["data"]) == 2
-    assert result["data"][0]["title"] == "Test Scheme 1"
+    save_mock.assert_called_once()
 
 
-def test_search_model_search_similar_items(mocker, mock_firebase_manager):
-    """Test search_similar_items method."""
+def test_predict_method_skips_firestore_on_warmup(mocker, mock_firebase_manager):
+    """Warmup calls must skip Firestore save."""
+    model = SearchModel(mock_firebase_manager)
+    mocker.patch.object(model, "aggregate_and_rank_results", return_value=pd.DataFrame())
+    save_mock = mocker.patch.object(model, "save_user_query")
+    params = PredictParams(query="ping", is_warmup=True)
+
+    model.predict(params)
+    save_mock.assert_not_called()
+
+
+def test_predict_paginated_basic_flow(mocker, mock_firebase_manager):
+    """Test predict_paginated basic behavior."""
     model = SearchModel(mock_firebase_manager)
 
-    # Mock the class attributes to prevent segfault
-    model.__class__.tokenizer = mocker.MagicMock()
-    model.__class__.model = mocker.MagicMock()
-    model.__class__.index = mocker.MagicMock()
-    model.__class__.index_to_scheme_id = {"0": "scheme1", "1": "scheme2"}
+    # Mock dependencies
+    mock_agg = mocker.patch.object(model, "aggregate_and_rank_results")
+    mock_agg.return_value = pd.DataFrame({"scheme_id": ["a"], "combined_scores": [0.5], "query": ["q"]})
+    mock_save = mocker.patch.object(model, "save_user_query")
+    mock_pagination = mocker.patch("ml_logic.searchModelManager.get_paginated_results")
+    mock_pagination.return_value = ([{"scheme_id": "a"}], "next123", False, 1)
 
-    # Create real PyTorch tensors for the mock data
-    token_embeddings = torch.randn(1, 3, 768)  # Batch size 1, 3 tokens, 768 dimensions
-    attention_mask = torch.ones(1, 3)  # Batch size 1, 3 tokens
+    params = PaginatedSearchParams(query="grant", limit=1)
+    result = model.predict_paginated(params)
 
-    # Mock the model output to return the token embeddings
-    model_output = mocker.MagicMock()
-    model_output.__getitem__.side_effect = (
-        lambda x: token_embeddings if x == 0 else None
-    )
-
-    # Mock the tokenizer to return the attention mask
-    encoded_input = {"attention_mask": attention_mask}
-    model.__class__.tokenizer.return_value = encoded_input
-    model.__class__.model.return_value = model_output
-
-    # Mock FAISS search results - use numpy arrays
-    distances = np.array([[0.1, 0.2]], dtype=np.float32)
-    indices = np.array([[0, 1]], dtype=np.int64)
-    model.__class__.index.search.return_value = (distances, indices)
-
-    # Mock fetch_schemes_batch
-    mock_schemes = [
-        {
-            "id": "scheme1",
-            "title": "Scheme 1",
-            "Description": "Test 1",
-            "Agency": "Agency 1",
-            "Link": "link1",
-            "scraped_text": "text1",
-            "Scheme": "Scheme 1",  # Add Scheme field as it's required
-        },
-        {
-            "id": "scheme2",
-            "title": "Scheme 2",
-            "Description": "Test 2",
-            "Agency": "Agency 2",
-            "Link": "link2",
-            "scraped_text": "text2",
-            "Scheme": "Scheme 2",  # Add Scheme field as it's required
-        },
-    ]
-    model.fetch_schemes_batch = mocker.MagicMock(return_value=mock_schemes)
-
-    # Mock torch.no_grad context
-    no_grad_mock = mocker.patch("torch.no_grad")
-    no_grad_mock.return_value.__enter__.return_value = None
-    no_grad_mock.return_value.__exit__.return_value = None
-
-    # Mock F.normalize to return a tensor that can be converted to numpy
-    normalized_tensor = torch.ones(1, 768)  # Match embedding dimensions
-    mocker.patch("torch.nn.functional.normalize", return_value=normalized_tensor)
-
-    results = model.search_similar_items("test query", "original query", 2)
-
-    assert not results.empty
-    assert "Similarity" in results.columns
-    assert "query" in results.columns
-    assert len(results) <= 2  # Should return at most 2 results
-    assert "Scheme" in results.columns  # Verify Scheme column exists
+    assert "sessionID" in result
+    assert "data" in result
+    assert "next_cursor" in result
+    assert isinstance(result["data"], list)
+    mock_save.assert_called_once()

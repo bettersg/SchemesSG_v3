@@ -10,6 +10,7 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.auth import verify_auth_token
+from utils.json_utils import safe_json_dumps
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -103,4 +104,4 @@ def retrieve_search_queries(req: https_fn.Request) -> https_fn.Response:
         )
 
     results = {"data": doc.to_dict()}
-    return https_fn.Response(response=json.dumps(results), status=200, mimetype="application/json", headers=headers)
+    return https_fn.Response(response=safe_json_dumps(results), status=200, mimetype="application/json", headers=headers)

@@ -38,12 +38,7 @@ Ensure you have the following installed:
 1. **Environment Variables and Model Files**
 Download the following required files from Google Drive (contact maintainers for access):
 - `.env` file → place in `backend/functions/`
-- `schemesv2-torch-allmpp-model/` → place in `backend/functions/ml_logic/`
-- `schemesv2-torch-allmpp-tokenizer/` → place in `backend/functions/ml_logic/`
-- Required `.npy` files → place in `backend/functions/ml_logic/`
-- Required `.faiss` files → place in `backend/functions/ml_logic/`
-
-Alternatively, you can build the model files yourself using `model-creation-transformer-faiss.ipynb`
+- Required `vector_store/` → place in `backend/functions/ml_logic/`
 
 Note: The `.env` file contains sensitive configuration for Azure OpenAI services and should never be committed to version control.
 
