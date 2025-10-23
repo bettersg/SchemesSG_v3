@@ -2,17 +2,23 @@
 import MiniChatBar from "@/components/chat-bar/mini-chat-bar";
 import MainChat from "@/components/main-chat";
 import SchemesList from "@/components/schemes/schemes-list";
-import SearchBar from "@/components/search-bar";
+import QueryBar from "@/components/query-bar";
 import UserQuery from "@/components/user-query";
 import { useRef, useState } from "react";
 import { useChat } from "./providers";
 import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
 import backgroundImageTwo from "@/assets/bg2.png";
-import Partners from "@/components/partners";
 import { FilterObjType } from "./interfaces/filter";
 import clsx from "clsx";
 import QueryPrompts from "@/components/query-prompts";
+import dynamic from "next/dynamic";
+import Partners from "@/components/partners";
+
+// lazy load about section
+const AboutSection = dynamic(() => import("@/components/about/about-section"), {
+  ssr: false,
+});
 
 export default function Home() {
   const { schemes } = useChat();
@@ -38,132 +44,143 @@ export default function Home() {
   };
 
   return (
-    <main
-      className={clsx(
-        "max-w-[1500px] h-full",
-        "relative z-10",
-        "flex flex-col items-center",
-        "p-4 sm:py-2 md:px-8 lg:px-16",
-        "xl:mx-auto"
-      )}
-    >
-      {schemes.length > 0 ? (
-        <>
-          {/* Desktop Layout */}
-          <div
-            className={clsx(
-              "overflow-hidden",
-              "max-md:flex flex-col h-full",
-              "md:grid gap-2 grid-rows-1 grid-cols-2 lg:grid-cols-[2fr_3fr]"
-            )}
-          >
-            <div className="flex md:hidden">
-              <UserQuery
-                resetFilters={resetFilters}
-                setIsLoadingSchemes={setIsLoadingSchemes}
-              />
-            </div>
-            <div className="hidden md:flex">
-              <MainChat
-                filterObj={filterObj}
-                resetFilters={resetFilters}
-                setIsLoadingSchemes={setIsLoadingSchemes}
-              />
-            </div>
-            <SchemesList
-              isLoadingSchemes={isLoadingSchemes}
-              filterObj={filterObj}
-              setFilterObj={setFilterObj}
-              nextCursor={nextCursor}
-              setNextCursor={setNextCursor}
-              selectedLocations={selectedLocations}
-              setSelectedLocations={setSelectedLocations}
-              selectedAgencies={selectedAgencies}
-              setSelectedAgencies={setSelectedAgencies}
-              resetFilters={resetFilters}
-            />
-          </div>
-
-          {/* Mobile Layout */}
-          <div
-            className={`md:hidden flex fixed bottom-0 left-0 right-0 bg-none transition-all duration-300 ease-in-out z-50
-            ${isExpanded ? "h-full" : "h-0"}`}
-          >
+    <>
+      <main
+        className={clsx(
+          "max-w-[1500px] h-full overflow-y-scroll",
+          "relative z-10",
+          "flex flex-col items-center",
+          "p-4 sm:py-2 md:px-8 lg:px-16",
+          "xl:mx-auto",
+          "bg-[linear-gradient(117deg,#EFF6FF_0%,#FFF_50%,#FAF5FF_100%)]"
+        )}
+      >
+        {schemes.length > 0 ? (
+          <>
+            {/* Desktop Layout */}
             <div
               className={clsx(
-                "w-full h-full",
-                "transition-opacity duration-300 pt-12",
-                !isExpanded && "pointer-events-none"
+                "overflow-hidden",
+                "max-md:flex flex-col h-full",
+                "md:grid gap-2 grid-rows-1 grid-cols-2 lg:grid-cols-[2fr_3fr]"
               )}
             >
-              {isExpanded && (
+              <div className="flex md:hidden">
+                <UserQuery
+                  resetFilters={resetFilters}
+                  setIsLoadingSchemes={setIsLoadingSchemes}
+                />
+              </div>
+              <div className="hidden md:flex">
                 <MainChat
                   filterObj={filterObj}
                   resetFilters={resetFilters}
-                  setIsExpanded={setIsExpanded}
                   setIsLoadingSchemes={setIsLoadingSchemes}
                 />
-              )}
-            </div>
-            <MiniChatBar
-              onExpand={() => setIsExpanded(true)}
-              isExpanded={isExpanded}
-            />
-          </div>
-        </>
-      ) : (
-        <div className="max-w-[35rem] flex flex-col items-center gap-4">
-          <div className="p-4">
-            {/* Desktop*/}
-            <div className="hidden md:block">
-              <h1 className="text-center text-4xl font-bold">
-                <span className="text-schemes-darkblue">
-                  Welcome to Schemes
-                </span>
-                <span className="text-schemes-blue">SG</span>
-              </h1>
-              <p className="text-schemes-darkblue text-center mt-6 text-lg">
-                An AI-supported search engine for public social assistance
-                schemes in Singapore.
-              </p>
+              </div>
+              <SchemesList
+                isLoadingSchemes={isLoadingSchemes}
+                filterObj={filterObj}
+                setFilterObj={setFilterObj}
+                nextCursor={nextCursor}
+                setNextCursor={setNextCursor}
+                selectedLocations={selectedLocations}
+                setSelectedLocations={setSelectedLocations}
+                selectedAgencies={selectedAgencies}
+                setSelectedAgencies={setSelectedAgencies}
+                resetFilters={resetFilters}
+              />
             </div>
 
-            {/* Mobile*/}
-            <div className="block md:hidden">
-              <h1 className="text-[32px] font-bold leading-tight">
-                <div className="text-schemes-darkblue text-center">
-                  Welcome to
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-schemes-darkblue">Schemes</span>
-                  <span className="text-schemes-blue">SG</span>
-                </div>
-              </h1>
-              <p className="text-schemes-darkblue mt-4 text-center leading-snug text-base">
-                This is an AI-supported search engine for public social
-                assistance schemes in Singapore.
-              </p>
+            {/* Mobile Layout */}
+            <div
+              className={`md:hidden flex fixed bottom-0 left-0 right-0 bg-none transition-all duration-300 ease-in-out z-50
+            ${isExpanded ? "h-full" : "h-0"}`}
+            >
+              <div
+                className={clsx(
+                  "w-full h-full",
+                  "transition-opacity duration-300 pt-12",
+                  !isExpanded && "pointer-events-none"
+                )}
+              >
+                {isExpanded && (
+                  <MainChat
+                    filterObj={filterObj}
+                    resetFilters={resetFilters}
+                    setIsExpanded={setIsExpanded}
+                    setIsLoadingSchemes={setIsLoadingSchemes}
+                  />
+                )}
+              </div>
+              <MiniChatBar
+                onExpand={() => setIsExpanded(true)}
+                isExpanded={isExpanded}
+              />
             </div>
-          </div>
-          <SearchBar searchbarRef={searchbarRef} />
-          <QueryPrompts focusSearchbar={focusSearchbar} />
-          <Partners />
-          <Image
-            src={backgroundImageOne}
-            alt="background image one"
-            className="absolute w-[35%] top-[10%] left-0 -z-10"
-            unoptimized
-            priority
-          />
-          <Image
-            src={backgroundImageTwo}
-            alt="background image two"
-            className="absolute w-[35%] top-0 right-0 -z-10"
-            unoptimized
-            priority
-          />
-        </div>
-      )}
-    </main>
+          </>
+        ) : (
+          <>
+            <div
+              className={clsx(
+                "max-w-[35rem] h-[calc(100vh-64px)] shrink-0",
+                "flex flex-col items-center gap-4"
+              )}
+            >
+              <div className="p-4">
+                {/* Desktop*/}
+                <div className="hidden md:block">
+                  <h1 className="text-center text-4xl font-bold">
+                    <span className="text-schemes-darkblue">
+                      Welcome to Schemes
+                    </span>
+                    <span className="text-schemes-blue">SG</span>
+                  </h1>
+                  <p className="text-schemes-darkblue text-center mt-6 text-2xl">
+                    An AI-supported search engine for public social assistance
+                    schemes in Singapore.
+                  </p>
+                </div>
+
+                {/* Mobile*/}
+                <div className="block md:hidden">
+                  <h1 className="text-[32px] font-bold leading-tight">
+                    <div className="text-schemes-darkblue text-center">
+                      Welcome to
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-schemes-darkblue">Schemes</span>
+                      <span className="text-schemes-blue">SG</span>
+                    </div>
+                  </h1>
+                  <p className="text-schemes-darkblue mt-4 text-center leading-snug text-lg">
+                    This is an AI-supported search engine for public social
+                    assistance schemes in Singapore.
+                  </p>
+                </div>
+
+              </div>
+              <QueryBar searchbarRef={searchbarRef} />
+              <QueryPrompts focusSearchbar={focusSearchbar} />
+              <Image
+                src={backgroundImageOne}
+                alt="background image one"
+                className="absolute w-[35%] top-[10%] left-0 -z-10"
+                unoptimized
+                priority
+              />
+              <Image
+                src={backgroundImageTwo}
+                alt="background image two"
+                className="absolute w-[35%] top-0 right-0 -z-10"
+                unoptimized
+                priority
+              />
+            </div>
+            <AboutSection />
+          </>
+        )}
+      </main>
+    </>
   );
 }
