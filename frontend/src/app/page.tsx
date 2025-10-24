@@ -13,7 +13,7 @@ import { FilterObjType } from "./interfaces/filter";
 import clsx from "clsx";
 import QueryPrompts from "@/components/query-prompts";
 import dynamic from "next/dynamic";
-import Partners from "@/components/partners";
+// import Partners from "@/components/partners";
 
 // lazy load about section
 const AboutSection = dynamic(() => import("@/components/about/about-section"), {
