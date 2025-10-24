@@ -1,18 +1,18 @@
 import { ClockIcon } from "@/assets/icons/clock-icon";
 import { SearchIcon } from "@/assets/icons/search-icon";
 import { StackIcon } from "@/assets/icons/stack-icon";
-import { Button } from "@heroui/react";
-import { useRouter } from "next/navigation";
-import StatsCard from "./stats-card";
-import Carousel from "./carousel";
-import AboutContent from "./about-content";
-import InfoCard from "./info-card";
 import { DataIcon } from "@/assets/icons/data-icon";
 import { CheckIcon } from "@/assets/icons/check-icon";
 import { AIFileIcon } from "@/assets/icons/ai-file-icon";
 import { PeopleIcon } from "@/assets/icons/people-icon";
 import { ChatIcon } from "@/assets/icons/chat-icon";
 import { RepeatIcon } from "@/assets/icons/repeat-icon";
+import { Button } from "@heroui/react";
+import { useRouter } from "next/navigation";
+import StatsCard from "./stats-card";
+import Carousel from "./carousel";
+import AboutContent from "./about-content";
+import InfoCard from "./info-card";
 import aboutusImg1 from '@/assets/about-section/about-us1.svg'
 import aboutusImg2 from '@/assets/about-section/about-us2.svg'
 import clsx from "clsx";
@@ -33,7 +33,7 @@ function AboutSection() {
             Built for the community, with the community
           </h2>
           <p className="text-base md:text-xl text-center">
-            Making Singapore's social assistance schemes{" "}
+            Making Singapore&apos;s social assistance schemes{" "}
             <span className="text-schemes-blue">easy to find</span> and{" "}
             <span className="text-schemes-blue">access</span>
           </p>
@@ -106,13 +106,13 @@ function AboutSection() {
             </InfoCard>
             <InfoCard
               title="Check for accuracy"
-              text="Entries are reviewed against primary documents to make sure the information you see is correct."
+              text="Entries are reviewed by volunteer team against source materials"
             >
               <CheckIcon className="fill-white" size={50} />
             </InfoCard>
             <InfoCard
               title="Enrich with AI"
-              text="We use web scraping and AI to fill in missing details and make scheme descriptions more complete over time."
+              text="We use AI to organise schemes details and make schemes easier to find."
             >
               <AIFileIcon className="fill-white" size={50} />
             </InfoCard>
