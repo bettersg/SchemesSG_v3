@@ -19,7 +19,19 @@ const config: Config = {
         "schemes-lightblue": "#D9E8FF",
         "schemes-darkblue": "#171347",
       },
-    }
+      keyframes: {
+        slide: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(100%)" },
+        },
+      },
+      animation: {
+        slide: "slide 15s linear forwards infinite",
+      },
+    },
+  },
+  future: {
+    hoverOnlyWhenSupported: true
   },
   plugins: [heroui()],
 };

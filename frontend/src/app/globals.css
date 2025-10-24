@@ -5,7 +5,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  
+
   .successMessage {
     background-color: #ecfdf5;
     color: #047857;
@@ -31,8 +31,29 @@ body {
   background: var(--background);
 }
 
+.faded-element {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    theme("colors.schemes-lightblue") 20%,
+    theme("colors.schemes-lightblue") 80%,
+    transparent 100%
+  );
+  /* For WebKit browsers, use the prefixed version */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    theme("colors.schemes-lightblue") 20%,
+    theme("colors.schemes-lightblue") 80%,
+    transparent 100%
+  );
+}
+
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .animation-paused div {
+    animation-play-state: paused;
+  }
+  .animation-play div {
+    animation-play-state: running;
   }
 }
