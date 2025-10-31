@@ -1,5 +1,5 @@
 "use client";
-import logoImg from "@/assets/logo.jpg";
+import logoImg from "@/assets/logo.svg";
 import {
   Navbar,
   NavbarBrand,
@@ -27,7 +27,6 @@ export default function MainHeader() {
 
   const navbarItems: NavbarItem[] = [
     { label: "Home", href: "/" },
-    { label: "About", href: "/about" },
     { label: "Feedback", href: "/feedback" },
     { label: "Contribute", href: "/contribute" },
   ];
@@ -37,7 +36,7 @@ export default function MainHeader() {
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
       classNames={{
-        base: "bg-white",
+        base: "bg-white shadow-sm",
         wrapper: "px-4 sm:px-6",
         item: [
           "flex",
@@ -75,8 +74,7 @@ export default function MainHeader() {
             <Image
               src={logoImg}
               alt="Schemes SG logo"
-              width={120}
-              height={30}
+              width={160}
               unoptimized
               priority
             />

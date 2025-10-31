@@ -1,13 +1,13 @@
 import { useChat } from "@/app/providers";
 import { Button, Spinner, Textarea } from "@heroui/react";
-import { FocusEvent, MutableRefObject, useState } from "react";
+import { MutableRefObject, useState } from "react";
 import { SearchIcon } from "../assets/icons/search-icon";
 import { getSchemes } from "./main-chat";
 
-interface SearchBarProps {
+interface QueryBarProps {
   searchbarRef: MutableRefObject<HTMLTextAreaElement | null>;
 }
-export default function SearchBar({ searchbarRef }: SearchBarProps) {
+export default function QueryBar({ searchbarRef }: QueryBarProps) {
   const LABEL =
     "Let us know how we can help you. Please give us more details on which schemes best suit your needs.";
   const DESCRIPTION = "Please avoid providing identifiable information.";
@@ -25,12 +25,6 @@ export default function SearchBar({ searchbarRef }: SearchBarProps) {
   } = useChat();
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
-
-  const scrollToView = (e: FocusEvent<HTMLInputElement, Element>) => {
-    if (e.target) {
-      e.target.scrollIntoView({ behavior: "smooth", inline: "nearest" });
-    }
-  };
 
   const handleSend = async () => {
     if (userQuery.trim()) {
@@ -68,7 +62,6 @@ export default function SearchBar({ searchbarRef }: SearchBarProps) {
       <Textarea
         value={userQuery}
         onChange={(e) => setUserQuery(e.target.value)}
-        onFocus={scrollToView}
         onKeyDown={async (e) => {
           if (e.key === "Enter" && !isBotResponseGenerating) {
             e.preventDefault();
@@ -77,8 +70,10 @@ export default function SearchBar({ searchbarRef }: SearchBarProps) {
         }}
         ref={searchbarRef}
         classNames={{
-          input: "placeholder:italic placeholder:text-black/20",
-          label: "font-semibold",
+          input:
+            "placeholder:text-base placeholder:italic placeholder:text-black/20 text-base",
+          label: "text-base md:text-lg font-semibold",
+          description: "text-base",
         }}
         type="text"
         size="md"
