@@ -1,8 +1,8 @@
-import AnimatedCard from "./animated-card";
+import StyledCard from "./styled-card";
 
 function StatsCard({ title, subtitle, children }) {
   return (
-    <AnimatedCard className=" rounded-md">
+    <StyledCard>
       <div className="flex flex-col gap-4 justify-center items-center">
         {children}
         <div className="flex flex-col gap-2 items-center text-center">
@@ -10,7 +10,7 @@ function StatsCard({ title, subtitle, children }) {
           <p className="text-base md:text-xl">{subtitle}</p>
         </div>
       </div>
-    </AnimatedCard>
+    </StyledCard>
   );
 }
 

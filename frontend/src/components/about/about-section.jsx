@@ -1,5 +1,4 @@
-import { ClockIcon } from "@/assets/icons/clock-icon";
-import { SearchIcon } from "@/assets/icons/search-icon";
+import { ShieldIcon } from "@/assets/icons/shield-icon";
 import { StackIcon } from "@/assets/icons/stack-icon";
 import { DataIcon } from "@/assets/icons/data-icon";
 import { CheckIcon } from "@/assets/icons/check-icon";
@@ -42,11 +41,11 @@ function AboutSection() {
           <StatsCard title="400+" subtitle="social schemes listed">
             <StackIcon size={50} className="fill-schemes-blue" />
           </StatsCard>
-          <StatsCard title="5000+" subtitle="queries since 2020">
-            <SearchIcon size={50} className="fill-schemes-blue" />
+          <StatsCard title="300+" subtitle="users monthly">
+            <PeopleIcon size={50} className="fill-schemes-blue" />
           </StatsCard>
-          <StatsCard title="24/7" subtitle="available">
-            <ClockIcon size={50} className="fill-schemes-blue" />
+          <StatsCard title="privacy-first" subtitle="secure and anonymous chat">
+            <ShieldIcon size={50} className="fill-schemes-blue" />
           </StatsCard>
         </div>
       </section>
