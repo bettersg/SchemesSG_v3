@@ -35,7 +35,7 @@ export default function RootLayout({
             <ChatProvider>
               <div className="h-screen flex flex-col">
                 <MainHeader />
-                <div className="h-[calc(100vh-64px)]">{children}</div>
+                <div className="h-[calc(100vh-64px)] bg-[linear-gradient(117deg,#EFF6FF_0%,#FFF_50%,#FAF5FF_100%)] overflow-y-scroll">{children}</div>
                 {/* <Footer /> */}
               </div>
             </ChatProvider>

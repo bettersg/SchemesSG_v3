@@ -100,7 +100,6 @@ export default function SchemesList({
   // load more schemes when bottom of list reached
   useEffect(() => {
     if (bottomReached && nextCursor) {
-      console.log("loading");
       loadMoreSchemes()
     }
   }, [bottomReached]);

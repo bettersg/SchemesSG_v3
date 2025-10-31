@@ -57,7 +57,7 @@ function AboutSection() {
       </section>
       <section
         className={clsx(
-          "flex flex-col items-center gap-12",
+          "flex flex-col items-center gap-4",
           "py-6 sm:py-9 md:py-12"
         )}
       >
