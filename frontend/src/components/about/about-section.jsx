@@ -142,8 +142,7 @@ function AboutSection() {
             Contact Us
           </h2>
           <p className="text-base md:text-xl text-center">
-            Have a question about Schemes.sg? Get in touch with us at
-            contact@schemes.sg or send us your feedback using the form below.
+            Have a question about Schemes.sg?
           </p>
           <Button
             color="primary"
@@ -159,3 +158,4 @@ function AboutSection() {
 }
 
 export default AboutSection;
+
