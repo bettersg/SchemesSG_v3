@@ -1,0 +1,4 @@
+READ ME
+Edit the credential key on line 9 (cred)
+Currently still WIP for "hello_pub/sub" hence it is commented out
+Ensure the correct collection is reflected at line 39 (docs)
