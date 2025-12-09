@@ -1,11 +1,12 @@
 FROM python:3.10-slim AS schemessg-backend
 
-# Install Node.js and npm
+# Install Node.js, npm, and Java (required for Firestore emulator)
 RUN apt-get update && apt-get install -y \
     curl \
     nodejs \
     npm \
     python3-venv \
+    default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Firebase CLI globally
