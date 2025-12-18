@@ -78,10 +78,22 @@ def upsert_source_doc(doc_id: str, data: Dict[str, str]) -> Dict[str, str]:
     existing_data = existing_doc.to_dict() if existing_doc.exists else {}
     
     # Merge new data with existing data (new values override existing ones)
+    # Include all fields from architecture diagram
     merged_data = {
         "scheme_name": data.get("scheme_name", existing_data.get("scheme_name", "")),
         "scheme_url": data.get("scheme_url", existing_data.get("scheme_url", "")),
         "scraped_text": data.get("scraped_text", existing_data.get("scraped_text", "")),
+        # Enhanced fields
+        "agency": data.get("agency", existing_data.get("agency", "")),
+        "image_url": data.get("image_url", existing_data.get("image_url", "")),
+        "phone": data.get("phone", existing_data.get("phone", "")),
+        "address": data.get("address", existing_data.get("address", "")),
+        "who_is_it_for": data.get("who_is_it_for", existing_data.get("who_is_it_for", "")),
+        "what_it_gives": data.get("what_it_gives", existing_data.get("what_it_gives", "")),
+        "scheme_type": data.get("scheme_type", existing_data.get("scheme_type", "")),
+        "llm_description": data.get("llm_description", existing_data.get("llm_description", "")),
+        "eligibility": data.get("eligibility", existing_data.get("eligibility", "")),
+        "how_to_apply": data.get("how_to_apply", existing_data.get("how_to_apply", "")),
     }
     
     # Use set with merge=True for upsert operation

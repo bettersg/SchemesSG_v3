@@ -13,7 +13,12 @@ The following endpoints are available:
    - feedback: Submit user feedback
    - update_scheme: Submit new schemes or request edits
 
-3. System:
+3. Slack Integration:
+   - slack_trigger_message: Trigger a Slack review message for a specific document
+   - slack_scan_and_notify: Scan source documents and post review messages for new items
+   - slack_interactive: Handle Slack interactive component events (buttons, modals)
+
+4. System:
    - health: Health check endpoint
    - keep_endpoints_warm: Scheduled task to reduce cold starts
 
@@ -41,6 +46,11 @@ from loguru import logger
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401
 from schemes.search_queries import retrieve_search_queries  # noqa: F401
+from slack_integration.slack import (  # noqa: F401
+    slack_interactive,
+    slack_scan_and_notify,
+    slack_trigger_message,
+)
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 from utils.endpoints import keep_endpoints_warm  # noqa: F401
 
