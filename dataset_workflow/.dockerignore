@@ -1,8 +1,0 @@
-/notebooks
-/__pycache__
-.env
-*.env
-**/*.pyc
-**/__pycache__
-.pytest_cache
-*.pyc

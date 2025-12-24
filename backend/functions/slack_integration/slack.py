@@ -186,10 +186,22 @@ def slack_scan_and_notify(req: https_fn.Request) -> https_fn.Response:
             if not doc_id or doc_id in notified:
                 continue
             
+            # Build data object with all fields matching slack_trigger_message
             data = {
                 "scheme_name": row.get("scheme_name", ""),
                 "scheme_url": row.get("scheme_url", ""),
                 "scraped_text": row.get("scraped_text", ""),
+                # Enhanced fields for full data model
+                "agency": row.get("agency", ""),
+                "image_url": row.get("image_url", ""),
+                "phone": row.get("phone", ""),
+                "address": row.get("address", ""),
+                "who_is_it_for": row.get("who_is_it_for", ""),
+                "what_it_gives": row.get("what_it_gives", ""),
+                "scheme_type": row.get("scheme_type", ""),
+                "llm_description": row.get("llm_description", row.get("scraped_text", "")),
+                "eligibility": row.get("eligibility", ""),
+                "how_to_apply": row.get("how_to_apply", ""),
             }
             
             payload = build_review_message(doc_id, data)
