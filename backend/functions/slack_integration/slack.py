@@ -28,6 +28,14 @@ from slack_integration.storage import (
     upsert_source_doc,
 )
 
+# New scheme approval imports
+from new_scheme.new_scheme_blocks import build_new_scheme_review_modal
+from new_scheme.approval_handler import (
+    handle_new_scheme_approval,
+    handle_new_scheme_rejection,
+    get_processed_data_from_entry,
+)
+
 
 def get_slack_client() -> WebClient:
     """
@@ -186,22 +194,10 @@ def slack_scan_and_notify(req: https_fn.Request) -> https_fn.Response:
             if not doc_id or doc_id in notified:
                 continue
             
-            # Build data object with all fields matching slack_trigger_message
             data = {
                 "scheme_name": row.get("scheme_name", ""),
                 "scheme_url": row.get("scheme_url", ""),
                 "scraped_text": row.get("scraped_text", ""),
-                # Enhanced fields for full data model
-                "agency": row.get("agency", ""),
-                "image_url": row.get("image_url", ""),
-                "phone": row.get("phone", ""),
-                "address": row.get("address", ""),
-                "who_is_it_for": row.get("who_is_it_for", ""),
-                "what_it_gives": row.get("what_it_gives", ""),
-                "scheme_type": row.get("scheme_type", ""),
-                "llm_description": row.get("llm_description", row.get("scraped_text", "")),
-                "eligibility": row.get("eligibility", ""),
-                "how_to_apply": row.get("how_to_apply", ""),
             }
             
             payload = build_review_message(doc_id, data)
@@ -351,27 +347,184 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     status=200,
                     headers=headers,
                 )
-            
+
+            # Handle new scheme review button
+            if action.get("action_id") == "review_new_scheme":
+                entry_doc_id = action.get("value")
+                trigger_id = event.get("trigger_id")
+
+                logger.info(f"Opening new scheme review modal for entry: {entry_doc_id}")
+
+                # Get processed data from schemeEntries
+                processed_data = get_processed_data_from_entry(entry_doc_id)
+
+                # Build metadata for modal
+                container = event.get("container", {})
+                metadata = {
+                    "doc_id": entry_doc_id,
+                    "channel": container.get("channel_id"),
+                    "message_ts": container.get("message_ts"),
+                    "type": "new_scheme",  # Distinguish from regular scheme review
+                }
+
+                # Open new scheme review modal
+                modal_view = build_new_scheme_review_modal(json.dumps(metadata), processed_data)
+                try:
+                    result = slack_client.views_open(trigger_id=trigger_id, view=modal_view)
+                    logger.info(f"New scheme modal opened: {result.get('ok', False)}")
+                except SlackApiError as e:
+                    error_detail = e.response.data if e.response else str(e)
+                    logger.error(f"Failed to open new scheme modal: {e.response['error'] if e.response else str(e)}")
+                    logger.error(f"Slack error details: {error_detail}")
+                    logger.debug(f"Modal view that failed: {json.dumps(modal_view, indent=2)}")
+
+                return https_fn.Response(
+                    response="",
+                    status=200,
+                    headers=headers,
+                )
+
+            # Handle new scheme rejection button
+            if action.get("action_id") == "reject_new_scheme":
+                entry_doc_id = action.get("value")
+                reviewer_id = event.get("user", {}).get("id", "")
+                container = event.get("container", {})
+                channel_id = container.get("channel_id")
+                message_ts = container.get("message_ts")
+
+                logger.info(f"Rejecting new scheme entry: {entry_doc_id}")
+
+                handle_new_scheme_rejection(
+                    slack_client=slack_client,
+                    entry_doc_id=entry_doc_id,
+                    channel_id=channel_id,
+                    message_ts=message_ts,
+                    reviewer_id=reviewer_id,
+                    reason=None,  # Could add a modal for rejection reason
+                )
+
+                return https_fn.Response(
+                    response="",
+                    status=200,
+                    headers=headers,
+                )
+
+            # Handle preview image button in new scheme modal
+            if action.get("action_id") == "preview_image_button":
+                view = event.get("view", {})
+                view_id = view.get("id")
+                state = view.get("state", {}).get("values", {})
+
+                # Get the new image URL from the input field
+                new_image_url = state.get("image_url_block", {}).get("image_url", {}).get("value", "")
+
+                logger.info(f"Preview image button clicked, new URL: {new_image_url[:50] if new_image_url else 'empty'}...")
+
+                # Find and update the image block in the current view
+                blocks = view.get("blocks", [])
+                updated_blocks = []
+                image_block_exists = False
+
+                for block in blocks:
+                    if block.get("block_id") == "image_preview_block":
+                        image_block_exists = True
+                        if new_image_url:
+                            # Update existing image block
+                            updated_blocks.append({
+                                "type": "image",
+                                "block_id": "image_preview_block",
+                                "image_url": new_image_url[:2000],
+                                "alt_text": "Image preview"
+                            })
+                        # If no URL, skip the image block (remove it)
+                    elif block.get("block_id") == "image_url_block" and not image_block_exists and new_image_url:
+                        # Insert image block before the URL input if it doesn't exist yet
+                        updated_blocks.append({
+                            "type": "image",
+                            "block_id": "image_preview_block",
+                            "image_url": new_image_url[:2000],
+                            "alt_text": "Image preview"
+                        })
+                        updated_blocks.append(block)
+                    else:
+                        updated_blocks.append(block)
+
+                # If image URL provided but no image block was added yet, add it before image_url_block
+                if new_image_url and not any(b.get("block_id") == "image_preview_block" for b in updated_blocks):
+                    final_blocks = []
+                    for block in updated_blocks:
+                        if block.get("block_id") == "image_url_block":
+                            final_blocks.append({
+                                "type": "image",
+                                "block_id": "image_preview_block",
+                                "image_url": new_image_url[:2000],
+                                "alt_text": "Image preview"
+                            })
+                        final_blocks.append(block)
+                    updated_blocks = final_blocks
+
+                # Update the modal view
+                try:
+                    updated_view = {
+                        "type": view.get("type"),
+                        "callback_id": view.get("callback_id"),
+                        "title": view.get("title"),
+                        "submit": view.get("submit"),
+                        "close": view.get("close"),
+                        "private_metadata": view.get("private_metadata"),
+                        "blocks": updated_blocks
+                    }
+                    slack_client.views_update(view_id=view_id, view=updated_view)
+                    logger.info("Modal updated with new image preview")
+                except SlackApiError as e:
+                    logger.error(f"Failed to update modal with image preview: {e.response['error'] if e.response else str(e)}")
+
+                return https_fn.Response(
+                    response="",
+                    status=200,
+                    headers=headers,
+                )
+
             return https_fn.Response(
                 response="",
                 status=200,
                 headers=headers,
             )
-        
+
         # Handle modal submissions (view_submission)
         if etype == "view_submission":
             view = event.get("view", {})
+            callback_id = view.get("callback_id", "")
             metadata_raw = view.get("private_metadata") or "{}"
-            
+
             try:
                 metadata = json.loads(metadata_raw)
             except json.JSONDecodeError:
                 metadata = {"doc_id": metadata_raw}
-            
+
+            # Handle new scheme approval submission
+            if callback_id == "new_scheme_approval_submit":
+                entry_doc_id = metadata.get("doc_id", "")
+                logger.info(f"Processing new scheme approval for: {entry_doc_id}")
+
+                result = handle_new_scheme_approval(
+                    slack_client=slack_client,
+                    event=event,
+                    entry_doc_id=entry_doc_id,
+                )
+
+                return https_fn.Response(
+                    response=json.dumps(result),
+                    status=200,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
+            # Handle existing scheme review submission (callback_id = "review_submit")
             doc_id = metadata.get("doc_id", "")
             channel_id = metadata.get("channel")
             message_ts = metadata.get("message_ts")
-            
+
             # Get existing document to preserve scheme_url
             existing = get_source_doc(doc_id) or {}
             
