@@ -18,7 +18,11 @@ The following endpoints are available:
    - slack_scan_and_notify: Scan source documents and post review messages for new items
    - slack_interactive: Handle Slack interactive component events (buttons, modals)
 
-4. System:
+4. New Scheme Processing (Firestore Triggers):
+   - on_new_scheme_entry: Triggered on schemeEntries document creation, runs pipeline steps 1-4
+     (scraping, LLM extraction, planning area), then posts to Slack for human review
+
+5. System:
    - health: Health check endpoint
    - keep_endpoints_warm: Scheduled task to reduce cold starts
 
@@ -53,6 +57,7 @@ from slack_integration.slack import (  # noqa: F401
 )
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 from utils.endpoints import keep_endpoints_warm  # noqa: F401
+from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
 
 
 # Initialise logger
@@ -60,9 +65,8 @@ logger.remove()
 logger.add(
     sys.stdout,
     level="INFO",
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
+    format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
     colorize=True,
-    backtrace=True,
 )
 logger.info("Logger initialised")
 
