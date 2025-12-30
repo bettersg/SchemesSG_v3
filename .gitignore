@@ -169,6 +169,11 @@ tags
 # ruff
 .ruff_cache
 
+# Firestore data exports (don't commit production/dev data)
+backend/prod_schemes_data.json
+backend/dev_schemes_data.json
+backend/firestore-backup/
+
 # ml files
 backend/.env
 backend/ml_logic/schemesv2-torch-allmpp-model
