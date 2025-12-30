@@ -587,7 +587,7 @@ def build_new_scheme_duplicate_message(
     """
     scheme_name = submission_data.get("Scheme", "Unknown")
     scheme_url = submission_data.get("Link", "")
-    domain = duplicate_info.get("domain", "")
+    normalized_url = duplicate_info.get("normalized_url", "")
     existing_scheme_name = duplicate_info.get("scheme", "")
     existing_url = duplicate_info.get("link", "")
 
@@ -596,20 +596,20 @@ def build_new_scheme_duplicate_message(
         "blocks": [
             {
                 "type": "header",
-                "text": {"type": "plain_text", "text": "Scheme Already Exists", "emoji": True}
+                "text": {"type": "plain_text", "text": "Duplicate URL Detected", "emoji": True}
             },
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f":no_entry: *This scheme was not added because it already exists in the database.*"
+                    "text": f":no_entry: *This scheme was not added because the same URL already exists in the database.*"
                 }
             },
             {
                 "type": "section",
                 "fields": [
                     {"type": "mrkdwn", "text": f"*Submitted URL:*\n<{scheme_url}|{scheme_url}>"},
-                    {"type": "mrkdwn", "text": f"*Domain:*\n`{domain}`"}
+                    {"type": "mrkdwn", "text": f"*Normalized:*\n`{normalized_url}`"}
                 ]
             },
             {"type": "divider"},

@@ -90,10 +90,10 @@ def on_new_scheme_entry(event: firestore_fn.Event[DocumentSnapshot]) -> None:
         entry_ref = db.collection("schemeEntries").document(doc_id)
         entry_ref.update({
             "pipeline_status": "duplicate",
-            "pipeline_error": f"A scheme from this domain already exists: {duplicate['scheme']} ({duplicate['link']})",
+            "pipeline_error": f"This URL already exists: {duplicate['scheme']} ({duplicate['link']})",
             "duplicate_scheme_id": duplicate["doc_id"],
             "duplicate_scheme_name": duplicate["scheme"],
-            "duplicate_domain": duplicate["domain"],
+            "duplicate_normalized_url": duplicate["normalized_url"],
         })
 
         # Post to Slack with duplicate warning
