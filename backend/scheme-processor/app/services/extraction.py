@@ -22,7 +22,7 @@ class ContactInfo:
     addresses: List[str] = field(default_factory=list)
 
 
-def extract_contacts(text: str) -> ContactInfo:
+def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
     """
     Extract contact information using regex patterns.
 
@@ -30,6 +30,7 @@ def extract_contacts(text: str) -> ContactInfo:
 
     Args:
         text: Raw text content to extract contacts from
+        max_text_length: Maximum text length to process (prevents ReDoS)
 
     Returns:
         ContactInfo with extracted emails, phones, and addresses
@@ -37,8 +38,14 @@ def extract_contacts(text: str) -> ContactInfo:
     if not text:
         return ContactInfo()
 
-    # Email regex - standard pattern
-    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    # Truncate text to prevent ReDoS attacks with crafted input
+    if len(text) > max_text_length:
+        logger.warning(f"Text truncated from {len(text)} to {max_text_length} chars for contact extraction")
+        text = text[:max_text_length]
+
+    # Email regex - optimized to prevent catastrophic backtracking
+    # Uses {1,64} limits instead of unbounded + quantifiers
+    email_pattern = r'[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,10}'
     emails = re.findall(email_pattern, text)
     # Filter out common false positives (image/asset file extensions)
     invalid_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.css', '.js', '.ico')
