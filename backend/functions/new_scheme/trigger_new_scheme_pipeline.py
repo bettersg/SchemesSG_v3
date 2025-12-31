@@ -2,25 +2,51 @@
 Firestore Trigger for New Scheme Entries.
 
 Triggers when a new document is created in schemeEntries collection.
-Runs the processing pipeline (steps 1-4) and posts to Slack for human review.
+Calls the scheme-processor Cloud Run service for processing.
 """
 import os
 import json
 from datetime import datetime, timezone
 
+import requests
+import google.auth
+import google.auth.transport.requests
+from google.oauth2 import service_account
 from firebase_functions import firestore_fn, options
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
 from slack_sdk.web import WebClient
-from slack_sdk.errors import SlackApiError
 from loguru import logger
 
-from new_scheme.pipeline_runner import run_scheme_processing_pipeline
-from new_scheme.new_scheme_blocks import (
-    build_new_scheme_review_message,
-    build_new_scheme_duplicate_message,
-)
+from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message
 from new_scheme.url_utils import check_duplicate_scheme
+from utils.json_utils import safe_json_dumps
+
+# URL for scheme-processor service
+# In local dev: http://scheme-processor:8081 (docker network)
+# In production: Cloud Run URL
+PROCESSOR_SERVICE_URL = os.getenv("PROCESSOR_SERVICE_URL", "http://localhost:8081")
+
+
+def get_identity_token(audience: str) -> str:
+    """Get identity token for Cloud Run authentication."""
+    # Try to get credentials from GOOGLE_APPLICATION_CREDENTIALS (service account)
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if creds_path and os.path.exists(creds_path):
+        credentials = service_account.IDTokenCredentials.from_service_account_file(
+            creds_path,
+            target_audience=audience
+        )
+        auth_req = google.auth.transport.requests.Request()
+        credentials.refresh(auth_req)
+        return credentials.token
+
+    # Fallback to Application Default Credentials (works on GCP)
+    credentials, _ = google.auth.default()
+    credentials = credentials.with_target_audience(audience)
+    auth_req = google.auth.transport.requests.Request()
+    credentials.refresh(auth_req)
+    return credentials.token
 
 
 def get_slack_client() -> WebClient:
@@ -39,28 +65,26 @@ def get_slack_channel() -> str:
     return channel
 
 
-@firestore_fn.on_document_created(
-    document="schemeEntries/{docId}",
-    region="asia-southeast1",
-    memory=options.MemoryOption.GB_2,  # Need more memory for scraping/LLM
-    timeout_sec=540,  # 9 minutes max for pipeline processing
-)
-def on_new_scheme_entry(event: firestore_fn.Event[DocumentSnapshot]) -> None:
+def process_new_scheme_entry(doc_id: str, data: dict) -> None:
     """
-    Triggered when a new document is created in schemeEntries collection.
+    Process a new scheme entry by calling Cloud Run service.
 
-    Pipeline:
-    1. Run scraping on submitted URL
-    2. Extract LLM fields (description, eligibility, who_is_it_for, etc.)
-    3. Extract planning area from address
-    4. Post processed data to Slack for human review
+    In local dev: calls local Docker container (scheme-processor:8081)
+    In production: calls Cloud Run endpoint
 
-    Skips ChromaDB/model artifact steps (5-7).
+    The scheme-processor service handles:
+    1. Web scraping with crawl4ai + Playwright
+    2. LLM field extraction
+    3. Contact extraction (regex)
+    4. Planning area lookup
+    5. Firestore update
+    6. Slack posting
+
+    Args:
+        doc_id: Document ID from schemeEntries
+        data: Document data
     """
-    doc_id = event.params["docId"]
-    data = event.data.to_dict() if event.data else {}
-
-    logger.info(f"New scheme entry created: {doc_id}")
+    logger.info(f"Processing scheme entry: {doc_id}")
     logger.info(f"Data: {json.dumps(data, default=str)[:500]}")
 
     # Check if this is a warmup or test entry
@@ -79,11 +103,11 @@ def on_new_scheme_entry(event: firestore_fn.Event[DocumentSnapshot]) -> None:
         logger.info(f"Entry already processed: {doc_id}")
         return
 
-    # Check for duplicate domain
+    # Check for duplicate URL (keep this in Firebase Functions for speed)
     link = data.get("Link", "")
     duplicate = check_duplicate_scheme(link)
     if duplicate:
-        logger.warning(f"Duplicate domain detected for {doc_id}: {duplicate}")
+        logger.warning(f"Duplicate URL detected for {doc_id}: {duplicate}")
 
         # Update schemeEntries with duplicate status
         db = firestore.client()
@@ -100,110 +124,66 @@ def on_new_scheme_entry(event: firestore_fn.Event[DocumentSnapshot]) -> None:
         post_duplicate_to_slack(doc_id, data, duplicate)
         return
 
+    # Call scheme-processor Cloud Run service
+    logger.info(f"Calling scheme-processor for {doc_id} at {PROCESSOR_SERVICE_URL}")
     try:
-        # Update status to processing
-        db = firestore.client()
-        entry_ref = db.collection("schemeEntries").document(doc_id)
-        entry_ref.update({
-            "pipeline_status": "processing",
-            "pipeline_started_at": datetime.now(timezone.utc).isoformat()
-        })
+        # Serialize data to JSON string first to handle datetime objects, then parse back
+        serialized_data = json.loads(safe_json_dumps(data))
 
-        # Run the processing pipeline (steps 1-4)
-        logger.info(f"Running pipeline for {doc_id}")
-        processed_data = run_scheme_processing_pipeline(doc_id, data)
+        # Get identity token for Cloud Run auth (skip for local dev http URLs)
+        headers = {"Content-Type": "application/json"}
+        if PROCESSOR_SERVICE_URL.startswith("https://"):
+            try:
+                token = get_identity_token(PROCESSOR_SERVICE_URL)
+                headers["Authorization"] = f"Bearer {token}"
+                logger.info(f"Got identity token for Cloud Run auth (token length: {len(token)})")
+            except Exception as auth_error:
+                logger.error(f"Failed to get identity token: {auth_error}")
 
-        # Store processed data in the document
-        update_data = {
-            "pipeline_status": processed_data.get("processing_status", "completed"),
-            "pipeline_completed_at": datetime.now(timezone.utc).isoformat(),
-            "scraped_text": processed_data.get("scraped_text", ""),
-            "llm_fields": processed_data.get("llm_fields", {}),
-            "planning_area": processed_data.get("planning_area"),
-            "logo_url": processed_data.get("logo_url"),
-        }
-
-        if processed_data.get("error"):
-            update_data["pipeline_error"] = processed_data["error"]
-
-        entry_ref.update(update_data)
-        logger.info(f"Pipeline completed for {doc_id}, status: {processed_data.get('processing_status')}")
-
-        # Post to Slack for human review
-        post_to_slack_for_review(doc_id, processed_data, entry_ref)
-
-    except Exception as e:
-        logger.error(f"Pipeline error for {doc_id}: {e}")
-
-        # Update status to failed
-        try:
-            db = firestore.client()
-            entry_ref = db.collection("schemeEntries").document(doc_id)
-            entry_ref.update({
-                "pipeline_status": "failed",
-                "pipeline_error": str(e),
-                "pipeline_failed_at": datetime.now(timezone.utc).isoformat()
-            })
-        except Exception as update_error:
-            logger.error(f"Failed to update error status: {update_error}")
-
-        # Still try to post to Slack with error info
-        try:
-            error_data = {
+        response = requests.post(
+            f"{PROCESSOR_SERVICE_URL}/process",
+            json={
                 "doc_id": doc_id,
                 "scheme_name": data.get("Scheme", "Unknown"),
                 "scheme_url": data.get("Link", ""),
-                "scraped_text": f"Pipeline Error: {str(e)}",
-                "llm_fields": {},
-                "planning_area": None,
-                "original_data": data,
-                "processing_status": "failed",
-                "error": str(e)
-            }
-            post_to_slack_for_review(doc_id, error_data, None)
-        except Exception as slack_error:
-            logger.error(f"Failed to post error to Slack: {slack_error}")
+                "original_data": serialized_data
+            },
+            headers=headers,
+            timeout=300  # 5 minute timeout
+        )
+        response.raise_for_status()
+
+        result = response.json()
+        logger.info(f"Scheme-processor result for {doc_id}: {result}")
+
+        if not result.get("success"):
+            logger.error(f"Scheme-processor failed for {doc_id}: {result.get('error')}")
+
+    except requests.exceptions.Timeout:
+        logger.error(f"Scheme-processor timeout for {doc_id}")
+        _update_error_status(doc_id, "Processing timeout - service did not respond in time")
+
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Scheme-processor connection error for {doc_id}: {e}")
+        _update_error_status(doc_id, f"Could not connect to processor service: {e}")
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Scheme-processor error for {doc_id}: {e}")
+        _update_error_status(doc_id, str(e))
 
 
-def post_to_slack_for_review(
-    doc_id: str,
-    processed_data: dict,
-    entry_ref=None
-) -> None:
-    """
-    Post processed scheme data to Slack for human review.
-
-    Args:
-        doc_id: Document ID from schemeEntries
-        processed_data: Result from run_scheme_processing_pipeline
-        entry_ref: Firestore document reference (for updating slack_ts)
-    """
+def _update_error_status(doc_id: str, error_msg: str) -> None:
+    """Update schemeEntries with error status."""
     try:
-        slack_client = get_slack_client()
-        channel = get_slack_channel()
-
-        # Build Slack message
-        message = build_new_scheme_review_message(doc_id, processed_data)
-
-        # Post to Slack
-        response = slack_client.chat_postMessage(channel=channel, **message)
-
-        logger.info(f"Posted to Slack for {doc_id}, ts: {response.get('ts')}")
-
-        # Store Slack message reference for later updates
-        if entry_ref and response.get("ok"):
-            entry_ref.update({
-                "slack_channel": channel,
-                "slack_message_ts": response.get("ts"),
-                "slack_notified_at": datetime.now(timezone.utc).isoformat()
-            })
-
-    except SlackApiError as e:
-        logger.error(f"Slack API error for {doc_id}: {e.response['error'] if e.response else str(e)}")
-        raise
+        db = firestore.client()
+        entry_ref = db.collection("schemeEntries").document(doc_id)
+        entry_ref.update({
+            "pipeline_status": "failed",
+            "pipeline_error": error_msg,
+            "pipeline_failed_at": datetime.now(timezone.utc).isoformat()
+        })
     except Exception as e:
-        logger.error(f"Failed to post to Slack for {doc_id}: {e}")
-        raise
+        logger.error(f"Failed to update error status for {doc_id}: {e}")
 
 
 def post_duplicate_to_slack(doc_id: str, data: dict, duplicate_info: dict) -> None:
@@ -225,3 +205,22 @@ def post_duplicate_to_slack(doc_id: str, data: dict, duplicate_info: dict) -> No
         logger.info(f"Posted duplicate warning to Slack for {doc_id}")
     except Exception as e:
         logger.error(f"Failed to post duplicate warning to Slack: {e}")
+
+
+@firestore_fn.on_document_created(
+    document="schemeEntries/{docId}",
+    region="asia-southeast1",
+    memory=options.MemoryOption.GB_1,  # Lightweight - just calls Cloud Run service
+    timeout_sec=540,  # 9 minutes max - includes waiting for Cloud Run response
+)
+def on_new_scheme_entry(event: firestore_fn.Event[DocumentSnapshot]) -> None:
+    """
+    Firestore trigger: Triggered when a new document is created in schemeEntries collection.
+
+    Calls scheme-processor Cloud Run service for heavy processing.
+    In local dev (without Firestore emulator), update_scheme.py calls
+    process_new_scheme_entry() directly.
+    """
+    doc_id = event.params["docId"]
+    data = event.data.to_dict() if event.data else {}
+    process_new_scheme_entry(doc_id, data)
