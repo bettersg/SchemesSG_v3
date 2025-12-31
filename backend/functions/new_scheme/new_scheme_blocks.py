@@ -8,7 +8,7 @@ Builds messages and modals for:
 """
 from typing import Dict, Any, Optional, List
 
-from new_scheme.pipeline_runner import WHO_IS_IT_FOR, WHAT_IT_GIVES, SCHEME_TYPE
+from new_scheme.constants import WHO_IS_IT_FOR, WHAT_IT_GIVES, SCHEME_TYPE
 
 
 def truncate_text(text: str, max_length: int = 500) -> str:
