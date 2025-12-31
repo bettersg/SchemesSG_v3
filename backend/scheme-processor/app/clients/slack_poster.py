@@ -3,15 +3,15 @@ Slack integration for posting scheme review messages.
 
 Posts processed scheme data to Slack for human review.
 """
+
 import os
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
-
-from slack_sdk.web import WebClient
-from slack_sdk.errors import SlackApiError
-from loguru import logger
+from typing import Any, Dict, Optional
 
 from app.clients.slack_blocks import build_new_scheme_review_message
+from loguru import logger
+from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
 
 
 def get_slack_client() -> Optional[WebClient]:
@@ -31,11 +31,7 @@ def get_slack_channel() -> Optional[str]:
     return channel
 
 
-def post_to_slack_for_review(
-    doc_id: str,
-    processed_data: Dict[str, Any],
-    db=None
-) -> Optional[Dict[str, Any]]:
+def post_to_slack_for_review(doc_id: str, processed_data: Dict[str, Any], db=None) -> Optional[Dict[str, Any]]:
     """
     Post processed scheme data to Slack for human review.
 
@@ -67,18 +63,20 @@ def post_to_slack_for_review(
         if db and response.get("ok"):
             try:
                 entry_ref = db.collection("schemeEntries").document(doc_id)
-                entry_ref.update({
-                    "slack_channel": channel,
-                    "slack_message_ts": response.get("ts"),
-                    "slack_notified_at": datetime.now(timezone.utc).isoformat()
-                })
+                entry_ref.update(
+                    {
+                        "slack_channel": channel,
+                        "slack_message_ts": response.get("ts"),
+                        "slack_notified_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
             except Exception as update_error:
                 logger.warning(f"Failed to update slack_ts in Firestore: {update_error}")
 
         return {"ok": response.get("ok"), "ts": response.get("ts")}
 
     except SlackApiError as e:
-        error_msg = e.response['error'] if e.response else str(e)
+        error_msg = e.response["error"] if e.response else str(e)
         logger.error(f"Slack API error for {doc_id}: {error_msg}")
         return None
     except Exception as e:

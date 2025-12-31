@@ -10,16 +10,18 @@ Usage:
     cd backend/functions
     uv run python scripts/populate_embeddings.py
 """
+
 import os
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pandas as pd
-from firebase_admin import firestore, credentials, initialize_app
+from dotenv import load_dotenv
+from firebase_admin import credentials, firestore, initialize_app
 from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
-from dotenv import load_dotenv
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,8 +38,16 @@ def build_desc_booster(row) -> str:
     into a single searchable text field for vector embedding.
     """
     components = []
-    for field in ["scheme", "agency", "llm_description", "search_booster",
-                  "who_is_it_for", "what_it_gives", "scheme_type", "service_area"]:
+    for field in [
+        "scheme",
+        "agency",
+        "llm_description",
+        "search_booster",
+        "who_is_it_for",
+        "what_it_gives",
+        "scheme_type",
+        "service_area",
+    ]:
         if pd.notna(row.get(field)):
             components.append(str(row[field]))
     return " ".join(components)
@@ -55,18 +65,20 @@ def populate_embeddings() -> Dict[str, Any]:
     try:
         # Initialize Firebase with credentials from environment
         private_key = os.getenv("FB_PRIVATE_KEY", "").replace("\\n", "\n")
-        cred = credentials.Certificate({
-            "type": os.getenv("FB_TYPE"),
-            "project_id": os.getenv("FB_PROJECT_ID"),
-            "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
-            "private_key": private_key,
-            "client_email": os.getenv("FB_CLIENT_EMAIL"),
-            "client_id": os.getenv("FB_CLIENT_ID"),
-            "auth_uri": os.getenv("FB_AUTH_URI"),
-            "token_uri": os.getenv("FB_TOKEN_URI"),
-            "auth_provider_x509_cert_url": os.getenv("FB_AUTH_PROVIDER_X509_CERT_URL"),
-            "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
-        })
+        cred = credentials.Certificate(
+            {
+                "type": os.getenv("FB_TYPE"),
+                "project_id": os.getenv("FB_PROJECT_ID"),
+                "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
+                "private_key": private_key,
+                "client_email": os.getenv("FB_CLIENT_EMAIL"),
+                "client_id": os.getenv("FB_CLIENT_ID"),
+                "auth_uri": os.getenv("FB_AUTH_URI"),
+                "token_uri": os.getenv("FB_TOKEN_URI"),
+                "auth_provider_x509_cert_url": os.getenv("FB_AUTH_PROVIDER_X509_CERT_URL"),
+                "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
+            }
+        )
 
         try:
             initialize_app(cred)
@@ -107,7 +119,7 @@ def populate_embeddings() -> Dict[str, Any]:
                 "success": True,
                 "indexed_schemes": 0,
                 "duration_seconds": round(time.time() - start_time, 2),
-                "error": "No active schemes found"
+                "error": "No active schemes found",
             }
 
         # Build desc_booster for embedding
@@ -123,12 +135,12 @@ def populate_embeddings() -> Dict[str, Any]:
         indexed = 0
 
         for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+            batch = df.iloc[i : i + batch_size]
             texts = batch["desc_booster"].tolist()
             doc_ids = batch["doc_id"].tolist()
 
             # Generate embeddings for batch
-            logger.info(f"Generating embeddings for batch {i//batch_size + 1}/{(len(df)-1)//batch_size + 1}...")
+            logger.info(f"Generating embeddings for batch {i // batch_size + 1}/{(len(df) - 1) // batch_size + 1}...")
             vectors = embeddings.embed_documents(texts)
 
             # Write to embeddings collection (only doc_id + embedding)
@@ -144,22 +156,18 @@ def populate_embeddings() -> Dict[str, Any]:
         duration = time.time() - start_time
         logger.info(f"Population completed in {duration:.2f}s ({indexed} embeddings)")
 
-        return {
-            "success": True,
-            "indexed_schemes": indexed,
-            "duration_seconds": round(duration, 2),
-            "error": None
-        }
+        return {"success": True, "indexed_schemes": indexed, "duration_seconds": round(duration, 2), "error": None}
 
     except Exception as e:
         logger.error(f"Population failed: {e}")
         import traceback
+
         traceback.print_exc()
         return {
             "success": False,
             "indexed_schemes": 0,
             "duration_seconds": round(time.time() - start_time, 2),
-            "error": str(e)
+            "error": str(e),
         }
 
 

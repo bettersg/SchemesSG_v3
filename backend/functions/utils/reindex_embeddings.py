@@ -6,15 +6,17 @@ Original 'schemes' collection is unchanged.
 
 This replaces reindex_chroma.py for Firestore Vector Search.
 """
+
 import os
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pandas as pd
 from firebase_admin import firestore
 from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
+
 
 COLLECTION_SCHEMES = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"
@@ -28,8 +30,16 @@ def build_desc_booster(row) -> str:
     into a single searchable text field for vector embedding.
     """
     components = []
-    for field in ["scheme", "agency", "llm_description", "search_booster",
-                  "who_is_it_for", "what_it_gives", "scheme_type", "service_area"]:
+    for field in [
+        "scheme",
+        "agency",
+        "llm_description",
+        "search_booster",
+        "who_is_it_for",
+        "what_it_gives",
+        "scheme_type",
+        "service_area",
+    ]:
         if pd.notna(row.get(field)):
             components.append(str(row[field]))
     return " ".join(components)
@@ -96,7 +106,7 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
                 "indexed_schemes": 0,
                 "skipped_inactive": skipped_inactive,
                 "duration_seconds": round(time.time() - start_time, 2),
-                "error": "No active schemes to index"
+                "error": "No active schemes to index",
             }
 
         # Build desc_booster field
@@ -113,12 +123,12 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
         indexed = 0
 
         for i in range(0, len(df), batch_size):
-            batch = df.iloc[i:i+batch_size]
+            batch = df.iloc[i : i + batch_size]
             texts = batch["desc_booster"].tolist()
             doc_ids = batch["doc_id"].tolist()
 
             # Generate embeddings for batch
-            logger.info(f"Generating embeddings for batch {i//batch_size + 1}...")
+            logger.info(f"Generating embeddings for batch {i // batch_size + 1}...")
             vectors = embeddings.embed_documents(texts)
 
             # Write to embeddings collection (only doc_id + embedding)
@@ -133,8 +143,7 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
 
         duration = time.time() - start_time
         logger.info(
-            f"Reindex completed in {duration:.2f}s "
-            f"({indexed} schemes indexed, {skipped_inactive} inactive skipped)"
+            f"Reindex completed in {duration:.2f}s ({indexed} schemes indexed, {skipped_inactive} inactive skipped)"
         )
 
         return {
@@ -143,13 +152,14 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
             "indexed_schemes": indexed,
             "skipped_inactive": skipped_inactive,
             "duration_seconds": round(duration, 2),
-            "error": None
+            "error": None,
         }
 
     except Exception as e:
         duration = time.time() - start_time
         logger.error(f"Embedding reindex failed: {e}")
         import traceback
+
         traceback.print_exc()
 
         return {
@@ -158,5 +168,5 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
             "indexed_schemes": 0,
             "skipped_inactive": 0,
             "duration_seconds": round(duration, 2),
-            "error": str(e)
+            "error": str(e),
         }

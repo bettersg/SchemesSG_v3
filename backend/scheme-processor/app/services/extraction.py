@@ -3,20 +3,21 @@ Domain Services for Scheme Data Extraction.
 
 Contains business logic for contact extraction, category normalization, and logo selection.
 """
+
 import re
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests
+from app.constants import HEADER_PATTERNS, LOGO_PATTERNS, NEGATIVE_PATTERNS
 from loguru import logger
-
-from app.constants import LOGO_PATTERNS, HEADER_PATTERNS, NEGATIVE_PATTERNS
 
 
 @dataclass
 class ContactInfo:
     """Result from contact extraction (regex-based)."""
+
     emails: List[str] = field(default_factory=list)
     phones: List[str] = field(default_factory=list)
     addresses: List[str] = field(default_factory=list)
@@ -45,32 +46,29 @@ def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
 
     # Email regex - optimized to prevent catastrophic backtracking
     # Uses {1,64} limits instead of unbounded + quantifiers
-    email_pattern = r'[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,10}'
+    email_pattern = r"[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,10}"
     emails = re.findall(email_pattern, text)
     # Filter out common false positives (image/asset file extensions)
-    invalid_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.css', '.js', '.ico')
-    filtered_emails = [
-        e for e in emails
-        if not e.lower().endswith(invalid_extensions)
-    ]
+    invalid_extensions = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".css", ".js", ".ico")
+    filtered_emails = [e for e in emails if not e.lower().endswith(invalid_extensions)]
 
     # Singapore phone patterns
     phone_patterns = [
-        r'\+65[\s\-]?\d{4}[\s\-]?\d{4}',       # +65 format
-        r'\(65\)[\s\-]?\d{4}[\s\-]?\d{4}',     # (65) format
-        r'(?<!\d)[689]\d{3}[\s\-]?\d{4}(?!\d)', # Local 8-digit (6/8/9 prefix)
-        r'1800[\s\-]?\d{3}[\s\-]?\d{4}',       # Toll-free 1800
-        r'1900[\s\-]?\d{3}[\s\-]?\d{4}',       # Premium 1900
+        r"\+65[\s\-]?\d{4}[\s\-]?\d{4}",  # +65 format
+        r"\(65\)[\s\-]?\d{4}[\s\-]?\d{4}",  # (65) format
+        r"(?<!\d)[689]\d{3}[\s\-]?\d{4}(?!\d)",  # Local 8-digit (6/8/9 prefix)
+        r"1800[\s\-]?\d{3}[\s\-]?\d{4}",  # Toll-free 1800
+        r"1900[\s\-]?\d{3}[\s\-]?\d{4}",  # Premium 1900
     ]
     phones = []
     for pattern in phone_patterns:
         matches = re.findall(pattern, text)
         phones.extend(matches)
     # Clean and dedupe
-    cleaned_phones = [re.sub(r'[\s\-]', '', p) for p in phones]
+    cleaned_phones = [re.sub(r"[\s\-]", "", p) for p in phones]
 
     # Singapore postal code pattern (6 digits)
-    postal_pattern = r'Singapore\s*\d{6}|S\s*\(\s*\d{6}\s*\)|S\d{6}'
+    postal_pattern = r"Singapore\s*\d{6}|S\s*\(\s*\d{6}\s*\)|S\d{6}"
     postal_matches = re.findall(postal_pattern, text, re.IGNORECASE)
 
     return ContactInfo(
@@ -80,10 +78,7 @@ def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
     )
 
 
-def normalize_categories(
-    llm_values: Optional[List[str]],
-    allowed_options: List[str]
-) -> List[str]:
+def normalize_categories(llm_values: Optional[List[str]], allowed_options: List[str]) -> List[str]:
     """
     Map LLM output values to valid category options using keyword matching.
 
@@ -142,7 +137,7 @@ def validate_image_url(url: str, timeout: int = 5) -> bool:
     Returns:
         True if URL is accessible and returns image content-type
     """
-    if not url or not url.startswith(('http://', 'https://')):
+    if not url or not url.startswith(("http://", "https://")):
         return False
 
     try:
@@ -151,8 +146,8 @@ def validate_image_url(url: str, timeout: int = 5) -> bool:
             logger.debug(f"Image URL returned {response.status_code}: {url}")
             return False
 
-        content_type = response.headers.get('content-type', '').lower()
-        if 'image' in content_type or url.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico')):
+        content_type = response.headers.get("content-type", "").lower()
+        if "image" in content_type or url.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico")):
             return True
 
         logger.debug(f"Image URL has non-image content-type '{content_type}': {url}")
@@ -185,14 +180,14 @@ def select_best_logo(images: List[Dict], base_url: str = "", validate: bool = Tr
     scored_candidates = []
 
     for img in images:
-        src = img.get('src', '')
-        if not src or src.startswith('data:'):
+        src = img.get("src", "")
+        if not src or src.startswith("data:"):
             continue
 
         src_lower = src.lower()
-        alt_lower = img.get('alt', '').lower()
-        desc_lower = img.get('desc', '').lower()
-        score = img.get('score', 0) or 0
+        alt_lower = img.get("alt", "").lower()
+        desc_lower = img.get("desc", "").lower()
+        score = img.get("score", 0) or 0
 
         # Strong boost for logo patterns in URL or alt
         if any(p in src_lower or p in alt_lower for p in LOGO_PATTERNS):
@@ -203,11 +198,11 @@ def select_best_logo(images: List[Dict], base_url: str = "", validate: bool = Tr
             score += 15
 
         # Boost for SVG (common logo format)
-        if '.svg' in src_lower:
+        if ".svg" in src_lower:
             score += 10
 
         # Small boost for PNG with transparency (common for logos)
-        if '.png' in src_lower:
+        if ".png" in src_lower:
             score += 3
 
         # Penalty for non-logo patterns
@@ -217,7 +212,7 @@ def select_best_logo(images: List[Dict], base_url: str = "", validate: bool = Tr
         if score > 0:
             # Convert relative URL to absolute
             absolute_url = src
-            if base_url and not src.startswith(('http://', 'https://')):
+            if base_url and not src.startswith(("http://", "https://")):
                 absolute_url = urljoin(base_url, src)
             scored_candidates.append((score, absolute_url))
 

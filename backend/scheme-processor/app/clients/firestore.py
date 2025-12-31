@@ -3,11 +3,12 @@ Firestore client for Cloud Run service.
 
 Provides connection to Firestore for reading/writing scheme data.
 """
-import os
-from typing import Optional
 
-from firebase_admin import firestore, credentials, initialize_app
+import os
+
+from firebase_admin import credentials, firestore, initialize_app
 from loguru import logger
+
 
 _db = None
 
@@ -29,21 +30,22 @@ def get_firestore_client():
             logger.warning("Firebase credentials not configured")
             return None
 
-        cred = credentials.Certificate({
-            "type": os.getenv("FB_TYPE", "service_account"),
-            "project_id": os.getenv("FB_PROJECT_ID"),
-            "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
-            "private_key": private_key,
-            "client_email": os.getenv("FB_CLIENT_EMAIL"),
-            "client_id": os.getenv("FB_CLIENT_ID"),
-            "auth_uri": os.getenv("FB_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
-            "token_uri": os.getenv("FB_TOKEN_URI", "https://oauth2.googleapis.com/token"),
-            "auth_provider_x509_cert_url": os.getenv(
-                "FB_AUTH_PROVIDER_X509_CERT_URL",
-                "https://www.googleapis.com/oauth2/v1/certs"
-            ),
-            "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
-        })
+        cred = credentials.Certificate(
+            {
+                "type": os.getenv("FB_TYPE", "service_account"),
+                "project_id": os.getenv("FB_PROJECT_ID"),
+                "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
+                "private_key": private_key,
+                "client_email": os.getenv("FB_CLIENT_EMAIL"),
+                "client_id": os.getenv("FB_CLIENT_ID"),
+                "auth_uri": os.getenv("FB_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
+                "token_uri": os.getenv("FB_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+                "auth_provider_x509_cert_url": os.getenv(
+                    "FB_AUTH_PROVIDER_X509_CERT_URL", "https://www.googleapis.com/oauth2/v1/certs"
+                ),
+                "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
+            }
+        )
 
         initialize_app(cred)
         _db = firestore.client()

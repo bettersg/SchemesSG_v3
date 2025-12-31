@@ -3,8 +3,6 @@ url for local testing:
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/schemes_search
 """
 
-import json
-
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from loguru import logger

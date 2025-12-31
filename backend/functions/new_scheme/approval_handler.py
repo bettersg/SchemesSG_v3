@@ -7,15 +7,16 @@ Handles Slack modal submissions to approve/reject new schemes:
 - Updates schemeEntries document with status
 - Posts confirmation message to Slack
 """
+
 import json
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
-from slack_sdk.web import WebClient
-from slack_sdk.errors import SlackApiError
 from loguru import logger
+from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
 
 from new_scheme.new_scheme_blocks import (
     build_new_scheme_approved_message,
@@ -111,33 +112,35 @@ def handle_new_scheme_approval(
 
         # Update schemeEntries document with approved data
         entries_ref = db.collection("schemeEntries").document(entry_doc_id)
-        entries_ref.update({
-            "Status": "approved",
-            "approved_by": reviewer_email or reviewer_id,
-            "approved_at": SERVER_TIMESTAMP,
-            "approved_scheme_id": new_scheme_id,
-            # Store the reviewed/edited data
-            "reviewed_data": approved_data,
-            "Scheme": approved_data.get("scheme_name"),
-            "Link": approved_data.get("scheme_url"),
-            "llm_fields": {
-                "who_is_it_for": approved_data.get("who_is_it_for", []),
-                "what_it_gives": approved_data.get("what_it_gives", []),
-                "scheme_type": approved_data.get("scheme_type", []),
-                "llm_description": approved_data.get("llm_description"),
-                "summary": approved_data.get("summary"),
-                "eligibility": approved_data.get("eligibility"),
-                "how_to_apply": approved_data.get("how_to_apply"),
-                "agency": approved_data.get("agency"),
-                "address": approved_data.get("address"),
-                "phone": approved_data.get("phone"),
-                "email": approved_data.get("email"),
-                "service_area": approved_data.get("service_area"),
-                "search_booster": approved_data.get("search_booster"),
-            },
-            "planning_area": approved_data.get("planning_area"),
-            "logo_url": approved_data.get("image_url"),
-        })
+        entries_ref.update(
+            {
+                "Status": "approved",
+                "approved_by": reviewer_email or reviewer_id,
+                "approved_at": SERVER_TIMESTAMP,
+                "approved_scheme_id": new_scheme_id,
+                # Store the reviewed/edited data
+                "reviewed_data": approved_data,
+                "Scheme": approved_data.get("scheme_name"),
+                "Link": approved_data.get("scheme_url"),
+                "llm_fields": {
+                    "who_is_it_for": approved_data.get("who_is_it_for", []),
+                    "what_it_gives": approved_data.get("what_it_gives", []),
+                    "scheme_type": approved_data.get("scheme_type", []),
+                    "llm_description": approved_data.get("llm_description"),
+                    "summary": approved_data.get("summary"),
+                    "eligibility": approved_data.get("eligibility"),
+                    "how_to_apply": approved_data.get("how_to_apply"),
+                    "agency": approved_data.get("agency"),
+                    "address": approved_data.get("address"),
+                    "phone": approved_data.get("phone"),
+                    "email": approved_data.get("email"),
+                    "service_area": approved_data.get("service_area"),
+                    "search_booster": approved_data.get("search_booster"),
+                },
+                "planning_area": approved_data.get("planning_area"),
+                "logo_url": approved_data.get("image_url"),
+            }
+        )
 
         logger.info(f"Updated schemeEntries {entry_doc_id} with approval status")
 
@@ -150,13 +153,9 @@ def handle_new_scheme_approval(
                     scheme_url=approved_data.get("scheme_url", ""),
                     reviewer_id=reviewer_id,
                     reviewed_at=reviewed_at,
-                    new_scheme_id=new_scheme_id
+                    new_scheme_id=new_scheme_id,
                 )
-                slack_client.chat_update(
-                    channel=channel_id,
-                    ts=message_ts,
-                    **approved_message
-                )
+                slack_client.chat_update(channel=channel_id, ts=message_ts, **approved_message)
             except SlackApiError as e:
                 logger.error(f"Failed to update Slack message: {e}")
 
@@ -177,12 +176,7 @@ def handle_new_scheme_approval(
         logger.error(f"Error approving scheme {entry_doc_id}: {e}")
 
         # Return error to Slack modal
-        return {
-            "response_action": "errors",
-            "errors": {
-                "scheme_name_block": f"Error saving scheme: {str(e)}"
-            }
-        }
+        return {"response_action": "errors", "errors": {"scheme_name_block": f"Error saving scheme: {str(e)}"}}
 
 
 def handle_new_scheme_rejection(
@@ -219,27 +213,22 @@ def handle_new_scheme_rejection(
             scheme_name = entry_data.get("Scheme", entry_data.get("scheme_name", "Unknown"))
 
             # Update schemeEntries document
-            entry_ref.update({
-                "Status": "rejected",
-                "rejected_by": reviewer_id,
-                "rejected_at": SERVER_TIMESTAMP,
-                "rejection_reason": reason,
-            })
+            entry_ref.update(
+                {
+                    "Status": "rejected",
+                    "rejected_by": reviewer_id,
+                    "rejected_at": SERVER_TIMESTAMP,
+                    "rejection_reason": reason,
+                }
+            )
 
         # Update original Slack message
         if channel_id and message_ts:
             try:
                 rejected_message = build_new_scheme_rejected_message(
-                    doc_id=entry_doc_id,
-                    scheme_name=scheme_name,
-                    reviewer_id=reviewer_id,
-                    reason=reason
+                    doc_id=entry_doc_id, scheme_name=scheme_name, reviewer_id=reviewer_id, reason=reason
                 )
-                slack_client.chat_update(
-                    channel=channel_id,
-                    ts=message_ts,
-                    **rejected_message
-                )
+                slack_client.chat_update(channel=channel_id, ts=message_ts, **rejected_message)
             except SlackApiError as e:
                 logger.error(f"Failed to update Slack message: {e}")
 
@@ -257,6 +246,7 @@ def extract_form_data(state: dict) -> Dict[str, Any]:
     Returns:
         Dict with extracted form values
     """
+
     def get_value(block_id: str, action_id: str) -> Optional[str]:
         """Get text input value from state."""
         block = state.get(block_id, {})

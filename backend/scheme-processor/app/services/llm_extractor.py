@@ -3,25 +3,26 @@ LLM field extraction using Azure OpenAI.
 
 Extracts structured data from scraped web content.
 """
+
+import json
 import os
 import re
-import json
-from typing import Dict, Any
-
-from loguru import logger
+from typing import Any, Dict
 
 from app.constants import (
-    WHO_IS_IT_FOR,
-    WHAT_IT_GIVES,
-    SCHEME_TYPE,
     EXTRACTION_INSTRUCTION,
+    SCHEME_TYPE,
+    WHAT_IT_GIVES,
+    WHO_IS_IT_FOR,
 )
 from app.services.extraction import normalize_categories
+from loguru import logger
 
 
 def _configure_litellm():
     """Configure LiteLLM to avoid event loop conflicts."""
     import litellm
+
     litellm.modify_params = True
     litellm.drop_params = True
     litellm.set_verbose = False
@@ -62,7 +63,7 @@ async def extract_with_llm(content: str) -> Dict[str, Any]:
         os.environ["AZURE_API_VERSION"] = azure_version
 
         # Convert HTML to clean text if needed
-        if '<' in content and '>' in content:
+        if "<" in content and ">" in content:
             logger.info(f"Converting {len(content)} chars of HTML to clean text")
             text = _html_to_text(content)
             logger.info(f"Converted to {len(text)} chars of clean text")
@@ -92,9 +93,9 @@ Return a JSON object with these fields:
 - how_to_apply: Steps to apply for this scheme (string)
 - agency: The organization name providing this scheme (string)
 - address: Full physical address including postal code if available (string)
-- who_is_it_for: Target audiences as array, select from: {', '.join(WHO_IS_IT_FOR[:15])}...
-- what_it_gives: Benefits/services as array, select from: {', '.join(WHAT_IT_GIVES[:15])}...
-- scheme_type: Scheme categories as array, select from: {', '.join(SCHEME_TYPE[:10])}...
+- who_is_it_for: Target audiences as array, select from: {", ".join(WHO_IS_IT_FOR[:15])}...
+- what_it_gives: Benefits/services as array, select from: {", ".join(WHAT_IT_GIVES[:15])}...
+- scheme_type: Scheme categories as array, select from: {", ".join(SCHEME_TYPE[:10])}...
 - service_area: Geographic service area (string)
 - search_booster: Comma-separated keywords for search (string)
 
@@ -108,7 +109,7 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
             api_base=azure_base,
             api_version=azure_version,
             temperature=0,
-            max_tokens=2000
+            max_tokens=2000,
         )
 
         response_content = response.choices[0].message.content
@@ -124,16 +125,13 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
 
         # Normalize categories
         who_is_it_for = normalize_categories(
-            extracted.get("who_is_it_for") if isinstance(extracted.get("who_is_it_for"), list) else [],
-            WHO_IS_IT_FOR
+            extracted.get("who_is_it_for") if isinstance(extracted.get("who_is_it_for"), list) else [], WHO_IS_IT_FOR
         )
         what_it_gives = normalize_categories(
-            extracted.get("what_it_gives") if isinstance(extracted.get("what_it_gives"), list) else [],
-            WHAT_IT_GIVES
+            extracted.get("what_it_gives") if isinstance(extracted.get("what_it_gives"), list) else [], WHAT_IT_GIVES
         )
         scheme_type = normalize_categories(
-            extracted.get("scheme_type") if isinstance(extracted.get("scheme_type"), list) else [],
-            SCHEME_TYPE
+            extracted.get("scheme_type") if isinstance(extracted.get("scheme_type"), list) else [], SCHEME_TYPE
         )
 
         result = {
@@ -164,6 +162,7 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
     except Exception as e:
         logger.error(f"LLM extraction error: {e}")
         import traceback
+
         traceback.print_exc()
         return {}
 
@@ -172,16 +171,16 @@ def _html_to_text(html: str) -> str:
     """Convert HTML to clean text, removing scripts, styles, and noise."""
     from bs4 import BeautifulSoup
 
-    soup = BeautifulSoup(html, 'lxml')
+    soup = BeautifulSoup(html, "lxml")
 
     # Remove script and style elements
-    for element in soup(['script', 'style', 'nav', 'noscript', 'iframe', 'svg']):
+    for element in soup(["script", "style", "nav", "noscript", "iframe", "svg"]):
         element.decompose()
 
     # Get text content
-    text = soup.get_text(separator='\n', strip=True)
+    text = soup.get_text(separator="\n", strip=True)
 
     # Clean up multiple newlines
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text

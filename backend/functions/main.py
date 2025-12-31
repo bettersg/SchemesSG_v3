@@ -46,11 +46,13 @@ Note: Do not deploy functions using firebase deploy. Deployment is handled by Gi
 import json
 import sys
 
+from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 from chat.chat import chat_message  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
+from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401
 from schemes.search_queries import retrieve_search_queries  # noqa: F401
@@ -61,8 +63,6 @@ from slack_integration.slack import (  # noqa: F401
 )
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 from utils.endpoints import keep_endpoints_warm  # noqa: F401
-from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
-from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 
 
 # Initialise logger

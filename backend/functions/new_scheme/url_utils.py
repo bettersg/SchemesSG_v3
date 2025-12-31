@@ -3,8 +3,9 @@ URL utilities for duplicate scheme detection.
 
 Provides URL normalization and duplicate checking functionality.
 """
-from urllib.parse import urlparse, urlunparse
-from typing import Optional, Dict, Any
+
+from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 from firebase_admin import firestore
 from loguru import logger
@@ -129,11 +130,11 @@ def check_duplicate_scheme(url: str) -> Optional[Dict[str, Any]]:
             logger.info(f"Found duplicate: {existing_link} (normalized: {existing_normalized})")
             # Try different field names for scheme name
             scheme_name = (
-                data.get("scheme") or
-                data.get("Scheme") or
-                data.get("scheme_name") or
-                data.get("name") or
-                extract_domain(existing_link)  # Fallback to domain if no name found
+                data.get("scheme")
+                or data.get("Scheme")
+                or data.get("scheme_name")
+                or data.get("name")
+                or extract_domain(existing_link)  # Fallback to domain if no name found
             )
             return {
                 "doc_id": doc.id,

@@ -3,14 +3,15 @@ Slack Block Kit builders for link check & reindex batch job.
 
 Builds summary messages for link health check results.
 """
-from typing import Dict, Any, List
+
+from typing import Any, Dict, List
 
 
 def build_link_check_summary_message(
     results: Dict[str, Any],
     dead_links: List[Dict[str, Any]],
     reindex_result: Dict[str, Any],
-    restored_links: List[Dict[str, Any]] = None
+    restored_links: List[Dict[str, Any]] = None,
 ) -> dict:
     """
     Build Slack message summarizing link check and reindex results.
@@ -51,23 +52,19 @@ def build_link_check_summary_message(
     summary_text += f":stopwatch: Duration: *{duration_str}*"
 
     blocks = [
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": "Link Check & Reindex Complete", "emoji": True}
-        },
-        {
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": summary_text}
-        },
+        {"type": "header", "text": {"type": "plain_text", "text": "Link Check & Reindex Complete", "emoji": True}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": summary_text}},
     ]
 
     # Add restored links section if any
     if restored_links:
         blocks.append({"type": "divider"})
-        blocks.append({
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": f"*Restored Links ({len(restored_links)}) - previously inactive:*"}
-        })
+        blocks.append(
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*Restored Links ({len(restored_links)}) - previously inactive:*"},
+            }
+        )
 
         for link in restored_links:
             doc_id = link.get("doc_id", "Unknown")
@@ -75,27 +72,25 @@ def build_link_check_summary_message(
             link_url = link.get("link", "")
             previous_error = link.get("previous_error", "Unknown")
 
-            restored_text = f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Previous error: _{previous_error}_"
+            restored_text = (
+                f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Previous error: _{previous_error}_"
+            )
 
-            blocks.append({
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": restored_text}
-            })
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": restored_text}})
 
-        blocks.append({
-            "type": "context",
-            "elements": [
-                {"type": "mrkdwn", "text": ":recycle: Status restored to active for these schemes"}
-            ]
-        })
+        blocks.append(
+            {
+                "type": "context",
+                "elements": [{"type": "mrkdwn", "text": ":recycle: Status restored to active for these schemes"}],
+            }
+        )
 
     # Add dead links section if any found
     if dead_links:
         blocks.append({"type": "divider"})
-        blocks.append({
-            "type": "section",
-            "text": {"type": "mrkdwn", "text": f"*Dead Links Detected ({len(dead_links)}):*"}
-        })
+        blocks.append(
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"*Dead Links Detected ({len(dead_links)}):*"}}
+        )
 
         # Build dead links list - each as a separate section to avoid text limits
         for link in dead_links:
@@ -106,17 +101,14 @@ def build_link_check_summary_message(
 
             dead_link_text = f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Error: _{error}_"
 
-            blocks.append({
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": dead_link_text}
-            })
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": dead_link_text}})
 
-        blocks.append({
-            "type": "context",
-            "elements": [
-                {"type": "mrkdwn", "text": ":warning: Status updated to 'inactive' for all dead links"}
-            ]
-        })
+        blocks.append(
+            {
+                "type": "context",
+                "elements": [{"type": "mrkdwn", "text": ":warning: Status updated to 'inactive' for all dead links"}],
+            }
+        )
 
     # Add reindex result
     blocks.append({"type": "divider"})
@@ -128,27 +120,16 @@ def build_link_check_summary_message(
             f"• Inactive skipped: {reindex_result.get('skipped_inactive', 0)}"
         )
     else:
-        reindex_text = (
-            f":x: *Embeddings Reindex:* Failed\n"
-            f"• Error: {reindex_result.get('error', 'Unknown')}"
-        )
+        reindex_text = f":x: *Embeddings Reindex:* Failed\n• Error: {reindex_result.get('error', 'Unknown')}"
 
-    blocks.append({
-        "type": "section",
-        "text": {"type": "mrkdwn", "text": reindex_text}
-    })
+    blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": reindex_text}})
 
     # Build fallback text
     fallback_text = f"Link Check Complete: {alive_count} active, {dead_count} dead"
     if restored_count > 0:
         fallback_text += f", {restored_count} restored"
 
-    return {
-        "text": fallback_text,
-        "blocks": blocks,
-        "unfurl_links": False,
-        "unfurl_media": False
-    }
+    return {"text": fallback_text, "blocks": blocks, "unfurl_links": False, "unfurl_media": False}
 
 
 def build_link_check_error_message(error: str) -> dict:
@@ -164,16 +145,7 @@ def build_link_check_error_message(error: str) -> dict:
     return {
         "text": f"Link Check Failed: {error}",
         "blocks": [
-            {
-                "type": "header",
-                "text": {"type": "plain_text", "text": "Link Check Failed", "emoji": True}
-            },
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f":x: *Error:* {error}"
-                }
-            }
-        ]
+            {"type": "header", "text": {"type": "plain_text", "text": "Link Check Failed", "emoji": True}},
+            {"type": "section", "text": {"type": "mrkdwn", "text": f":x: *Error:* {error}"}},
+        ],
     }

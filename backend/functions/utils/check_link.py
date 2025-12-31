@@ -4,22 +4,20 @@ URL health check utility.
 Provides functions to check if URLs are accessible using HTTP HEAD requests.
 Falls back to GET for servers that block HEAD requests.
 """
+
+from typing import Any, Dict
+
 import requests
-from typing import Dict, Any, Optional
 from loguru import logger
+
 
 # Use a browser-like User-Agent to avoid being blocked
 BROWSER_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
 
-def check_link_health(
-    url: str,
-    timeout: int = 10,
-    max_redirects: int = 3
-) -> Dict[str, Any]:
+def check_link_health(url: str, timeout: int = 10, max_redirects: int = 3) -> Dict[str, Any]:
     """
     Check if a URL is accessible using HTTP HEAD request.
 
@@ -40,12 +38,7 @@ def check_link_health(
             - final_url: str|None - Final URL after redirects
     """
     if not url:
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": "Empty URL",
-            "final_url": None
-        }
+        return {"alive": False, "status_code": 0, "error": "Empty URL", "final_url": None}
 
     # Ensure URL has scheme
     if not url.startswith(("http://", "https://")):
@@ -54,12 +47,7 @@ def check_link_health(
     try:
         # Use HEAD request (faster, less bandwidth)
         response = requests.head(
-            url,
-            timeout=timeout,
-            allow_redirects=True,
-            headers={
-                "User-Agent": BROWSER_USER_AGENT
-            }
+            url, timeout=timeout, allow_redirects=True, headers={"User-Agent": BROWSER_USER_AGENT}
         )
 
         # Check redirect count
@@ -68,26 +56,16 @@ def check_link_health(
                 "alive": False,
                 "status_code": response.status_code,
                 "error": f"Too many redirects ({len(response.history)})",
-                "final_url": response.url
+                "final_url": response.url,
             }
 
         # 2xx = success
         if 200 <= response.status_code < 300:
-            return {
-                "alive": True,
-                "status_code": response.status_code,
-                "error": None,
-                "final_url": response.url
-            }
+            return {"alive": True, "status_code": response.status_code, "error": None, "final_url": response.url}
 
         # 3xx should have been followed, but check just in case
         if 300 <= response.status_code < 400:
-            return {
-                "alive": True,
-                "status_code": response.status_code,
-                "error": None,
-                "final_url": response.url
-            }
+            return {"alive": True, "status_code": response.status_code, "error": None, "final_url": response.url}
 
         # 4xx = client errors (dead link)
         if 400 <= response.status_code < 500:
@@ -100,10 +78,7 @@ def check_link_health(
                 410: "Gone",
                 429: "Rate Limited",
             }
-            error = error_messages.get(
-                response.status_code,
-                f"HTTP {response.status_code}"
-            )
+            error = error_messages.get(response.status_code, f"HTTP {response.status_code}")
 
             # 429 is rate limiting - don't mark as dead
             if response.status_code == 429:
@@ -111,7 +86,7 @@ def check_link_health(
                     "alive": True,  # Don't mark as dead, just rate limited
                     "status_code": response.status_code,
                     "error": "Rate limited - skipped",
-                    "final_url": response.url
+                    "final_url": response.url,
                 }
 
             # 405 Method Not Allowed - try GET as fallback
@@ -129,15 +104,10 @@ def check_link_health(
                     "alive": True,  # Don't mark as dead
                     "status_code": 403,
                     "error": "Blocked by bot protection (Cloudflare/WAF) - manual check needed",
-                    "final_url": response.url
+                    "final_url": response.url,
                 }
 
-            return {
-                "alive": False,
-                "status_code": response.status_code,
-                "error": error,
-                "final_url": response.url
-            }
+            return {"alive": False, "status_code": response.status_code, "error": error, "final_url": response.url}
 
         # 5xx = server errors (might be temporary)
         if response.status_code >= 500:
@@ -150,11 +120,8 @@ def check_link_health(
             return {
                 "alive": False,
                 "status_code": response.status_code,
-                "error": error_messages.get(
-                    response.status_code,
-                    f"Server Error {response.status_code}"
-                ),
-                "final_url": response.url
+                "error": error_messages.get(response.status_code, f"Server Error {response.status_code}"),
+                "final_url": response.url,
             }
 
         # Unknown status
@@ -162,57 +129,27 @@ def check_link_health(
             "alive": False,
             "status_code": response.status_code,
             "error": f"Unknown status {response.status_code}",
-            "final_url": response.url
+            "final_url": response.url,
         }
 
     except requests.exceptions.Timeout:
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": f"Connection timeout ({timeout}s)",
-            "final_url": None
-        }
+        return {"alive": False, "status_code": 0, "error": f"Connection timeout ({timeout}s)", "final_url": None}
 
     except requests.exceptions.SSLError as e:
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": f"SSL Error: {str(e)[:100]}",
-            "final_url": None
-        }
+        return {"alive": False, "status_code": 0, "error": f"SSL Error: {str(e)[:100]}", "final_url": None}
 
     except requests.exceptions.ConnectionError as e:
         error_str = str(e)
         if "NameResolutionError" in error_str or "Name or service not known" in error_str:
-            return {
-                "alive": False,
-                "status_code": 0,
-                "error": "DNS resolution failed",
-                "final_url": None
-            }
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": f"Connection failed: {error_str[:100]}",
-            "final_url": None
-        }
+            return {"alive": False, "status_code": 0, "error": "DNS resolution failed", "final_url": None}
+        return {"alive": False, "status_code": 0, "error": f"Connection failed: {error_str[:100]}", "final_url": None}
 
     except requests.exceptions.TooManyRedirects:
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": "Too many redirects",
-            "final_url": None
-        }
+        return {"alive": False, "status_code": 0, "error": "Too many redirects", "final_url": None}
 
     except Exception as e:
         logger.error(f"Unexpected error checking {url}: {e}")
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": f"Unexpected error: {str(e)[:100]}",
-            "final_url": None
-        }
+        return {"alive": False, "status_code": 0, "error": f"Unexpected error: {str(e)[:100]}", "final_url": None}
 
 
 def _check_with_get(url: str, timeout: int) -> Dict[str, Any]:
@@ -228,31 +165,19 @@ def _check_with_get(url: str, timeout: int) -> Dict[str, Any]:
             timeout=timeout,
             allow_redirects=True,
             stream=True,  # Don't download body
-            headers={
-                "User-Agent": BROWSER_USER_AGENT
-            }
+            headers={"User-Agent": BROWSER_USER_AGENT},
         )
         response.close()  # Close without reading body
 
         if 200 <= response.status_code < 400:
-            return {
-                "alive": True,
-                "status_code": response.status_code,
-                "error": None,
-                "final_url": response.url
-            }
+            return {"alive": True, "status_code": response.status_code, "error": None, "final_url": response.url}
 
         return {
             "alive": False,
             "status_code": response.status_code,
             "error": f"HTTP {response.status_code}",
-            "final_url": response.url
+            "final_url": response.url,
         }
 
     except Exception as e:
-        return {
-            "alive": False,
-            "status_code": 0,
-            "error": f"GET fallback failed: {str(e)[:100]}",
-            "final_url": None
-        }
+        return {"alive": False, "status_code": 0, "error": f"GET fallback failed: {str(e)[:100]}", "final_url": None}

@@ -10,24 +10,25 @@ Scheduled function (runs monthly) that:
 Can also be run locally via:
     uv run python -c "from batch_jobs.run_link_check_and_reindex import run_link_check_and_reindex_core; run_link_check_and_reindex_core()"
 """
+
 import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from firebase_admin import firestore
-from firebase_functions import scheduler_fn, options
+from firebase_functions import options, scheduler_fn
 from loguru import logger
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-
 from utils.check_link import check_link_health
 from utils.reindex_embeddings import reindex_embeddings
+
 from batch_jobs.slack_blocks import (
-    build_link_check_summary_message,
     build_link_check_error_message,
+    build_link_check_summary_message,
 )
 
 
@@ -47,10 +48,7 @@ def get_slack_channel() -> str:
     return channel
 
 
-def check_single_scheme(
-    doc_id: str,
-    scheme_data: Dict[str, Any]
-) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
+def check_single_scheme(doc_id: str, scheme_data: Dict[str, Any]) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
     """
     Check a single scheme's link health.
 
@@ -114,8 +112,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
         max_workers = min(20, total_count)  # Cap at 20 concurrent requests
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
-                executor.submit(check_single_scheme, doc_id, data): (doc_id, data)
-                for doc_id, data in schemes_to_check
+                executor.submit(check_single_scheme, doc_id, data): (doc_id, data) for doc_id, data in schemes_to_check
             }
 
             for future in as_completed(futures):
@@ -129,21 +126,25 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                         # Track if restoring from inactive
                         if was_inactive:
                             restored_count += 1
-                            restored_links.append({
+                            restored_links.append(
+                                {
+                                    "doc_id": doc_id,
+                                    "scheme_name": scheme_data.get("scheme", "Unknown"),
+                                    "link": scheme_data.get("link", ""),
+                                    "previous_error": scheme_data.get("link_check_error", "Unknown"),
+                                }
+                            )
+                    else:
+                        dead_count += 1
+                        dead_links.append(
+                            {
                                 "doc_id": doc_id,
                                 "scheme_name": scheme_data.get("scheme", "Unknown"),
                                 "link": scheme_data.get("link", ""),
-                                "previous_error": scheme_data.get("link_check_error", "Unknown")
-                            })
-                    else:
-                        dead_count += 1
-                        dead_links.append({
-                            "doc_id": doc_id,
-                            "scheme_name": scheme_data.get("scheme", "Unknown"),
-                            "link": scheme_data.get("link", ""),
-                            "error": result.get("error", "Unknown"),
-                            "status_code": result.get("status_code", 0)
-                        })
+                                "error": result.get("error", "Unknown"),
+                                "status_code": result.get("status_code", 0),
+                            }
+                        )
 
                 except Exception as e:
                     logger.error(f"Error checking scheme: {e}")
@@ -164,30 +165,36 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
             if result["alive"]:
                 if was_inactive:
                     # Restore inactive scheme to active (link is now alive)
-                    batch.update(scheme_ref, {
-                        "status": firestore.DELETE_FIELD,
-                        "status_reason": firestore.DELETE_FIELD,
-                        "status_updated_at": firestore.DELETE_FIELD,
-                        "link_check_error": firestore.DELETE_FIELD,
-                        "last_link_check": now_iso,
-                        "link_check_status_code": result.get("status_code", 200)
-                    })
+                    batch.update(
+                        scheme_ref,
+                        {
+                            "status": firestore.DELETE_FIELD,
+                            "status_reason": firestore.DELETE_FIELD,
+                            "status_updated_at": firestore.DELETE_FIELD,
+                            "link_check_error": firestore.DELETE_FIELD,
+                            "last_link_check": now_iso,
+                            "link_check_status_code": result.get("status_code", 200),
+                        },
+                    )
                 else:
                     # Update last check timestamp for alive links
-                    batch.update(scheme_ref, {
-                        "last_link_check": now_iso,
-                        "link_check_status_code": result.get("status_code", 200)
-                    })
+                    batch.update(
+                        scheme_ref,
+                        {"last_link_check": now_iso, "link_check_status_code": result.get("status_code", 200)},
+                    )
             else:
                 # Mark dead links as inactive
-                batch.update(scheme_ref, {
-                    "status": "inactive",
-                    "status_reason": "Dead link detected",
-                    "status_updated_at": now_iso,
-                    "last_link_check": now_iso,
-                    "link_check_status_code": result.get("status_code", 0),
-                    "link_check_error": result.get("error", "Unknown")
-                })
+                batch.update(
+                    scheme_ref,
+                    {
+                        "status": "inactive",
+                        "status_reason": "Dead link detected",
+                        "status_updated_at": now_iso,
+                        "last_link_check": now_iso,
+                        "link_check_status_code": result.get("status_code", 0),
+                        "link_check_error": result.get("error", "Unknown"),
+                    },
+                )
 
             batch_count += 1
 
@@ -222,15 +229,10 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "alive_count": alive_count,
                 "dead_count": dead_count,
                 "restored_count": restored_count,
-                "duration_seconds": duration_seconds
+                "duration_seconds": duration_seconds,
             }
 
-            message = build_link_check_summary_message(
-                results_summary,
-                dead_links,
-                reindex_result,
-                restored_links
-            )
+            message = build_link_check_summary_message(results_summary, dead_links, reindex_result, restored_links)
 
             slack_client.chat_postMessage(channel=channel, **message)
             logger.info("Slack notification sent")
@@ -247,10 +249,10 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "dead_count": dead_count,
                 "restored_count": restored_count,
                 "dead_links": dead_links,
-                "restored_links": restored_links
+                "restored_links": restored_links,
             },
             "reindex": reindex_result,
-            "duration_seconds": duration_seconds
+            "duration_seconds": duration_seconds,
         }
 
         logger.info(f"Batch job complete in {duration_seconds}s")
@@ -268,10 +270,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
         except Exception:
             pass
 
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 @scheduler_fn.on_schedule(

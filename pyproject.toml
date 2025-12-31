@@ -1,0 +1,20 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+ignore = ["C901", "E501", "E741", "F402", "F823", "SIM1", "SIM300", "SIM212", "SIM905", "UP009", "UP015", "UP031", "UP028", "UP004", "UP045", "UP007"]
+select = ["C", "E", "F", "I", "W", "RUF013", "PERF102", "PLC1802", "PLC0208", "SIM", "UP", "PIE794", "FURB"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401", "F403", "F811"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+known-first-party = ["functions", "app"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

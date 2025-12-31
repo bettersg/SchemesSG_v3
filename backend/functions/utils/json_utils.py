@@ -2,9 +2,9 @@
 
 import json
 import math
-from google.cloud.firestore_v1.base_document import DocumentSnapshot
-from google.cloud.firestore_v1._helpers import DatetimeWithNanoseconds
 from datetime import datetime
+
+from google.cloud.firestore_v1._helpers import DatetimeWithNanoseconds
 
 
 class FirestoreJSONEncoder(json.JSONEncoder):
@@ -27,7 +27,7 @@ class FirestoreJSONEncoder(json.JSONEncoder):
             JSON-serializable representation of the object
         """
         # Handle Firestore Timestamp objects
-        if hasattr(obj, 'timestamp') and hasattr(obj, 'isoformat'):
+        if hasattr(obj, "timestamp") and hasattr(obj, "isoformat"):
             return obj.isoformat()
 
         # Handle DatetimeWithNanoseconds (Firestore datetime type)
@@ -60,11 +60,11 @@ class FirestoreJSONEncoder(json.JSONEncoder):
 
 def safe_json_dumps(data, **kwargs):
     """Safely serialize data to JSON, handling Firestore data types.
-    
+
     Args:
         data: The data to serialize
         **kwargs: Additional arguments to pass to json.dumps
-        
+
     Returns:
         str: JSON string representation of the data
     """

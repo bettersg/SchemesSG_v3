@@ -9,24 +9,24 @@ Full pipeline for processing new scheme submissions:
 5. Update Firestore with results
 6. Post to Slack for human review
 """
-import os
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from loguru import logger
+import os
 
 from app.models import ProcessRequest, ProcessResponse
 from app.pipeline import process_scheme
+from fastapi import FastAPI, HTTPException
+from loguru import logger
+from pydantic import BaseModel
+
 
 app = FastAPI(
-    title="Scheme Processor",
-    description="Cloud Run service for processing new scheme submissions",
-    version="0.1.0"
+    title="Scheme Processor", description="Cloud Run service for processing new scheme submissions", version="0.1.0"
 )
 
 
 class HealthResponse(BaseModel):
     """Response body for /health endpoint."""
+
     status: str
 
 
@@ -56,19 +56,17 @@ async def process(request: ProcessRequest):
             doc_id=request.doc_id,
             scheme_name=request.scheme_name,
             scheme_url=request.scheme_url,
-            original_data=request.original_data
+            original_data=request.original_data,
         )
         return ProcessResponse(**result)
 
     except Exception as e:
         logger.error(f"Processing failed for {request.doc_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.environ.get("PORT", 8081))
     uvicorn.run(app, host="0.0.0.0", port=port)

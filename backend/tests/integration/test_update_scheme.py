@@ -1,8 +1,7 @@
 """Tests for the update scheme functionality."""
 
 import json
-from datetime import datetime
-import pytest
+
 from update_scheme.update_scheme import update_scheme
 
 

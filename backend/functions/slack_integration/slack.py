@@ -6,41 +6,42 @@ This module provides Firebase Functions for Slack integration including:
 - Scanning and notifying about new scraping errors
 - Handling Slack interactive components (buttons, modals)
 """
+
 import json
 import os
-import urllib.parse
 import traceback
+import urllib.parse
 from datetime import datetime, timezone
 
 from firebase_functions import https_fn, options
-from slack_sdk.web import WebClient
-from slack_sdk.errors import SlackApiError
 from loguru import logger
-
-from slack_integration.block_kit import build_review_message, build_review_modal, build_review_locked_message
-from slack_integration.slack_utils import verify_slack_signature
-from slack_integration.storage import (
-    read_source_rows,
-    load_notified_ids,
-    save_notified_ids,
-    get_source_doc,
-    upsert_edit_doc,
-    upsert_source_doc,
+from new_scheme.approval_handler import (
+    get_processed_data_from_entry,
+    handle_new_scheme_approval,
+    handle_new_scheme_rejection,
 )
 
 # New scheme approval imports
 from new_scheme.new_scheme_blocks import build_new_scheme_review_modal
-from new_scheme.approval_handler import (
-    handle_new_scheme_approval,
-    handle_new_scheme_rejection,
-    get_processed_data_from_entry,
+from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
+
+from slack_integration.block_kit import build_review_locked_message, build_review_message, build_review_modal
+from slack_integration.slack_utils import verify_slack_signature
+from slack_integration.storage import (
+    get_source_doc,
+    load_notified_ids,
+    read_source_rows,
+    save_notified_ids,
+    upsert_edit_doc,
+    upsert_source_doc,
 )
 
 
 def get_slack_client() -> WebClient:
     """
     Get Slack WebClient instance.
-    
+
     Returns:
         WebClient instance configured with bot token from environment
     """
@@ -57,17 +58,17 @@ def get_slack_client() -> WebClient:
 def slack_trigger_message(req: https_fn.Request) -> https_fn.Response:
     """
     Trigger a Slack review message for a specific document.
-    
+
     Creates or updates a source document in Firestore and posts a review message to Slack.
-    
+
     Args:
         req: Firebase Function request object
-        
+
     Returns:
         Response with success status and doc_id
     """
     headers = {"Content-Type": "application/json"}
-    
+
     if req.method != "POST":
         return https_fn.Response(
             response=json.dumps({"error": "Only POST requests are allowed"}),
@@ -75,19 +76,19 @@ def slack_trigger_message(req: https_fn.Request) -> https_fn.Response:
             mimetype="application/json",
             headers=headers,
         )
-    
+
     try:
         body = req.get_json(silent=True) or {}
         channel = body.get("channel") or os.getenv("SLACK_CHANNEL_ID")
-        
+
         if not channel:
             return https_fn.Response(
-                response=json.dumps({"error": "Set SLACK_CHANNEL_ID or pass {\"channel\": \"C...\"}"}),
+                response=json.dumps({"error": 'Set SLACK_CHANNEL_ID or pass {"channel": "C..."}'}),
                 status=400,
                 mimetype="application/json",
                 headers=headers,
             )
-        
+
         doc_id = body.get("doc_id") or "test-doc"
         data = {
             "scheme_name": body.get("scheme_name", "Test Scheme"),
@@ -105,34 +106,31 @@ def slack_trigger_message(req: https_fn.Request) -> https_fn.Response:
             "eligibility": body.get("eligibility", ""),
             "how_to_apply": body.get("how_to_apply", ""),
         }
-        
+
         # Upsert source document to Firestore
         upsert_source_doc(doc_id, data)
-        
+
         # Build and send Slack message
         payload = build_review_message(doc_id, data)
         slack_client = get_slack_client()
-        
+
         try:
             slack_client.chat_postMessage(channel=channel, **payload)
         except SlackApiError as e:
             return https_fn.Response(
-                response=json.dumps({
-                    "error": str(e),
-                    "details": e.response.data if e.response else None
-                }),
+                response=json.dumps({"error": str(e), "details": e.response.data if e.response else None}),
                 status=500,
                 mimetype="application/json",
                 headers=headers,
             )
-        
+
         return https_fn.Response(
             response=json.dumps({"ok": True, "doc_id": doc_id}),
             status=200,
             mimetype="application/json",
             headers=headers,
         )
-        
+
     except Exception as e:
         return https_fn.Response(
             response=json.dumps({"error": f"Internal server error: {str(e)}"}),
@@ -150,18 +148,18 @@ def slack_trigger_message(req: https_fn.Request) -> https_fn.Response:
 def slack_scan_and_notify(req: https_fn.Request) -> https_fn.Response:
     """
     Scan source documents and post review messages for new items.
-    
+
     Reads all source documents from Firestore, filters out already notified ones,
     and posts Slack messages for new documents.
-    
+
     Args:
         req: Firebase Function request object
-        
+
     Returns:
         Response with list of posted document IDs
     """
     headers = {"Content-Type": "application/json"}
-    
+
     if req.method != "POST":
         return https_fn.Response(
             response=json.dumps({"error": "Only POST requests are allowed"}),
@@ -169,37 +167,37 @@ def slack_scan_and_notify(req: https_fn.Request) -> https_fn.Response:
             mimetype="application/json",
             headers=headers,
         )
-    
+
     try:
         body = req.get_json(silent=True) or {}
         channel = body.get("channel") or os.getenv("SLACK_CHANNEL_ID")
-        
+
         if not channel:
             return https_fn.Response(
-                response=json.dumps({"error": "Set SLACK_CHANNEL_ID or pass {\"channel\": \"C...\"}"}),
+                response=json.dumps({"error": 'Set SLACK_CHANNEL_ID or pass {"channel": "C..."}'}),
                 status=400,
                 mimetype="application/json",
                 headers=headers,
             )
-        
+
         # Read all source rows from Firestore
         rows = read_source_rows()
         notified = load_notified_ids()
         posted = []
-        
+
         slack_client = get_slack_client()
-        
+
         for row in rows:
             doc_id = row.get("id")
             if not doc_id or doc_id in notified:
                 continue
-            
+
             data = {
                 "scheme_name": row.get("scheme_name", ""),
                 "scheme_url": row.get("scheme_url", ""),
                 "scraped_text": row.get("scraped_text", ""),
             }
-            
+
             payload = build_review_message(doc_id, data)
             try:
                 slack_client.chat_postMessage(channel=channel, **payload)
@@ -207,19 +205,19 @@ def slack_scan_and_notify(req: https_fn.Request) -> https_fn.Response:
             except SlackApiError:
                 # Continue with next item, but don't mark as posted
                 pass
-        
+
         # Save notified IDs to Firestore
         if posted:
             notified.update(posted)
             save_notified_ids(notified)
-        
+
         return https_fn.Response(
             response=json.dumps({"ok": True, "posted": posted}),
             status=200,
             mimetype="application/json",
             headers=headers,
         )
-        
+
     except Exception as e:
         return https_fn.Response(
             response=json.dumps({"error": f"Internal server error: {str(e)}"}),
@@ -236,27 +234,27 @@ def slack_scan_and_notify(req: https_fn.Request) -> https_fn.Response:
 def slack_interactive(req: https_fn.Request) -> https_fn.Response:
     """
     Handle Slack interactive component events (button clicks, modal submissions).
-    
+
     This endpoint handles:
     - block_actions: Button clicks that open modals
     - view_submission: Modal form submissions
-    
+
     Args:
         req: Firebase Function request object (contains form-encoded data from Slack)
-        
+
     Returns:
         Response appropriate for Slack interactive component protocol
     """
     # Slack interactive endpoints don't need CORS headers
     headers = {"Content-Type": "application/json"}
-    
+
     if req.method != "POST":
         return https_fn.Response(
             response="",
             status=405,
             headers=headers,
         )
-    
+
     # Verify Slack signature
     if not verify_slack_signature(req):
         return https_fn.Response(
@@ -264,32 +262,32 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
             status=401,
             headers=headers,
         )
-    
+
     try:
         # Parse form-encoded data from Slack
         # Slack sends application/x-www-form-urlencoded, not JSON
         content_type = req.headers.get("Content-Type", "")
-        
+
         if "application/x-www-form-urlencoded" in content_type:
             body_str = req.get_data().decode("utf-8")
             form_data = urllib.parse.parse_qs(body_str)
             payload_str = form_data.get("payload", [None])[0]
-            
+
             if not payload_str:
                 return https_fn.Response(
                     response="",
                     status=400,
                     headers=headers,
                 )
-            
+
             event = json.loads(payload_str)
         else:
             # Fallback to JSON (for testing)
             event = req.get_json() or {}
-        
+
         etype = event.get("type")
         slack_client = get_slack_client()
-        
+
         # Handle button clicks (block_actions)
         if etype == "block_actions":
             actions = event.get("actions", [])
@@ -299,12 +297,12 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     status=200,
                     headers=headers,
                 )
-            
+
             action = actions[0]
             if action.get("action_id") == "review_scheme":
                 doc_id = action.get("value")
                 trigger_id = event.get("trigger_id")
-                
+
                 # Get existing source document from Firestore
                 existing = get_source_doc(doc_id) or {}
                 data = {
@@ -321,7 +319,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     "eligibility": existing.get("eligibility", ""),
                     "how_to_apply": existing.get("how_to_apply", ""),
                 }
-                
+
                 # Build metadata for modal
                 container = event.get("container", {})
                 metadata = {
@@ -329,7 +327,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     "channel": container.get("channel_id"),
                     "message_ts": container.get("message_ts"),
                 }
-                
+
                 # Open modal
                 logger.info(f"Opening modal for doc_id={doc_id}")
                 modal_view = build_review_modal(json.dumps(metadata), data)
@@ -341,7 +339,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     logger.debug(f"Modal view structure: {json.dumps(modal_view, indent=2)}")
                     logger.debug(traceback.format_exc())
                     # Still return 200 to prevent Slack from retrying
-                
+
                 return https_fn.Response(
                     response="",
                     status=200,
@@ -351,6 +349,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
             # Handle new scheme review button
             if action.get("action_id") == "review_new_scheme":
                 import time
+
                 start_time = time.time()
 
                 entry_doc_id = action.get("value")
@@ -361,7 +360,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 # Get processed data from schemeEntries
                 t1 = time.time()
                 processed_data = get_processed_data_from_entry(entry_doc_id)
-                logger.info(f"Firestore fetch took {(time.time() - t1)*1000:.0f}ms")
+                logger.info(f"Firestore fetch took {(time.time() - t1) * 1000:.0f}ms")
 
                 # Build metadata for modal
                 container = event.get("container", {})
@@ -375,13 +374,13 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 # Open new scheme review modal
                 t2 = time.time()
                 modal_view = build_new_scheme_review_modal(json.dumps(metadata), processed_data)
-                logger.info(f"Modal build took {(time.time() - t2)*1000:.0f}ms")
+                logger.info(f"Modal build took {(time.time() - t2) * 1000:.0f}ms")
 
                 t3 = time.time()
                 try:
                     result = slack_client.views_open(trigger_id=trigger_id, view=modal_view)
-                    logger.info(f"Slack API took {(time.time() - t3)*1000:.0f}ms, opened: {result.get('ok', False)}")
-                    logger.info(f"Total time: {(time.time() - start_time)*1000:.0f}ms")
+                    logger.info(f"Slack API took {(time.time() - t3) * 1000:.0f}ms, opened: {result.get('ok', False)}")
+                    logger.info(f"Total time: {(time.time() - start_time) * 1000:.0f}ms")
                 except SlackApiError as e:
                     error_detail = e.response.data if e.response else str(e)
                     logger.error(f"Failed to open new scheme modal: {e.response['error'] if e.response else str(e)}")
@@ -428,7 +427,9 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 # Get the new image URL from the input field
                 new_image_url = state.get("image_url_block", {}).get("image_url", {}).get("value", "")
 
-                logger.info(f"Preview image button clicked, new URL: {new_image_url[:50] if new_image_url else 'empty'}...")
+                logger.info(
+                    f"Preview image button clicked, new URL: {new_image_url[:50] if new_image_url else 'empty'}..."
+                )
 
                 # Find and update the image block in the current view
                 blocks = view.get("blocks", [])
@@ -440,21 +441,25 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                         image_block_exists = True
                         if new_image_url:
                             # Update existing image block
-                            updated_blocks.append({
-                                "type": "image",
-                                "block_id": "image_preview_block",
-                                "image_url": new_image_url[:2000],
-                                "alt_text": "Image preview"
-                            })
+                            updated_blocks.append(
+                                {
+                                    "type": "image",
+                                    "block_id": "image_preview_block",
+                                    "image_url": new_image_url[:2000],
+                                    "alt_text": "Image preview",
+                                }
+                            )
                         # If no URL, skip the image block (remove it)
                     elif block.get("block_id") == "image_url_block" and not image_block_exists and new_image_url:
                         # Insert image block before the URL input if it doesn't exist yet
-                        updated_blocks.append({
-                            "type": "image",
-                            "block_id": "image_preview_block",
-                            "image_url": new_image_url[:2000],
-                            "alt_text": "Image preview"
-                        })
+                        updated_blocks.append(
+                            {
+                                "type": "image",
+                                "block_id": "image_preview_block",
+                                "image_url": new_image_url[:2000],
+                                "alt_text": "Image preview",
+                            }
+                        )
                         updated_blocks.append(block)
                     else:
                         updated_blocks.append(block)
@@ -464,12 +469,14 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     final_blocks = []
                     for block in updated_blocks:
                         if block.get("block_id") == "image_url_block":
-                            final_blocks.append({
-                                "type": "image",
-                                "block_id": "image_preview_block",
-                                "image_url": new_image_url[:2000],
-                                "alt_text": "Image preview"
-                            })
+                            final_blocks.append(
+                                {
+                                    "type": "image",
+                                    "block_id": "image_preview_block",
+                                    "image_url": new_image_url[:2000],
+                                    "alt_text": "Image preview",
+                                }
+                            )
                         final_blocks.append(block)
                     updated_blocks = final_blocks
 
@@ -482,12 +489,12 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                         "submit": view.get("submit"),
                         "close": view.get("close"),
                         "private_metadata": view.get("private_metadata"),
-                        "blocks": updated_blocks
+                        "blocks": updated_blocks,
                     }
                     slack_client.views_update(view_id=view_id, view=updated_view)
                     logger.info("Modal updated with new image preview")
                 except SlackApiError as e:
-                    error_msg = e.response['error'] if e.response else str(e)
+                    error_msg = e.response["error"] if e.response else str(e)
                     logger.error(f"Failed to update modal with image preview: {error_msg}")
 
                     # If image preview fails, show error message instead
@@ -500,17 +507,25 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                         for block in error_blocks:
                             final_blocks.append(block)
                             if block.get("block_id") == "image_preview_actions":
-                                final_blocks.append({
-                                    "type": "context",
-                                    "block_id": "image_error_block",
-                                    "elements": [{
-                                        "type": "mrkdwn",
-                                        "text": ":warning: *Image preview failed* - The website may be blocking external access. The URL will still be saved."
-                                    }]
-                                })
+                                final_blocks.append(
+                                    {
+                                        "type": "context",
+                                        "block_id": "image_error_block",
+                                        "elements": [
+                                            {
+                                                "type": "mrkdwn",
+                                                "text": ":warning: *Image preview failed* - The website may be blocking external access. The URL will still be saved.",
+                                            }
+                                        ],
+                                    }
+                                )
 
                         # Remove any existing error block first
-                        final_blocks = [b for b in final_blocks if b.get("block_id") != "image_error_block" or b.get("type") == "context"]
+                        final_blocks = [
+                            b
+                            for b in final_blocks
+                            if b.get("block_id") != "image_error_block" or b.get("type") == "context"
+                        ]
 
                         try:
                             error_view = {
@@ -520,7 +535,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                                 "submit": view.get("submit"),
                                 "close": view.get("close"),
                                 "private_metadata": view.get("private_metadata"),
-                                "blocks": final_blocks
+                                "blocks": final_blocks,
                             }
                             slack_client.views_update(view_id=view_id, view=error_view)
                             logger.info("Modal updated with image error message")
@@ -575,35 +590,47 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
 
             # Get existing document to preserve scheme_url
             existing = get_source_doc(doc_id) or {}
-            
+
             # Extract form values from modal state
             state = view.get("state", {}).get("values", {})
-            
+
             # Pre-filled text fields
             scheme_name = state.get("scheme_name_block", {}).get("scheme_name", {}).get("value", "")
             agency = state.get("agency_block", {}).get("agency", {}).get("value", "")
             image_url = state.get("image_url_block", {}).get("image_url", {}).get("value", "")
             phone = state.get("phone_block", {}).get("phone", {}).get("value", "")
             address = state.get("address_block", {}).get("address", {}).get("value", "")
-            
+
             # Dropdowns
             who_is_it_for_obj = state.get("who_is_it_for_block", {}).get("who_is_it_for", {})
-            who_is_it_for = who_is_it_for_obj.get("selected_option", {}).get("value", "") if who_is_it_for_obj.get("selected_option") else ""
-            
+            who_is_it_for = (
+                who_is_it_for_obj.get("selected_option", {}).get("value", "")
+                if who_is_it_for_obj.get("selected_option")
+                else ""
+            )
+
             what_it_gives_obj = state.get("what_it_gives_block", {}).get("what_it_gives", {})
-            what_it_gives = what_it_gives_obj.get("selected_option", {}).get("value", "") if what_it_gives_obj.get("selected_option") else ""
-            
+            what_it_gives = (
+                what_it_gives_obj.get("selected_option", {}).get("value", "")
+                if what_it_gives_obj.get("selected_option")
+                else ""
+            )
+
             scheme_type_obj = state.get("scheme_type_block", {}).get("scheme_type", {})
-            scheme_type = scheme_type_obj.get("selected_option", {}).get("value", "") if scheme_type_obj.get("selected_option") else ""
-            
+            scheme_type = (
+                scheme_type_obj.get("selected_option", {}).get("value", "")
+                if scheme_type_obj.get("selected_option")
+                else ""
+            )
+
             # Text areas
             llm_description = state.get("llm_description_block", {}).get("llm_description", {}).get("value", "")
             eligibility = state.get("eligibility_block", {}).get("eligibility", {}).get("value", "")
             how_to_apply = state.get("how_to_apply_block", {}).get("how_to_apply", {}).get("value", "")
-            
+
             reviewer_id = event.get("user", {}).get("id", "")
             reviewed_at = datetime.now(timezone.utc).isoformat()
-            
+
             # Save edited document to Firestore
             upsert_edit_doc(
                 doc_id,
@@ -624,7 +651,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     "updated_at": reviewed_at,
                 },
             )
-            
+
             updated_data = {
                 "scheme_name": scheme_name,
                 "scheme_url": existing.get("scheme_url", ""),
@@ -639,7 +666,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 "eligibility": eligibility,
                 "how_to_apply": how_to_apply,
             }
-            
+
             # Update the original message to show it's reviewed
             if channel_id and message_ts:
                 locked_message = build_review_locked_message(doc_id, updated_data, reviewer_id, reviewed_at)
@@ -647,7 +674,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     slack_client.chat_update(channel=channel_id, ts=message_ts, **locked_message)
                 except SlackApiError:
                     pass
-            
+
             # Post thank you message
             if channel_id and reviewer_id:
                 thank_text = (
@@ -658,7 +685,7 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     slack_client.chat_postMessage(channel=channel_id, text=thank_text)
                 except SlackApiError:
                     pass
-            
+
             # Return response action to close modal
             return https_fn.Response(
                 response=json.dumps({"response_action": "clear"}),
@@ -666,18 +693,17 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 mimetype="application/json",
                 headers=headers,
             )
-        
+
         # Unknown event type
         return https_fn.Response(
             response="",
             status=200,
             headers=headers,
         )
-        
-    except Exception as e:
+
+    except Exception:
         return https_fn.Response(
             response="",
             status=500,
             headers=headers,
         )
-

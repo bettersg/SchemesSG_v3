@@ -11,15 +11,17 @@ Usage:
     cd backend/functions
     uv run python scripts/test_vector_search.py
 """
-import os
-from typing import List, Dict, Any
 
-from firebase_admin import firestore, credentials, initialize_app
-from google.cloud.firestore_v1.vector import Vector
+import os
+from typing import Any, Dict, List
+
+from dotenv import load_dotenv
+from firebase_admin import credentials, firestore, initialize_app
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
-from dotenv import load_dotenv
+
 
 # Load environment variables
 load_dotenv()
@@ -31,18 +33,20 @@ COLLECTION_SCHEMES = "schemes"
 def init_firebase():
     """Initialize Firebase connection."""
     private_key = os.getenv("FB_PRIVATE_KEY", "").replace("\\n", "\n")
-    cred = credentials.Certificate({
-        "type": os.getenv("FB_TYPE"),
-        "project_id": os.getenv("FB_PROJECT_ID"),
-        "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
-        "private_key": private_key,
-        "client_email": os.getenv("FB_CLIENT_EMAIL"),
-        "client_id": os.getenv("FB_CLIENT_ID"),
-        "auth_uri": os.getenv("FB_AUTH_URI"),
-        "token_uri": os.getenv("FB_TOKEN_URI"),
-        "auth_provider_x509_cert_url": os.getenv("FB_AUTH_PROVIDER_X509_CERT_URL"),
-        "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
-    })
+    cred = credentials.Certificate(
+        {
+            "type": os.getenv("FB_TYPE"),
+            "project_id": os.getenv("FB_PROJECT_ID"),
+            "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
+            "private_key": private_key,
+            "client_email": os.getenv("FB_CLIENT_EMAIL"),
+            "client_id": os.getenv("FB_CLIENT_ID"),
+            "auth_uri": os.getenv("FB_AUTH_URI"),
+            "token_uri": os.getenv("FB_TOKEN_URI"),
+            "auth_provider_x509_cert_url": os.getenv("FB_AUTH_PROVIDER_X509_CERT_URL"),
+            "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
+        }
+    )
 
     try:
         initialize_app(cred)
@@ -104,7 +108,7 @@ def test_vector_search(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
 
     # Batch fetch in chunks of 30 (Firestore 'in' query limit)
     for i in range(0, len(doc_ids), 30):
-        batch_ids = doc_ids[i:i+30]
+        batch_ids = doc_ids[i : i + 30]
         docs = db.collection(COLLECTION_SCHEMES).where("__name__", "in", batch_ids).get()
         for doc in docs:
             scheme_data = doc.to_dict()

@@ -6,9 +6,10 @@ Builds messages and modals for:
 - Processed scheme review with LLM fields
 - Approval confirmation messages
 """
-from typing import Dict, Any, Optional, List
 
-from new_scheme.constants import WHO_IS_IT_FOR, WHAT_IT_GIVES, SCHEME_TYPE
+from typing import Any, Dict, List, Optional
+
+from new_scheme.constants import SCHEME_TYPE, WHAT_IT_GIVES, WHO_IS_IT_FOR
 
 
 def truncate_text(text: str, max_length: int = 500) -> str:
@@ -37,7 +38,6 @@ def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any])
     scraped_text = processed_data.get("scraped_text", "")
     llm_fields = processed_data.get("llm_fields", {})
     planning_area = processed_data.get("planning_area", "Not Available")
-    original_data = processed_data.get("original_data", {})
     processing_status = processed_data.get("processing_status", "unknown")
     error = processed_data.get("error")
 
@@ -56,36 +56,29 @@ def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any])
         status_text = f"Processing failed: {error}"
 
     blocks = [
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": "New Scheme Submission", "emoji": True}
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*{scheme_name}*\n<{scheme_url}|View Original Link>"
-            }
-        },
+        {"type": "header", "text": {"type": "plain_text", "text": "New Scheme Submission", "emoji": True}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": f"*{scheme_name}*\n<{scheme_url}|View Original Link>"}},
         {
             "type": "context",
             "elements": [
                 {"type": "mrkdwn", "text": "Submitted by: Anonymous user"},
-                {"type": "mrkdwn", "text": f"{status_emoji} {status_text}"}
-            ]
+                {"type": "mrkdwn", "text": f"{status_emoji} {status_text}"},
+            ],
         },
         {"type": "divider"},
     ]
 
     # Add scraped text preview if available
     if scraped_text and not scraped_text.startswith(("HTTP Error:", "Scraping Error:")):
-        blocks.append({
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Scraped Text Preview:*\n```{truncate_text(scraped_text, 400)}```"
+        blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Scraped Text Preview:*\n```{truncate_text(scraped_text, 400)}```",
+                },
             }
-        })
+        )
 
     def format_list_field(value) -> str:
         """Format a list field for display."""
@@ -98,74 +91,83 @@ def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any])
         fields = []
 
         if llm_fields.get("who_is_it_for"):
-            fields.append({
-                "type": "mrkdwn",
-                "text": f"*Who is it for:*\n{truncate_text(format_list_field(llm_fields['who_is_it_for']), 100)}"
-            })
+            fields.append(
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Who is it for:*\n{truncate_text(format_list_field(llm_fields['who_is_it_for']), 100)}",
+                }
+            )
 
         if llm_fields.get("what_it_gives"):
-            fields.append({
-                "type": "mrkdwn",
-                "text": f"*What it gives:*\n{truncate_text(format_list_field(llm_fields['what_it_gives']), 100)}"
-            })
+            fields.append(
+                {
+                    "type": "mrkdwn",
+                    "text": f"*What it gives:*\n{truncate_text(format_list_field(llm_fields['what_it_gives']), 100)}",
+                }
+            )
 
         if llm_fields.get("scheme_type"):
-            fields.append({
-                "type": "mrkdwn",
-                "text": f"*Scheme type:*\n{truncate_text(format_list_field(llm_fields['scheme_type']), 100)}"
-            })
+            fields.append(
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Scheme type:*\n{truncate_text(format_list_field(llm_fields['scheme_type']), 100)}",
+                }
+            )
 
         if planning_area:
             pa_text = planning_area if isinstance(planning_area, str) else ", ".join(planning_area)
-            fields.append({
-                "type": "mrkdwn",
-                "text": f"*Planning Area:*\n{pa_text}"
-            })
+            fields.append({"type": "mrkdwn", "text": f"*Planning Area:*\n{pa_text}"})
 
         if fields:
-            blocks.append({
-                "type": "section",
-                "fields": fields[:4]  # Slack allows max 10 fields, we use 4
-            })
+            blocks.append(
+                {
+                    "type": "section",
+                    "fields": fields[:4],  # Slack allows max 10 fields, we use 4
+                }
+            )
 
         # Add description preview
         if llm_fields.get("llm_description"):
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*Description:*\n{truncate_text(llm_fields['llm_description'], 300)}"
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*Description:*\n{truncate_text(llm_fields['llm_description'], 300)}",
+                    },
                 }
-            })
+            )
 
     blocks.append({"type": "divider"})
 
     # Add action buttons
-    blocks.append({
-        "type": "actions",
-        "elements": [
-            {
-                "type": "button",
-                "text": {"type": "plain_text", "text": "Review & Approve", "emoji": True},
-                "style": "primary",
-                "action_id": "review_new_scheme",
-                "value": doc_id
-            },
-            {
-                "type": "button",
-                "text": {"type": "plain_text", "text": "Reject", "emoji": True},
-                "style": "danger",
-                "action_id": "reject_new_scheme",
-                "value": doc_id
-            }
-        ]
-    })
+    blocks.append(
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Review & Approve", "emoji": True},
+                    "style": "primary",
+                    "action_id": "review_new_scheme",
+                    "value": doc_id,
+                },
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Reject", "emoji": True},
+                    "style": "danger",
+                    "action_id": "reject_new_scheme",
+                    "value": doc_id,
+                },
+            ],
+        }
+    )
 
     return {
         "text": f"New scheme submission: {scheme_name}",
         "blocks": blocks,
         "unfurl_links": False,
-        "unfurl_media": False
+        "unfurl_media": False,
     }
 
 
@@ -225,18 +227,15 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
 
     # Build multi-select options from constants
     who_is_it_for_options = [
-        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]}
-        for opt in WHO_IS_IT_FOR
+        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]} for opt in WHO_IS_IT_FOR
     ]
 
     what_it_gives_options = [
-        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]}
-        for opt in WHAT_IT_GIVES
+        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]} for opt in WHAT_IT_GIVES
     ]
 
     scheme_type_options = [
-        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]}
-        for opt in SCHEME_TYPE
+        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]} for opt in SCHEME_TYPE
     ]
 
     def get_initial_options(llm_value: str, options: List[dict]) -> List[dict]:
@@ -256,10 +255,7 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
 
     blocks = [
         # Basic Information Section
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": "Basic Information"}
-        },
+        {"type": "header", "text": {"type": "plain_text", "text": "Basic Information"}},
         {
             "type": "input",
             "block_id": "scheme_name_block",
@@ -267,105 +263,87 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
             "element": {
                 "type": "plain_text_input",
                 "action_id": "scheme_name",
-                "initial_value": str(scheme_name)[:150]
-            }
+                "initial_value": str(scheme_name)[:150],
+            },
         },
         {
             "type": "input",
             "block_id": "scheme_url_block",
             "label": {"type": "plain_text", "text": "Scheme URL"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "scheme_url",
-                "initial_value": str(scheme_url)[:500]
-            }
+            "element": {"type": "plain_text_input", "action_id": "scheme_url", "initial_value": str(scheme_url)[:500]},
         },
     ]
 
     # Note: Automatic image preview removed - Slack often fails to download images
     # due to websites blocking Slack's crawler. Users can use "Preview Image" button instead.
 
-    blocks.extend([
-        {
-            "type": "input",
-            "block_id": "image_url_block",
-            "label": {"type": "plain_text", "text": "Logo/Image URL"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "image_url",
-                "initial_value": str(logo_url)[:500] if logo_url else ""
+    blocks.extend(
+        [
+            {
+                "type": "input",
+                "block_id": "image_url_block",
+                "label": {"type": "plain_text", "text": "Logo/Image URL"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "image_url",
+                    "initial_value": str(logo_url)[:500] if logo_url else "",
+                },
+                "optional": True,
             },
-            "optional": True
-        },
-        {
-            "type": "actions",
-            "block_id": "image_preview_actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {"type": "plain_text", "text": "🔄 Preview Image", "emoji": True},
-                    "action_id": "preview_image_button"
-                }
-            ]
-        },
-
-        # Contact Information Section
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": "Contact Information"}
-        },
-        {
-            "type": "input",
-            "block_id": "address_block",
-            "label": {"type": "plain_text", "text": "Address"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "address",
-                "initial_value": str(address)[:500],
-                "multiline": True
+            {
+                "type": "actions",
+                "block_id": "image_preview_actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "🔄 Preview Image", "emoji": True},
+                        "action_id": "preview_image_button",
+                    }
+                ],
             },
-            "optional": True
-        },
-        {
-            "type": "input",
-            "block_id": "phone_block",
-            "label": {"type": "plain_text", "text": "Phone"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "phone",
-                "initial_value": str(phone)[:150]
+            # Contact Information Section
+            {"type": "header", "text": {"type": "plain_text", "text": "Contact Information"}},
+            {
+                "type": "input",
+                "block_id": "address_block",
+                "label": {"type": "plain_text", "text": "Address"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "address",
+                    "initial_value": str(address)[:500],
+                    "multiline": True,
+                },
+                "optional": True,
             },
-            "optional": True
-        },
-        {
-            "type": "input",
-            "block_id": "email_block",
-            "label": {"type": "plain_text", "text": "Email"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "email",
-                "initial_value": str(email)[:150]
+            {
+                "type": "input",
+                "block_id": "phone_block",
+                "label": {"type": "plain_text", "text": "Phone"},
+                "element": {"type": "plain_text_input", "action_id": "phone", "initial_value": str(phone)[:150]},
+                "optional": True,
             },
-            "optional": True
-        },
-        {
-            "type": "input",
-            "block_id": "planning_area_block",
-            "label": {"type": "plain_text", "text": "Planning Area"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "planning_area",
-                "initial_value": str(planning_area)[:150]
+            {
+                "type": "input",
+                "block_id": "email_block",
+                "label": {"type": "plain_text", "text": "Email"},
+                "element": {"type": "plain_text_input", "action_id": "email", "initial_value": str(email)[:150]},
+                "optional": True,
             },
-            "optional": True
-        },
-
-        # Categorization Section
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": "Categorization"}
-        },
-    ])
+            {
+                "type": "input",
+                "block_id": "planning_area_block",
+                "label": {"type": "plain_text", "text": "Planning Area"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "planning_area",
+                    "initial_value": str(planning_area)[:150],
+                },
+                "optional": True,
+            },
+            # Categorization Section
+            {"type": "header", "text": {"type": "plain_text", "text": "Categorization"}},
+        ]
+    )
 
     # Build multi-select elements (values are comma-separated strings)
     who_is_it_for_element = {
@@ -398,70 +376,68 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
     if initial_type:
         scheme_type_element["initial_options"] = initial_type
 
-    blocks.extend([
-        {
-            "type": "input",
-            "block_id": "who_is_it_for_block",
-            "label": {"type": "plain_text", "text": "Who is it for?"},
-            "element": who_is_it_for_element,
-            "optional": True
-        },
-        {
-            "type": "input",
-            "block_id": "what_it_gives_block",
-            "label": {"type": "plain_text", "text": "What it gives"},
-            "element": what_it_gives_element,
-            "optional": True
-        },
-        {
-            "type": "input",
-            "block_id": "scheme_type_block",
-            "label": {"type": "plain_text", "text": "Scheme Type"},
-            "element": scheme_type_element,
-            "optional": True
-        },
-
-        # Description Section
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": "Scheme Details"}
-        },
-        {
-            "type": "input",
-            "block_id": "llm_description_block",
-            "label": {"type": "plain_text", "text": "Description"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "llm_description",
-                "multiline": True,
-                "initial_value": str(llm_description)[:2900]
-            }
-        },
-        {
-            "type": "input",
-            "block_id": "eligibility_block",
-            "label": {"type": "plain_text", "text": "Eligibility"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "eligibility",
-                "multiline": True,
-                "initial_value": str(eligibility)[:2900]
+    blocks.extend(
+        [
+            {
+                "type": "input",
+                "block_id": "who_is_it_for_block",
+                "label": {"type": "plain_text", "text": "Who is it for?"},
+                "element": who_is_it_for_element,
+                "optional": True,
             },
-            "optional": True
-        },
-        {
-            "type": "input",
-            "block_id": "how_to_apply_block",
-            "label": {"type": "plain_text", "text": "How to Apply"},
-            "element": {
-                "type": "plain_text_input",
-                "action_id": "how_to_apply",
-                "multiline": True,
-                "initial_value": str(how_to_apply)[:2900]
+            {
+                "type": "input",
+                "block_id": "what_it_gives_block",
+                "label": {"type": "plain_text", "text": "What it gives"},
+                "element": what_it_gives_element,
+                "optional": True,
             },
-            "optional": True
-        }
-    ])
+            {
+                "type": "input",
+                "block_id": "scheme_type_block",
+                "label": {"type": "plain_text", "text": "Scheme Type"},
+                "element": scheme_type_element,
+                "optional": True,
+            },
+            # Description Section
+            {"type": "header", "text": {"type": "plain_text", "text": "Scheme Details"}},
+            {
+                "type": "input",
+                "block_id": "llm_description_block",
+                "label": {"type": "plain_text", "text": "Description"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "llm_description",
+                    "multiline": True,
+                    "initial_value": str(llm_description)[:2900],
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "eligibility_block",
+                "label": {"type": "plain_text", "text": "Eligibility"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "eligibility",
+                    "multiline": True,
+                    "initial_value": str(eligibility)[:2900],
+                },
+                "optional": True,
+            },
+            {
+                "type": "input",
+                "block_id": "how_to_apply_block",
+                "label": {"type": "plain_text", "text": "How to Apply"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "how_to_apply",
+                    "multiline": True,
+                    "initial_value": str(how_to_apply)[:2900],
+                },
+                "optional": True,
+            },
+        ]
+    )
 
     return {
         "type": "modal",
@@ -470,17 +446,12 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
         "submit": {"type": "plain_text", "text": "Approve & Add"},
         "close": {"type": "plain_text", "text": "Cancel"},
         "private_metadata": metadata,
-        "blocks": blocks
+        "blocks": blocks,
     }
 
 
 def build_new_scheme_approved_message(
-    doc_id: str,
-    scheme_name: str,
-    scheme_url: str,
-    reviewer_id: str,
-    reviewed_at: str,
-    new_scheme_id: str
+    doc_id: str, scheme_name: str, scheme_url: str, reviewer_id: str, reviewed_at: str, new_scheme_id: str
 ) -> dict:
     """
     Build message confirming scheme was approved and added.
@@ -505,8 +476,8 @@ def build_new_scheme_approved_message(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f":white_check_mark: *New scheme approved and added!*\n\n*{scheme_name}*\n<{scheme_url}|View Scheme>"
-                }
+                    "text": f":white_check_mark: *New scheme approved and added!*\n\n*{scheme_name}*\n<{scheme_url}|View Scheme>",
+                },
             },
             {
                 "type": "context",
@@ -514,18 +485,15 @@ def build_new_scheme_approved_message(
                     {"type": "mrkdwn", "text": f"Approved by {reviewed_by}"},
                     {"type": "mrkdwn", "text": f"At: {reviewed_at}"},
                     {"type": "mrkdwn", "text": f"Scheme ID: `{new_scheme_id}`"},
-                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"}
-                ]
-            }
-        ]
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                ],
+            },
+        ],
     }
 
 
 def build_new_scheme_rejected_message(
-    doc_id: str,
-    scheme_name: str,
-    reviewer_id: str,
-    reason: Optional[str] = None
+    doc_id: str, scheme_name: str, reviewer_id: str, reason: Optional[str] = None
 ) -> dict:
     """
     Build message confirming scheme was rejected.
@@ -549,24 +517,22 @@ def build_new_scheme_rejected_message(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f":x: *Scheme submission rejected*\n\n*{scheme_name}*{reason_text}"
-                }
+                    "text": f":x: *Scheme submission rejected*\n\n*{scheme_name}*{reason_text}",
+                },
             },
             {
                 "type": "context",
                 "elements": [
                     {"type": "mrkdwn", "text": f"Rejected by {reviewed_by}"},
-                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"}
-                ]
-            }
-        ]
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                ],
+            },
+        ],
     }
 
 
 def build_new_scheme_duplicate_message(
-    doc_id: str,
-    submission_data: Dict[str, Any],
-    duplicate_info: Dict[str, Any]
+    doc_id: str, submission_data: Dict[str, Any], duplicate_info: Dict[str, Any]
 ) -> dict:
     """
     Build Slack message for scheme that already exists.
@@ -588,23 +554,20 @@ def build_new_scheme_duplicate_message(
     return {
         "text": f"Scheme already exists: {scheme_name}",
         "blocks": [
-            {
-                "type": "header",
-                "text": {"type": "plain_text", "text": "Duplicate URL Detected", "emoji": True}
-            },
+            {"type": "header", "text": {"type": "plain_text", "text": "Duplicate URL Detected", "emoji": True}},
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f":no_entry: *This scheme was not added because the same URL already exists in the database.*"
-                }
+                    "text": ":no_entry: *This scheme was not added because the same URL already exists in the database.*",
+                },
             },
             {
                 "type": "section",
                 "fields": [
                     {"type": "mrkdwn", "text": f"*Submitted URL:*\n<{scheme_url}|{scheme_url}>"},
-                    {"type": "mrkdwn", "text": f"*Normalized:*\n`{normalized_url}`"}
-                ]
+                    {"type": "mrkdwn", "text": f"*Normalized:*\n`{normalized_url}`"},
+                ],
             },
             {"type": "divider"},
             {
@@ -612,16 +575,14 @@ def build_new_scheme_duplicate_message(
                 "text": {
                     "type": "mrkdwn",
                     "text": f"*Existing scheme in database:*\n"
-                           f"• *Name:* {existing_scheme_name}\n"
-                           f"• *URL:* <{existing_url}|{existing_url}>\n"
-                           f"• *ID:* `{duplicate_info['doc_id']}`"
-                }
+                    f"• *Name:* {existing_scheme_name}\n"
+                    f"• *URL:* <{existing_url}|{existing_url}>\n"
+                    f"• *ID:* `{duplicate_info['doc_id']}`",
+                },
             },
             {
                 "type": "context",
-                "elements": [
-                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}` | Submitted by: anonymous user"}
-                ]
-            }
-        ]
+                "elements": [{"type": "mrkdwn", "text": f"Entry ID: `{doc_id}` | Submitted by: anonymous user"}],
+            },
+        ],
     }

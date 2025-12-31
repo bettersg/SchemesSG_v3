@@ -1,7 +1,7 @@
 """Tests for the schemes functionality."""
 
 import json
-import pytest
+
 from schemes.schemes import schemes
 
 

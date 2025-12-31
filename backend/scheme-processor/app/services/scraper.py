@@ -3,19 +3,17 @@ Web scraping with crawl4ai + Playwright.
 
 Handles web content extraction with Cloudflare bypass support via Pydoll.
 """
+
+import asyncio
 import io
 import os
-import re
-import asyncio
 import subprocess
-from typing import Dict, Any, List, Optional, Tuple
-from urllib.parse import urljoin
+from typing import Any, Dict, List
 
 import requests
-from loguru import logger
-
-from app.constants import CLOUDFLARE_INDICATORS, BOT_PROTECTION_INDICATORS
+from app.constants import BOT_PROTECTION_INDICATORS, CLOUDFLARE_INDICATORS
 from app.services.extraction import select_best_logo
+from loguru import logger
 
 
 async def scrape_url(url: str) -> Dict[str, Any]:
@@ -37,7 +35,7 @@ async def scrape_url(url: str) -> Dict[str, Any]:
 
 def _is_pdf(url: str) -> bool:
     """Check if URL points to a PDF file."""
-    return url.lower().endswith('.pdf')
+    return url.lower().endswith(".pdf")
 
 
 async def _scrape_pdf(url: str) -> Dict[str, Any]:
@@ -59,27 +57,12 @@ async def _scrape_pdf(url: str) -> Dict[str, Any]:
                 text += page_text + "\n"
 
         if not text.strip():
-            return {
-                "content": "",
-                "images": [],
-                "logo_url": None,
-                "error": "PDF Processing Error: No text extracted"
-            }
+            return {"content": "", "images": [], "logo_url": None, "error": "PDF Processing Error: No text extracted"}
 
-        return {
-            "content": text.strip(),
-            "images": [],
-            "logo_url": None,
-            "error": None
-        }
+        return {"content": text.strip(), "images": [], "logo_url": None, "error": None}
 
     except Exception as e:
-        return {
-            "content": "",
-            "images": [],
-            "logo_url": None,
-            "error": f"PDF Processing Error: {str(e)}"
-        }
+        return {"content": "", "images": [], "logo_url": None, "error": f"PDF Processing Error: {str(e)}"}
 
 
 async def _scrape_html(url: str) -> Dict[str, Any]:
@@ -118,7 +101,7 @@ def _is_cloudflare_blocked(result: Dict[str, Any]) -> bool:
 async def _try_crawl4ai(url: str) -> Dict[str, Any]:
     """Try scraping with crawl4ai."""
     try:
-        from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig
+        from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
         from crawl4ai.deep_crawling import BFSDeepCrawlStrategy
 
         browser_config = BrowserConfig(
@@ -131,17 +114,13 @@ async def _try_crawl4ai(url: str) -> Dict[str, Any]:
                 "--disable-features=IsolateOrigins,site-per-process",
                 "--disable-site-isolation-trials",
                 "--disable-extensions",
-            ]
+            ],
         )
 
         crawl_config = CrawlerRunConfig(
-            deep_crawl_strategy=BFSDeepCrawlStrategy(
-                max_depth=1,
-                include_external=False,
-                max_pages=5
-            ),
+            deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=5),
             cache_mode=CacheMode.BYPASS,
-            verbose=False
+            verbose=False,
         )
 
         logger.info(f"Starting crawl4ai for: {url}")
@@ -154,30 +133,15 @@ async def _try_crawl4ai(url: str) -> Dict[str, Any]:
     except Exception as e:
         error_str = str(e).lower()
         if any(ind in error_str for ind in BOT_PROTECTION_INDICATORS):
-            return {
-                "content": "",
-                "images": [],
-                "logo_url": None,
-                "error": f"Bot protection detected: {str(e)}"
-            }
+            return {"content": "", "images": [], "logo_url": None, "error": f"Bot protection detected: {str(e)}"}
         logger.error(f"Crawl4ai error for {url}: {e}")
-        return {
-            "content": "",
-            "images": [],
-            "logo_url": None,
-            "error": f"Crawl Error: {str(e)}"
-        }
+        return {"content": "", "images": [], "logo_url": None, "error": f"Crawl Error: {str(e)}"}
 
 
 def _process_crawl_results(results, url: str) -> Dict[str, Any]:
     """Process crawl4ai results into standardized format."""
     if not results:
-        return {
-            "content": "",
-            "images": [],
-            "logo_url": None,
-            "error": "No results from crawler"
-        }
+        return {"content": "", "images": [], "logo_url": None, "error": "No results from crawler"}
 
     # Handle list results (deep crawl)
     if isinstance(results, list):
@@ -190,46 +154,31 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
                 if text:
                     all_text.append(text)
 
-                if hasattr(result, 'media') and result.media:
-                    images = result.media.get('images', [])
+                if hasattr(result, "media") and result.media:
+                    images = result.media.get("images", [])
                     all_images.extend(images)
 
         scraped_text = "\n\n---PAGE BREAK---\n\n".join(all_text)
         logo_url = select_best_logo(all_images, url) if all_images else None
 
-        return {
-            "content": scraped_text,
-            "images": all_images,
-            "logo_url": logo_url,
-            "error": None
-        }
+        return {"content": scraped_text, "images": all_images, "logo_url": logo_url, "error": None}
 
     # Single result
     if not results.success:
         error_msg = results.error_message or "Unknown crawl error"
-        return {
-            "content": "",
-            "images": [],
-            "logo_url": None,
-            "error": error_msg
-        }
+        return {"content": "", "images": [], "logo_url": None, "error": error_msg}
 
     scraped_text = results.markdown or results.cleaned_html or ""
     images = []
     logo_url = None
 
-    if hasattr(results, 'media') and results.media:
-        images = results.media.get('images', [])
+    if hasattr(results, "media") and results.media:
+        images = results.media.get("images", [])
         if images:
             logo_url = select_best_logo(images, url)
 
     logger.info(f"Crawl4ai completed for {url}: {len(scraped_text)} chars")
-    return {
-        "content": scraped_text,
-        "images": images,
-        "logo_url": logo_url,
-        "error": None
-    }
+    return {"content": scraped_text, "images": images, "logo_url": logo_url, "error": None}
 
 
 async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
@@ -254,7 +203,7 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
             xvfb_process = subprocess.Popen(
                 ["Xvfb", f":{display_num}", "-screen", "0", "1920x1080x24"],
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.DEVNULL,
             )
             await asyncio.sleep(1)
             logger.info(f"Started Xvfb on :{display_num}")
@@ -309,8 +258,7 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
                     title = await tab.execute_script("return document.title")
                     logger.info(f"Page title (attempt {attempt + 1}): {title}")
                     if title and any(
-                        ind in str(title).lower()
-                        for ind in ["just a moment", "attention required", "checking"]
+                        ind in str(title).lower() for ind in ["just a moment", "attention required", "checking"]
                     ):
                         logger.info("Still on Cloudflare challenge, waiting...")
                         await asyncio.sleep(10)
@@ -326,18 +274,13 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
                 logger.info(f"Pydoll succeeded for {url}: {len(page_content)} chars")
                 images = _extract_images_from_html(page_content, url)
                 logo_url = select_best_logo(images, url) if images else None
-                return {
-                    "content": page_content,
-                    "images": images,
-                    "logo_url": logo_url,
-                    "error": None
-                }
+                return {"content": page_content, "images": images, "logo_url": logo_url, "error": None}
             else:
                 return {
                     "content": "",
                     "images": [],
                     "logo_url": None,
-                    "error": "Pydoll: Content too short (Cloudflare may still be blocking)"
+                    "error": "Pydoll: Content too short (Cloudflare may still be blocking)",
                 }
 
     except ImportError as e:
@@ -368,14 +311,14 @@ async def _extract_pydoll_content(tab) -> str:
             return result
         if isinstance(result, dict):
             try:
-                if 'result' in result:
-                    inner = result['result']
-                    if isinstance(inner, dict) and 'result' in inner:
-                        inner = inner['result']
-                    if isinstance(inner, dict) and 'value' in inner:
-                        return str(inner['value'])
-                if 'value' in result:
-                    return str(result['value'])
+                if "result" in result:
+                    inner = result["result"]
+                    if isinstance(inner, dict) and "result" in inner:
+                        inner = inner["result"]
+                    if isinstance(inner, dict) and "value" in inner:
+                        return str(inner["value"])
+                if "value" in result:
+                    return str(result["value"])
             except Exception:
                 pass
         return str(result)
@@ -410,30 +353,25 @@ def _extract_images_from_html(html: str, base_url: str) -> List[Dict]:
     """Extract images from HTML for logo detection."""
     from bs4 import BeautifulSoup
 
-    soup = BeautifulSoup(html, 'lxml')
+    soup = BeautifulSoup(html, "lxml")
     images = []
 
-    for img in soup.find_all('img'):
-        src = img.get('src', '')
-        if not src or src.startswith('data:'):
+    for img in soup.find_all("img"):
+        src = img.get("src", "")
+        if not src or src.startswith("data:"):
             continue
 
         # Build description from parent context
         desc_parts = []
         for parent in img.parents:
-            if parent.name in ['header', 'nav', 'footer', 'aside']:
+            if parent.name in ["header", "nav", "footer", "aside"]:
                 desc_parts.append(parent.name)
-            parent_class = parent.get('class', [])
+            parent_class = parent.get("class", [])
             if parent_class:
                 desc_parts.extend(parent_class if isinstance(parent_class, list) else [parent_class])
             if len(desc_parts) > 5:
                 break
 
-        images.append({
-            'src': src,
-            'alt': img.get('alt', ''),
-            'desc': ' '.join(desc_parts),
-            'score': 0
-        })
+        images.append({"src": src, "alt": img.get("alt", ""), "desc": " ".join(desc_parts), "score": 0})
 
     return images

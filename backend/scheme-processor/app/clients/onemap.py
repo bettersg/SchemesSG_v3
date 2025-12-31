@@ -3,6 +3,7 @@ OneMap API Integration for Planning Area extraction.
 
 Extracts Singapore planning area from addresses using OneMap geocoding API.
 """
+
 import os
 import re
 from typing import Optional
@@ -35,7 +36,7 @@ class PlanningAreaService:
             response = requests.post(
                 "https://www.onemap.gov.sg/api/auth/post/getToken",
                 json={"email": email, "password": password},
-                timeout=10
+                timeout=10,
             )
             if response.status_code == 200:
                 return response.json().get("access_token")
@@ -65,19 +66,14 @@ class PlanningAreaService:
 
         try:
             # Extract postal code if present (6 digits)
-            postal_match = re.search(r'\b(\d{6})\b', address)
+            postal_match = re.search(r"\b(\d{6})\b", address)
             search_value = postal_match.group(1) if postal_match else address
 
             # Step 1: Geocode address to get coordinates
             geo_response = requests.get(
                 "https://www.onemap.gov.sg/api/common/elastic/search",
-                params={
-                    "searchVal": search_value,
-                    "returnGeom": "Y",
-                    "getAddrDetails": "Y",
-                    "pageNum": 1
-                },
-                timeout=10
+                params={"searchVal": search_value, "returnGeom": "Y", "getAddrDetails": "Y", "pageNum": 1},
+                timeout=10,
             )
 
             geo_data = geo_response.json()
@@ -94,7 +90,7 @@ class PlanningAreaService:
                 "https://www.onemap.gov.sg/api/public/popapi/getPlanningarea",
                 params={"latitude": lat, "longitude": lon},
                 headers={"Authorization": self._token},
-                timeout=10
+                timeout=10,
             )
 
             pa_data = pa_response.json()

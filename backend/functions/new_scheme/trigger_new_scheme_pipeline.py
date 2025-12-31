@@ -4,23 +4,25 @@ Firestore Trigger for New Scheme Entries.
 Triggers when a new document is created in schemeEntries collection.
 Calls the scheme-processor Cloud Run service for processing.
 """
-import os
+
 import json
+import os
 from datetime import datetime, timezone
 
-import requests
 import google.auth
 import google.auth.transport.requests
-from google.oauth2 import service_account
-from firebase_functions import firestore_fn, options
+import requests
 from firebase_admin import firestore
+from firebase_functions import firestore_fn, options
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
-from slack_sdk.web import WebClient
+from google.oauth2 import service_account
 from loguru import logger
+from slack_sdk.web import WebClient
+from utils.json_utils import safe_json_dumps
 
 from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message
 from new_scheme.url_utils import check_duplicate_scheme
-from utils.json_utils import safe_json_dumps
+
 
 # URL for scheme-processor service
 # In local dev: http://scheme-processor:8081 (docker network)
@@ -34,8 +36,7 @@ def get_identity_token(audience: str) -> str:
     creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if creds_path and os.path.exists(creds_path):
         credentials = service_account.IDTokenCredentials.from_service_account_file(
-            creds_path,
-            target_audience=audience
+            creds_path, target_audience=audience
         )
         auth_req = google.auth.transport.requests.Request()
         credentials.refresh(auth_req)
@@ -112,13 +113,15 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         # Update schemeEntries with duplicate status
         db = firestore.client()
         entry_ref = db.collection("schemeEntries").document(doc_id)
-        entry_ref.update({
-            "pipeline_status": "duplicate",
-            "pipeline_error": f"This URL already exists: {duplicate['scheme']} ({duplicate['link']})",
-            "duplicate_scheme_id": duplicate["doc_id"],
-            "duplicate_scheme_name": duplicate["scheme"],
-            "duplicate_normalized_url": duplicate["normalized_url"],
-        })
+        entry_ref.update(
+            {
+                "pipeline_status": "duplicate",
+                "pipeline_error": f"This URL already exists: {duplicate['scheme']} ({duplicate['link']})",
+                "duplicate_scheme_id": duplicate["doc_id"],
+                "duplicate_scheme_name": duplicate["scheme"],
+                "duplicate_normalized_url": duplicate["normalized_url"],
+            }
+        )
 
         # Post to Slack with duplicate warning
         post_duplicate_to_slack(doc_id, data, duplicate)
@@ -146,10 +149,10 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
                 "doc_id": doc_id,
                 "scheme_name": data.get("Scheme", "Unknown"),
                 "scheme_url": data.get("Link", ""),
-                "original_data": serialized_data
+                "original_data": serialized_data,
             },
             headers=headers,
-            timeout=300  # 5 minute timeout
+            timeout=300,  # 5 minute timeout
         )
         response.raise_for_status()
 
@@ -177,11 +180,13 @@ def _update_error_status(doc_id: str, error_msg: str) -> None:
     try:
         db = firestore.client()
         entry_ref = db.collection("schemeEntries").document(doc_id)
-        entry_ref.update({
-            "pipeline_status": "failed",
-            "pipeline_error": error_msg,
-            "pipeline_failed_at": datetime.now(timezone.utc).isoformat()
-        })
+        entry_ref.update(
+            {
+                "pipeline_status": "failed",
+                "pipeline_error": error_msg,
+                "pipeline_failed_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
     except Exception as e:
         logger.error(f"Failed to update error status for {doc_id}: {e}")
 

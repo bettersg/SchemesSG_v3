@@ -5,8 +5,8 @@ from uuid import uuid1
 
 import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
-from google.cloud.firestore_v1.vector import Vector
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+from google.cloud.firestore_v1.vector import Vector
 from langchain.docstore.document import Document
 from langchain_community.retrievers import BM25Retriever
 from langchain_openai import AzureOpenAIEmbeddings
@@ -166,10 +166,7 @@ class SearchModel:
         # Step 2: Query embeddings collection using Firestore vector search
         embeddings_collection = self.__class__.db.collection(EMBEDDINGS_COLLECTION)
         vector_query = embeddings_collection.find_nearest(
-            vector_field="embedding",
-            query_vector=Vector(vec),
-            distance_measure=DistanceMeasure.COSINE,
-            limit=top_k
+            vector_field="embedding", query_vector=Vector(vec), distance_measure=DistanceMeasure.COSINE, limit=top_k
         )
 
         # Get matching doc_ids from vector search results
