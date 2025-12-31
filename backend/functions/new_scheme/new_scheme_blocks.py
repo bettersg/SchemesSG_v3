@@ -282,14 +282,8 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
         },
     ]
 
-    # Add image preview if logo_url is a valid absolute URL
-    if logo_url and str(logo_url).startswith(("http://", "https://")):
-        blocks.append({
-            "type": "image",
-            "block_id": "image_preview_block",
-            "image_url": str(logo_url)[:2000],
-            "alt_text": "Scheme logo"
-        })
+    # Note: Automatic image preview removed - Slack often fails to download images
+    # due to websites blocking Slack's crawler. Users can use "Preview Image" button instead.
 
     blocks.extend([
         {

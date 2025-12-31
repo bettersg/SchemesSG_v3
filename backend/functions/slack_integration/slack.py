@@ -350,13 +350,18 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
 
             # Handle new scheme review button
             if action.get("action_id") == "review_new_scheme":
+                import time
+                start_time = time.time()
+
                 entry_doc_id = action.get("value")
                 trigger_id = event.get("trigger_id")
 
                 logger.info(f"Opening new scheme review modal for entry: {entry_doc_id}")
 
                 # Get processed data from schemeEntries
+                t1 = time.time()
                 processed_data = get_processed_data_from_entry(entry_doc_id)
+                logger.info(f"Firestore fetch took {(time.time() - t1)*1000:.0f}ms")
 
                 # Build metadata for modal
                 container = event.get("container", {})
@@ -368,10 +373,15 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 }
 
                 # Open new scheme review modal
+                t2 = time.time()
                 modal_view = build_new_scheme_review_modal(json.dumps(metadata), processed_data)
+                logger.info(f"Modal build took {(time.time() - t2)*1000:.0f}ms")
+
+                t3 = time.time()
                 try:
                     result = slack_client.views_open(trigger_id=trigger_id, view=modal_view)
-                    logger.info(f"New scheme modal opened: {result.get('ok', False)}")
+                    logger.info(f"Slack API took {(time.time() - t3)*1000:.0f}ms, opened: {result.get('ok', False)}")
+                    logger.info(f"Total time: {(time.time() - start_time)*1000:.0f}ms")
                 except SlackApiError as e:
                     error_detail = e.response.data if e.response else str(e)
                     logger.error(f"Failed to open new scheme modal: {e.response['error'] if e.response else str(e)}")
@@ -477,7 +487,45 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     slack_client.views_update(view_id=view_id, view=updated_view)
                     logger.info("Modal updated with new image preview")
                 except SlackApiError as e:
-                    logger.error(f"Failed to update modal with image preview: {e.response['error'] if e.response else str(e)}")
+                    error_msg = e.response['error'] if e.response else str(e)
+                    logger.error(f"Failed to update modal with image preview: {error_msg}")
+
+                    # If image preview fails, show error message instead
+                    if "downloading image failed" in str(e.response) or error_msg == "invalid_arguments":
+                        # Remove image block and add error context
+                        error_blocks = [b for b in updated_blocks if b.get("block_id") != "image_preview_block"]
+
+                        # Find image_url_block and insert error message after it
+                        final_blocks = []
+                        for block in error_blocks:
+                            final_blocks.append(block)
+                            if block.get("block_id") == "image_preview_actions":
+                                final_blocks.append({
+                                    "type": "context",
+                                    "block_id": "image_error_block",
+                                    "elements": [{
+                                        "type": "mrkdwn",
+                                        "text": ":warning: *Image preview failed* - The website may be blocking external access. The URL will still be saved."
+                                    }]
+                                })
+
+                        # Remove any existing error block first
+                        final_blocks = [b for b in final_blocks if b.get("block_id") != "image_error_block" or b.get("type") == "context"]
+
+                        try:
+                            error_view = {
+                                "type": view.get("type"),
+                                "callback_id": view.get("callback_id"),
+                                "title": view.get("title"),
+                                "submit": view.get("submit"),
+                                "close": view.get("close"),
+                                "private_metadata": view.get("private_metadata"),
+                                "blocks": final_blocks
+                            }
+                            slack_client.views_update(view_id=view_id, view=error_view)
+                            logger.info("Modal updated with image error message")
+                        except Exception as inner_e:
+                            logger.error(f"Failed to show error message: {inner_e}")
 
                 return https_fn.Response(
                     response="",
