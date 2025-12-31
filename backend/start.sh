@@ -1,4 +1,5 @@
 #!/bin/bash
 
-# Start Firebase emulator
-firebase emulators:start --only functions,firestore --project schemessg-v3-dev
+# Start Firebase functions only (connects to cloud Firestore for vector search)
+# Note: Firestore emulator has limited vector search support
+firebase emulators:start --only functions --project schemessg-v3-dev
