@@ -22,7 +22,11 @@ The following endpoints are available:
    - on_new_scheme_entry: Triggered on schemeEntries document creation, runs pipeline steps 1-4
      (scraping, LLM extraction, planning area), then posts to Slack for human review
 
-5. System:
+5. Batch Jobs:
+   - scheduled_link_check_and_reindex: Monthly scheduled job to check all scheme links,
+     mark dead links inactive, post summary to Slack, and reindex embeddings
+
+6. System:
    - health: Health check endpoint
    - keep_endpoints_warm: Scheduled task to reduce cold starts
 
@@ -58,6 +62,7 @@ from slack_integration.slack import (  # noqa: F401
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 from utils.endpoints import keep_endpoints_warm  # noqa: F401
 from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
+from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 
 
 # Initialise logger
