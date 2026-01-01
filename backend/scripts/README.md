@@ -42,7 +42,7 @@ uv run python scripts/populate_embeddings.py --prod
 - Only run once per environment - use reindex for updates
 
 **Prerequisites:**
-- `.env` (dev) or `.env.prod` (production) with Firebase + Azure OpenAI credentials
+- `.env.dev` (dev) or `.env.prod` (production) with Firebase + Azure OpenAI credentials
 - Vector index deployed: `firebase deploy --only firestore:indexes --project <project-id>`
 
 ### Ongoing Maintenance (Automated)
@@ -220,10 +220,10 @@ backend/
 | File | Purpose | Credentials |
 |------|---------|-------------|
 | `scripts/download_prod_data.py` | Download from production Firestore | `.env.prod` |
-| `scripts/download_dev_data.py` | Download from dev Firestore | `.env` |
+| `scripts/download_dev_data.py` | Download from dev Firestore | `.env.dev` |
 | `scripts/load_local_data.py` | Load JSON into emulator | `.env` |
 | `scripts/normalize_and_export_to_sheets.py` | Export to Google Sheets | `.env` + Sheets API |
-| `functions/scripts/populate_embeddings.py` | One-time embedding population | `.env` or `.env.prod` |
+| `functions/scripts/populate_embeddings.py` | One-time embedding population | `.env.dev` or `.env.prod` |
 | `functions/scripts/test_vector_search.py` | Test vector search | `.env` |
 | `functions/scripts/run_link_check_and_reindex.py` | Manual link check + reindex | `.env` |
 

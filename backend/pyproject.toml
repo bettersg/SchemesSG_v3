@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "en-core-web-sm",
-    "faiss-cpu==1.9.0",
     "firebase-admin>=6.0.0",
     "firebase-functions~=0.1.0",
     "flask-cors==5.0.0",

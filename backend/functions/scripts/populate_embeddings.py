@@ -6,7 +6,7 @@ Original 'schemes' collection is unchanged.
 
 Usage:
     cd backend/functions
-    uv run python scripts/populate_embeddings.py --dev   # Uses .env (schemessg-v3-dev)
+    uv run python scripts/populate_embeddings.py --dev   # Uses .env.dev (schemessg-v3-dev)
     uv run python scripts/populate_embeddings.py --prod  # Uses .env.prod (schemessg)
 """
 
@@ -33,7 +33,7 @@ def parse_args():
     env_group.add_argument(
         "--dev",
         action="store_true",
-        help="Run against dev project (schemessg-v3-dev) using .env",
+        help="Run against dev project (schemessg-v3-dev) using .env.dev",
     )
     env_group.add_argument(
         "--prod",
@@ -53,12 +53,12 @@ def load_environment(is_prod: bool):
         load_dotenv(env_file, override=True)
         logger.info("Loaded production environment (.env.prod)")
     else:
-        env_file = os.path.join(os.path.dirname(__file__), "..", ".env")
+        env_file = os.path.join(os.path.dirname(__file__), "..", ".env.dev")
         if not os.path.exists(env_file):
             logger.error(f"Dev env file not found: {env_file}")
             sys.exit(1)
         load_dotenv(env_file, override=True)
-        logger.info("Loaded dev environment (.env)")
+        logger.info("Loaded dev environment (.env.dev)")
 
 COLLECTION_SOURCE = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"

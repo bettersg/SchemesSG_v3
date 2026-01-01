@@ -4,13 +4,13 @@ Backend services for the Singapore government schemes discovery platform.
 
 ## Quick Navigation
 - [Architecture](#architecture)
-- [Directory Structure](#directory-structure)
+- [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [API Endpoints](#api-endpoints)
 - [scheme-processor (Cloud Run)](#scheme-processor-cloud-run)
 - [New Scheme Flow](#new-scheme-flow)
 - [Batch Jobs](#batch-jobs)
-- [Ad-hoc Scripts](#ad-hoc-scripts)
+- [Scripts](#scripts)
 - [Deployment](#deployment)
 - [Firebase Projects](#firebase-projects)
 
@@ -57,42 +57,42 @@ User submits scheme (/contribute)
 - Posts summary to Slack
 - Reindexes embeddings into Firestore
 
-## Directory Structure
+## Project Structure
+
+| Directory | Description |
+|-----------|-------------|
+| `functions/` | Firebase Functions (Python 3.10) - API endpoints, Firestore triggers, Slack handlers |
+| `functions/batch_jobs/` | Scheduled jobs (monthly link check & embedding reindex) |
+| `functions/ml_logic/` | Search model using Firestore Vector Search |
+| `functions/new_scheme/` | Firestore trigger + Slack approval workflow for new submissions |
+| `functions/scripts/` | Setup scripts (populate embeddings, test vector search) |
+| `functions/.env` | Local development (uses local scheme-processor) |
+| `functions/.env.dev` | Dev deployment credentials (`schemessg-v3-dev`) |
+| `functions/.env.prod` | Prod deployment credentials (`schemessg`) |
+| `scheme-processor/` | Cloud Run service (Python 3.11) - web scraping, LLM extraction |
+| `scripts/` | Data management scripts - see [scripts/README.md](scripts/README.md) |
+| `firestore.indexes.json` | Firestore indexes including vector search index |
+
+### Directory Tree
 
 ```
 backend/
 ├── functions/                   # Firebase Functions (Python 3.10)
 │   ├── batch_jobs/              # Scheduled link check and reindex
-│   ├── chat/                    # Chat endpoint
-│   ├── fb_manager/              # Firebase Admin SDK singleton
-│   ├── feedback/                # User feedback
-│   ├── ml_logic/                # Search and embeddings logic
-│   ├── new_scheme/              # Firestore trigger + Slack approval handlers
-│   ├── schemes/                 # Scheme CRUD + search endpoints
-│   ├── scripts/                 # Ad-hoc scripts (embeddings, vector search testing)
-│   ├── slack_integration/       # Slack interactive handlers
-│   ├── update_scheme/           # Public form submission endpoint
-│   ├── utils/                   # Shared utilities
-│   ├── .env                     # Dev environment (schemessg-v3-dev)
-│   ├── .env.prod                # Prod environment (schemessg)
+│   ├── ml_logic/                # Search model (Firestore Vector Search)
+│   ├── new_scheme/              # Firestore trigger + Slack approval
+│   ├── scripts/                 # Setup scripts (embeddings, testing)
+│   ├── .env                     # Dev credentials (schemessg-v3-dev)
+│   ├── .env.prod                # Prod credentials (schemessg)
 │   └── main.py                  # Functions entry point
 ├── scheme-processor/            # Cloud Run service (Python 3.11)
-│   ├── app/
-│   │   ├── clients/             # Firestore, OneMap, Slack clients
-│   │   ├── services/            # Scraper, LLM extractor, contact extraction
-│   │   ├── main.py              # FastAPI app
-│   │   └── pipeline.py          # Processing orchestration
-│   ├── Dockerfile
-│   ├── deploy.sh                # Deployment script
-│   └── pyproject.toml
+│   ├── app/                     # FastAPI application
+│   ├── deploy.sh                # Deployment script (--dev/--prod)
+│   └── Dockerfile
 ├── scripts/                     # Data management scripts
-│   ├── download_prod_data.py    # Download from production Firestore
-│   ├── load_local_data.py       # Load into emulator
-│   └── README.md                # Detailed workflow docs
-├── docker-compose-firebase.yml  # Local development orchestration
-├── Dockerfile.firebase          # Functions container
-├── firebase.json                # Firebase configuration
-└── start.sh                     # Emulator startup script
+│   └── README.md                # Detailed script documentation
+├── firestore.indexes.json       # Vector search index config
+└── docker-compose-firebase.yml  # Local development
 ```
 
 ## Getting Started
@@ -237,39 +237,16 @@ cd backend/functions
 uv run python -m scripts.run_link_check_and_reindex
 ```
 
-## Ad-hoc Scripts
+## Scripts
 
-### Functions Scripts
-Located in `functions/scripts/`:
+For detailed documentation on all scripts, see [scripts/README.md](scripts/README.md).
 
-```bash
-cd backend/functions
-
-# Populate embeddings for all schemes
-uv run python -m scripts.populate_embeddings
-
-# Test vector search queries
-uv run python -m scripts.test_vector_search
-
-# Run link check manually
-uv run python -m scripts.run_link_check_and_reindex
-```
-
-### Data Management Scripts
-Located in `scripts/`:
-
-```bash
-cd backend
-
-# Download production data to local JSON
-uv run python scripts/download_prod_data.py
-
-# Load JSON into running emulator
-uv run python scripts/load_local_data.py
-
-# Export to Google Sheets (normalization workflow)
-uv run python scripts/normalize_and_export_to_sheets.py
-```
+**Key scripts:**
+| Script | Purpose |
+|--------|---------|
+| `functions/scripts/populate_embeddings.py` | One-time vector embeddings setup (requires `--dev` or `--prod`) |
+| `functions/scripts/test_vector_search.py` | Test vector search queries |
+| `scripts/download_prod_data.py` | Download production data for local development |
 
 ## Deployment
 
@@ -302,10 +279,13 @@ The deploy script:
 | Development | `schemessg-v3-dev` | Testing, emulator |
 
 ### Credential Files
-- `functions/.env` - Development credentials
-- `functions/.env.prod` - Production credentials
+- `functions/.env` - Local development (uses local scheme-processor)
+- `functions/.env.dev` - Dev deployment (GitHub Actions → `schemessg-v3-dev`)
+- `functions/.env.prod` - Prod deployment (GitHub Actions → `schemessg`)
 - `functions/creds.json` - Dev service account
 - `functions/creds.prod.json` - Prod service account
+
+> **Important**: Scripts like `populate_embeddings.py` and `deploy.sh` require explicit environment flags (`--dev` or `--prod`) to prevent accidental operations on the wrong project.
 
 **Never mix credentials between environments.**
 
