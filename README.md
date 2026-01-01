@@ -74,6 +74,28 @@ The project consists of two main components:
 
 Note: For local frontend development to work, you must have the backend running via Docker. Please refer to `backend/README.md` for Docker setup and running instructions.
 
+## Link Check & Reindex
+
+A scheduled batch job runs monthly (1st of each month at 9am) to:
+1. Check all scheme links for dead links
+2. Mark dead links as inactive in Firestore
+3. Post summary to Slack
+4. Reindex Firestore embeddings (excluding inactive schemes)
+
+To trigger manually:
+
+**Option 1: Run locally**
+```bash
+cd backend/functions
+uv run python -c "from batch_jobs.run_link_check_and_reindex import run_link_check_and_reindex_core; run_link_check_and_reindex_core()"
+```
+
+**Option 2: Trigger from Google Cloud Console**
+1. Go to [Cloud Scheduler](https://console.cloud.google.com/cloudscheduler)
+2. Select the appropriate project (`schemessg-v3-dev` or `schemessg`)
+3. Find the job: `firebase-schedule-scheduled_link_check_and_reindex-asia-southeast1`
+4. Click **"Run Now"**
+
 ## Contributing
 
 We welcome contributions from the community! Here's how you can help:
