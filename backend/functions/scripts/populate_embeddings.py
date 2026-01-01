@@ -26,9 +26,7 @@ from loguru import logger
 
 def parse_args():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Populate schemes_embeddings collection for Firestore vector search."
-    )
+    parser = argparse.ArgumentParser(description="Populate schemes_embeddings collection for Firestore vector search.")
     env_group = parser.add_mutually_exclusive_group(required=True)
     env_group.add_argument(
         "--dev",
@@ -59,6 +57,7 @@ def load_environment(is_prod: bool):
             sys.exit(1)
         load_dotenv(env_file, override=True)
         logger.info("Loaded dev environment (.env.dev)")
+
 
 COLLECTION_SOURCE = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"
