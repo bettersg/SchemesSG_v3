@@ -4,14 +4,15 @@ Populate schemes_embeddings collection for Firestore vector search.
 Creates a separate collection with only doc_id + embedding.
 Original 'schemes' collection is unchanged.
 
-Run against dev project: schemessg-v3-dev
-
 Usage:
     cd backend/functions
-    uv run python scripts/populate_embeddings.py
+    uv run python scripts/populate_embeddings.py --dev   # Uses .env (schemessg-v3-dev)
+    uv run python scripts/populate_embeddings.py --prod  # Uses .env.prod (schemessg)
 """
 
+import argparse
 import os
+import sys
 import time
 from typing import Any, Dict
 
@@ -23,8 +24,41 @@ from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
 
 
-# Load environment variables from .env file
-load_dotenv()
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Populate schemes_embeddings collection for Firestore vector search."
+    )
+    env_group = parser.add_mutually_exclusive_group(required=True)
+    env_group.add_argument(
+        "--dev",
+        action="store_true",
+        help="Run against dev project (schemessg-v3-dev) using .env",
+    )
+    env_group.add_argument(
+        "--prod",
+        action="store_true",
+        help="Run against production project (schemessg) using .env.prod",
+    )
+    return parser.parse_args()
+
+
+def load_environment(is_prod: bool):
+    """Load the appropriate environment file."""
+    if is_prod:
+        env_file = os.path.join(os.path.dirname(__file__), "..", ".env.prod")
+        if not os.path.exists(env_file):
+            logger.error(f"Production env file not found: {env_file}")
+            sys.exit(1)
+        load_dotenv(env_file, override=True)
+        logger.info("Loaded production environment (.env.prod)")
+    else:
+        env_file = os.path.join(os.path.dirname(__file__), "..", ".env")
+        if not os.path.exists(env_file):
+            logger.error(f"Dev env file not found: {env_file}")
+            sys.exit(1)
+        load_dotenv(env_file, override=True)
+        logger.info("Loaded dev environment (.env)")
 
 COLLECTION_SOURCE = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"
@@ -172,5 +206,20 @@ def populate_embeddings() -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
+    args = parse_args()
+    is_prod = args.prod
+
+    # Load appropriate environment
+    load_environment(is_prod)
+
+    # Confirmation for production
+    if is_prod:
+        project_id = os.getenv("FB_PROJECT_ID")
+        logger.warning(f"You are about to populate embeddings in PRODUCTION ({project_id})")
+        confirm = input("Type 'yes' to confirm: ")
+        if confirm.lower() != "yes":
+            logger.info("Aborted.")
+            sys.exit(0)
+
     result = populate_embeddings()
     print(f"\nResult: {result}")
