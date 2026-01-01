@@ -23,7 +23,7 @@ if [ "$ENV" = "prod" ]; then
     PROJECT_ID="schemessg"
     ENV_FILE="../functions/.env.prod"
     # Firebase Admin SDK service account for prod
-    FIREBASE_SA="firebase-adminsdk-jok49@schemessg.iam.gserviceaccount.com"
+    FIREBASE_SA="firebase-adminsdk-jt0tt@schemessg.iam.gserviceaccount.com"
 else
     PROJECT_ID="schemessg-v3-dev"
     ENV_FILE="../functions/.env"
