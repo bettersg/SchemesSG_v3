@@ -148,6 +148,15 @@ uv run python scripts/download_prod_data.py
 uv run python scripts/load_local_data.py
 ```
 
+### Running Tests
+
+From `backend/` (config in `pytest.ini`):
+```bash
+uv run pytest                    # All tests with coverage
+uv run pytest tests/unit/        # Unit tests only
+uv run pytest tests/integration/ # Integration tests only
+```
+
 ## API Endpoints
 
 Base URL (local): `http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1`
