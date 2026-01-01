@@ -255,6 +255,19 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
+    # Handle warmup requests (from keep_endpoints_warm scheduled function)
+    # Warmup requests send JSON with is_warmup=true
+    content_type = req.headers.get("Content-Type", "")
+    if "application/json" in content_type:
+        body = req.get_json(silent=True) or {}
+        if body.get("is_warmup"):
+            logger.info("Warmup request received for slack_interactive")
+            return https_fn.Response(
+                response="",
+                status=200,
+                headers=headers,
+            )
+
     # Verify Slack signature
     if not verify_slack_signature(req):
         return https_fn.Response(
