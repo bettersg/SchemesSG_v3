@@ -201,7 +201,7 @@ __pycache__/
 .firebase/
 
 # Next.js
-/.next/
+.next/
 out/
 *.tsbuildinfo
 next-env.d.ts
