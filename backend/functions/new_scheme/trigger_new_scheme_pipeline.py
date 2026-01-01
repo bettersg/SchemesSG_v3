@@ -10,6 +10,7 @@ import os
 from datetime import datetime, timezone
 
 import google.auth
+import google.auth.compute_engine
 import google.auth.transport.requests
 import requests
 from firebase_admin import firestore
@@ -42,10 +43,13 @@ def get_identity_token(audience: str) -> str:
         credentials.refresh(auth_req)
         return credentials.token
 
-    # Fallback to Application Default Credentials (works on GCP)
-    credentials, _ = google.auth.default()
-    credentials = credentials.with_target_audience(audience)
+    # Fallback to compute engine credentials (works on GCP - Cloud Functions/Run)
     auth_req = google.auth.transport.requests.Request()
+    credentials = google.auth.compute_engine.IDTokenCredentials(
+        request=auth_req,
+        target_audience=audience,
+        use_metadata_identity_endpoint=True,
+    )
     credentials.refresh(auth_req)
     return credentials.token
 
