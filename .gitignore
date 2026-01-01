@@ -97,6 +97,8 @@ celerybeat-schedule
 
 # Environments
 .env
+.env.dev
+.env.prod
 .venv
 env/
 venv/
@@ -198,8 +200,11 @@ __pycache__/
 # Firebase
 .firebase/
 
-# Next.js build output
+# Next.js
+/.next/
 out/
+*.tsbuildinfo
+next-env.d.ts
 
 # Environment variables
 .env.*
@@ -230,6 +235,18 @@ pnpm-lock.yaml
 # Temporary files
 *.tmp
 *.swp
+*.local
+
+# Yarn PnP
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Vercel
+.vercel
+
+# SSL certificates
+*.pem
 
 #dataset_workflow
 node_modules/
