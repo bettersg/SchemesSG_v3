@@ -10,6 +10,36 @@ SchemesSG is a Singapore government schemes discovery platform. The backend uses
 - **Slack Integration**: Admin approval workflow for new scheme submissions
 - **crawl4ai**: Web scraping and LLM extraction for new schemes
 
+## Critical: Two Dependency Files
+
+The project has **two separate dependency files** for different purposes:
+
+### `pyproject.toml` (Root backend/)
+- **Purpose**: Local development with `uv` package manager
+- **Used for**: Running scripts locally, running tests, local development
+- **Commands**: `uv run python scripts/...`, `uv run pytest`, `uv sync`
+- **Managed by**: uv (creates `.venv/` directory)
+
+### `functions/requirements.txt`
+- **Purpose**: Firebase Functions deployment
+- **Used for**: Cloud deployment of Firebase Functions
+- **Commands**: `firebase deploy --only functions`
+- **Note**: Firebase reads this file during deployment to install dependencies
+
+### ⚠️ IMPORTANT: Keep Dependencies in Sync
+When adding a new dependency:
+1. Add to `functions/requirements.txt` (for Firebase deployment)
+2. Add to `pyproject.toml` (for local development/testing)
+3. Run `uv sync` to update local environment
+
+**Example**:
+```bash
+# After adding a new package
+echo "new-package==1.0.0" >> functions/requirements.txt
+# Then add same version to pyproject.toml dependencies array
+uv sync
+```
+
 ## Critical: Two Firebase Projects
 
 This is the most important thing to understand:
@@ -344,7 +374,9 @@ docker compose -f docker-compose-firebase.yml up -d
 
 ```
 backend/
+├── pyproject.toml              # Local dev dependencies (uv) - for scripts & tests
 ├── functions/
+│   ├── requirements.txt        # Firebase Functions dependencies (for deployment)
 │   ├── .env                    # Dev credentials (schemessg-v3-dev)
 │   ├── .env.prod               # Prod credentials (schemessg)
 │   ├── fb_manager/
@@ -364,6 +396,9 @@ backend/
 │   ├── download_prod_data.py   # Download from production
 │   ├── load_local_data.py      # Load into emulator
 │   └── README.md               # Detailed script docs
+├── tests/                      # Test suite (run with: uv run pytest)
+│   ├── unit/                   # Unit tests
+│   └── integration/            # Integration tests
 ├── firestore-backup/
 │   └── current/                # Auto-exported emulator data
 ├── prod_schemes_data.json      # Downloaded production data (gitignored)
@@ -507,5 +542,5 @@ git add functions/slack_integration/slack.py && git commit -m "Fix Slack modal i
 
 ---
 
-*Last updated: 2025-12-30*
+*Last updated: 2026-01-01*
 *Reflects learnings from new scheme pipeline implementation*
