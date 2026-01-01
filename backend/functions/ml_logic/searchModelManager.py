@@ -1,12 +1,12 @@
 import os
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid1
 
-import chromadb
 import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
+from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
+from google.cloud.firestore_v1.vector import Vector
 from langchain.docstore.document import Document
 from langchain_community.retrievers import BM25Retriever
 from langchain_openai import AzureOpenAIEmbeddings
@@ -17,8 +17,8 @@ from utils.pagination import decode_cursor, get_paginated_results
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
-parent_dir = Path(__file__).parent
-embeddings_path = parent_dir / "vector_store"
+# Collection for storing embeddings (separate from schemes collection)
+EMBEDDINGS_COLLECTION = "schemes_embeddings"
 
 
 class PredictParams(BaseModel):
@@ -38,7 +38,7 @@ class PaginatedSearchParams(BaseModel):
     cursor: Optional[str] = None
     similarity_threshold: Optional[int] = None
     is_warmup: Optional[bool] = False
-    top_k: Optional[int] = 100  # Number of items to retrieve from ChromaDB vector store
+    top_k: Optional[int] = 100  # Number of items to retrieve from vector search
     filters: Optional[Dict[str, List[str]]] = {}
 
 
@@ -66,16 +66,16 @@ class SearchModel:
             return
 
         cls.db = cls.firebase_manager.firestore_client
-        # config = Config()
-        # In SearchModel.initialise() method
+        # Use dimensions=2048 for text-embedding-3-large (Firestore max is 2048)
         cls.embeddings = AzureOpenAIEmbeddings(
             azure_endpoint=os.environ["AZURE_OPENAI_EMBEDDING_ENDPOINT"],
             api_key=os.environ["AZURE_OPENAI_EMBEDDING_API_KEY"],
             api_version=os.environ["OPENAI_EMBEDDING_API_VERSION"],
             model=os.environ["AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME"],
+            dimensions=2048,
         )
-        chroma_client = chromadb.PersistentClient(path=embeddings_path)
-        cls.index = chroma_client.get_collection("schemes")
+        # Note: Vector search uses Firestore's findNearest() on schemes_embeddings collection
+        # No separate index initialization needed - Firestore handles it
 
         cls.initialised = True
 
@@ -137,8 +137,13 @@ class SearchModel:
 
     def search(self, query_text: str, top_k: int) -> pd.DataFrame:
         """
-        Embed the input query, search the vector index for the most similar schemes,
+        Embed the input query, search Firestore vector index for the most similar schemes,
         and return a merged DataFrame containing scheme metadata and similarity scores.
+
+        Search flow:
+        1. Generate query embedding
+        2. Query schemes_embeddings collection with findNearest() -> get doc_ids
+        3. Fetch full scheme data from schemes collection
 
         Args:
             query_text (str): The user's search query.
@@ -155,23 +160,43 @@ class SearchModel:
             Exception: Propagates any exception encountered while fetching scheme details,
                        after logging the error.
         """
+        # Step 1: Generate query embedding
         vec = self.__class__.embeddings.embed_query(query_text)
-        results = self.__class__.index.query(query_embeddings=vec, n_results=top_k)
 
-        distances, ids = results["distances"][0], results["ids"][0]
+        # Step 2: Query embeddings collection using Firestore vector search
+        embeddings_collection = self.__class__.db.collection(EMBEDDINGS_COLLECTION)
+        vector_query = embeddings_collection.find_nearest(
+            vector_field="embedding", query_vector=Vector(vec), distance_measure=DistanceMeasure.COSINE, limit=top_k
+        )
 
-        # convert cosine distance → similarity and normalize
-        vec_scores = [max(0, 1 - d) for d in distances]
-        if max(vec_scores) > min(vec_scores):
+        # Get matching doc_ids from vector search results
+        embedding_results = vector_query.get()
+        ids = [doc.id for doc in embedding_results]
+
+        if not ids:
+            logger.warning(f"No vector search results for query: {query_text}")
+            return pd.DataFrame(columns=["scheme_id", "vec_similarity_score", "query"])
+
+        # Calculate similarity scores based on position (findNearest returns sorted by distance)
+        # Use a linear decay: first result gets highest score, last gets lowest
+        vec_scores = [(top_k - i) / top_k for i in range(len(ids))]
+
+        # Normalize scores to 0-1 range
+        if len(vec_scores) > 1 and max(vec_scores) > min(vec_scores):
             vec_scores = [(s - min(vec_scores)) / (max(vec_scores) - min(vec_scores)) for s in vec_scores]
 
         score_df = pd.DataFrame(zip(ids, vec_scores), columns=["scheme_id", "vec_similarity_score"])
 
+        # Step 3: Fetch full scheme data from schemes collection
         try:
             scheme_df = pd.DataFrame(self.fetch_schemes_batch(ids))
         except Exception as e:
             logger.error("Error fetching schemes: %s", e)
             raise
+
+        if scheme_df.empty:
+            logger.warning(f"No schemes found for doc_ids: {ids}")
+            return pd.DataFrame(columns=["scheme_id", "vec_similarity_score", "query"])
 
         merged = pd.merge(scheme_df, score_df, on="scheme_id")
         merged["query"] = query_text
@@ -249,10 +274,34 @@ class SearchModel:
             return self.query_cache[cache_key]
 
         results = self.search(query_text, top_k)
+
+        # Handle empty results - skip ranking if no vector results
+        if results.empty:
+            logger.warning(f"No search results to rank for query: {query_text}")
+            self.query_cache[cache_key] = results
+            return results
+
         results = self.rank(query_text, results).drop_duplicates("scheme_id")
 
         self.query_cache[cache_key] = results
         return results.head(top_k)
+
+    def _sanitize_for_firestore(self, data):
+        """
+        Sanitize data for Firestore by removing NaN/NaT values.
+
+        Firestore cannot handle pandas NaN or NaT (Not a Time) values.
+        This recursively converts them to None.
+        """
+        if isinstance(data, dict):
+            return {k: self._sanitize_for_firestore(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [self._sanitize_for_firestore(item) for item in data]
+        elif isinstance(data, float) and pd.isna(data):
+            return None
+        elif pd.isna(data):  # Catches NaT and other pandas NA types
+            return None
+        return data
 
     def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
         """
@@ -264,10 +313,13 @@ class SearchModel:
             schemes_response (list[dict[str, str | int]]): schemes response converted to list of dictionaries
         """
 
+        # Sanitize schemes_response to remove NaN/NaT values
+        sanitized_response = self._sanitize_for_firestore(schemes_response)
+
         user_query = {
             "query_text": query,
             "query_timestamp": datetime.now(tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
-            "schemes_response": schemes_response,
+            "schemes_response": sanitized_response,
             "session_id": session_id,
         }
 
@@ -317,7 +369,7 @@ class SearchModel:
             dict[str, any]: response containing paginated results
         """
 
-        # Use the top_k parameter for ChromaDB index search
+        # Use the top_k parameter for vector search
         internal_top_k = params.top_k
 
         # Check if we have a cursor and extract session_id from it

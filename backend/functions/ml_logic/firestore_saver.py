@@ -24,6 +24,7 @@ from utils.logging_setup import setup_logging
 
 from .prompt import AI_MESSAGE
 
+
 logger = setup_logging()
 
 

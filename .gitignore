@@ -4,7 +4,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.env*
+*creds*
 # C extensions
 *.so
 
@@ -167,6 +168,14 @@ tags
 
 # ruff
 .ruff_cache
+
+# Firestore data exports (don't commit production/dev data)
+backend/prod_schemes_data.json
+backend/dev_schemes_data.json
+backend/firestore-backup/
+
+# Google Sheets credentials
+**/google_sheets_credentials.json
 
 # ml files
 backend/.env

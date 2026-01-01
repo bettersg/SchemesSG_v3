@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
 from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.checkpoint.base import CheckpointTuple
 from ml_logic.firestore_saver import FirestoreChatSaver, FirestoreSerializer
 from ml_logic.prompt import AI_MESSAGE

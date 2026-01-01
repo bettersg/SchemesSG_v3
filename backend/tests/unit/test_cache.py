@@ -2,7 +2,6 @@ import datetime
 import hashlib
 from unittest.mock import patch
 
-import pytest
 from langgraph.cache.base import Namespace
 from ml_logic.cache import InMemoryCacheWithMaxsize, generate_cache_key
 from ml_logic.states import ChatbotState

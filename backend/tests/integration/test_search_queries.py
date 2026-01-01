@@ -1,7 +1,7 @@
 """Tests for the search queries functionality."""
 
 import json
-import pytest
+
 from schemes.search_queries import retrieve_search_queries
 
 

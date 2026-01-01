@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+
 # LLM Configuration Constants
 PROVIDER_MODEL_NAME = "azure_openai:gpt-4.1-mini"
 CHATBOT_TEMPERATURE = 0.1
