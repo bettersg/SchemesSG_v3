@@ -1,0 +1,3 @@
+[submodule "schemessg_data_analysis"]
+	path = data_analysis
+	url = https://github.com/CJBuzz/schemessg_data_analysis
