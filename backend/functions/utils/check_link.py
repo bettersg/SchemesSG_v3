@@ -3,6 +3,7 @@ URL health check utility.
 
 Provides functions to check if URLs are accessible using HTTP HEAD requests.
 Falls back to GET for servers that block HEAD requests.
+Handles soft 404s and Cloudflare-protected sites.
 """
 
 from typing import Any, Dict
@@ -16,8 +17,84 @@ BROWSER_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
+# Cloudflare-specific status codes (520-527)
+CLOUDFLARE_STATUS_CODES = {520, 521, 522, 523, 524, 525, 526, 527}
 
-def check_link_health(url: str, timeout: int = 10, max_redirects: int = 3) -> Dict[str, Any]:
+# Common 404 page indicators
+ERROR_PAGE_INDICATORS = [
+    "page not found",
+    "404 error",
+    "page doesn't exist",
+    "page does not exist",
+    "not found</title>",
+    "error 404",
+    "404 - ",
+]
+
+
+def _is_cloudflare_response(response) -> bool:
+    """Check if response is from a Cloudflare-fronted site."""
+    headers = response.headers
+    if headers.get("cf-ray"):
+        return True
+    if headers.get("cf-mitigated"):
+        return True
+    if "cloudflare" in headers.get("server", "").lower():
+        return True
+    return False
+
+
+def _check_soft_404(url: str, timeout: int) -> Dict[str, Any]:
+    """
+    Check if a 404 response actually serves valid content (soft 404).
+
+    Some CMS systems return 404 status but serve the actual page content.
+    """
+    try:
+        response = requests.get(
+            url,
+            timeout=timeout,
+            allow_redirects=True,
+            headers={"User-Agent": BROWSER_USER_AGENT},
+        )
+
+        content = response.text
+        content_lower = content.lower()
+
+        # Check for indicators of valid content
+        # Use flexible check for title (may have attributes like <title data-min-length=...>)
+        has_title = "<title" in content_lower and "</title>" in content_lower
+        has_body = "<body" in content_lower
+        is_substantial = len(content) > 1000  # More than 1KB of content
+
+        # Check for common 404 page indicators
+        is_error_page = any(indicator in content_lower for indicator in ERROR_PAGE_INDICATORS)
+
+        if has_title and has_body and is_substantial and not is_error_page:
+            return {
+                "alive": True,
+                "status_code": 404,
+                "error": "Soft 404 - page serves content despite 404 status",
+                "final_url": response.url,
+            }
+
+        return {
+            "alive": False,
+            "status_code": 404,
+            "error": "Not Found",
+            "final_url": response.url,
+        }
+
+    except Exception as e:
+        return {
+            "alive": False,
+            "status_code": 404,
+            "error": f"Soft 404 check failed: {str(e)[:100]}",
+            "final_url": None,
+        }
+
+
+def check_link_health(url: str, timeout: int = 20, max_redirects: int = 10) -> Dict[str, Any]:
     """
     Check if a URL is accessible using HTTP HEAD request.
 
@@ -27,8 +104,8 @@ def check_link_health(url: str, timeout: int = 10, max_redirects: int = 3) -> Di
 
     Args:
         url: The URL to check
-        timeout: Request timeout in seconds (default 10)
-        max_redirects: Maximum number of redirects to follow (default 3)
+        timeout: Request timeout in seconds (default 20)
+        max_redirects: Maximum number of redirects to follow (default 10)
 
     Returns:
         dict with:
@@ -107,10 +184,32 @@ def check_link_health(url: str, timeout: int = 10, max_redirects: int = 3) -> Di
                     "final_url": response.url,
                 }
 
+            # 404 Not Found - check for soft 404 (server returns 404 but serves valid content)
+            if response.status_code == 404:
+                return _check_soft_404(url, timeout)
+
             return {"alive": False, "status_code": response.status_code, "error": error, "final_url": response.url}
 
         # 5xx = server errors (might be temporary)
         if response.status_code >= 500:
+            # Cloudflare-specific 52x errors - treat as alive but uncertain
+            if response.status_code in CLOUDFLARE_STATUS_CODES:
+                return {
+                    "alive": True,  # Don't mark as dead
+                    "status_code": response.status_code,
+                    "error": f"Cloudflare error {response.status_code} - manual check needed",
+                    "final_url": response.url,
+                }
+
+            # 503 from Cloudflare = challenge page, not dead
+            if response.status_code == 503 and _is_cloudflare_response(response):
+                return {
+                    "alive": True,
+                    "status_code": 503,
+                    "error": "Cloudflare challenge page - link is protected, not dead",
+                    "final_url": response.url,
+                }
+
             error_messages = {
                 500: "Internal Server Error",
                 502: "Bad Gateway",
