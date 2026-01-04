@@ -12,7 +12,7 @@
 The core functionality is powered by a sophisticated search system that combines:
 - **Natural Language Search**: Users can describe their situation in everyday language and receive relevant scheme recommendations
 - **Intelligent Chat Interface**: Contextual conversations powered by Azure OpenAI to help users understand scheme eligibility and application processes
-- **Vector-Based Scheme Matching**: FAISS similarity search to match user situations with the most relevant support schemes
+- **Hybrid Search**: Combines BM25 keyword matching with Firestore Vector Search for accurate scheme recommendations
 - **Serverless Architecture**: Firebase Cloud Functions with Python runtime for scalable, maintainable backend operations
 - **Modern Web Interface**: Responsive Next.js frontend with TypeScript for a seamless user experience
 
@@ -35,26 +35,31 @@ Ensure you have the following installed:
 
 ### Required Files Setup
 
-1. **Environment Variables and Model Files**
+1. **Environment Variables**
 Download the following required files from Google Drive (contact maintainers for access):
-- `.env` file → place in `backend/functions/`
-- Required `vector_store/` → place in `backend/functions/ml_logic/`
+- `.env` → `backend/functions/` (local development, uses local scheme-processor)
+- `.env.dev` → `backend/functions/` (dev deployment credentials for `schemessg-v3-dev`)
+- `.env.prod` → `backend/functions/` (prod deployment credentials for `schemessg`)
 
-Note: The `.env` file contains sensitive configuration for Azure OpenAI services and should never be committed to version control.
+Note: These files contain sensitive configuration for Firebase, Azure OpenAI, and Slack services. Never commit them to version control.
 
 ## Project Structure
 
-The project consists of two main components:
+| Directory | Description |
+|-----------|-------------|
+| `frontend/` | Next.js application with TypeScript - see [frontend/README.md](frontend/README.md) |
+| `backend/` | Firebase Functions + Cloud Run services - see [backend/README.md](backend/README.md) |
+| `backend/functions/` | Firebase Functions (Python 3.10) - API endpoints, triggers, Slack handlers |
+| `backend/scheme-processor/` | Cloud Run service (Python 3.11) - web scraping, LLM extraction |
+| `backend/scripts/` | Data management scripts - see [backend/scripts/README.md](backend/scripts/README.md) |
+| `.github/workflows/` | GitHub Actions for CI/CD deployment |
 
-1. **Frontend**: Next.js application with TypeScript
-   - See `frontend/README.md` for setup instructions
-   - Staging URL: https://schemessg-v3-dev.web.app/
-   - Staging URL: https://schemes.sg/
+### URLs
 
-2. **Backend**: Firebase Functions with Python 3.10 runtime
-   - See `backend/README.md` for setup instructions
-   - Staging URL: https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/
-   - Staging URL: https://asia-southeast1-schemessg.cloudfunctions.net/
+| Environment | Frontend | Backend |
+|-------------|----------|---------|
+| Production | https://schemes.sg | https://asia-southeast1-schemessg.cloudfunctions.net/ |
+| Development | https://schemessg-v3-dev.web.app/ | https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/ |
 
 ## Development Workflow
 
@@ -73,6 +78,28 @@ The project consists of two main components:
    - When `main` branch is pushed, the github action `.github/workflows/deploy_functions_prod.yml` will be triggered to deploy to Schemes prod
 
 Note: For local frontend development to work, you must have the backend running via Docker. Please refer to `backend/README.md` for Docker setup and running instructions.
+
+## Link Check & Reindex
+
+A scheduled batch job runs monthly (1st of each month at 9am) to:
+1. Check all scheme links for dead links
+2. Mark dead links as inactive in Firestore
+3. Post summary to Slack
+4. Reindex Firestore embeddings (excluding inactive schemes)
+
+To trigger manually:
+
+**Option 1: Run locally**
+```bash
+cd backend/functions
+uv run python -c "from batch_jobs.run_link_check_and_reindex import run_link_check_and_reindex_core; run_link_check_and_reindex_core()"
+```
+
+**Option 2: Trigger from Google Cloud Console**
+1. Go to [Cloud Scheduler](https://console.cloud.google.com/cloudscheduler)
+2. Select the appropriate project (`schemessg-v3-dev` or `schemessg`)
+3. Find the job: `firebase-schedule-scheduled_link_check_and_reindex-asia-southeast1`
+4. Click **"Run Now"**
 
 ## Contributing
 

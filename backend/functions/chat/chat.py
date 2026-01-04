@@ -4,17 +4,14 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/chat_message
 """
 
 import json
-import sys
 from datetime import datetime
 
 import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
-from loguru import logger
 from ml_logic import Chatbot, dataframe_to_text
 from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
-from utils.auth import verify_auth_token
 from utils.json_utils import safe_json_dumps
 from utils.logging_setup import setup_logging
 

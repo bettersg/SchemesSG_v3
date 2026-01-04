@@ -1,24 +1,38 @@
 """
 url for local testing:
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/update_scheme
+
+Note: In local dev (without Firestore emulator), triggers don't fire.
+So we call the pipeline directly after creating the document.
+In production, the Firestore trigger will handle it.
 """
 
 import json
+import os
+import threading
 from datetime import datetime, timezone
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
-from utils.cors_config import get_cors_headers, handle_cors_preflight
+from loguru import logger
 from utils.auth import verify_auth_token
+from utils.cors_config import get_cors_headers, handle_cors_preflight
 
 
 # Firestore client
 firebase_manager = FirebaseManager()
 
 
+def is_local_dev() -> bool:
+    """Check if running in local development (emulator without Firestore emulator)."""
+    # If FIRESTORE_EMULATOR_HOST is not set, we're connecting to cloud Firestore
+    # and triggers won't work, so we need to call the pipeline directly
+    return os.getenv("FIRESTORE_EMULATOR_HOST") is None and os.getenv("ENVIRONMENT") == "local"
+
+
 @https_fn.on_request(
     region="asia-southeast1",
-    memory=options.MemoryOption.GB_1,
+    memory=options.MemoryOption.GB_2,  # Increased for pipeline processing in local dev
 )
 def update_scheme(req: https_fn.Request) -> https_fn.Response:
     """
@@ -92,11 +106,31 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         }
 
         # Add the data to Firestore
-        firebase_manager.firestore_client.collection("schemeEntries").add(update_scheme_data)
+        _, doc_ref = firebase_manager.firestore_client.collection("schemeEntries").add(update_scheme_data)
+        doc_id = doc_ref.id
+        logger.info(f"Created schemeEntries document: {doc_id}")
+
+        # In local dev mode (without Firestore emulator), triggers don't fire
+        # So we call the pipeline in a background thread for new scheme submissions
+        if is_local_dev() and typeOfRequest and typeOfRequest.lower() == "new":
+            logger.info(f"Local dev mode: calling pipeline in background for {doc_id}")
+
+            def run_pipeline():
+                try:
+                    from new_scheme.trigger_new_scheme_pipeline import process_new_scheme_entry
+
+                    process_new_scheme_entry(doc_id, update_scheme_data)
+                except Exception as pipeline_error:
+                    logger.error(f"Pipeline error for {doc_id}: {pipeline_error}")
+
+            thread = threading.Thread(target=run_pipeline, daemon=True)
+            thread.start()
 
         # Return a success response
         return https_fn.Response(
-            response=json.dumps({"success": True, "message": "Request for scheme update successfully added"}),
+            response=json.dumps(
+                {"success": True, "message": "Request for scheme update successfully added", "docId": doc_id}
+            ),
             status=200,
             mimetype="application/json",
             headers=headers,

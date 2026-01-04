@@ -35,25 +35,6 @@ jobs:
         with:
           node-version: '20' # Upgraded to 20 to meet firebase-tools@14.2.0 requirements
 
-      # Step 3.5: Download the ZIP file from Google Drive
-      - name: Download Models ZIP
-        run: |
-          wget "${{ secrets.LINK_TO_MODEL_FILES }}" -O models.zip
-
-      - name: List Directory Contents
-        run: ls -lh models.zip
-      - name: Check File Type
-        run: file models.zip
-
-      # Step 3.5.2: Extract the ZIP file
-      - name: Extract Models ZIP
-        run: |
-          unzip models.zip -d backend/functions/ml_logic
-
-      # Step 3.5.3: Clean up
-      - name: Clean Up
-        run: rm models.zip
-
       # Step 4: Create Service Account Key and Set Env Variables
       - name: Create SA key and set env variables
         run: |

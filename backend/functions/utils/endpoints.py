@@ -220,6 +220,14 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
                 "url": f"{get_endpoint_url('retrieve_search_queries')}/warmup-session?is_warmup=true",  # Endpoint will return 200 immediately
                 "data": None,
             },
+            {
+                "name": "slack_interactive",
+                "method": "POST",
+                "url": get_endpoint_url("slack_interactive"),
+                "data": {
+                    "is_warmup": True,  # Endpoint will return 200 immediately
+                },
+            },
         ]
 
         # Make warmup requests to all endpoints

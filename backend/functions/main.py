@@ -13,7 +13,20 @@ The following endpoints are available:
    - feedback: Submit user feedback
    - update_scheme: Submit new schemes or request edits
 
-3. System:
+3. Slack Integration:
+   - slack_trigger_message: Trigger a Slack review message for a specific document
+   - slack_scan_and_notify: Scan source documents and post review messages for new items
+   - slack_interactive: Handle Slack interactive component events (buttons, modals)
+
+4. New Scheme Processing (Firestore Triggers):
+   - on_new_scheme_entry: Triggered on schemeEntries document creation, runs pipeline steps 1-4
+     (scraping, LLM extraction, planning area), then posts to Slack for human review
+
+5. Batch Jobs:
+   - scheduled_link_check_and_reindex: Monthly scheduled job to check all scheme links,
+     mark dead links inactive, post summary to Slack, and reindex embeddings
+
+6. System:
    - health: Health check endpoint
    - keep_endpoints_warm: Scheduled task to reduce cold starts
 
@@ -33,14 +46,21 @@ Note: Do not deploy functions using firebase deploy. Deployment is handled by Gi
 import json
 import sys
 
+from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 from chat.chat import chat_message  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
+from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401
 from schemes.search_queries import retrieve_search_queries  # noqa: F401
+from slack_integration.slack import (  # noqa: F401
+    slack_interactive,
+    slack_scan_and_notify,
+    slack_trigger_message,
+)
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 from utils.endpoints import keep_endpoints_warm  # noqa: F401
 
@@ -50,9 +70,8 @@ logger.remove()
 logger.add(
     sys.stdout,
     level="INFO",
-    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | {message}",
+    format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
     colorize=True,
-    backtrace=True,
 )
 logger.info("Logger initialised")
 

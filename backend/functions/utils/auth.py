@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from firebase_admin import auth
 from firebase_functions import https_fn
 from loguru import logger

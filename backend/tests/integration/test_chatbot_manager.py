@@ -1,10 +1,8 @@
 """Integration tests for chatbotManager.py."""
 
-from datetime import datetime, timezone
-
 import os
+
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
 from ml_logic.chatbotManager import Chatbot
 from ml_logic.config import ChatbotConfig
 
@@ -178,9 +176,7 @@ def test_chatbot_stream_firestore_error_handling(mock_firebase_manager, mocker):
     chatbot = Chatbot(mock_firebase_manager)
 
     # Mock Firestore error in the checkpointer
-    mock_firestore_error = mocker.patch.object(
-        chatbot.graph.checkpointer, "put", side_effect=Exception("Firestore error")
-    )
+    mocker.patch.object(chatbot.graph.checkpointer, "put", side_effect=Exception("Firestore error"))
 
     # Mock successful streaming response
     mock_stream_data = [

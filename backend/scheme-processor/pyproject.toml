@@ -1,0 +1,23 @@
+[project]
+name = "scheme-processor"
+version = "0.1.0"
+description = "Cloud Run service for processing new scheme submissions"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "crawl4ai>=0.7.8",
+    "playwright>=1.40.0",
+    "pydoll-python>=2.15.0",
+    "beautifulsoup4>=4.12.3",
+    "lxml>=5.3.0",
+    "loguru>=0.7.2",
+    "litellm>=1.40.0",
+    "slack-sdk>=3.33.1",
+    "requests>=2.32.3",
+    "pypdf>=5.1.0",
+    "python-dotenv>=1.0.1",
+    "firebase-admin>=6.0.0",
+    "google-cloud-firestore>=2.16.0",
+    "pydantic>=2.0",
+]

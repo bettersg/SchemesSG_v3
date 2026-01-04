@@ -1,9 +1,7 @@
 """Tests for the feedback endpoint."""
 
 import json
-from datetime import datetime, timezone
 
-import pytest
 from feedback.feedback import feedback
 
 
