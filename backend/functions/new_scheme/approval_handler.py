@@ -62,7 +62,7 @@ def handle_new_scheme_approval(
     original_llm_fields = original_data.get("llm_fields", {})
 
     # Merge: form data takes precedence, but include LLM-only fields
-    llm_only_fields = ["summary", "agency", "search_booster", "service_area"]
+    llm_only_fields = ["summary", "search_booster", "service_area"]
     for field in llm_only_fields:
         if field not in approved_data or not approved_data.get(field):
             approved_data[field] = original_llm_fields.get(field)
@@ -264,6 +264,7 @@ def extract_form_data(state: dict) -> Dict[str, Any]:
     return {
         "scheme_name": get_value("scheme_name_block", "scheme_name"),
         "scheme_url": get_value("scheme_url_block", "scheme_url"),
+        "agency": get_value("agency_block", "agency"),
         "image_url": get_value("image_url_block", "image_url"),
         "address": get_value("address_block", "address"),
         "phone": get_value("phone_block", "phone"),

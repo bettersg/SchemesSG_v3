@@ -202,6 +202,7 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
     address = llm_fields.get("address", "") or ""
     phone = llm_fields.get("phone", "") or ""
     email = llm_fields.get("email", "") or ""
+    agency = llm_fields.get("agency", "") or ""
 
     # Handle list values - convert to comma-separated strings
     if isinstance(address, list):
@@ -224,6 +225,8 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
         eligibility = " ".join(str(e) for e in eligibility if e)
     if isinstance(how_to_apply, list):
         how_to_apply = " ".join(str(h) for h in how_to_apply if h)
+    if isinstance(agency, list):
+        agency = ", ".join(str(a) for a in agency if a)
 
     # Build multi-select options from constants
     who_is_it_for_options = [
@@ -271,6 +274,17 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
             "block_id": "scheme_url_block",
             "label": {"type": "plain_text", "text": "Scheme URL"},
             "element": {"type": "plain_text_input", "action_id": "scheme_url", "initial_value": str(scheme_url)[:500]},
+        },
+        {
+            "type": "input",
+            "block_id": "agency_block",
+            "label": {"type": "plain_text", "text": "Agency"},
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "agency",
+                "initial_value": str(agency)[:150],
+            },
+            "optional": True,
         },
     ]
 
