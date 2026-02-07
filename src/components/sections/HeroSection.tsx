@@ -1,19 +1,29 @@
+import { useState } from "react"
 import { motion } from "motion/react"
-import { ArrowRight, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Search, ArrowRight, Sparkles } from "lucide-react"
 import { ScrollingColumn } from "@/components/shared/ScrollingColumn"
 import { ScrollingLogoColumn } from "@/components/shared/ScrollingLogoColumn"
 import { heroContent, schemeCategories } from "@/data/content"
 import { agencies } from "@/data/agencies"
 
+const examplePrompt = "I'm a single parent looking for financial assistance..."
+
 export function HeroSection() {
+  const [query, setQuery] = useState("")
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const searchQuery = query || examplePrompt
+    window.location.href = `https://schemes.sg/search?q=${encodeURIComponent(searchQuery)}`
+  }
+
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-neutral-50 grain-overlay">
+    <section className="relative min-h-[100svh] flex items-center overflow-hidden bg-neutral-50 grain-overlay">
       {/* Gradient glow orbs */}
       <div className="pointer-events-none absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-lime-300/10 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-10%] right-[5%] h-[500px] w-[500px] rounded-full bg-lime-200/15 blur-[100px]" />
 
-      <div className="relative mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-8 px-6 py-32 lg:py-24">
+      <div className="relative mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-8 px-6 py-24 lg:py-20">
         {/* Left scrolling column — scheme categories */}
         <div className="hidden lg:flex items-center">
           <ScrollingColumn
@@ -28,22 +38,22 @@ export function HeroSection() {
         <div className="flex flex-col items-center justify-center text-center">
           {/* Floating 3D icon */}
           <motion.div
-            className="animate-float mb-8 relative z-10"
+            className="animate-float mb-6 relative z-10"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <div className="relative">
-              <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-sky-300 to-sky-500 shadow-xl shadow-sky-400/20 flex items-center justify-center rotate-[-8deg]">
-                <Sparkles className="h-9 w-9 text-white" strokeWidth={1.5} />
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-br from-sky-300 to-sky-500 shadow-xl shadow-sky-400/20 flex items-center justify-center rotate-[-8deg]">
+                <Sparkles className="h-7 w-7 sm:h-9 sm:w-9 text-white" strokeWidth={1.5} />
               </div>
-              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg bg-neutral-200 shadow-sm rotate-12" />
+              <div className="absolute -bottom-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-lg bg-neutral-200 shadow-sm rotate-12" />
             </div>
           </motion.div>
 
           {/* Headline */}
           <motion.h1
-            className="font-serif text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-[5rem] xl:text-[5.5rem]"
+            className="font-serif text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
@@ -58,7 +68,7 @@ export function HeroSection() {
 
           {/* Subtitle */}
           <motion.p
-            className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-500"
+            className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-neutral-500"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -66,23 +76,35 @@ export function HeroSection() {
             {heroContent.subtitle}
           </motion.p>
 
-          {/* CTA */}
-          <motion.div
+          {/* Search bar */}
+          <motion.form
+            onSubmit={handleSubmit}
+            className="mt-8 w-full max-w-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.45 }}
           >
-            <Button
-              size="lg"
-              className="mt-9 rounded-full bg-lime-400 hover:bg-lime-500 text-neutral-900 px-9 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer transition-all duration-200 border-0"
-              asChild
-            >
-              <a href="https://schemes.sg">
-                {heroContent.cta}
+            <div className="relative flex items-center rounded-full bg-white border border-neutral-200/80 shadow-lg shadow-neutral-200/40 hover:shadow-xl hover:shadow-neutral-200/50 transition-shadow duration-300 focus-within:ring-2 focus-within:ring-lime-400/40 focus-within:border-lime-300">
+              <Search className="absolute left-4 h-5 w-5 text-neutral-400 pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={examplePrompt}
+                className="w-full bg-transparent py-4 pl-12 pr-14 text-[15px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none rounded-full"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 flex h-9 w-9 items-center justify-center rounded-full bg-lime-400 hover:bg-lime-500 text-neutral-900 transition-colors duration-200 cursor-pointer"
+                aria-label="Search"
+              >
                 <ArrowRight className="h-4 w-4" />
-              </a>
-            </Button>
-          </motion.div>
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-neutral-400">
+              Try: &ldquo;healthcare subsidies for seniors&rdquo; or &ldquo;education grants for low-income families&rdquo;
+            </p>
+          </motion.form>
         </div>
 
         {/* Right scrolling column — agency logos */}
