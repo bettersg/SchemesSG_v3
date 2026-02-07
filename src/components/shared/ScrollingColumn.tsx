@@ -45,9 +45,13 @@ export function ScrollingColumn({
   }
 
   return (
-    <div className={cn("relative h-[420px] overflow-hidden", className)}>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-neutral-50 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-neutral-50 to-transparent" />
+    <div
+      className={cn("relative h-[420px] overflow-hidden", className)}
+      style={{
+        maskImage: "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
+      }}
+    >
 
       <motion.div
         className="flex flex-col"
