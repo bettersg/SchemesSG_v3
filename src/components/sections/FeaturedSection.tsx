@@ -9,6 +9,11 @@ const featuredLogos = [
   { name: "Hatch", src: "/featured/hatch-logo.5129b052.svg" },
 ]
 
+const partnerLogos = [
+  { name: "Singapore Association of Social Workers", src: "/featured/sasw.a489ae5f.png" },
+  { name: "Care Corner Singapore", src: "/featured/carecorner.cf5eba1a.png" },
+]
+
 export function FeaturedSection() {
   return (
     <section className="border-t border-neutral-200/60 bg-white py-14 px-6">
@@ -31,6 +36,22 @@ export function FeaturedSection() {
               className="h-10 md:h-12 w-auto object-contain brightness-0 opacity-40 hover:opacity-70 transition-opacity duration-200"
             />
           ))}
+        </div>
+
+        <div className="mt-10 pt-10 border-t border-neutral-100">
+          <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
+            Our Partners
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-8">
+            {partnerLogos.map((logo) => (
+              <img
+                key={logo.name}
+                src={logo.src}
+                alt={logo.name}
+                className="h-12 md:h-14 w-auto object-contain opacity-60 hover:opacity-90 transition-opacity duration-200"
+              />
+            ))}
+          </div>
         </div>
       </motion.div>
     </section>
