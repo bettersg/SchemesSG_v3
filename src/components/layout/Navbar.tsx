@@ -86,7 +86,7 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-neutral-200 px-6 pb-6">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col items-center gap-1">
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -98,17 +98,19 @@ export function Navbar() {
               </a>
             ))}
           </div>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-3 flex justify-center">
+            <LanguageToggle />
+          </div>
+          <div className="mt-3 flex justify-center">
             <Button
               size="sm"
-              className="flex-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
+              className="w-full rounded-lg bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
               asChild
             >
               <a href="https://schemes.sg">
                 {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </Button>
-            <LanguageToggle />
           </div>
         </div>
       )}
