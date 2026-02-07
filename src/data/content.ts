@@ -1,19 +1,19 @@
 export const siteConfig = {
   name: "Schemes.sg",
-  tagline: "Making social assistance accessible for every Singaporean.",
+  tagline: "Making social assistance accessible for everyone.",
   url: "https://schemes.sg",
 }
 
 export const navLinks = [
   { label: "About", href: "#about" },
   { label: "Features", href: "#features" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Contribute", href: "#faq" },
 ]
 
 export const heroContent = {
   headline: "Schemes That\nMatch You, Not\nThe Other Way\nAround",
   subtitle:
-    "AI-powered search to help you discover the social assistance schemes you deserve. Over 500 schemes from 200+ Singapore agencies.",
+    "AI-powered search to help you discover the social assistance schemes you deserve. Over 500 schemes from 200+ agencies.",
   cta: "Find Schemes",
 }
 
@@ -90,12 +90,12 @@ export const faqItems = [
   {
     question: "What is Schemes.sg?",
     answer:
-      "Schemes.sg is an AI-powered search engine that helps Singapore residents discover public social assistance schemes they may be eligible for. We aggregate information from over 200 government agencies and community organisations.",
+      "Schemes.sg is an AI-powered search engine that helps you discover public social assistance schemes you may be eligible for. We aggregate information from over 200 government agencies and community organisations.",
   },
   {
     question: "Is Schemes.sg free to use?",
     answer:
-      "Yes, Schemes.sg is completely free. Our mission is to make social assistance information accessible to everyone in Singapore.",
+      "Yes, Schemes.sg is completely free. Our mission is to make social assistance information accessible to everyone.",
   },
   {
     question: "How does the AI matching work?",

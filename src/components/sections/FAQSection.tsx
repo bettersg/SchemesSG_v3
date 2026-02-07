@@ -75,10 +75,10 @@ export function FAQSection() {
             </div>
 
             <h3 className="text-lg font-bold tracking-tight">
-              Do you have more questions?
+              Suggest a New Scheme
             </h3>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Our support team is just a message away. Let us know how we can help.
+              Know a scheme that&rsquo;s missing? Help us grow the database by submitting it.
             </p>
 
             <div className="mt-auto pt-6" />
@@ -87,8 +87,8 @@ export function FAQSection() {
               className="rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-5 text-sm font-semibold cursor-pointer shadow-none"
               asChild
             >
-              <a href="mailto:hello@schemes.sg">
-                Get in touch
+              <a href="https://schemes.sg/contribute">
+                Suggest a scheme
               </a>
             </Button>
           </div>

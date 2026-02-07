@@ -35,7 +35,7 @@ export function AgenciesSection() {
               200+ Agencies
             </h2>
             <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-              We index schemes from Singapore&rsquo;s key government ministries, statutory boards, and community organisations.
+              We index schemes from key government ministries, statutory boards, and community organisations.
             </p>
             <Button
               size="lg"
