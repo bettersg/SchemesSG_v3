@@ -37,6 +37,7 @@ export function FeaturedSection() {
               src={logo.src}
               alt={logo.name}
               className="h-10 md:h-12 w-auto object-contain opacity-50 hover:opacity-80 transition-opacity duration-200"
+              loading="lazy"
             />
           ))}
         </div>
@@ -52,6 +53,7 @@ export function FeaturedSection() {
                 src={logo.src}
                 alt={logo.name}
                 className="h-12 md:h-14 w-auto object-contain opacity-60 hover:opacity-90 transition-opacity duration-200"
+                loading="lazy"
               />
             ))}
           </div>
