@@ -20,7 +20,7 @@ export function HeroSection() {
     <section className="relative min-h-0 lg:min-h-[100svh] flex items-center overflow-hidden bg-neutral-50 grain-overlay">
       {/* Gradient glow orbs */}
       <div className="pointer-events-none absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-amber-300/10 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] right-[5%] h-[500px] w-[500px] rounded-full bg-blue-200/10 blur-[100px]" />
+      <div className="pointer-events-none absolute bottom-[-10%] right-[5%] h-[600px] w-[600px] rounded-full bg-blue-300/20 blur-[120px]" />
 
       <div className="relative mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-8 px-6 pt-28 pb-16 lg:py-20">
         {/* Left scrolling column — scheme categories */}

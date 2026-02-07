@@ -162,7 +162,7 @@ export const en: Translations = {
   cta: {
     headline: "Find the Support You Deserve",
     subtitle:
-      "Stop spending hours searching across government websites. Let our AI match you with the right schemes in seconds.",
+      "Stop spending hours searching across normal web search. Let our AI match you with the right schemes in seconds.",
     button: "Search Schemes Now",
     note: "Free to use. No sign-up required.",
   },
