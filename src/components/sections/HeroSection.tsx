@@ -84,18 +84,18 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.45 }}
           >
-            <div className="relative flex items-center rounded-full bg-white border border-neutral-200/80 shadow-lg shadow-neutral-200/40 hover:shadow-xl hover:shadow-neutral-200/50 transition-shadow duration-300 focus-within:ring-2 focus-within:ring-lime-400/40 focus-within:border-lime-300">
-              <Search className="absolute left-4 h-5 w-5 text-neutral-400 pointer-events-none" />
+            <div className="relative flex items-center rounded-full bg-white border border-neutral-300 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-lime-400/50 focus-within:border-lime-400">
+              <Search className="absolute left-5 h-5 w-5 text-neutral-500 pointer-events-none" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={examplePrompt}
-                className="w-full bg-transparent py-4 pl-12 pr-14 text-[15px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none rounded-full"
+                className="w-full bg-transparent py-4 pl-13 pr-14 text-[15px] text-neutral-800 placeholder:text-neutral-500 focus:outline-none rounded-full"
               />
               <button
                 type="submit"
-                className="absolute right-2 flex h-9 w-9 items-center justify-center rounded-full bg-lime-400 hover:bg-lime-500 text-neutral-900 transition-colors duration-200 cursor-pointer"
+                className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-lime-400 hover:bg-lime-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
                 aria-label="Search"
               >
                 <ArrowRight className="h-4 w-4" />
