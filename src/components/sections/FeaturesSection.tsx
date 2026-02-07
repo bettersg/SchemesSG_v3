@@ -1,6 +1,7 @@
 import { motion } from "motion/react"
 import { Search, SlidersHorizontal, Sparkles, Globe, UserCheck } from "lucide-react"
 import { SectionWrapper } from "@/components/shared/SectionWrapper"
+import { useLanguage } from "@/i18n"
 
 /* ------------------------------------------------------------------ */
 /*  Decorative illustration components for each bento card             */
@@ -219,6 +220,8 @@ function AgencyLogosIllustration() {
 /* ------------------------------------------------------------------ */
 
 export function FeaturesSection() {
+  const { t } = useLanguage()
+
   return (
     <SectionWrapper id="features" className="bg-neutral-50/80 overflow-hidden">
       <div className="text-center">
@@ -229,10 +232,10 @@ export function FeaturesSection() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-            Tools That Work Hard as You
+            {t.features.heading}
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            Explore features that streamline your search and connect you with the right schemes.
+            {t.features.subtitle}
           </p>
         </motion.div>
       </div>
@@ -255,10 +258,10 @@ export function FeaturesSection() {
           >
             <SearchIllustration />
             <h3 className="mt-5 text-lg font-bold tracking-tight">
-              Find Schemes That Fit You
+              {t.features.cards.search.title}
             </h3>
             <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              Describe your situation in plain English. Our AI understands your needs and finds the most relevant schemes — no jargon required.
+              {t.features.cards.search.description}
             </p>
           </motion.div>
 
@@ -272,10 +275,10 @@ export function FeaturesSection() {
           >
             <SuggestSchemeIllustration />
             <h3 className="mt-5 text-lg font-bold tracking-tight">
-              Suggest a New Scheme
+              {t.features.cards.suggest.title}
             </h3>
             <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              Our AI agents responsibly gather publicly available details from the webpage. A volunteer then reviews and approves the listing before it goes live.
+              {t.features.cards.suggest.description}
             </p>
           </motion.div>
         </div>
@@ -292,10 +295,10 @@ export function FeaturesSection() {
           >
             <DatabaseIllustration />
             <h3 className="mt-4 text-lg font-bold tracking-tight">
-              500+ Schemes, One Place.
+              {t.features.cards.database.title}
             </h3>
             <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              Access government and community schemes from agencies like MSF, MOH, HDB, CPF, and more — all in one searchable database.
+              {t.features.cards.database.description}
             </p>
           </motion.div>
 
@@ -309,10 +312,10 @@ export function FeaturesSection() {
           >
             <FilterIllustration />
             <h3 className="mt-4 text-lg font-bold tracking-tight">
-              Find the Right Scheme, No Noise
+              {t.features.cards.filter.title}
             </h3>
             <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              Use filters to narrow down schemes by agency, category, eligibility criteria, and the type of support you need.
+              {t.features.cards.filter.description}
             </p>
           </motion.div>
 
@@ -328,10 +331,10 @@ export function FeaturesSection() {
               <AgencyLogosIllustration />
               <div className="min-w-0">
                 <h3 className="text-lg font-bold tracking-tight">
-                  200+ Trusted Agencies.
+                  {t.features.cards.agencies.title}
                 </h3>
                 <p className="mt-1 text-muted-foreground leading-relaxed text-[15px]">
-                  Government ministries, statutory boards, and community organisations.
+                  {t.features.cards.agencies.description}
                 </p>
               </div>
             </div>

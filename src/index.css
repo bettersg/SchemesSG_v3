@@ -45,8 +45,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Custom fonts */
-  --font-sans: "Plus Jakarta Sans Variable", system-ui, sans-serif;
-  --font-serif: "DM Serif Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans Variable", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-serif: "DM Serif Display", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Georgia, serif;
 
   /* Amber / warm accent palette (matching logo orange gradient) */
   --color-amber-50: oklch(0.987 0.022 85);

@@ -3,17 +3,16 @@ import { motion } from "motion/react"
 import { Search, ArrowRight, ArrowUpRight } from "lucide-react"
 import { ScrollingColumn } from "@/components/shared/ScrollingColumn"
 import { ScrollingLogoColumn } from "@/components/shared/ScrollingLogoColumn"
-import { heroContent, schemeCategories } from "@/data/content"
+import { useLanguage } from "@/i18n"
 import { agencies } from "@/data/agencies"
 
-const examplePrompt = "I'm a single parent looking for financial assistance..."
-
 export function HeroSection() {
+  const { t } = useLanguage()
   const [query, setQuery] = useState("")
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const searchQuery = query || examplePrompt
+    const searchQuery = query || t.hero.searchPlaceholder
     window.location.href = `https://schemes.sg/search?q=${encodeURIComponent(searchQuery)}`
   }
 
@@ -27,7 +26,7 @@ export function HeroSection() {
         {/* Left scrolling column — scheme categories */}
         <div className="hidden lg:flex items-center">
           <ScrollingColumn
-            items={schemeCategories}
+            items={t.schemeCategories}
             direction="up"
             highlightIndex={3}
             speed={28}
@@ -46,11 +45,11 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <span className="leading-none">Built by volunteers at</span>
+            <span className="leading-none">{t.hero.volunteerBanner}</span>
             <img src="/featured/bettersg-logo.a549b628.svg" alt="better.sg" className="h-6 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
             <span className="h-3 w-px bg-neutral-700 shrink-0" />
             <span className="font-medium text-white leading-none flex items-center gap-1">
-              Get involved <ArrowUpRight className="h-3 w-3" />
+              {t.hero.getInvolved} <ArrowUpRight className="h-3 w-3" />
             </span>
           </motion.a>
 
@@ -61,10 +60,10 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
           >
-            {heroContent.headline.split("\n").map((line, i) => (
+            {t.hero.headline.split("\n").map((line, i) => (
               <span key={i}>
                 {line}
-                {i < heroContent.headline.split("\n").length - 1 && <br />}
+                {i < t.hero.headline.split("\n").length - 1 && <br />}
               </span>
             ))}
           </motion.h1>
@@ -76,7 +75,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            {heroContent.subtitle}
+            {t.hero.subtitle}
           </motion.p>
 
           {/* Search bar */}
@@ -93,19 +92,19 @@ export function HeroSection() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={examplePrompt}
+                placeholder={t.hero.searchPlaceholder}
                 className="w-full bg-transparent py-4 pl-13 pr-14 text-[15px] text-neutral-800 placeholder:text-neutral-500 focus:outline-none rounded-full"
               />
               <button
                 type="submit"
                 className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
-                aria-label="Search"
+                aria-label={t.a11y.search}
               >
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
             <p className="mt-3 text-xs text-neutral-400">
-              Try: &ldquo;healthcare subsidies for seniors&rdquo; or &ldquo;education grants for low-income families&rdquo;
+              {t.hero.searchHint}
             </p>
           </motion.form>
         </div>

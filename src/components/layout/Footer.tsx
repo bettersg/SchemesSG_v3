@@ -1,7 +1,9 @@
-import { siteConfig, footerLinks } from "@/data/content"
 import { Separator } from "@/components/ui/separator"
+import { useLanguage } from "@/i18n"
 
 export function Footer() {
+  const { t } = useLanguage()
+
   return (
     <footer className="bg-neutral-950 text-neutral-400 py-16 px-6">
       <div className="mx-auto max-w-7xl">
@@ -14,18 +16,18 @@ export function Footer() {
               <span className="text-neutral-500 -ml-1">.sg</span>
             </a>
             <p className="mt-4 text-sm leading-relaxed text-neutral-500 max-w-[260px]">
-              {siteConfig.tagline}
+              {t.footer.tagline}
             </p>
           </div>
 
           {/* Product links */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-4">
-              Product
+              {t.footer.productHeading}
             </h3>
             <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.label}>
+              {t.footer.productLinks.map((link) => (
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-white transition-colors cursor-pointer"
@@ -40,11 +42,11 @@ export function Footer() {
           {/* Resources links */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-4">
-              Resources
+              {t.footer.resourcesHeading}
             </h3>
             <ul className="space-y-3">
-              {footerLinks.resources.map((link) => (
-                <li key={link.label}>
+              {t.footer.resourceLinks.map((link) => (
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-white transition-colors cursor-pointer"
@@ -59,11 +61,11 @@ export function Footer() {
           {/* Legal links */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-4">
-              Legal
+              {t.footer.legalHeading}
             </h3>
             <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
-                <li key={link.label}>
+              {t.footer.legalLinks.map((link) => (
+                <li key={link.href}>
                   <a
                     href={link.href}
                     className="text-sm hover:text-white transition-colors cursor-pointer"
@@ -79,8 +81,8 @@ export function Footer() {
         <Separator className="my-10 bg-neutral-800" />
 
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-neutral-600 sm:flex-row">
-          <p>&copy; {new Date().getFullYear()} Schemes.sg. All rights reserved.</p>
-          <p>Made with care in Singapore</p>
+          <p>{t.footer.copyright.replace("{year}", String(new Date().getFullYear()))}</p>
+          <p>{t.footer.madeIn}</p>
         </div>
       </div>
     </footer>

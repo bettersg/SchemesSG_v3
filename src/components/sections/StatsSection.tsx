@@ -1,8 +1,15 @@
 import { motion } from "motion/react"
 import { AnimatedCounter } from "@/components/shared/AnimatedCounter"
-import { stats } from "@/data/content"
+import { useLanguage } from "@/i18n"
+
+const statValues = [
+  { value: 500, suffix: "+" },
+  { value: 200, suffix: "+" },
+]
 
 export function StatsSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="bg-neutral-900 py-16 px-6">
       <div className="mx-auto max-w-5xl">
@@ -13,12 +20,12 @@ export function StatsSection() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5 }}
         >
-          {stats.map((stat) => (
-            <div key={stat.label}>
+          {t.stats.items.map((stat, index) => (
+            <div key={index}>
               <div className="text-4xl font-bold text-white md:text-5xl lg:text-6xl tracking-tight">
                 <AnimatedCounter
-                  target={stat.value}
-                  suffix={stat.suffix}
+                  target={statValues[index].value}
+                  suffix={statValues[index].suffix}
                   duration={2000}
                 />
               </div>

@@ -1,4 +1,5 @@
 import { motion } from "motion/react"
+import { useLanguage } from "@/i18n"
 
 const featuredLogos = [
   { name: "Channel NewsAsia", src: "/featured/cna-logo.fe6e55ec.svg" },
@@ -15,6 +16,8 @@ const partnerLogos = [
 ]
 
 export function FeaturedSection() {
+  const { t } = useLanguage()
+
   return (
     <section className="border-t border-neutral-200/60 bg-neutral-50 py-14 px-6">
       <motion.div
@@ -25,7 +28,7 @@ export function FeaturedSection() {
         transition={{ duration: 0.5 }}
       >
         <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
-          Featured on
+          {t.featured.heading}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-16">
           {featuredLogos.map((logo) => (
@@ -40,7 +43,7 @@ export function FeaturedSection() {
 
         <div className="mt-10 pt-10 border-t border-neutral-100">
           <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
-            Our Partners
+            {t.featured.partnersHeading}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-8">
             {partnerLogos.map((logo) => (

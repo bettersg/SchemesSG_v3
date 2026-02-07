@@ -1,9 +1,11 @@
 import { motion } from "motion/react"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ctaContent } from "@/data/content"
+import { useLanguage } from "@/i18n"
 
 export function CTASection() {
+  const { t } = useLanguage()
+
   return (
     <section className="relative bg-neutral-950 py-24 px-6 overflow-hidden">
       {/* Decorative gradient orbs */}
@@ -18,10 +20,10 @@ export function CTASection() {
         transition={{ duration: 0.6 }}
       >
         <h2 className="font-serif text-3xl font-bold text-white tracking-tight md:text-4xl lg:text-5xl">
-          {ctaContent.headline}
+          {t.cta.headline}
         </h2>
         <p className="mt-5 text-neutral-400 text-lg leading-relaxed max-w-xl mx-auto">
-          {ctaContent.subtitle}
+          {t.cta.subtitle}
         </p>
         <Button
           size="lg"
@@ -29,11 +31,11 @@ export function CTASection() {
           asChild
         >
           <a href="https://schemes.sg">
-            {ctaContent.cta}
+            {t.cta.button}
             <ArrowRight className="h-4 w-4" />
           </a>
         </Button>
-        <p className="mt-4 text-sm text-neutral-500">{ctaContent.note}</p>
+        <p className="mt-4 text-sm text-neutral-500">{t.cta.note}</p>
       </motion.div>
     </section>
   )

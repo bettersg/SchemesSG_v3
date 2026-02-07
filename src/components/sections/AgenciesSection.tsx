@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { agencies } from "@/data/agencies"
 import type { Agency } from "@/data/agencies"
+import { useLanguage } from "@/i18n"
 
 // Build 6 rows from the 24 agencies (4 per row), doubled for overflow
 const rows: Agency[][] = [
@@ -18,6 +19,8 @@ const rows: Agency[][] = [
 const rowOffsets = ["3%", "-2%", "1%", "-3%", "2%", "-1%"]
 
 export function AgenciesSection() {
+  const { t } = useLanguage()
+
   return (
     <section id="about" className="py-10 px-6">
       <div className="mx-auto max-w-5xl rounded-3xl bg-white overflow-hidden pt-16 pb-0">
@@ -30,12 +33,15 @@ export function AgenciesSection() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-              Discover Schemes From{"\n"}
-              <br className="hidden sm:inline" />
-              200+ Agencies
+              {t.agencies.heading.split("\n").map((line, i) => (
+                <span key={i}>
+                  {line}
+                  {i < t.agencies.heading.split("\n").length - 1 && <br className="hidden sm:inline" />}
+                </span>
+              ))}
             </h2>
             <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-              We index schemes from key government ministries, statutory boards, and community organisations.
+              {t.agencies.subtitle}
             </p>
             <Button
               size="lg"
@@ -43,7 +49,7 @@ export function AgenciesSection() {
               asChild
             >
               <a href="https://schemes.sg">
-                Get Started <ArrowRight className="h-4 w-4" />
+                {t.agencies.cta} <ArrowRight className="h-4 w-4" />
               </a>
             </Button>
           </motion.div>

@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react"
 import { Menu, X, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { navLinks } from "@/data/content"
+import { useLanguage } from "@/i18n"
+import { LanguageToggle } from "@/components/shared/LanguageToggle"
 import { cn } from "@/lib/utils"
 
+const navLinkHrefs = ["#about", "#features", "#faq"]
+
 export function Navbar() {
+  const { t } = useLanguage()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const navLinks = [
+    { label: t.nav.about, href: navLinkHrefs[0] },
+    { label: t.nav.features, href: navLinkHrefs[1] },
+    { label: t.nav.contribute, href: navLinkHrefs[2] },
+  ]
 
   useEffect(() => {
     function onScroll() {
@@ -53,34 +63,21 @@ export function Navbar() {
             asChild
           >
             <a href="https://schemes.sg">
-              Find Schemes <ArrowRight className="h-3.5 w-3.5" />
+              {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </Button>
         </div>
 
-        {/* Auth buttons - desktop */}
-        <div className="hidden md:flex items-center gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            className="rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white cursor-pointer"
-          >
-            Login
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-lg border-neutral-300 text-neutral-700 hover:bg-neutral-50 cursor-pointer"
-          >
-            Sign Up
-          </Button>
+        {/* Language toggle - desktop */}
+        <div className="hidden md:flex items-center">
+          <LanguageToggle />
         </div>
 
         {/* Mobile menu toggle */}
         <button
           className="md:hidden p-2 cursor-pointer"
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-label={mobileOpen ? t.a11y.closeMenu : t.a11y.openMenu}
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -101,19 +98,17 @@ export function Navbar() {
               </a>
             ))}
           </div>
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex items-center gap-3">
             <Button
               size="sm"
               className="flex-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
               asChild
             >
               <a href="https://schemes.sg">
-                Find Schemes <ArrowRight className="h-3.5 w-3.5" />
+                {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </Button>
-            <Button variant="outline" size="sm" className="rounded-lg cursor-pointer">
-              Login
-            </Button>
+            <LanguageToggle />
           </div>
         </div>
       )}

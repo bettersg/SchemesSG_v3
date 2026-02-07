@@ -1,9 +1,11 @@
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 import { SectionWrapper } from "@/components/shared/SectionWrapper"
-import { howItWorks } from "@/data/content"
+import { useLanguage } from "@/i18n"
 
 export function HowItWorksSection() {
+  const { t } = useLanguage()
+
   return (
     <SectionWrapper id="about" className="bg-neutral-50/60">
       <div className="text-center">
@@ -17,10 +19,10 @@ export function HowItWorksSection() {
             variant="secondary"
             className="mb-4 rounded-full px-4 py-1 text-xs font-medium bg-amber-50 text-amber-800 border-amber-200"
           >
-            How It Works
+            {t.howItWorks.badge}
           </Badge>
           <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-            Find Your Schemes in 3 Steps
+            {t.howItWorks.heading}
           </h2>
         </motion.div>
       </div>
@@ -32,9 +34,9 @@ export function HowItWorksSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8">
-          {howItWorks.map((step, index) => (
+          {t.howItWorks.steps.map((step, index) => (
             <motion.div
-              key={step.step}
+              key={index}
               className="flex flex-col items-center text-center"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -42,7 +44,7 @@ export function HowItWorksSection() {
               transition={{ duration: 0.5, delay: index * 0.15 }}
             >
               <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 text-white text-lg font-bold shadow-lg shadow-neutral-900/20">
-                {step.step}
+                {index + 1}
               </div>
               <h3 className="mt-6 text-lg font-semibold tracking-tight">
                 {step.title}

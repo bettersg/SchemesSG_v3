@@ -1,8 +1,10 @@
 import { motion } from "motion/react"
 import { SectionWrapper } from "@/components/shared/SectionWrapper"
-import { testimonial } from "@/data/content"
+import { useLanguage } from "@/i18n"
 
 export function TestimonialSection() {
+  const { t } = useLanguage()
+
   return (
     <SectionWrapper className="bg-white">
       <motion.div
@@ -14,17 +16,17 @@ export function TestimonialSection() {
       >
         {/* Avatar on top */}
         <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-neutral-900 font-bold text-xl shadow-lg shadow-amber-300/20 ring-4 ring-white">
-          {testimonial.author.charAt(0)}
+          {t.testimonial.author.charAt(0)}
         </div>
 
         {/* Name and role */}
         <p className="mt-4 text-sm text-muted-foreground">
-          {testimonial.author} &bull; <span className="font-semibold text-foreground">{testimonial.role}</span>
+          {t.testimonial.author} &bull; <span className="font-semibold text-foreground">{t.testimonial.role}</span>
         </p>
 
         {/* Large serif quote below */}
         <blockquote className="mt-8 font-serif text-2xl leading-relaxed tracking-tight text-foreground md:text-[1.75rem] lg:text-[2rem]">
-          &ldquo;{testimonial.quote}&rdquo;
+          &ldquo;{t.testimonial.quote}&rdquo;
         </blockquote>
       </motion.div>
     </SectionWrapper>

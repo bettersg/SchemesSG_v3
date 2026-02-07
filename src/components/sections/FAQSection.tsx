@@ -8,9 +8,11 @@ import {
 import { MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SectionWrapper } from "@/components/shared/SectionWrapper"
-import { faqItems } from "@/data/content"
+import { useLanguage } from "@/i18n"
 
 export function FAQSection() {
+  const { t } = useLanguage()
+
   return (
     <SectionWrapper id="faq" className="bg-neutral-50/60">
       <div className="text-center">
@@ -21,10 +23,10 @@ export function FAQSection() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-            Got Questions? We&rsquo;ve Got Answers
+            {t.faq.heading}
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            Find quick answers to the most common questions about how our platform works, what you get, and how to get the most out of it.
+            {t.faq.subtitle}
           </p>
         </motion.div>
       </div>
@@ -38,7 +40,7 @@ export function FAQSection() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <Accordion type="single" collapsible className="flex flex-col gap-3">
-            {faqItems.map((item, index) => (
+            {t.faq.items.map((item, index) => (
               <AccordionItem
                 key={index}
                 value={`item-${index}`}
@@ -75,10 +77,10 @@ export function FAQSection() {
             </div>
 
             <h3 className="text-lg font-bold tracking-tight">
-              Suggest a New Scheme
+              {t.faq.sidebar.title}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Know a scheme that&rsquo;s missing? Help us grow the database by submitting it.
+              {t.faq.sidebar.description}
             </p>
 
             <div className="mt-auto pt-6" />
@@ -88,7 +90,7 @@ export function FAQSection() {
               asChild
             >
               <a href="https://schemes.sg/contribute">
-                Suggest a scheme
+                {t.faq.sidebar.cta}
               </a>
             </Button>
           </div>
