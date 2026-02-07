@@ -1,5 +1,5 @@
 import { motion } from "motion/react"
-import { Search, SlidersHorizontal, Sparkles } from "lucide-react"
+import { Search, SlidersHorizontal, Sparkles, Globe, UserCheck } from "lucide-react"
 import { SectionWrapper } from "@/components/shared/SectionWrapper"
 
 /* ------------------------------------------------------------------ */
@@ -145,30 +145,60 @@ function FilterIllustration() {
   )
 }
 
-function EligibilityIllustration() {
+function SuggestSchemeIllustration() {
   return (
-    <div className="relative rounded-xl bg-neutral-50 border border-neutral-100 p-4 overflow-hidden">
-      {/* Mock profile scan UI */}
-      <div className="flex flex-col items-center">
-        <div className="relative">
-          <div className="h-16 w-16 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-400 text-lg font-bold">
-            ?
+    <div className="relative rounded-xl bg-neutral-50 border border-neutral-100 p-3.5 overflow-hidden">
+      {/* Step 1: User submits URL */}
+      <div className="flex items-center gap-2.5">
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200 text-neutral-500 text-[10px] font-bold">1</div>
+        <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
+          <div className="flex items-center gap-1.5">
+            <Globe className="h-3 w-3 shrink-0 text-neutral-400" />
+            <span className="text-[10px] text-neutral-500 truncate">https://gov.sg/schemes/new-grant</span>
           </div>
-          {/* Scan corners */}
-          <div className="absolute -top-1 -left-1 h-4 w-4 border-t-2 border-l-2 border-lime-400 rounded-tl" />
-          <div className="absolute -top-1 -right-1 h-4 w-4 border-t-2 border-r-2 border-lime-400 rounded-tr" />
-          <div className="absolute -bottom-1 -left-1 h-4 w-4 border-b-2 border-l-2 border-lime-400 rounded-bl" />
-          <div className="absolute -bottom-1 -right-1 h-4 w-4 border-b-2 border-r-2 border-lime-400 rounded-br" />
-        </div>
-        {/* Progress bar */}
-        <div className="mt-4 w-40 h-2 rounded-full bg-neutral-200 overflow-hidden">
-          <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-lime-300 to-lime-400" />
         </div>
       </div>
-      {/* Loading text */}
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <div className="h-4 w-4 rounded-full border-2 border-lime-400 border-t-transparent animate-spin" />
-        <span className="text-xs text-neutral-500">Checking eligibility...</span>
+
+      <div className="ml-3 border-l-2 border-dashed border-neutral-200 h-3" />
+
+      {/* Step 2: AI agents extract */}
+      <div className="flex items-center gap-2.5">
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-lime-100 text-lime-700 text-[10px] font-bold">2</div>
+        <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 shrink-0 text-lime-600" />
+            <span className="text-[10px] text-neutral-700 font-medium">AI extracting scheme details</span>
+          </div>
+          <div className="mt-1.5 flex gap-1">
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">Eligibility</span>
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">Benefits</span>
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">Agency</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="ml-3 border-l-2 border-dashed border-neutral-200 h-3" />
+
+      {/* Step 3: Slack approval */}
+      <div className="flex items-start gap-2.5">
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-800 text-white text-[10px] font-bold">3</div>
+        <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none">
+              <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm6.33 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 20.206 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zm-1.272 0a2.528 2.528 0 0 1-2.52 2.521 2.527 2.527 0 0 1-2.521-2.521V2.522A2.527 2.527 0 0 1 11.372 0a2.528 2.528 0 0 1 2.52 2.522v6.312zm-2.52 6.33a2.528 2.528 0 0 1 2.52 2.52 2.527 2.527 0 0 1-2.52 2.522 2.527 2.527 0 0 1-2.521-2.522v-2.52h2.52zm0-1.272a2.528 2.528 0 0 1-2.521-2.52 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 11.372a2.528 2.528 0 0 1-2.522 2.52h-6.312z" fill="#E01E5A"/>
+            </svg>
+            <span className="text-[10px] font-semibold text-neutral-700">#scheme-reviews</span>
+          </div>
+          <div className="rounded bg-neutral-50 border border-neutral-100 px-2 py-1.5">
+            <p className="text-[10px] text-neutral-600"><span className="font-semibold">New Housing Grant 2025</span> — HDB</p>
+            <div className="mt-1.5 flex gap-1.5">
+              <span className="flex items-center gap-1 rounded bg-lime-500 px-2 py-0.5 text-[9px] font-semibold text-white">
+                <UserCheck className="h-2.5 w-2.5" /> Approve
+              </span>
+              <span className="rounded bg-white border border-neutral-200 px-2 py-0.5 text-[9px] text-neutral-500">Reject</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -236,12 +266,12 @@ export function FeaturesSection() {
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <EligibilityIllustration />
+            <SuggestSchemeIllustration />
             <h3 className="mt-5 text-lg font-bold tracking-tight">
-              Check Your Eligibility
+              Suggest a New Scheme
             </h3>
             <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              Answer a few simple questions and we&rsquo;ll show you which schemes you&rsquo;re likely eligible for, saving you hours of research.
+              Our AI agents responsibly gather publicly available details from the webpage. A volunteer then reviews and approves the listing before it goes live.
             </p>
           </motion.div>
         </div>
