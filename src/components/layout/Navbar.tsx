@@ -29,10 +29,11 @@ export function Navbar() {
         {/* Logo */}
         <a
           href="/"
-          className="flex items-center gap-1.5 font-serif text-xl tracking-tight cursor-pointer"
+          className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
+          <img src="/logo.svg" alt="" className="h-7 w-auto" />
           <span className="text-neutral-900 font-bold">Schemes</span>
-          <span className="text-neutral-400">.sg</span>
+          <span className="text-neutral-400 -ml-1">.sg</span>
         </a>
 
         {/* Center pill nav - desktop */}

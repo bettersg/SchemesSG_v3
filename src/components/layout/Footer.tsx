@@ -8,9 +8,10 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <a href="/" className="font-serif text-xl tracking-tight">
+            <a href="/" className="flex items-center gap-2 font-serif text-xl tracking-tight">
+              <img src="/logo.svg" alt="" className="h-7 w-auto" />
               <span className="text-white font-bold">Schemes</span>
-              <span className="text-neutral-500">.sg</span>
+              <span className="text-neutral-500 -ml-1">.sg</span>
             </a>
             <p className="mt-4 text-sm leading-relaxed text-neutral-500 max-w-[260px]">
               {siteConfig.tagline}
