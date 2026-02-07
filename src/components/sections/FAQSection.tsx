@@ -69,7 +69,7 @@ export function FAQSection() {
               <div className="h-14 w-20 rounded-lg bg-neutral-100 flex items-end justify-center pb-1">
                 <div className="h-8 w-14 rounded-md bg-neutral-200/80" />
               </div>
-              <div className="h-8 w-8 rounded-lg bg-lime-400 flex items-center justify-center -ml-3 mt-4 shadow-sm">
+              <div className="h-8 w-8 rounded-lg bg-amber-400 flex items-center justify-center -ml-3 mt-4 shadow-sm">
                 <MessageCircle className="h-4 w-4 text-neutral-900" strokeWidth={2} />
               </div>
             </div>

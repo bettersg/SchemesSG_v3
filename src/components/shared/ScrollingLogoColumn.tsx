@@ -98,7 +98,7 @@ export function ScrollingLogoColumn({
                 className={cn(
                   "h-9 w-9 shrink-0 rounded-full object-cover bg-white transition-all duration-300",
                   isHighlighted
-                    ? "shadow-md ring-2 ring-lime-300"
+                    ? "shadow-md ring-2 ring-amber-300"
                     : "shadow-sm"
                 )}
                 loading="lazy"

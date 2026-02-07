@@ -48,18 +48,31 @@
   --font-sans: "Plus Jakarta Sans Variable", system-ui, sans-serif;
   --font-serif: "DM Serif Display", Georgia, serif;
 
-  /* Lime / neon green accent palette (matching reference) */
-  --color-lime-50: oklch(0.986 0.031 120);
-  --color-lime-100: oklch(0.967 0.067 122);
-  --color-lime-200: oklch(0.938 0.127 124);
-  --color-lime-300: oklch(0.897 0.196 126);
-  --color-lime-400: oklch(0.852 0.199 128);
-  --color-lime-500: oklch(0.768 0.189 130);
-  --color-lime-600: oklch(0.648 0.164 131);
-  --color-lime-700: oklch(0.532 0.136 131);
-  --color-lime-800: oklch(0.453 0.112 130);
-  --color-lime-900: oklch(0.391 0.09 131);
-  --color-lime-950: oklch(0.274 0.072 132);
+  /* Amber / warm accent palette (matching logo orange gradient) */
+  --color-amber-50: oklch(0.987 0.022 85);
+  --color-amber-100: oklch(0.962 0.059 85);
+  --color-amber-200: oklch(0.924 0.12 85);
+  --color-amber-300: oklch(0.879 0.169 75);
+  --color-amber-400: oklch(0.828 0.189 68);
+  --color-amber-500: oklch(0.769 0.188 60);
+  --color-amber-600: oklch(0.666 0.179 52);
+  --color-amber-700: oklch(0.555 0.163 48);
+  --color-amber-800: oklch(0.473 0.137 46);
+  --color-amber-900: oklch(0.414 0.112 45);
+  --color-amber-950: oklch(0.279 0.077 45);
+
+  /* Blue / trust palette (matching logo blue gradient) */
+  --color-blue-50: oklch(0.97 0.014 254);
+  --color-blue-100: oklch(0.932 0.032 255);
+  --color-blue-200: oklch(0.882 0.059 254);
+  --color-blue-300: oklch(0.809 0.105 251);
+  --color-blue-400: oklch(0.714 0.159 254);
+  --color-blue-500: oklch(0.623 0.214 259);
+  --color-blue-600: oklch(0.546 0.245 262);
+  --color-blue-700: oklch(0.488 0.243 264);
+  --color-blue-800: oklch(0.424 0.199 265);
+  --color-blue-900: oklch(0.379 0.146 265);
+  --color-blue-950: oklch(0.282 0.091 267);
 
   /* Neutral grays */
   --color-neutral-50: oklch(0.985 0 0);
@@ -89,17 +102,17 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.968 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.852 0.199 128);
+  --accent: oklch(0.828 0.189 68);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.852 0.199 128);
-  --chart-2: oklch(0.768 0.189 130);
-  --chart-3: oklch(0.648 0.164 131);
-  --chart-4: oklch(0.897 0.196 126);
-  --chart-5: oklch(0.532 0.136 131);
+  --chart-1: oklch(0.828 0.189 68);
+  --chart-2: oklch(0.769 0.188 60);
+  --chart-3: oklch(0.666 0.179 52);
+  --chart-4: oklch(0.879 0.169 75);
+  --chart-5: oklch(0.555 0.163 48);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

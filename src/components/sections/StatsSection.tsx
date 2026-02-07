@@ -22,7 +22,7 @@ export function StatsSection() {
                   duration={2000}
                 />
               </div>
-              <p className="mt-2 text-sm font-medium uppercase tracking-wider text-lime-400/70">
+              <p className="mt-2 text-sm font-medium uppercase tracking-wider text-amber-400/70">
                 {stat.label}
               </p>
             </div>

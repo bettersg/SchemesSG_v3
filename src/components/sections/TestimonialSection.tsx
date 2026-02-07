@@ -13,7 +13,7 @@ export function TestimonialSection() {
         transition={{ duration: 0.6 }}
       >
         {/* Avatar on top */}
-        <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-lime-300 to-lime-500 flex items-center justify-center text-neutral-900 font-bold text-xl shadow-lg shadow-lime-300/20 ring-4 ring-white">
+        <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-neutral-900 font-bold text-xl shadow-lg shadow-amber-300/20 ring-4 ring-white">
           {testimonial.author.charAt(0)}
         </div>
 

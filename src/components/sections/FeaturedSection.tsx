@@ -16,7 +16,7 @@ const partnerLogos = [
 
 export function FeaturedSection() {
   return (
-    <section className="border-t border-neutral-200/60 bg-white py-14 px-6">
+    <section className="border-t border-neutral-200/60 bg-neutral-50 py-14 px-6">
       <motion.div
         className="mx-auto max-w-5xl"
         initial={{ opacity: 0, y: 10 }}
@@ -33,7 +33,7 @@ export function FeaturedSection() {
               key={logo.name}
               src={logo.src}
               alt={logo.name}
-              className="h-10 md:h-12 w-auto object-contain brightness-0 opacity-40 hover:opacity-70 transition-opacity duration-200"
+              className="h-10 md:h-12 w-auto object-contain opacity-50 hover:opacity-80 transition-opacity duration-200"
             />
           ))}
         </div>

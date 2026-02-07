@@ -35,7 +35,7 @@ export function ScrollingColumn({
             )}
           >
             {i === highlightIndex && (
-              <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-lime-500" />
+              <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
             )}
             {item}
           </div>
@@ -79,7 +79,7 @@ export function ScrollingColumn({
               )}
             >
               {isHighlighted && (
-                <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-lime-500" />
+                <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
               )}
               {item}
             </div>

@@ -35,7 +35,7 @@ function SearchIllustration() {
           </div>
           <p className="mt-1.5 text-[10px] text-neutral-500 leading-relaxed">Financial assistance for lower-income families facing difficulties...</p>
           <div className="mt-2 flex gap-1.5">
-            <span className="rounded-full bg-lime-50 border border-lime-200 px-2 py-0.5 text-[9px] font-medium text-lime-700">Financial Aid</span>
+            <span className="rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-medium text-amber-700">Financial Aid</span>
             <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">Families</span>
             <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">Monthly</span>
           </div>
@@ -72,7 +72,7 @@ function DatabaseIllustration() {
         </div>
         <div className="absolute top-14 left-12 rotate-[2deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-md">
           <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-lime-100 flex items-center justify-center text-[8px] font-bold text-lime-600">F</div>
+            <div className="h-5 w-5 rounded bg-amber-100 flex items-center justify-center text-[8px] font-bold text-amber-600">F</div>
             <span className="text-[10px] font-medium text-neutral-700">Financial Aid</span>
           </div>
         </div>
@@ -136,7 +136,7 @@ function FilterIllustration() {
       <div className="flex items-center gap-4 text-xs text-neutral-500">
         <span>Singapore</span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-lime-400" />
+          <span className="h-2 w-2 rounded-full bg-amber-400" />
           Eligible
         </span>
         <Sparkles className="h-3.5 w-3.5 text-neutral-300" />
@@ -163,10 +163,10 @@ function SuggestSchemeIllustration() {
 
       {/* Step 2: AI agents extract */}
       <div className="flex items-center gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-lime-100 text-lime-700 text-[10px] font-bold">2</div>
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">2</div>
         <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
           <div className="flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 shrink-0 text-lime-600" />
+            <Sparkles className="h-3 w-3 shrink-0 text-blue-600" />
             <span className="text-[10px] text-neutral-700 font-medium">AI extracting scheme details</span>
           </div>
           <div className="mt-1.5 flex gap-1">
@@ -192,7 +192,7 @@ function SuggestSchemeIllustration() {
           <div className="rounded bg-neutral-50 border border-neutral-100 px-2 py-1.5">
             <p className="text-[10px] text-neutral-600"><span className="font-semibold">New Housing Grant 2025</span> — HDB</p>
             <div className="mt-1.5 flex gap-1.5">
-              <span className="flex items-center gap-1 rounded bg-lime-500 px-2 py-0.5 text-[9px] font-semibold text-white">
+              <span className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-[9px] font-semibold text-white">
                 <UserCheck className="h-2.5 w-2.5" /> Approve
               </span>
               <span className="rounded bg-white border border-neutral-200 px-2 py-0.5 text-[9px] text-neutral-500">Reject</span>
@@ -220,7 +220,7 @@ function AgencyLogosIllustration() {
 
 export function FeaturesSection() {
   return (
-    <SectionWrapper id="features" className="bg-white">
+    <SectionWrapper id="features" className="bg-neutral-50/80 overflow-hidden">
       <div className="text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -238,9 +238,13 @@ export function FeaturesSection() {
       </div>
 
       {/* Bento grid — two flex columns */}
-      <div className="mt-16 mx-auto max-w-5xl grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div className="relative mt-16 mx-auto max-w-5xl grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* Background gradient glows */}
+        <div className="pointer-events-none absolute z-0 -top-40 -left-20 h-[600px] w-[600px] rounded-full bg-amber-200 opacity-40 blur-[150px]" />
+        <div className="pointer-events-none absolute z-0 top-1/4 -right-10 h-[500px] w-[500px] rounded-full bg-blue-200 opacity-30 blur-[130px]" />
+        <div className="pointer-events-none absolute z-0 -bottom-20 left-1/3 h-[500px] w-[500px] rounded-full bg-amber-100 opacity-40 blur-[120px]" />
         {/* Left column */}
-        <div className="flex flex-col gap-5">
+        <div className="relative z-10 flex flex-col gap-5">
           {/* Card 1 — AI-Powered Search */}
           <motion.div
             className="flex-1 rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"
@@ -277,7 +281,7 @@ export function FeaturesSection() {
         </div>
 
         {/* Right column */}
-        <div className="flex flex-col gap-5">
+        <div className="relative z-10 flex flex-col gap-5">
           {/* Card 2 — Comprehensive Database */}
           <motion.div
             className="flex-1 rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"

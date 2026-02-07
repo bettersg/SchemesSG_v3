@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { motion } from "motion/react"
-import { Search, ArrowRight, Sparkles } from "lucide-react"
+import { Search, ArrowRight, ArrowUpRight } from "lucide-react"
 import { ScrollingColumn } from "@/components/shared/ScrollingColumn"
 import { ScrollingLogoColumn } from "@/components/shared/ScrollingLogoColumn"
 import { heroContent, schemeCategories } from "@/data/content"
@@ -20,8 +20,8 @@ export function HeroSection() {
   return (
     <section className="relative min-h-[100svh] flex items-center overflow-hidden bg-neutral-50 grain-overlay">
       {/* Gradient glow orbs */}
-      <div className="pointer-events-none absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-lime-300/10 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] right-[5%] h-[500px] w-[500px] rounded-full bg-lime-200/15 blur-[100px]" />
+      <div className="pointer-events-none absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-amber-300/10 blur-[120px]" />
+      <div className="pointer-events-none absolute bottom-[-10%] right-[5%] h-[500px] w-[500px] rounded-full bg-blue-200/10 blur-[100px]" />
 
       <div className="relative mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-8 px-6 py-24 lg:py-20">
         {/* Left scrolling column — scheme categories */}
@@ -36,20 +36,23 @@ export function HeroSection() {
 
         {/* Center content */}
         <div className="flex flex-col items-center justify-center text-center">
-          {/* Floating 3D icon */}
-          <motion.div
-            className="animate-float mb-6 relative z-10"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+          {/* Volunteer banner */}
+          <motion.a
+            href="https://better.sg"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-8 inline-flex items-center gap-3 rounded-full bg-neutral-900 px-3.5 py-1 text-xs text-neutral-300 hover:bg-neutral-800 transition-colors duration-200 cursor-pointer"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="relative">
-              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-to-br from-sky-300 to-sky-500 shadow-xl shadow-sky-400/20 flex items-center justify-center rotate-[-8deg]">
-                <Sparkles className="h-7 w-7 sm:h-9 sm:w-9 text-white" strokeWidth={1.5} />
-              </div>
-              <div className="absolute -bottom-1 -right-1 h-5 w-5 sm:h-6 sm:w-6 rounded-lg bg-neutral-200 shadow-sm rotate-12" />
-            </div>
-          </motion.div>
+            <span className="leading-none">Built by volunteers at</span>
+            <img src="/featured/bettersg-logo.a549b628.svg" alt="better.sg" className="h-6 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
+            <span className="h-3 w-px bg-neutral-700 shrink-0" />
+            <span className="font-medium text-white leading-none flex items-center gap-1">
+              Get involved <ArrowUpRight className="h-3 w-3" />
+            </span>
+          </motion.a>
 
           {/* Headline */}
           <motion.h1
@@ -84,7 +87,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.45 }}
           >
-            <div className="relative flex items-center rounded-full bg-white border border-neutral-300 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-lime-400/50 focus-within:border-lime-400">
+            <div className="relative flex items-center rounded-full bg-white border border-neutral-300 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-amber-400/50 focus-within:border-amber-400">
               <Search className="absolute left-5 h-5 w-5 text-neutral-500 pointer-events-none" />
               <input
                 type="text"
@@ -95,7 +98,7 @@ export function HeroSection() {
               />
               <button
                 type="submit"
-                className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-lime-400 hover:bg-lime-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
+                className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
                 aria-label="Search"
               >
                 <ArrowRight className="h-4 w-4" />

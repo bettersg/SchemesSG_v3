@@ -49,7 +49,7 @@ export function Navbar() {
           ))}
           <Button
             size="sm"
-            className="rounded-full bg-lime-400 hover:bg-lime-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer border-0 shadow-none"
+            className="rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer border-0 shadow-none"
             asChild
           >
             <a href="https://schemes.sg">
@@ -104,7 +104,7 @@ export function Navbar() {
           <div className="mt-4 flex gap-2">
             <Button
               size="sm"
-              className="flex-1 rounded-lg bg-lime-400 hover:bg-lime-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
+              className="flex-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
               asChild
             >
               <a href="https://schemes.sg">

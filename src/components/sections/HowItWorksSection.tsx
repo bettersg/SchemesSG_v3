@@ -15,7 +15,7 @@ export function HowItWorksSection() {
         >
           <Badge
             variant="secondary"
-            className="mb-4 rounded-full px-4 py-1 text-xs font-medium bg-lime-50 text-lime-800 border-lime-200"
+            className="mb-4 rounded-full px-4 py-1 text-xs font-medium bg-amber-50 text-amber-800 border-amber-200"
           >
             How It Works
           </Badge>
