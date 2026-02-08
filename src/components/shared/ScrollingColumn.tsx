@@ -1,5 +1,5 @@
-import { motion, useReducedMotion } from "motion/react"
 import { cn } from "@/lib/utils"
+import { Marquee } from "./Marquee"
 
 interface ScrollingColumnProps {
   items: string[]
@@ -9,6 +9,26 @@ interface ScrollingColumnProps {
   className?: string
 }
 
+const ITEM_HEIGHT = 52
+
+function Item({ item, isHighlighted }: { item: string; isHighlighted: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap transition-colors duration-300",
+        isHighlighted
+          ? "text-foreground font-semibold"
+          : "text-muted-foreground/30"
+      )}
+    >
+      {isHighlighted && (
+        <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+      )}
+      {item}
+    </div>
+  )
+}
+
 export function ScrollingColumn({
   items,
   direction = "up",
@@ -16,76 +36,20 @@ export function ScrollingColumn({
   speed = 25,
   className,
 }: ScrollingColumnProps) {
-  const shouldReduceMotion = useReducedMotion()
-  const duplicated = [...items, ...items, ...items]
-  const itemHeight = 52
-  const totalHeight = items.length * itemHeight
-
-  if (shouldReduceMotion) {
-    return (
-      <div className={cn("flex flex-col items-start gap-1", className)}>
-        {items.map((item, i) => (
-          <div
-            key={item}
-            className={cn(
-              "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap",
-              i === highlightIndex
-                ? "text-foreground font-semibold"
-                : "text-muted-foreground/35"
-            )}
-          >
-            {i === highlightIndex && (
-              <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-            )}
-            {item}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div
-      className={cn("relative h-[420px] overflow-hidden", className)}
-      style={{
-        maskImage: "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
-      }}
-    >
-
-      <motion.div
-        className="flex flex-col"
-        animate={{
-          y: direction === "up" ? [0, -totalHeight] : [-totalHeight, 0],
-        }}
-        transition={{
-          y: {
-            duration: speed,
-            repeat: Infinity,
-            ease: "linear",
-          },
-        }}
-      >
-        {duplicated.map((item, index) => {
-          const isHighlighted = index % items.length === highlightIndex
-          return (
-            <div
-              key={`${item}-${index}`}
-              className={cn(
-                "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap transition-colors duration-300",
-                isHighlighted
-                  ? "text-foreground font-semibold"
-                  : "text-muted-foreground/30"
-              )}
-            >
-              {isHighlighted && (
-                <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
-              )}
-              {item}
-            </div>
-          )
-        })}
-      </motion.div>
-    </div>
+    <Marquee
+      items={items}
+      itemHeight={ITEM_HEIGHT}
+      direction={direction}
+      highlightIndex={highlightIndex}
+      speed={speed}
+      className={className}
+      renderItem={(item, index, isHighlighted) => (
+        <Item key={`${item}-${index}`} item={item} isHighlighted={isHighlighted} />
+      )}
+      renderStaticItem={(item, _i, isHighlighted) => (
+        <Item key={item} item={item} isHighlighted={isHighlighted} />
+      )}
+    />
   )
 }

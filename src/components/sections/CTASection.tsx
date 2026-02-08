@@ -30,7 +30,7 @@ export function CTASection() {
           className="mt-9 rounded-full bg-amber-400 text-neutral-900 hover:bg-amber-500 px-10 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer transition-all duration-200 border-0"
           asChild
         >
-          <a href="https://schemes.sg">
+          <a href="https://schemes.sg" target="_blank" rel="noopener noreferrer">
             {t.cta.button}
             <ArrowRight className="h-4 w-4" />
           </a>

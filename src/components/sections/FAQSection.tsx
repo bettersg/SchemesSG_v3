@@ -90,7 +90,7 @@ export function FAQSection() {
               className="rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-5 text-sm font-semibold cursor-pointer shadow-none"
               asChild
             >
-              <a href="https://schemes.sg/contribute">
+              <a href="https://schemes.sg/contribute" target="_blank" rel="noopener noreferrer">
                 {t.faq.sidebar.cta}
               </a>
             </Button>

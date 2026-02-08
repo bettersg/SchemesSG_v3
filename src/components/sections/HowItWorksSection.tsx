@@ -7,7 +7,7 @@ export function HowItWorksSection() {
   const { t } = useLanguage()
 
   return (
-    <SectionWrapper id="about" className="bg-neutral-50/60">
+    <SectionWrapper id="how-it-works" className="bg-neutral-50/60">
       <div className="text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

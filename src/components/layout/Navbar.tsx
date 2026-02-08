@@ -41,7 +41,7 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
-          <img src="/logo.svg" alt="" className="h-7 w-auto" />
+          <img src="/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
           <span className="text-neutral-900 font-bold">Schemes</span>
           <span className="text-neutral-400 -ml-1">.sg</span>
         </a>
@@ -62,7 +62,7 @@ export function Navbar() {
             className="rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer border-0 shadow-none"
             asChild
           >
-            <a href="https://schemes.sg">
+            <a href="https://schemes.sg" target="_blank" rel="noopener noreferrer">
               {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </Button>
@@ -107,7 +107,7 @@ export function Navbar() {
               className="w-full rounded-lg bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
               asChild
             >
-              <a href="https://schemes.sg">
+              <a href="https://schemes.sg" target="_blank" rel="noopener noreferrer">
                 {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </Button>

@@ -5,7 +5,7 @@ import { agencies } from "@/data/agencies"
 import type { Agency } from "@/data/agencies"
 import { useLanguage } from "@/i18n"
 
-// Build 6 rows from the 24 agencies (4 per row), doubled for overflow
+// Build 6 rows from the 24 agencies (4 per row), tripled for overflow
 const rows: Agency[][] = [
   agencies.slice(0, 4),
   agencies.slice(4, 8),
@@ -14,6 +14,9 @@ const rows: Agency[][] = [
   agencies.slice(16, 20),
   agencies.slice(20, 24),
 ]
+
+// Pre-compute tripled rows at module level (static data, no need to recompute per render)
+const tripledRows = rows.map((row) => [...row, ...row, ...row])
 
 // Horizontal offsets to stagger each row for visual variety
 const rowOffsets = ["3%", "-2%", "1%", "-3%", "2%", "-1%"]
@@ -48,7 +51,7 @@ export function AgenciesSection() {
               className="mt-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer transition-all duration-200"
               asChild
             >
-              <a href="https://schemes.sg">
+              <a href="https://schemes.sg" target="_blank" rel="noopener noreferrer">
                 {t.agencies.cta} <ArrowRight className="h-4 w-4" />
               </a>
             </Button>
@@ -64,15 +67,13 @@ export function AgenciesSection() {
           }}
         >
           <div className="flex flex-col items-center gap-4 py-4">
-            {rows.map((row, i) => {
-              const doubled = [...row, ...row, ...row]
-              return (
+            {tripledRows.map((tripled, i) => (
                 <div
                   key={i}
                   className="flex gap-4"
                   style={{ transform: `translateX(${rowOffsets[i]})` }}
                 >
-                  {doubled.map((agency, j) => (
+                  {tripled.map((agency, j) => (
                     <div
                       key={`${agency.shortName}-${j}`}
                       className="flex shrink-0 items-center gap-3 rounded-full border border-neutral-200/60 bg-neutral-50 px-4 py-2.5"
@@ -89,8 +90,7 @@ export function AgenciesSection() {
                     </div>
                   ))}
                 </div>
-              )
-            })}
+            ))}
           </div>
         </div>
       </div>

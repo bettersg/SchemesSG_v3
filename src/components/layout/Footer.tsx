@@ -11,7 +11,7 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-2 font-serif text-xl tracking-tight">
-              <img src="/logo.svg" alt="" className="h-7 w-auto" />
+              <img src="/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
               <span className="text-white font-bold">Schemes</span>
               <span className="text-neutral-500 -ml-1">.sg</span>
             </a>
