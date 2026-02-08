@@ -135,6 +135,13 @@
   }
 }
 
+/* Shimmer animation for skeleton loading */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Float animation for hero icon */
 @keyframes float {
   0%, 100% {
