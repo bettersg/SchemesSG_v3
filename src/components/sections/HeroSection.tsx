@@ -46,7 +46,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             <span className="leading-none">{t.hero.volunteerBanner}</span>
-            <img src="/featured/bettersg-logo.a549b628.svg" alt="better.sg" className="h-6 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
+            <img src="/featured/bettersg-logo.svg" alt="better.sg" className="h-3.5 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
             <span className="h-3 w-px bg-neutral-700 shrink-0" />
             <span className="font-medium text-white leading-none flex items-center gap-1">
               {t.hero.getInvolved} <ArrowUpRight className="h-3 w-3" />

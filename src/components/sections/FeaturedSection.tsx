@@ -1,13 +1,14 @@
 import { motion } from "motion/react"
 import { useLanguage } from "@/i18n"
+import { cn } from "@/lib/utils"
 
 const featuredLogos = [
   { name: "Channel NewsAsia", src: "/featured/cna-logo.fe6e55ec.svg" },
   { name: "Lianhe Zaobao", src: "/featured/lianhe-zaobao-logo.c41c922e.svg" },
   { name: "Money FM", src: "/featured/moneyfm-logo.c4778b09.svg" },
-  { name: "Better.sg", src: "/featured/bettersg-logo.a549b628.svg" },
+  { name: "Better.sg", src: "/featured/bettersg-logo.svg" },
   { name: "Sengkang Town Council", src: "/featured/sengkang-logo.4fef7e5f.svg" },
-  { name: "Hatch", src: "/featured/hatch-logo.5129b052.svg" },
+  { name: "Hatch", src: "/featured/hatch-logo.png" },
 ]
 
 const partnerLogos = [
@@ -36,7 +37,7 @@ export function FeaturedSection() {
               key={logo.name}
               src={logo.src}
               alt={logo.name}
-              className="h-10 md:h-12 w-auto object-contain opacity-50 hover:opacity-80 transition-opacity duration-200"
+              className={cn("w-auto object-contain opacity-50 hover:opacity-80 transition-opacity duration-200", logo.name === "Better.sg" ? "h-6 md:h-7" : "h-10 md:h-12")}
               loading="lazy"
             />
           ))}
