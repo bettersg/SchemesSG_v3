@@ -27,13 +27,22 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               {t.footer.productLinks.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-white transition-colors cursor-pointer"
-                  >
-                    {link.label}
-                  </a>
+                <li key={link.label}>
+                  {link.comingSoon ? (
+                    <span className="text-sm text-neutral-600 flex items-center gap-2">
+                      {link.label}
+                      <span className="text-[10px] tracking-wider font-medium text-neutral-500 bg-neutral-800 rounded-full px-2 py-0.5">
+                        Coming Soon
+                      </span>
+                    </span>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-sm hover:text-white transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -46,13 +55,22 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               {t.footer.resourceLinks.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-white transition-colors cursor-pointer"
-                  >
-                    {link.label}
-                  </a>
+                <li key={link.label}>
+                  {link.comingSoon ? (
+                    <span className="text-sm text-neutral-600 flex items-center gap-2">
+                      {link.label}
+                      <span className="text-[10px] tracking-wider font-medium text-neutral-500 bg-neutral-800 rounded-full px-2 py-0.5">
+                        Coming Soon
+                      </span>
+                    </span>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-sm hover:text-white transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -65,13 +83,22 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               {t.footer.legalLinks.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-sm hover:text-white transition-colors cursor-pointer"
-                  >
-                    {link.label}
-                  </a>
+                <li key={link.label}>
+                  {link.comingSoon ? (
+                    <span className="text-sm text-neutral-600 flex items-center gap-2">
+                      {link.label}
+                      <span className="text-[10px] tracking-wider font-medium text-neutral-500 bg-neutral-800 rounded-full px-2 py-0.5">
+                        Coming Soon
+                      </span>
+                    </span>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-sm hover:text-white transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

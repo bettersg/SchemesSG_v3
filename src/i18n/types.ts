@@ -91,9 +91,9 @@ export interface Translations {
     productHeading: string
     resourcesHeading: string
     legalHeading: string
-    productLinks: Array<{ label: string; href: string }>
-    resourceLinks: Array<{ label: string; href: string }>
-    legalLinks: Array<{ label: string; href: string }>
+    productLinks: Array<{ label: string; href: string; comingSoon?: boolean }>
+    resourceLinks: Array<{ label: string; href: string; comingSoon?: boolean }>
+    legalLinks: Array<{ label: string; href: string; comingSoon?: boolean }>
     copyright: string
     madeIn: string
   }
