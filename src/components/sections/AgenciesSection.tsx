@@ -36,7 +36,7 @@ export function AgenciesSection() {
               {t.agencies.heading.split("\n").map((line, i) => (
                 <span key={i}>
                   {line}
-                  {i < t.agencies.heading.split("\n").length - 1 && <br className="hidden sm:inline" />}
+                  {i < t.agencies.heading.split("\n").length - 1 && <>{" "}<br className="hidden sm:inline" /></>}
                 </span>
               ))}
             </h2>

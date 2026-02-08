@@ -5,7 +5,7 @@ import { useLanguage } from "@/i18n"
 import { LanguageToggle } from "@/components/shared/LanguageToggle"
 import { cn } from "@/lib/utils"
 
-const navLinkHrefs = ["#about", "#features", "#faq"]
+const navLinkHrefs = ["#about", "#features", "#contribute"]
 
 export function Navbar() {
   const { t } = useLanguage()
