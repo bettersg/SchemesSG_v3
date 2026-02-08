@@ -1,73 +1,98 @@
-# React + TypeScript + Vite
+# Schemes.sg Landing Site
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Landing page for [Schemes.sg](https://schemes.sg) -- an AI-powered search engine that helps people in Singapore find social assistance schemes they're eligible for.
 
-Currently, two official plugins are available:
+**Live:** https://schemes-landing-dev.web.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
 
-## React Compiler
+- **React 19** + **TypeScript** (strict mode)
+- **Vite 7** dev server & bundler
+- **Tailwind CSS v4** (Vite plugin, no config file -- theme defined in `src/index.css`)
+- **shadcn/ui** component primitives
+- **motion** (framer-motion successor) for scroll-triggered animations
+- **pnpm** package manager
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting Started
 
-## Expanding the ESLint configuration
+```bash
+# Install dependencies
+pnpm install
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# Start dev server (http://localhost:5173)
+pnpm dev
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Type-check + production build
+pnpm build
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Lint
+pnpm lint
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview production build
+pnpm preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```
+landing/
+├── public/                  # Static assets
+├── src/
+│   ├── components/
+│   │   ├── layout/          # Navbar, Footer
+│   │   ├── sections/        # Page sections (Hero, Featured, Features, Agencies, etc.)
+│   │   ├── shared/          # Reusable components (SectionWrapper, AnimatedCounter, etc.)
+│   │   └── ui/              # shadcn/ui primitives (button, card, badge, accordion, separator)
+│   ├── data/                # Static data (agencies, content)
+│   ├── i18n/                # Internationalization (EN / 中文)
+│   │   └── translations/    # Translation files
+│   ├── lib/                 # Utilities (cn helper)
+│   ├── App.tsx              # Root component with lazy-loaded sections
+│   ├── main.tsx             # Entry point
+│   └── index.css            # Tailwind theme + custom animations
+├── index.html               # Shell with pre-React skeleton HTML
+├── firebase.json            # Firebase Hosting config
+└── vite.config.ts
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Page Sections
+
+All sections are code-split via `React.lazy()` and show shimmer skeleton placeholders while loading:
+
+1. **Hero** -- headline, search CTA, scrolling text columns
+2. **Featured** -- media mentions and press
+3. **Features** -- what Schemes.sg offers
+4. **Agencies** -- 12 Singapore government agencies in the database
+5. **Testimonial** -- user/partner quotes
+6. **FAQ** -- common questions (accordion)
+7. **CTA** -- final call to action
+
+## Internationalization
+
+Supports English and Simplified Chinese via a lightweight React Context system. Toggle is in the Navbar. Language preference is persisted to `localStorage`.
+
+To add a new language:
+1. Add the locale to `src/i18n/types.ts`
+2. Create a translation file in `src/i18n/translations/`
+3. Register it in `src/i18n/index.ts`
+
+## Styling
+
+- **Color system:** OKLch-based with amber/warm accents and blue/trust palette, matching the Schemes.sg brand
+- **Fonts:** Plus Jakarta Sans Variable (body) + DM Serif Display (headlines), with CJK fallbacks
+- **Path alias:** `@/` maps to `src/`
+- **Utility:** use `cn()` from `@/lib/utils` for conditional class merging
+
+## Adding a shadcn/ui Component
+
+```bash
+pnpm dlx shadcn@latest add <component>
+```
+
+## Deployment
+
+Firebase Hosting, multi-site project `schemessg-v3-dev`:
+
+```bash
+pnpm build && firebase deploy --only hosting:schemes-landing-dev
 ```
