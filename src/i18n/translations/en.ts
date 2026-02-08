@@ -108,12 +108,21 @@ export const en: Translations = {
     ],
   },
 
-  testimonial: {
-    quote:
-      "Schemes.sg helped me find financial assistance I never knew existed. Within minutes, I discovered three schemes my family was eligible for. The process was so much simpler than searching through dozens of government websites.",
-    author: "Sarah T.",
-    role: "Single mother, Jurong West",
-  },
+  testimonials: [
+    {
+      quote:
+        "I had no idea there were schemes for my situation until I tried Schemes.sg. It matched me with three programmes I actually qualified for, and one of them covered my kids' school fees. I wish I'd found this sooner.",
+      author: "Sarah T.",
+      role: "Single mother, Jurong West",
+    },
+    {
+      quote:
+        "We used to spend a lot of time manually searching for schemes on behalf of our clients. With Schemes.sg, our social workers can pull up relevant options in seconds. It's become part of our daily workflow.",
+      author: "Care Corner Singapore",
+      role: "Community Partner",
+      avatar: "/featured/carecorner-avatar.png",
+    },
+  ],
 
   faq: {
     heading: "Got Questions? We\u2019ve Got Answers",
@@ -133,7 +142,7 @@ export const en: Translations = {
       {
         question: "How does the AI matching work?",
         answer:
-          "Our AI analyses your situation based on factors like household income, family composition, employment status, and specific needs. It then cross-references this against eligibility criteria across 500+ schemes to surface the most relevant options.",
+          "Our search is powered by the same technology behind the best-in-class search engines in the world. We index information from eligibility criteria, location, and many more factors across 500+ schemes. You can also chat with your search results to refine them further based on your needs.",
       },
       {
         question: "What types of schemes are covered?",
@@ -143,7 +152,7 @@ export const en: Translations = {
       {
         question: "Is my personal information safe?",
         answer:
-          "We take privacy seriously. We do not store your personal details after your search session, and all data is encrypted in transit. We never share your information with third parties.",
+          "Your privacy is protected by design. We don't require any login or account, which means there's no way for us to know who you are. Your searches are encrypted in transit and at rest, and we never share your information with anyone.",
       },
       {
         question: "How up-to-date is the information?",

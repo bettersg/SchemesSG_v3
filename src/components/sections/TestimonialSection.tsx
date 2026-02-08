@@ -7,28 +7,38 @@ export function TestimonialSection() {
 
   return (
     <SectionWrapper className="bg-white">
-      <motion.div
-        className="mx-auto max-w-3xl text-center"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Avatar on top */}
-        <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-neutral-900 font-bold text-xl shadow-lg shadow-amber-300/20 ring-4 ring-white">
-          {t.testimonial.author.charAt(0)}
-        </div>
+      <div className="mx-auto max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+        {t.testimonials.map((item, index) => (
+          <motion.div
+            key={index}
+            className="flex flex-col rounded-2xl border border-neutral-200/60 bg-neutral-50/50 p-8 lg:p-10"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, delay: index * 0.15 }}
+          >
+            {/* Quote */}
+            <blockquote className="flex-1 font-serif text-lg leading-relaxed tracking-tight text-foreground lg:text-xl">
+              &ldquo;{item.quote}&rdquo;
+            </blockquote>
 
-        {/* Name and role */}
-        <p className="mt-4 text-sm text-muted-foreground">
-          {t.testimonial.author} &bull; <span className="font-semibold text-foreground">{t.testimonial.role}</span>
-        </p>
-
-        {/* Large serif quote below */}
-        <blockquote className="mt-8 font-serif text-2xl leading-relaxed tracking-tight text-foreground md:text-[1.75rem] lg:text-[2rem]">
-          &ldquo;{t.testimonial.quote}&rdquo;
-        </blockquote>
-      </motion.div>
+            {/* Author */}
+            <div className="mt-6 flex items-center gap-3">
+              {item.avatar ? (
+                <img src={item.avatar} alt={item.author} className="h-10 w-10 shrink-0 rounded-lg object-contain bg-white shadow-sm" />
+              ) : (
+                <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-neutral-900 font-bold text-sm shadow-sm">
+                  {item.author.charAt(0)}
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-semibold text-foreground">{item.author}</p>
+                <p className="text-xs text-muted-foreground">{item.role}</p>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </SectionWrapper>
   )
 }

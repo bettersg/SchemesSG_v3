@@ -58,11 +58,12 @@ export interface Translations {
     }>
   }
 
-  testimonial: {
+  testimonials: Array<{
     quote: string
     author: string
     role: string
-  }
+    avatar?: string
+  }>
 
   faq: {
     heading: string
