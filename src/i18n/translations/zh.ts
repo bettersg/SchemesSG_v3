@@ -188,7 +188,7 @@ export const zh: Translations = {
     ],
     resourceLinks: [
       { label: "\u5173\u4E8E", href: "#about" },
-      { label: "\u535A\u5BA2", href: "#" },
+      { label: "\u8D21\u732E", href: "#contribute" },
       { label: "\u8054\u7CFB\u6211\u4EEC", href: "#" },
     ],
     legalLinks: [

@@ -188,7 +188,7 @@ export const en: Translations = {
     ],
     resourceLinks: [
       { label: "About", href: "#about" },
-      { label: "Blog", href: "#" },
+      { label: "Contribute", href: "#contribute" },
       { label: "Contact", href: "#" },
     ],
     legalLinks: [
