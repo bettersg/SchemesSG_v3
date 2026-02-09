@@ -19,8 +19,8 @@ export function HeroSection() {
   return (
     <section className="relative min-h-0 lg:min-h-[100svh] flex items-center overflow-hidden bg-neutral-50 grain-overlay">
       {/* Gradient glow orbs */}
-      <div className="pointer-events-none absolute top-[-20%] left-[10%] h-[600px] w-[600px] rounded-full bg-amber-300/10 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] right-[5%] h-[600px] w-[600px] rounded-full bg-blue-300/20 blur-[120px]" />
+      <div className="pointer-events-none absolute bottom-[10%] left-[10%] h-[600px] w-[600px] rounded-full bg-amber-300/10 blur-[120px]" />
+      <div className="pointer-events-none absolute top-[10%] right-[5%] h-[600px] w-[600px] rounded-full bg-blue-300/20 blur-[120px]" />
 
       <div className="relative mx-auto w-full max-w-7xl grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-8 px-6 pt-28 pb-16 lg:py-20">
         {/* Left scrolling column — scheme categories */}
@@ -92,7 +92,7 @@ export function HeroSection() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t.hero.searchPlaceholder}
+                // placeholder={t.hero.searchPlaceholder}
                 className="w-full bg-transparent py-4 pl-13 pr-14 text-[15px] text-neutral-800 placeholder:text-neutral-500 focus:outline-none rounded-full"
               />
               <button
@@ -112,7 +112,7 @@ export function HeroSection() {
         {/* Right scrolling column — agency logos */}
         <div className="hidden lg:flex items-center justify-end">
           <ScrollingLogoColumn
-            agencies={agencies}
+            agencies={agencies.slice(0, 12)}
             speed={32}
           />
         </div>

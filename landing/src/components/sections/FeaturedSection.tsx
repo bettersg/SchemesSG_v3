@@ -31,13 +31,13 @@ export function FeaturedSection() {
         <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
           {t.featured.heading}
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-16">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-8 md:gap-x-8">
           {featuredLogos.map((logo) => (
             <img
               key={logo.name}
               src={logo.src}
               alt={logo.name}
-              className={cn("w-auto object-contain opacity-50 hover:opacity-80 transition-opacity duration-200", logo.name === "Better.sg" ? "h-6 md:h-7" : "h-10 md:h-12")}
+              className={cn("w-auto object-contain transition-opacity duration-200", logo.name === "Better.sg" ? "h-10 md:h-11" : "h-14 md:h-16")}
               loading="lazy"
             />
           ))}
@@ -47,13 +47,13 @@ export function FeaturedSection() {
           <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
             {t.featured.partnersHeading}
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
             {partnerLogos.map((logo) => (
               <img
                 key={logo.name}
                 src={logo.src}
                 alt={logo.name}
-                className="h-12 md:h-14 w-auto object-contain opacity-60 hover:opacity-90 transition-opacity duration-200"
+                className="h-14 md:h-16 w-auto object-contain transition-opacity duration-200"
                 loading="lazy"
               />
             ))}

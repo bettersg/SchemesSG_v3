@@ -5,14 +5,11 @@ import { agencies } from "@/data/agencies"
 import type { Agency } from "@/data/agencies"
 import { useLanguage } from "@/i18n"
 
-// Build 6 rows from the 24 agencies (4 per row), tripled for overflow
+// Build 3 rows from the 24 agencies (8 per row), tripled for overflow
 const rows: Agency[][] = [
-  agencies.slice(0, 4),
-  agencies.slice(4, 8),
-  agencies.slice(8, 12),
-  agencies.slice(12, 16),
-  agencies.slice(16, 20),
-  agencies.slice(20, 24),
+  agencies.slice(0, 8),
+  agencies.slice(8, 16),
+  agencies.slice(16, 24),
 ]
 
 // Pre-compute tripled rows at module level (static data, no need to recompute per render)
@@ -25,7 +22,7 @@ export function AgenciesSection() {
   const { t } = useLanguage()
 
   return (
-    <section id="about" className="py-10 px-6">
+    <section id="about" className="py-10 px-6 bg-neutral-50">
       <div className="mx-auto max-w-5xl rounded-3xl bg-white overflow-hidden pt-16 pb-0">
         {/* Header content */}
         <div className="text-center px-6">

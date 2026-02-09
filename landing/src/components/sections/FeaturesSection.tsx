@@ -1,7 +1,9 @@
-import { motion } from "motion/react"
+import { motion, useReducedMotion } from "motion/react"
 import { Search, SlidersHorizontal, Sparkles, Globe, UserCheck } from "lucide-react"
 import { SectionWrapper } from "@/components/shared/SectionWrapper"
 import { useLanguage } from "@/i18n"
+import Gravity, { MatterBody } from "../ui/gravity"
+import { cn } from "@/lib/utils"
 
 /* ------------------------------------------------------------------ */
 /*  Decorative illustration components for each bento card             */
@@ -55,49 +57,187 @@ function SearchIllustration() {
 }
 
 function DatabaseIllustration() {
-  return (
-    <div className="relative flex items-center justify-center py-4">
-      {/* Scattered scheme category cards */}
-      <div className="relative h-40 w-full">
-        <div className="absolute top-2 left-4 rotate-[-6deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-blue-100 flex items-center justify-center text-[8px] font-bold text-blue-600">H</div>
-            <span className="text-[10px] font-medium text-neutral-700">Healthcare</span>
+  const shouldReduceMotion = useReducedMotion()
+  const cards = [
+    {
+      posStyle: {
+        top: '0%',
+        left: '10%',
+        rotate: '-6deg'
+      },
+      text: 'Healthcare',
+      textStyle: 'bg-blue-100 text-blue-600'
+    }, {
+      posStyle: {
+        top: '0%',
+        left: '50%',
+        rotate: '4deg'
+      },
+      text: 'Education',
+      textStyle: 'bg-amber-100 text-amber-600'
+    }, {
+      posStyle: {
+        top: '34%',
+        left: '2%',
+        rotate: '2deg'
+      },
+      text: 'Financial Aid',
+      textStyle: 'bg-red-100 text-red-600'
+    }, {
+      posStyle: {
+        top: '36%',
+        left: '56%',
+        rotate: '-3deg'
+      },
+      text: 'Disability',
+      textStyle: 'bg-purple-100 text-purple-600'
+    }, {
+      posStyle: {
+        top: '70%',
+        left: '50%',
+        rotate: '5deg'
+      },
+      text: 'Childcare',
+      textStyle: 'bg-rose-100 text-rose-600'
+    }, {
+      posStyle: {
+        top: '70%',
+        left: '10%',
+        rotate: '-2deg'
+      },
+      text: 'Eldercare',
+      textStyle: 'bg-teal-100 text-teal-600'
+    }
+  ]
+  if (shouldReduceMotion) {
+    return (
+
+      <div className="relative flex items-center justify-center py-4">
+        {/* Scattered scheme category cards */}
+        <div className="relative h-40 w-full">
+          {cards.map(card => (
+            <div key={card.text} className={cn("absolute rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm")} style={{...card.posStyle}}>
+            <div className="flex items-center gap-1.5">
+              <div className={cn("w-5 h-5 sm:w-8 sm:h-8 rounded bg-blue-100 flex items-center justify-center text-[8px] sm:text-[12px] font-bold", card.textStyle)}>{card.text.charAt(0)}</div>
+              <span className="text-[10px] sm:text-[14px] font-medium text-neutral-700">{card.text}</span>
+            </div>
           </div>
-        </div>
-        <div className="absolute top-0 right-6 rotate-[4deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-amber-100 flex items-center justify-center text-[8px] font-bold text-amber-600">E</div>
-            <span className="text-[10px] font-medium text-neutral-700">Education</span>
+          ))}
+          {/* <div className="absolute top-2 left-4 rotate-[-6deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded bg-blue-100 flex items-center justify-center text-[8px] font-bold text-blue-600">H</div>
+              <span className="text-[10px] font-medium text-neutral-700">Healthcare</span>
+            </div>
           </div>
-        </div>
-        <div className="absolute top-14 left-12 rotate-[2deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-md">
-          <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-amber-100 flex items-center justify-center text-[8px] font-bold text-amber-600">F</div>
-            <span className="text-[10px] font-medium text-neutral-700">Financial Aid</span>
+          <div className="absolute top-0 right-6 rotate-[4deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded bg-amber-100 flex items-center justify-center text-[8px] font-bold text-amber-600">E</div>
+              <span className="text-[10px] font-medium text-neutral-700">Education</span>
+            </div>
           </div>
-        </div>
-        <div className="absolute top-16 right-4 rotate-[-3deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-rose-100 flex items-center justify-center text-[8px] font-bold text-rose-600">D</div>
-            <span className="text-[10px] font-medium text-neutral-700">Disability</span>
+          <div className="absolute top-14 left-12 rotate-[2deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-md">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded bg-amber-100 flex items-center justify-center text-[8px] font-bold text-amber-600">F</div>
+              <span className="text-[10px] font-medium text-neutral-700">Financial Aid</span>
+            </div>
           </div>
-        </div>
-        <div className="absolute bottom-0 left-6 rotate-[5deg] rounded-lg bg-white/70 border border-neutral-100 px-3 py-2">
-          <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-purple-100 flex items-center justify-center text-[8px] font-bold text-purple-600">C</div>
-            <span className="text-[10px] font-medium text-neutral-500">Childcare</span>
+          <div className="absolute top-16 right-4 rotate-[-3deg] rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded bg-rose-100 flex items-center justify-center text-[8px] font-bold text-rose-600">D</div>
+              <span className="text-[10px] font-medium text-neutral-700">Disability</span>
+            </div>
           </div>
-        </div>
-        <div className="absolute bottom-2 right-10 rotate-[-2deg] rounded-lg bg-white/60 border border-neutral-100 px-3 py-2">
-          <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded bg-teal-100 flex items-center justify-center text-[8px] font-bold text-teal-600">E</div>
-            <span className="text-[10px] font-medium text-neutral-400">Eldercare</span>
+          <div className="absolute bottom-0 left-6 rotate-[5deg] rounded-lg bg-white/70 border border-neutral-100 px-3 py-2">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded bg-purple-100 flex items-center justify-center text-[8px] font-bold text-purple-600">C</div>
+              <span className="text-[10px] font-medium text-neutral-500">Childcare</span>
+            </div>
           </div>
+          <div className="absolute bottom-2 right-10 rotate-[-2deg] rounded-lg bg-white/60 border border-neutral-100 px-3 py-2">
+            <div className="flex items-center gap-1.5">
+              <div className="h-5 w-5 rounded bg-teal-100 flex items-center justify-center text-[8px] font-bold text-teal-600">E</div>
+              <span className="text-[10px] font-medium text-neutral-400">Eldercare</span>
+            </div>
+          </div> */}
         </div>
       </div>
-    </div>
-  )
+    )
+  } else {
+    return (
+      <Gravity gravity={{ x: 0, y: 1 }} className="w-full h-full relative">
+        {cards.map(card => (
+          <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x={card.posStyle.left}
+          y={card.posStyle.top}
+          key={card.text}
+        >
+          <div key={card.text} className={cn("rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm")}>
+            <div className="flex items-center gap-1.5">
+              <div className={cn("w-5 h-5 sm:w-8 sm:h-8 rounded bg-blue-100 flex items-center justify-center text-[8px] sm:text-[12px] font-bold", card.textStyle)}>{card.text.charAt(0)}</div>
+              <span className="text-[10px] sm:text-[14px] font-medium text-neutral-700">{card.text}</span>
+            </div>
+          </div>
+        </MatterBody>
+        ))}
+        {/* <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x="30%"
+          y="10%"
+        >
+          <div className="text-xl sm:text-2xl md:text-3xl bg-[#0015ff] text-white rounded-full hover:cursor-pointer px-8 py-4">
+            react
+          </div>
+        </MatterBody>
+        <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x="30%"
+          y="30%"
+        >
+          <div className="text-xl sm:text-2xl md:text-3xl bg-[#e794da] text-white rounded-full hover:cursor-grab px-8 py-4 ">
+            typescript
+          </div>
+        </MatterBody>
+        <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x="40%"
+          y="20%"
+          angle={10}
+        >
+          <div className="text-xl sm:text-2xl md:text-3xl bg-[#1f464d] text-white rounded-full hover:cursor-grab px-8 py-4 ">
+            motion
+          </div>
+        </MatterBody>
+        <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x="75%"
+          y="10%"
+        >
+          <div className="text-xl sm:text-2xl md:text-3xl bg-[#ff5941] text-white rounded-full hover:cursor-grab px-8 py-4 ">
+            tailwind
+          </div>
+        </MatterBody>
+        <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x="80%"
+          y="20%"
+        >
+          <div className="text-xl sm:text-2xl md:text-3xl bg-[#f97316] text-white rounded-full hover:cursor-grab px-8 py-4 ">
+            drei
+          </div>
+        </MatterBody>
+        <MatterBody
+          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
+          x="50%"
+          y="10%"
+        >
+          <div className="text-xl sm:text-2xl md:text-3xl bg-[#ffd726] text-white rounded-full hover:cursor-grab px-8 py-4 ">
+            matter-js
+          </div>
+        </MatterBody> */}
+      </Gravity>
+    )
+  }
 }
 
 function FilterIllustration() {
@@ -220,10 +360,11 @@ function AgencyLogosIllustration() {
 /* ------------------------------------------------------------------ */
 
 export function FeaturesSection() {
+
   const { t } = useLanguage()
 
   return (
-    <SectionWrapper id="features" className="bg-neutral-50/80 overflow-hidden">
+    <SectionWrapper id="features" className="bg-neutral-50 overflow-hidden">
       <div className="text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -293,7 +434,9 @@ export function FeaturesSection() {
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <DatabaseIllustration />
+            <div className="w-full h-[200px] sm:h-[300px] relative">
+              <DatabaseIllustration />
+            </div>
             <h3 className="mt-4 text-lg font-bold tracking-tight">
               {t.features.cards.database.title}
             </h3>
@@ -320,7 +463,7 @@ export function FeaturesSection() {
           </motion.div>
 
           {/* Card 5 — 200+ Agencies */}
-          <motion.div
+          {/* <motion.div
             className="rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -338,7 +481,7 @@ export function FeaturesSection() {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </div>
     </SectionWrapper>
