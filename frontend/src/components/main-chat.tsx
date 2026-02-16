@@ -114,7 +114,7 @@ export default function MainChat({
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
-  const streamBufferRef = useRef("");
+  const [streamBuffer, setStreamBuffer] = useState("");
   const scrollableDivRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,13 +131,15 @@ export default function MainChat({
   }, [messages]);
   
   useEffect(() => {
+    if (streamBuffer === "") return;
+
     // 1. Calculate how far behind we are (The "Tension")
-    const bufferLength = streamBufferRef.current.length;
+    const bufferLength = streamBuffer.length;
     const currentLength = currentStreamingMessage.length;
     const distance = bufferLength - currentLength;
 
     if (distance > 0) {
-      const normalDelay = 20;
+      const normalDelay = 15;
       // fasterDelay when there is greater backlog
       const fasterDelay = Math.max(1, normalDelay - Math.floor(distance / 5)); 
 
@@ -145,7 +147,7 @@ export default function MainChat({
         setCurrentStreamingMessage((prev) => {
           // "Types" 1 character at a time unless there is a huge backlog, then double speed
           const charTypeRate = distance > 100 ? 2 : 1; 
-          return streamBufferRef.current.slice(0, prev.length + charTypeRate);
+          return streamBuffer.slice(0, prev.length + charTypeRate);
         });
         handleScrollToBottom(); //auto-scrolls to buttom
       }, fasterDelay);
@@ -154,10 +156,11 @@ export default function MainChat({
     } else if (!isBotResponseGenerating && bufferLength > 0) {
       handleBotResponse(currentStreamingMessage);
       setCurrentStreamingMessage("");
-      streamBufferRef.current = "";
+      setStreamBuffer("");
     }
-  }, [currentStreamingMessage, isBotResponseGenerating]);
+  }, [streamBuffer, currentStreamingMessage, isBotResponseGenerating]);
 
+  
   const handleUserInput = async (input: string) => {
     setMessages((prevMessages) => [
       ...prevMessages,
@@ -181,7 +184,7 @@ export default function MainChat({
   const fetchBotResponse = async (userMessage: string) => {
     setIsBotResponseGenerating(true);
     setCurrentStreamingMessage("");
-    streamBufferRef.current = "";
+    setStreamBuffer("");
 
     // Prevent chat if no valid sessionId exists
     if (!sessionId || sessionId.trim() === "") {
@@ -238,7 +241,7 @@ export default function MainChat({
             try {
               const data = JSON.parse(line.slice(6));
               fullMessage += data.chunk;
-              streamBufferRef.current = fullMessage;
+              setStreamBuffer((prev) => prev + data.chunk);
             } catch (e) {
               console.error("Error parsing SSE data:", e);
             }
