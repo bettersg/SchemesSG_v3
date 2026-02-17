@@ -15,7 +15,7 @@ from app.constants import (
     WHAT_IT_GIVES,
     WHO_IS_IT_FOR,
 )
-from app.services.extraction import normalize_categories
+from app.services.extraction import is_generic_email, normalize_categories
 from loguru import logger
 
 
@@ -27,6 +27,27 @@ def _configure_litellm():
     litellm.drop_params = True
     litellm.set_verbose = False
     os.environ["LITELLM_LOG"] = "ERROR"
+
+
+# Run configuration once at module load
+_configure_litellm()
+
+_HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
+
+
+def _strip_code_fences(text: str) -> str:
+    """Strip markdown code fences from LLM response."""
+    text = text.strip()
+    # Try ```json ... ``` first
+    match = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    # If it starts/ends with ``` without language tag
+    if text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
 
 
 async def extract_with_llm(content: str) -> Dict[str, Any]:
@@ -42,16 +63,14 @@ async def extract_with_llm(content: str) -> Dict[str, Any]:
     if not content or len(content) < 100:
         return {}
 
-    _configure_litellm()
-
     try:
         import litellm
 
         # Get Azure config from environment
         azure_key = os.getenv("AZURE_OPENAI_API_KEY", "")
         azure_base = os.getenv("AZURE_OPENAI_ENDPOINT", "")
-        azure_version = os.getenv("OPENAI_API_VERSION", "2024-02-15-preview")
-        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o")
+        azure_version = os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
+        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5")
 
         if not azure_key or not azure_base:
             logger.warning("Azure OpenAI not configured, skipping LLM extraction")
@@ -62,8 +81,8 @@ async def extract_with_llm(content: str) -> Dict[str, Any]:
         os.environ["AZURE_API_BASE"] = azure_base
         os.environ["AZURE_API_VERSION"] = azure_version
 
-        # Convert HTML to clean text if needed
-        if "<" in content and ">" in content:
+        # Convert HTML to clean text if needed (check for actual HTML tags)
+        if _HTML_TAG_RE.search(content):
             logger.info(f"Converting {len(content)} chars of HTML to clean text")
             text = _html_to_text(content)
             logger.info(f"Converted to {len(text)} chars of clean text")
@@ -74,11 +93,16 @@ async def extract_with_llm(content: str) -> Dict[str, Any]:
             logger.warning("Clean text too short after conversion")
             return {}
 
-        # Truncate if too long
+        # Smart truncation: keep first 10K + last 2K to preserve footer/contact info
         max_chars = 12000
-        truncated_text = text[:max_chars] if len(text) > max_chars else text
+        if len(text) > max_chars:
+            head_size = 10000
+            tail_size = 2000
+            truncated_text = text[:head_size] + "\n\n[...truncated...]\n\n" + text[-tail_size:]
+        else:
+            truncated_text = text
 
-        # Build extraction prompt
+        # Build extraction prompt with full category lists
         prompt = f"""{EXTRACTION_INSTRUCTION}
 
 Content to extract from:
@@ -87,40 +111,58 @@ Content to extract from:
 ---
 
 Return a JSON object with these fields:
-- llm_description: A comprehensive description of the scheme/service (string)
+- llm_description: A comprehensive description of the scheme/service using newlines and bullet point lists for readability. Do NOT duplicate information from the eligibility, how_to_apply, or agency fields. Focus on what the scheme does, who it helps, and key benefits.
 - summary: A brief 1-2 sentence summary (string)
 - eligibility: Eligibility criteria and requirements (string)
 - how_to_apply: Steps to apply for this scheme (string)
 - agency: The organization name providing this scheme (string)
 - address: Full physical address including postal code if available (string)
-- who_is_it_for: Target audiences as array, select from: {", ".join(WHO_IS_IT_FOR[:15])}...
-- what_it_gives: Benefits/services as array, select from: {", ".join(WHAT_IT_GIVES[:15])}...
-- scheme_type: Scheme categories as array, select from: {", ".join(SCHEME_TYPE[:10])}...
+- phone: Phone number(s) found on the page, including hotlines and toll-free numbers. Comma-separated if multiple (string or null)
+- email: Contact email address(es) found on the page. Comma-separated if multiple (string or null)
+- who_is_it_for: Target audiences as array, select ONLY from: {", ".join(WHO_IS_IT_FOR)}
+- what_it_gives: Benefits/services as array, select ONLY from: {", ".join(WHAT_IT_GIVES)}
+- scheme_type: Scheme categories as array, select ONLY from: {", ".join(SCHEME_TYPE)}
 - service_area: Geographic service area (string)
 - search_booster: Comma-separated keywords for search (string)
 
 Return ONLY valid JSON, no markdown code blocks or explanation."""
 
         logger.info("Calling Azure OpenAI for extraction...")
-        response = litellm.completion(
-            model=f"azure/{deployment_name}",
-            messages=[{"role": "user", "content": prompt}],
-            api_key=azure_key,
-            api_base=azure_base,
-            api_version=azure_version,
-            temperature=0,
-            max_tokens=2000,
-        )
 
-        response_content = response.choices[0].message.content
+        # Retry once for transient API errors
+        last_error = None
+        for attempt in range(2):
+            try:
+                response = litellm.completion(
+                    model=f"azure/{deployment_name}",
+                    messages=[{"role": "user", "content": prompt}],
+                    api_key=azure_key,
+                    api_base=azure_base,
+                    api_version=azure_version,
+                    max_tokens=3000,
+                    reasoning_effort="low",
+                )
+                break
+            except Exception as api_err:
+                last_error = api_err
+                err_str = str(api_err).lower()
+                if attempt == 0 and ("timeout" in err_str or "rate" in err_str or "429" in err_str):
+                    logger.warning(f"API call failed (attempt {attempt + 1}), retrying: {api_err}")
+                    import asyncio
+                    await asyncio.sleep(2)
+                    continue
+                raise
+        else:
+            raise last_error
+
+        response_content = response.choices[0].message.content or ""
         logger.info(f"LLM extraction response: {len(response_content)} chars")
+        if not response_content:
+            logger.error(f"Empty response from LLM. Usage: {response.usage}")
+            return {}
 
-        # Parse JSON from response
-        if "```json" in response_content:
-            response_content = response_content.split("```json")[1].split("```")[0]
-        elif "```" in response_content:
-            response_content = response_content.split("```")[1].split("```")[0]
-
+        # Parse JSON from response (robust code fence stripping)
+        response_content = _strip_code_fences(response_content)
         extracted = json.loads(response_content.strip())
 
         # Normalize categories
@@ -134,10 +176,19 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
             extracted.get("scheme_type") if isinstance(extracted.get("scheme_type"), list) else [], SCHEME_TYPE
         )
 
+        # Extract and filter phone/email from LLM (fallback for regex)
+        llm_phone = extracted.get("phone")
+        llm_email = extracted.get("email")
+
+        # Filter generic/placeholder emails from LLM output
+        if llm_email and isinstance(llm_email, str):
+            filtered = [e.strip() for e in llm_email.split(",") if not is_generic_email(e.strip())]
+            llm_email = ", ".join(filtered) if filtered else None
+
         result = {
             "address": extracted.get("address"),
-            "phone": None,  # Filled by regex (more reliable)
-            "email": None,  # Filled by regex (more reliable)
+            "phone": llm_phone,
+            "email": llm_email,
             "llm_description": extracted.get("llm_description"),
             "summary": extracted.get("summary"),
             "eligibility": extracted.get("eligibility"),
