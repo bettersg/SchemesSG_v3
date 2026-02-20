@@ -13,6 +13,7 @@ The scheduled warmup task runs every 4 minutes and keeps the following endpoints
 - feedback: POST endpoint for user feedback
 - update_scheme: POST endpoint for scheme update requests
 - search_queries: GET endpoint for retrieving search history
+- catalog: GET endpoint for retrieving scheme catalogs
 
 All endpoints support an `is_warmup` parameter that, when true, will return a 200 status
 immediately without performing any database operations. This helps reduce unnecessary
@@ -174,6 +175,12 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
                 "name": "schemes",
                 "method": "GET",
                 "url": f"{get_endpoint_url('schemes')}/1?is_warmup=true",  # Endpoint will return 200 immediately
+                "data": None,
+            },
+            {
+                "name": "catalog",
+                "method": "GET",
+                "url": f"{get_endpoint_url('catalog')}?is_warmup=true",  # Endpoint will return 200 immediately
                 "data": None,
             },
             {
