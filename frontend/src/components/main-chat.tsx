@@ -162,6 +162,16 @@ export default function MainChat({
 
   
   const handleUserInput = async (input: string) => {
+    if (
+      streamBuffer !== "" && 
+      streamBuffer.length > currentStreamingMessage.length
+    ) {
+      const fullPrevMsg = streamBuffer;
+      setStreamBuffer("");
+      setCurrentStreamingMessage("");
+      handleBotResponse(fullPrevMsg);
+    } 
+
     setMessages((prevMessages) => [
       ...prevMessages,
       { type: "user", text: input },
