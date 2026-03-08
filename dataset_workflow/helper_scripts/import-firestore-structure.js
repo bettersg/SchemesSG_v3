@@ -1,128 +1,145 @@
 const admin = require('firebase-admin');
-const fs = require('fs/promises');
+const fs = require('fs');
 const path = require('path');
+const csv = require('csv-parser');
 
 // Initialize Firebase Admin with prod credentials
 const serviceAccount = require('../prod-creds.json');
-// const serviceAccount = require('../dev-creds.json')
+// const serviceAccount = require('../dev-creds.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-// Get Firestore instance with specific database
+// Get Firestore instance
 const db = admin.firestore();
 db.settings({
   ignoreUndefinedProperties: true,
   timestampsInSnapshots: true,
-  // databaseId: 'schemes-prod'  // Specify the database ID here
 });
 
-async function createEmptyCollection(collectionName, fields) {
+// Collections to import: name, CSV file, and fields that need JSON.parse()
+const COLLECTIONS = [
+  {
+    collectionName: 'schemes',
+    csvFile: 'firestore-schemes-prod.csv',
+    jsonFields: [],
+  },
+  {
+    collectionName: 'chatHistory',
+    csvFile: 'firestore-chatHistory-prod.csv',
+    jsonFields: ['messages', 'metadata', 'versions'],
+  },
+  {
+    collectionName: 'schemeEntries',
+    csvFile: 'firestore-schemeEntries-prod.csv',
+    jsonFields: [],
+  },
+  {
+    collectionName: 'schemes_embeddings',
+    csvFile: 'firestore-schemes_embeddings-prod.csv',
+    jsonFields: ['embedding'],
+  },
+  {
+    collectionName: 'userFeedback',
+    csvFile: 'firestore-userFeedback-prod.csv',
+    jsonFields: [],
+  },
+  {
+    collectionName: 'userQuery',
+    csvFile: 'firestore-userQuery-prod.csv',
+    jsonFields: ['schemes_response'],
+  },
+];
+
+function parseField(value, isJson) {
+  if (!isJson || !value) return value;
   try {
-    console.log(`Creating collection: ${collectionName}`);
-
-    // Create a document with the field structure
-    const tempDoc = {};
-    for (const [field, type] of Object.entries(fields)) {
-      switch(type) {
-        case 'string':
-          tempDoc[field] = '';
-          break;
-        case 'object':
-          tempDoc[field] = {};
-          break;
-        default:
-          tempDoc[field] = null;
-      }
-    }
-
-    // Add a sample document
-    await db.collection(collectionName).add(tempDoc);
-    console.log(`Successfully initialized collection: ${collectionName}`);
-  } catch (error) {
-    console.error(`Error creating collection ${collectionName}:`, error);
-    throw error;
+    return JSON.parse(value);
+  } catch {
+    return value;
   }
 }
 
-async function importStructure() {
-  try {
-    console.log('Starting import...');
-    const structurePath = path.join(__dirname, 'schemes-dev-firestore-structure.json');
-    const structure = JSON.parse(
-      await fs.readFile(structurePath, 'utf8')
-    );
-
-    // Import schemes data first
-    if (structure.schemes?.documents) {
-      console.log(`Found ${structure.schemes.documents.length} schemes to import`);
-
-      // Clear the schemes collection before importing
-      const schemesSnapshot = await db.collection('schemes').get();
-      if (!schemesSnapshot.empty) {
-        let deleteBatch = db.batch();
-        let deleteCount = 0;
-        for (const doc of schemesSnapshot.docs) {
-          deleteBatch.delete(doc.ref);
-          deleteCount++;
-          if (deleteCount === 500) {
-            await deleteBatch.commit();
-            deleteBatch = db.batch();
-            deleteCount = 0;
-          }
-        }
-        if (deleteCount > 0) {
-          await deleteBatch.commit();
-        }
-        console.log('Cleared existing documents from schemes collection');
-      }
-
-      let batch = db.batch();
-      let count = 0;
-      let batchCount = 0;
-
-      for (const doc of structure.schemes.documents) {
-        const ref = db.collection('schemes').doc(doc.id);
-        batch.set(ref, doc.data);
-        count++;
-
-        if (count === 500) {
-          try {
-            await batch.commit();
-            console.log(`Committed batch ${++batchCount} (500 documents)`);
-            batch = db.batch();
-            count = 0;
-          } catch (error) {
-            console.error(`Error committing batch ${batchCount}:`, error);
-            throw error;
-          }
-        }
-      }
-
-      if (count > 0) {
-        try {
-          await batch.commit();
-          console.log(`Committed final batch of ${count} documents`);
-        } catch (error) {
-          console.error('Error committing final batch:', error);
-          throw error;
-        }
-      }
-    }
-
-    // Create other collections
-    for (const [collectionName, collectionData] of Object.entries(structure)) {
-      if (collectionName !== 'schemes') {
-        // await createEmptyCollection(collectionName, collectionData.fields);
-      }
-    }
-
-    console.log('Import completed successfully');
-    process.exit(0);
-  } catch (error) {
-    console.error('Import failed:', error);
-    process.exit(1);
-  }
+function readCsv(filePath) {
+  return new Promise((resolve, reject) => {
+    const rows = [];
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (row) => rows.push(row))
+      .on('end', () => resolve(rows))
+      .on('error', (err) => reject(err));
+  });
 }
 
-importStructure();
+async function importCollection({ collectionName, csvFile, jsonFields }) {
+  console.log(`\n--- Collection: ${collectionName} ---`);
+
+  // Existence check
+  const countSnap = await db.collection(collectionName).count().get();
+  const existingCount = countSnap.data().count;
+  if (existingCount > 0) {
+    console.log(`  ${existingCount} documents found, skipping import.`);
+    return;
+  }
+  console.log(`  Collection empty, proceeding with import.`);
+
+  const filePath = path.join(__dirname, csvFile);
+  const rows = await readCsv(filePath);
+  console.log(`  Read ${rows.length} rows from ${csvFile}`);
+
+  const jsonFieldSet = new Set(jsonFields);
+  let batch = db.batch();
+  let batchCount = 0;
+  let totalImported = 0;
+
+  for (const row of rows) {
+    const { id, ...fields } = row;
+    if (!id) {
+      console.warn(`  Skipping row with missing id: ${JSON.stringify(row).slice(0, 80)}`);
+      continue;
+    }
+
+    const data = {};
+    for (const [key, value] of Object.entries(fields)) {
+      data[key] = parseField(value, jsonFieldSet.has(key));
+    }
+
+    const ref = db.collection(collectionName).doc(id);
+    batch.set(ref, data);
+    batchCount++;
+    totalImported++;
+
+    if (batchCount === 500) {
+      await batch.commit();
+      console.log(`  Committed batch of 500 (total so far: ${totalImported})`);
+      batch = db.batch();
+      batchCount = 0;
+    }
+  }
+
+  if (batchCount > 0) {
+    await batch.commit();
+    console.log(`  Committed final batch of ${batchCount}`);
+  }
+
+  console.log(`  Done. Imported ${totalImported} documents into '${collectionName}'.`);
+}
+
+async function importAllCollections() {
+  console.log('Starting production Firestore import...');
+  console.log('NOTE: Ensure the Firestore database has been re-enabled before running this script.\n');
+
+  for (const config of COLLECTIONS) {
+    try {
+      await importCollection(config);
+    } catch (err) {
+      console.error(`  ERROR importing '${config.collectionName}':`, err);
+      process.exit(1);
+    }
+  }
+
+  console.log('\nAll collections imported successfully.');
+  process.exit(0);
+}
+
+importAllCollections();
