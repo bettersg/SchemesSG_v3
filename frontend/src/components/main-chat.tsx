@@ -1,6 +1,6 @@
 "use client";
 
-import { useChat } from "@/app/providers";
+import { useChat } from "@/app/(main)/providers";
 import { fetchWithAuth } from "@/app/utils/api";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list";
@@ -142,7 +142,7 @@ export default function MainChat({
   const handleBotResponse = (response: string) => {
     setMessages((prevMessages) => {
       const lastMsg = prevMessages[prevMessages.length - 1];
-      if (lastMsg.type == "user") {
+      if (lastMsg && lastMsg.type == "user") {
         return [...prevMessages, { type: "bot", text: response }];
       }
       return prevMessages;

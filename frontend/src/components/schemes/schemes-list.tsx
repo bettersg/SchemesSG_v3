@@ -12,7 +12,7 @@ import {
   useMemo,
 } from "react";
 import { useInView } from "framer-motion";
-import { useChat } from "@/app/providers";
+import { useChat } from "@/app/(main)/providers";
 import { FilterObjType } from "@/app/interfaces/filter";
 import clsx from "clsx";
 import { parseArrayString } from "@/app/utils/helper";

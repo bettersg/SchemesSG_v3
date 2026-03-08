@@ -1,4 +1,4 @@
-import { BranchContact } from "@/app/schemes/[schemeId]/page";
+import { BranchContact } from "@/app/(main)/schemes/[schemeId]/page";
 import { LocationIcon } from "@/assets/icons/location-icon";
 import { MailIcon } from "@/assets/icons/mail-icon";
 import { PhoneIcon } from "@/assets/icons/phone-icon";
