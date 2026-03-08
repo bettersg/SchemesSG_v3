@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "en-core-web-sm",
     "firebase-admin>=6.0.0",
-    "firebase-functions~=0.1.0",
+    "firebase-functions~=0.5.0",
     "flask-cors==5.0.0",
     "flask==3.0.3",
     "google-cloud-firestore>=2.16.0",
