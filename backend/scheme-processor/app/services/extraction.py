@@ -13,6 +13,21 @@ import requests
 from app.constants import HEADER_PATTERNS, LOGO_PATTERNS, NEGATIVE_PATTERNS
 from loguru import logger
 
+GENERIC_EMAIL_DOMAINS = {"example.com", "example.org", "test.com", "domain.com", "email.com", "sample.com"}
+GENERIC_EMAIL_PREFIXES = {"user@", "example@", "test@", "name@", "email@", "your@", "sample@", "placeholder@"}
+
+
+def is_generic_email(email: str) -> bool:
+    """Check if an email is a generic/placeholder address."""
+    email_lower = email.lower().strip()
+    domain = email_lower.split("@")[-1] if "@" in email_lower else ""
+    if domain in GENERIC_EMAIL_DOMAINS:
+        return True
+    for prefix in GENERIC_EMAIL_PREFIXES:
+        if email_lower.startswith(prefix):
+            return True
+    return False
+
 
 @dataclass
 class ContactInfo:
@@ -50,7 +65,10 @@ def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
     emails = re.findall(email_pattern, text)
     # Filter out common false positives (image/asset file extensions)
     invalid_extensions = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".css", ".js", ".ico")
-    filtered_emails = [e for e in emails if not e.lower().endswith(invalid_extensions)]
+    filtered_emails = [
+        e for e in emails
+        if not e.lower().endswith(invalid_extensions) and not is_generic_email(e)
+    ]
 
     # Singapore phone patterns
     phone_patterns = [
