@@ -4,20 +4,17 @@ from dataclasses import dataclass
 
 
 # LLM Configuration Constants
-PROVIDER_MODEL_NAME = "azure_openai:gpt-4.1-mini"
-CHATBOT_TEMPERATURE = 0.1
-CHATBOT_TOP_P = 0.9
-CHATBOT_PRESENCE_PENALTY = 0.2
-CHATBOT_FREQUENCY_PENALTY = 0.2
-CHATBOT_MAX_TOKENS = 512
+PROVIDER_MODEL_NAME = "azure_openai:gpt-5"
+CHATBOT_MAX_COMPLETION_TOKENS = 512
 
 
 @dataclass
 class ChatbotConfig:
-    """Configuration for LLM chatbot parameters"""
+    """Configuration for LLM chatbot parameters.
 
-    temperature: float = CHATBOT_TEMPERATURE
-    top_p: float = CHATBOT_TOP_P
-    presence_penalty: float = CHATBOT_PRESENCE_PENALTY
-    frequency_penalty: float = CHATBOT_FREQUENCY_PENALTY
-    max_tokens: int = CHATBOT_MAX_TOKENS
+    GPT-5 is a reasoning model that does not support temperature, top_p,
+    presence_penalty, or frequency_penalty. Uses max_completion_tokens
+    instead of max_tokens.
+    """
+
+    max_completion_tokens: int = CHATBOT_MAX_COMPLETION_TOKENS
