@@ -95,7 +95,8 @@ interface MarqueeAnimatedItemProps<T> {
 function MarqueeAnimatedItem<T>({item, index, renderItem, containerRef, itemHeight, containerHeight, highlightIdx, setHighlightIdx} : MarqueeAnimatedItemProps<T>) {
 	const ref = useRef(null)
 	const shrink = Math.floor(containerHeight / 2 - itemHeight)
-	const isInCenter = useInView(ref, {root: containerRef, margin: `-${shrink}px 0px -${shrink}px 0px`})
+	const margin = `-${shrink}px 0px -${shrink}px 0px` as `${number}px ${number}px ${number}px ${number}px`
+	const isInCenter = useInView(ref, {root: containerRef, margin})
 	useEffect(() => {
 		if (isInCenter) {
 			setHighlightIdx(index)
