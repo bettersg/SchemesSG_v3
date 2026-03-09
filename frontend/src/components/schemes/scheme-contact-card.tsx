@@ -9,6 +9,10 @@ interface SchemeContactCardProps {
 }
 
 export default function SchemeContactCard({contact}: SchemeContactCardProps) {
+  if (!contact.address && !contact.phones?.length && !contact.emails?.length) {
+    return null;
+  }
+
   return (
     <Card
       className="p-4 flex flex-col gap-2"
