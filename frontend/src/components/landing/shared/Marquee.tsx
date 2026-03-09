@@ -56,7 +56,7 @@ export function Marquee<T>({
           "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
       }}
     >
-	<div className={cn("flex items-center")} style={{ height: itemHeight }} ref={container}>
+	<div className={cn("flex items-center h-full")} ref={container}>
 
       <motion.div
         className={cn("flex flex-col", innerClassName)}
@@ -73,7 +73,7 @@ export function Marquee<T>({
       >
 			{duplicated.map((item, index) =>
 			  {
-				return <MarqueeAnimatedItem key={index} item={item} index={index} renderItem={renderItem} containerRef={container} itemHeight={itemHeight} highlightIdx={highlightIdx} setHighlightIdx={setHighlightIdx}/>}
+				return <MarqueeAnimatedItem key={index} item={item} index={index} renderItem={renderItem} containerRef={container} itemHeight={itemHeight} containerHeight={height} highlightIdx={highlightIdx} setHighlightIdx={setHighlightIdx}/>}
 			)}
       </motion.div>
 		</div>
@@ -87,13 +87,15 @@ interface MarqueeAnimatedItemProps<T> {
 	renderItem: (item: T, index: number, isHighlighted: boolean) => ReactNode
 	containerRef: RefObject<HTMLDivElement | null>
 	itemHeight: number
+	containerHeight: number
 	highlightIdx: number
 	setHighlightIdx: Dispatch<SetStateAction<number>>
 }
 
-function MarqueeAnimatedItem<T>({item, index, renderItem, containerRef, itemHeight, highlightIdx, setHighlightIdx} : MarqueeAnimatedItemProps<T>) {
+function MarqueeAnimatedItem<T>({item, index, renderItem, containerRef, itemHeight, containerHeight, highlightIdx, setHighlightIdx} : MarqueeAnimatedItemProps<T>) {
 	const ref = useRef(null)
-	const isInCenter = useInView(ref, {root: containerRef, margin: `${itemHeight}px 0px 0px 0px`})
+	const shrink = Math.floor(containerHeight / 2 - itemHeight)
+	const isInCenter = useInView(ref, {root: containerRef, margin: `-${shrink}px 0px -${shrink}px 0px`})
 	useEffect(() => {
 		if (isInCenter) {
 			setHighlightIdx(index)

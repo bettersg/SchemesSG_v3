@@ -17,10 +17,8 @@ function Item({ item, isHighlighted }: { item: string; isHighlighted: boolean })
   return (
     <div
       className={cn(
-        "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap transition-colors duration-300",
-        isHighlighted
-          ? "text-foreground font-semibold"
-          : "text-muted-foreground/30"
+        "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap transition-opacity duration-300",
+        isHighlighted ? "opacity-100" : "opacity-40"
       )}
     >
       {isHighlighted && (

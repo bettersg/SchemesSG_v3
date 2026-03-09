@@ -269,3 +269,4 @@ landing/.claude/
 landing/screenshot-*.png
 !landing/pnpm-lock.yaml
 !landing/src/lib/
+!frontend/src/lib/

@@ -19,7 +19,7 @@ function AgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlighted: 
     <div
       className={cn(
         "flex h-[56px] items-center gap-2 transition-opacity duration-300",
-        isHighlighted ? "opacity-100" : "opacity-30"
+        isHighlighted ? "opacity-100" : "opacity-40"
       )}
       title={agency.name}
     >
@@ -54,7 +54,7 @@ function StaticAgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlig
     <div
       className={cn(
         "flex h-[56px] items-center gap-2.5",
-        isHighlighted ? "opacity-100" : "opacity-30"
+        isHighlighted ? "opacity-100" : "opacity-40"
       )}
       title={agency.name}
     >

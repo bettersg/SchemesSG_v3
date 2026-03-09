@@ -1,5 +1,6 @@
 "use client"
 
+import { ArrowUpRight } from "lucide-react"
 import { Separator } from "@/components/landing/ui/separator"
 import { useLanguage } from "@/lib/landing-i18n"
 
@@ -59,6 +60,22 @@ export function Footer() {
         </div>
 
         <Separator className="my-10 bg-neutral-800" />
+
+        <div className="flex justify-center mb-6">
+          <a
+            href="https://better.sg"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 rounded-full bg-neutral-900 border border-neutral-800 px-4 py-1.5 text-xs text-neutral-400 hover:border-neutral-700 hover:text-neutral-300 transition-colors duration-200 cursor-pointer"
+          >
+            <span className="leading-none">{t.hero.volunteerBanner}</span>
+            <img src="/landing/featured/bettersg-logo.svg" alt="better.sg" className="h-3.5 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
+            <span className="h-3 w-px bg-neutral-700 shrink-0" />
+            <span className="font-medium text-neutral-300 leading-none flex items-center gap-1">
+              {t.hero.getInvolved} <ArrowUpRight className="h-3 w-3" />
+            </span>
+          </a>
+        </div>
 
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-neutral-600 sm:flex-row">
           <p>{t.footer.copyright.replace("{year}", String(new Date().getFullYear()))}</p>

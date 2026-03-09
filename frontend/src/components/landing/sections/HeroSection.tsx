@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Search, ArrowRight, ArrowUpRight } from "lucide-react"
+import { Search, ArrowRight } from "lucide-react"
 import { ScrollingColumn } from "@/components/landing/shared/ScrollingColumn"
 import { ScrollingLogoColumn } from "@/components/landing/shared/ScrollingLogoColumn"
 import { useLanguage } from "@/lib/landing-i18n"
@@ -39,24 +39,6 @@ export function HeroSection() {
 
         {/* Center content */}
         <div className="flex flex-col items-center justify-center text-center">
-          {/* Volunteer banner */}
-          <motion.a
-            href="https://better.sg"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-8 inline-flex items-center gap-3 rounded-full bg-neutral-900 px-3.5 py-1 text-xs text-neutral-300 hover:bg-neutral-800 transition-colors duration-200 cursor-pointer"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <span className="leading-none">{t.hero.volunteerBanner}</span>
-            <img src="/landing/featured/bettersg-logo.svg" alt="better.sg" className="h-3.5 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
-            <span className="h-3 w-px bg-neutral-700 shrink-0" />
-            <span className="font-medium text-white leading-none flex items-center gap-1">
-              {t.hero.getInvolved} <ArrowUpRight className="h-3 w-3" />
-            </span>
-          </motion.a>
-
           {/* Headline */}
           <motion.h1
             className="font-landing-serif text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]"

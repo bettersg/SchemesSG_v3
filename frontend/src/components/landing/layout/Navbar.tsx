@@ -7,17 +7,22 @@ import { useLanguage } from "@/lib/landing-i18n"
 import { LanguageToggle } from "@/components/landing/shared/LanguageToggle"
 import { cn } from "@/lib/landing-utils"
 
-const navLinkHrefs = ["#about", "#features", "#contribute"]
+type NavLink = {
+  label: string
+  href: string
+  disabled?: boolean
+}
 
 export function Navbar() {
   const { t } = useLanguage()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const navLinks = [
-    { label: t.nav.about, href: navLinkHrefs[0] },
-    { label: t.nav.features, href: navLinkHrefs[1] },
-    { label: t.nav.contribute, href: navLinkHrefs[2] },
+  const navLinks: NavLink[] = [
+    { label: t.nav.about, href: "#about" },
+    { label: t.nav.contribute, href: "#contribute" },
+    { label: t.nav.catalog, href: "#", disabled: true },
+    { label: t.nav.searchSchemes, href: "/" },
   ]
 
   useEffect(() => {
@@ -50,24 +55,31 @@ export function Navbar() {
 
         {/* Center pill nav - desktop */}
         <div className="hidden md:flex items-center gap-1 rounded-full bg-neutral-100/80 backdrop-blur-sm px-2 py-1.5 border border-neutral-200/60">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="px-4 py-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors rounded-full cursor-pointer"
-            >
-              {link.label}
-            </a>
-          ))}
-          <Button
-            size="sm"
-            className="rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer border-0 shadow-none"
-            asChild
-          >
-            <a href="/">
-              {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-          </Button>
+          {navLinks.map((link) =>
+            link.disabled ? (
+              <span
+                key={link.label}
+                className="relative px-4 py-1.5 text-sm font-medium text-neutral-300 cursor-default rounded-full flex flex-col items-center"
+              >
+                {link.label}
+                <span className="text-[8px] tracking-wider font-semibold text-neutral-400 leading-none">
+                  {t.nav.comingSoon}
+                </span>
+              </span>
+            ) : (
+              <a
+                key={link.label}
+                href={link.href}
+                className={cn(
+                  "px-4 py-1.5 text-sm font-medium text-neutral-500 rounded-full cursor-pointer transition-all duration-200",
+                  "hover:bg-amber-400 hover:text-neutral-900"
+                )}
+              >
+                {link.label}
+                {link.href === "/" && <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />}
+              </a>
+            )
+          )}
         </div>
 
         {/* Language toggle - desktop */}
@@ -89,16 +101,28 @@ export function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-neutral-200 px-6 pb-6">
           <div className="flex flex-col items-center gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="px-3 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.filter((link) => link.href !== "/").map((link) =>
+              link.disabled ? (
+                <span
+                  key={link.label}
+                  className="px-3 py-3 text-sm font-medium text-neutral-300 flex flex-col items-center"
+                >
+                  {link.label}
+                  <span className="text-[8px] tracking-wider font-semibold text-neutral-400 leading-none">
+                    {t.nav.comingSoon}
+                  </span>
+                </span>
+              ) : (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="px-3 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  {link.label}
+                </a>
+              )
+            )}
           </div>
           <div className="mt-3 flex justify-center">
             <LanguageToggle />
@@ -110,7 +134,7 @@ export function Navbar() {
               asChild
             >
               <a href="/">
-                {t.nav.findSchemes} <ArrowRight className="h-3.5 w-3.5" />
+                {t.nav.searchSchemes} <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </Button>
           </div>
