@@ -1,4 +1,4 @@
-import { useChat } from "@/app/providers";
+import { useChat } from "@/app/(main)/providers";
 import { Button } from "@heroui/react";
 
 interface queryPromptsProps {

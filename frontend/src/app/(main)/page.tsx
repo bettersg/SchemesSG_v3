@@ -4,16 +4,18 @@ import MainChat from "@/components/main-chat";
 import SchemesList from "@/components/schemes/schemes-list";
 import QueryBar from "@/components/query-bar";
 import UserQuery from "@/components/user-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "./providers";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import backgroundImageOne from "@/assets/bg1.png";
 import backgroundImageTwo from "@/assets/bg2.png";
-import { FilterObjType } from "./interfaces/filter";
+import { FilterObjType } from "@/app/interfaces/filter";
 import clsx from "clsx";
 import QueryPrompts from "@/components/query-prompts";
 import dynamic from "next/dynamic";
 import Partners from "@/components/partners";
+import { getSchemes } from "@/components/main-chat";
 
 // lazy load about section
 const AboutSection = dynamic(() => import("@/components/about/about-section"), {
@@ -21,10 +23,31 @@ const AboutSection = dynamic(() => import("@/components/about/about-section"), {
 });
 
 export default function Home() {
-  const { schemes } = useChat();
+  const { schemes, setSchemes, setUserQuery, setSessionId, setMessages, setTotalCount, setNextCursor: setNextCursorCtx } = useChat();
+  const searchParams = useSearchParams();
   const [isLoadingSchemes, setIsLoadingSchemes] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [nextCursor, setNextCursor] = useState("");
+
+  // Handle ?q= search param from landing page
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && schemes.length === 0) {
+      setUserQuery(q);
+      setIsLoadingSchemes(true);
+      getSchemes(q).then(({ schemesRes, sessionId, totalCount, nextCursor: nc }) => {
+        setTotalCount(totalCount);
+        setNextCursor(nc);
+        setNextCursorCtx(nc);
+        setIsLoadingSchemes(false);
+        if (sessionId !== "") {
+          setSessionId(sessionId);
+          setMessages([{ type: "user", text: q }]);
+        }
+        setSchemes(schemesRes);
+      });
+    }
+  }, [searchParams]);
 
   const searchbarRef = useRef<HTMLTextAreaElement | null>(null);
   const focusSearchbar = () => {

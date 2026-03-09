@@ -1,4 +1,4 @@
-import { useChat } from "@/app/providers";
+import { useChat } from "@/app/(main)/providers";
 import { Button, Spinner, Textarea } from "@heroui/react";
 import { MutableRefObject, useState } from "react";
 import { SearchIcon } from "../assets/icons/search-icon";
