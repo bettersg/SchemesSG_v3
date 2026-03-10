@@ -19,10 +19,10 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navLinks: NavLink[] = [
-    { label: t.nav.about, href: "#about" },
-    { label: t.nav.contribute, href: "#contribute" },
     { label: t.nav.catalog, href: "#", disabled: true },
     { label: t.nav.searchSchemes, href: "/" },
+    { label: t.nav.contribute, href: "/contribute" },
+    { label: t.nav.about, href: "/about" },
   ]
 
   useEffect(() => {
@@ -66,17 +66,22 @@ export function Navbar() {
                   {t.nav.comingSoon}
                 </span>
               </span>
+            ) : link.href === "/" ? (
+              <a
+                key={link.label}
+                href={link.href}
+                className="px-4 py-1.5 text-sm font-semibold text-neutral-900 rounded-full cursor-pointer transition-all duration-200 bg-amber-400 hover:bg-amber-500"
+              >
+                {link.label}
+                <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
+              </a>
             ) : (
               <a
                 key={link.label}
                 href={link.href}
-                className={cn(
-                  "px-4 py-1.5 text-sm font-medium text-neutral-500 rounded-full cursor-pointer transition-all duration-200",
-                  "hover:bg-amber-400 hover:text-neutral-900"
-                )}
+                className="px-4 py-1.5 text-sm font-medium text-neutral-500 rounded-full cursor-pointer transition-all duration-200 hover:bg-neutral-200/80 hover:text-neutral-900"
               >
                 {link.label}
-                {link.href === "/" && <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />}
               </a>
             )
           )}
@@ -100,7 +105,7 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-neutral-200 px-6 pb-6">
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1 w-full">
             {navLinks.filter((link) => link.href !== "/").map((link) =>
               link.disabled ? (
                 <span

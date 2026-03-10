@@ -188,8 +188,9 @@ export const en: Translations = {
       { label: "FAQ", href: "#faq" },
     ],
     resourceLinks: [
-      { label: "About", href: "#about", comingSoon: true },
-      { label: "Contribute", href: "#contribute" },
+      { label: "About", href: "/about" },
+      { label: "Contribute", href: "/contribute" },
+      { label: "Feedback", href: "/feedback" },
       { label: "Contact", href: "#", comingSoon: true },
     ],
     legalLinks: [
