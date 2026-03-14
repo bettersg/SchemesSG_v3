@@ -20,13 +20,13 @@ import { getSchemes } from "../main-chat";
 // Type for scheme from search results
 export type SearchResScheme = {
   schemeId: string;
-  schemeType: string;
+  schemeType: string[];
   schemeName: string;
   agency: string;
   description: string;
-  targetAudience: string;
+  targetAudience: string[];
   scrapedText: string;
-  benefits: string;
+  benefits: string[];
   link: string;
   image: string;
   searchBooster: string;

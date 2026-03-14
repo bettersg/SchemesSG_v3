@@ -8,3 +8,11 @@ export const parseArrayString = (arrstr: string | string[]| undefined) : string[
   }
   return arrstr
 };
+
+// converts a CSV string or string array into a trimmed string array
+// used for multi-value fields: scheme_type, who_is_it_for, what_it_gives
+export const toStringArray = (value: string | string[] | undefined): string[] => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  return value.split(",").map((s) => s.trim()).filter(Boolean);
+};

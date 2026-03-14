@@ -2,6 +2,7 @@
 
 import { useChat } from "@/app/(main)/providers";
 import { fetchWithAuth } from "@/app/utils/api";
+import { toStringArray } from "@/app/utils/helper";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list";
 import { Button, Spacer } from "@heroui/react";
@@ -15,13 +16,13 @@ import { RawSchemeData, SearchResponse } from "@/app/interfaces/schemes";
 
 export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
   return {
-    schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || "",
+    schemeType: toStringArray(rawData["scheme_type"] ?? rawData["Scheme Type"]),
     schemeName: rawData["scheme"] || rawData["Scheme"] || "",
-    targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || "",
+    targetAudience: toStringArray(rawData["who_is_it_for"] ?? rawData["Who's it for"]),
     agency: rawData["agency"] || rawData["Agency"] || "",
     description: rawData["description"] || rawData["Description"] || "",
     scrapedText: rawData["scraped_text"] || "",
-    benefits: rawData["what_it_gives"] || rawData["What it gives"] || "",
+    benefits: toStringArray(rawData["what_it_gives"] ?? rawData["What it gives"]),
     link: rawData["link"] || rawData["Link"] || "",
     image: rawData["image"] || rawData["Image"] || "",
     searchBooster:

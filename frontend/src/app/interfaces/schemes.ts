@@ -1,11 +1,11 @@
 export interface RawSchemeData {
-  "Scheme Type"?: string;
+  "Scheme Type"?: string | string[];
   Scheme?: string;
-  "Who's it for"?: string;
+  "Who's it for"?: string | string[];
   Agency?: string;
   Description?: string;
   scraped_text?: string;
-  "What it gives"?: string;
+  "What it gives"?: string | string[];
   Link?: string;
   Image?: string;
   "search_booster(WL)"?: string;
@@ -15,12 +15,12 @@ export interface RawSchemeData {
   Quintile?: number;
 
   // Lowercase properties from the backend
-  scheme_type?: string;
+  scheme_type?: string | string[];
   scheme?: string;
-  who_is_it_for?: string;
+  who_is_it_for?: string | string[];
   agency?: string;
   description?: string;
-  what_it_gives?: string;
+  what_it_gives?: string | string[];
   link?: string;
   image?: string;
   search_booster?: string;
