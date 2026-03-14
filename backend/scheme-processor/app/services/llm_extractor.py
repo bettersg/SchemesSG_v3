@@ -194,9 +194,9 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
             "eligibility": extracted.get("eligibility"),
             "how_to_apply": extracted.get("how_to_apply"),
             "agency": extracted.get("agency"),
-            "who_is_it_for": ", ".join(who_is_it_for) if who_is_it_for else None,
-            "what_it_gives": ", ".join(what_it_gives) if what_it_gives else None,
-            "scheme_type": ", ".join(scheme_type) if scheme_type else None,
+            "who_is_it_for": who_is_it_for if who_is_it_for else None,
+            "what_it_gives": what_it_gives if what_it_gives else None,
+            "scheme_type": scheme_type if scheme_type else None,
             "service_area": extracted.get("service_area"),
             "search_booster": extracted.get("search_booster"),
         }

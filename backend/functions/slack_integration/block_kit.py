@@ -2,6 +2,8 @@
 Build a Slack message with a Review button for a given row in the scraping errors table.
 """
 
+from new_scheme.constants import SCHEME_TYPE, WHAT_IT_GIVES, WHO_IS_IT_FOR
+
 
 def build_review_message(doc_id: str, data: dict) -> dict:
     scheme_name = data.get("scheme_name", "(no name)")
@@ -41,7 +43,7 @@ def build_review_modal(metadata: str, data: dict) -> dict:
     - Phone
     - Address
 
-    Dropdowns:
+    Multi-select dropdowns (aligned with new_scheme constants):
     - who_is_it_for
     - what_it_gives
     - scheme_type
@@ -56,44 +58,40 @@ def build_review_modal(metadata: str, data: dict) -> dict:
     image_url = data.get("image_url", "")
     phone = data.get("phone", "")
     address = data.get("address", "")
-    who_is_it_for = data.get("who_is_it_for", "")
-    what_it_gives = data.get("what_it_gives", "")
-    scheme_type = data.get("scheme_type", "")
+    who_is_it_for = data.get("who_is_it_for", [])
+    what_it_gives = data.get("what_it_gives", [])
+    scheme_type = data.get("scheme_type", [])
     llm_description = data.get("llm_description", "")
     eligibility = data.get("eligibility", "")
     how_to_apply = data.get("how_to_apply", "")
 
-    # Dropdown options (can be customized based on your needs)
+    # Normalise to list (handle legacy CSV strings in existing data)
+    def to_list(value) -> list:
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str) and value.strip():
+            return [v.strip() for v in value.split(",") if v.strip()]
+        return []
+
+    who_is_it_for = to_list(who_is_it_for)
+    what_it_gives = to_list(what_it_gives)
+    scheme_type = to_list(scheme_type)
+
+    # Build options from shared constants (same lists used by new_scheme pipeline)
     who_is_it_for_options = [
-        {"text": {"type": "plain_text", "text": "Individuals"}, "value": "individuals"},
-        {"text": {"type": "plain_text", "text": "Families"}, "value": "families"},
-        {"text": {"type": "plain_text", "text": "Seniors"}, "value": "seniors"},
-        {"text": {"type": "plain_text", "text": "Youth"}, "value": "youth"},
-        {"text": {"type": "plain_text", "text": "Persons with Disabilities"}, "value": "pwd"},
-        {"text": {"type": "plain_text", "text": "Low Income"}, "value": "low_income"},
-        {"text": {"type": "plain_text", "text": "Businesses"}, "value": "businesses"},
+        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]} for opt in WHO_IS_IT_FOR
     ]
-
     what_it_gives_options = [
-        {"text": {"type": "plain_text", "text": "Financial Assistance"}, "value": "financial_assistance"},
-        {"text": {"type": "plain_text", "text": "Subsidies"}, "value": "subsidies"},
-        {"text": {"type": "plain_text", "text": "Grants"}, "value": "grants"},
-        {"text": {"type": "plain_text", "text": "Loans"}, "value": "loans"},
-        {"text": {"type": "plain_text", "text": "Education Support"}, "value": "education_support"},
-        {"text": {"type": "plain_text", "text": "Healthcare Support"}, "value": "healthcare_support"},
-        {"text": {"type": "plain_text", "text": "Housing Support"}, "value": "housing_support"},
-        {"text": {"type": "plain_text", "text": "Training/Employment"}, "value": "training_employment"},
+        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]} for opt in WHAT_IT_GIVES
+    ]
+    scheme_type_options = [
+        {"text": {"type": "plain_text", "text": opt[:75]}, "value": opt[:75]} for opt in SCHEME_TYPE
     ]
 
-    scheme_type_options = [
-        {"text": {"type": "plain_text", "text": "Financial Aid"}, "value": "financial_aid"},
-        {"text": {"type": "plain_text", "text": "Education"}, "value": "education"},
-        {"text": {"type": "plain_text", "text": "Healthcare"}, "value": "healthcare"},
-        {"text": {"type": "plain_text", "text": "Housing"}, "value": "housing"},
-        {"text": {"type": "plain_text", "text": "Employment"}, "value": "employment"},
-        {"text": {"type": "plain_text", "text": "Social Services"}, "value": "social_services"},
-        {"text": {"type": "plain_text", "text": "Business Support"}, "value": "business_support"},
-    ]
+    def get_initial_options(values: list, options: list) -> list:
+        """Return matching option dicts for the given values list."""
+        value_set = set(values)
+        return [opt for opt in options if opt["value"] in value_set][:10]
 
     blocks = [
         # Pre-filled Text Fields Section
@@ -140,39 +138,36 @@ def build_review_modal(metadata: str, data: dict) -> dict:
         {"type": "header", "text": {"type": "plain_text", "text": "Categorization"}},
     ]
 
-    # Build dropdown elements conditionally (only add initial_option if value exists)
+    # Build multi-select elements
     who_is_it_for_element = {
-        "type": "static_select",
+        "type": "multi_static_select",
         "action_id": "who_is_it_for",
-        "placeholder": {"type": "plain_text", "text": "Select target audience"},
+        "placeholder": {"type": "plain_text", "text": "Select target audiences"},
         "options": who_is_it_for_options,
     }
-    if who_is_it_for:
-        initial = next((opt for opt in who_is_it_for_options if opt["value"] == who_is_it_for), None)
-        if initial:
-            who_is_it_for_element["initial_option"] = initial
+    initial_who = get_initial_options(who_is_it_for, who_is_it_for_options)
+    if initial_who:
+        who_is_it_for_element["initial_options"] = initial_who
 
     what_it_gives_element = {
-        "type": "static_select",
+        "type": "multi_static_select",
         "action_id": "what_it_gives",
-        "placeholder": {"type": "plain_text", "text": "Select benefit type"},
+        "placeholder": {"type": "plain_text", "text": "Select benefit types"},
         "options": what_it_gives_options,
     }
-    if what_it_gives:
-        initial = next((opt for opt in what_it_gives_options if opt["value"] == what_it_gives), None)
-        if initial:
-            what_it_gives_element["initial_option"] = initial
+    initial_what = get_initial_options(what_it_gives, what_it_gives_options)
+    if initial_what:
+        what_it_gives_element["initial_options"] = initial_what
 
     scheme_type_element = {
-        "type": "static_select",
+        "type": "multi_static_select",
         "action_id": "scheme_type",
-        "placeholder": {"type": "plain_text", "text": "Select scheme category"},
+        "placeholder": {"type": "plain_text", "text": "Select scheme categories"},
         "options": scheme_type_options,
     }
-    if scheme_type:
-        initial = next((opt for opt in scheme_type_options if opt["value"] == scheme_type), None)
-        if initial:
-            scheme_type_element["initial_option"] = initial
+    initial_type = get_initial_options(scheme_type, scheme_type_options)
+    if initial_type:
+        scheme_type_element["initial_options"] = initial_type
 
     blocks.extend(
         [
@@ -181,20 +176,22 @@ def build_review_modal(metadata: str, data: dict) -> dict:
                 "block_id": "who_is_it_for_block",
                 "label": {"type": "plain_text", "text": "Who is it for?"},
                 "element": who_is_it_for_element,
+                "optional": True,
             },
             {
                 "type": "input",
                 "block_id": "what_it_gives_block",
                 "label": {"type": "plain_text", "text": "What it gives"},
                 "element": what_it_gives_element,
+                "optional": True,
             },
             {
                 "type": "input",
                 "block_id": "scheme_type_block",
                 "label": {"type": "plain_text", "text": "Scheme Type"},
                 "element": scheme_type_element,
+                "optional": True,
             },
-            # Text Areas Section
             # Text Areas Section
             {"type": "header", "text": {"type": "plain_text", "text": "LLM Extracted Fields"}},
             {
