@@ -118,7 +118,7 @@ export const en: Translations = {
     },
     {
       quote:
-        "We used to spend a lot of time manually searching for schemes on behalf of our clients. With Schemes.sg, our social workers can pull up relevant options in seconds. It's become part of our daily workflow.",
+        "Schemes.sg helps our staff quickly find relevant support options for service users. We're excited to see how this tool can strengthen our work with the community.",
       author: "Care Corner Singapore",
       role: "Community Partner",
       avatar: "/landing/featured/carecorner-avatar.png",

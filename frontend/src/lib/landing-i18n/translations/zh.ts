@@ -118,7 +118,7 @@ export const zh: Translations = {
     },
     {
       quote:
-        "\u4EE5\u524D\u6211\u4EEC\u8981\u82B1\u5F88\u591A\u65F6\u95F4\u624B\u52A8\u4E3A\u670D\u52A1\u5BF9\u8C61\u67E5\u627E\u5408\u9002\u7684\u8BA1\u5212\u3002\u6709\u4E86 Schemes.sg\uFF0C\u6211\u4EEC\u7684\u793E\u5DE5\u53EF\u4EE5\u5728\u51E0\u79D2\u949F\u5185\u627E\u5230\u76F8\u5173\u65B9\u6848\u3002\u5B83\u5DF2\u7ECF\u6210\u4E3A\u6211\u4EEC\u65E5\u5E38\u5DE5\u4F5C\u7684\u4E00\u90E8\u5206\u3002",
+        "Schemes.sg 帮助我们的员工快速为服务对象找到相关的支持方案。我们很期待看到这个工具如何加强我们与社区的合作。",
       author: "Care Corner Singapore",
       role: "\u793E\u533A\u5408\u4F5C\u4F19\u4F34",
       avatar: "/landing/featured/carecorner-avatar.png",
