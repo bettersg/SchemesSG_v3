@@ -110,10 +110,11 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     }
   } else {
     // no physical branch. Group contact details together
-    if (rawData.phone || rawData.email) {
+    if (rawData.phone || rawData.email || rawData.address) {
       contacts.push({
         phones: rawData.phone && rawData.phone,
         emails: rawData.email && rawData.email,
+        address: rawData.address && rawData.address[0],
       });
     }
   }

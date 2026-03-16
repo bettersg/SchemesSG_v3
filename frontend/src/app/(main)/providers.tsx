@@ -9,7 +9,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { analytics } from "./firebaseConfig"; // Adjust path as needed
+import { analytics } from "../firebaseConfig";
 
 // Chat Context
 export type Message = {

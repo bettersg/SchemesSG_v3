@@ -146,7 +146,8 @@ class Chatbot:
             if mode == "messages":
                 cached = False
                 message_chunk, _ = data
-                yield message_chunk.content
+                if message_chunk.content:
+                    yield message_chunk.content
             else:
                 saved_updates = data
 

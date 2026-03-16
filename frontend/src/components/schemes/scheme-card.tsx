@@ -23,7 +23,8 @@ function SchemeCard({scheme}: SchemeCardProps) {
             width={60}
             radius="sm"
             classNames={{
-              wrapper: 'shrink-0'
+              wrapper: 'shrink-0',
+              img: 'object-contain'
             }}
           />
           <div className="flex flex-col">

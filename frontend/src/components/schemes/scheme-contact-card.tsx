@@ -1,4 +1,4 @@
-import { BranchContact } from "@/app/schemes/[schemeId]/page";
+import { BranchContact } from "@/app/(main)/schemes/[schemeId]/page";
 import { LocationIcon } from "@/assets/icons/location-icon";
 import { MailIcon } from "@/assets/icons/mail-icon";
 import { PhoneIcon } from "@/assets/icons/phone-icon";
@@ -9,6 +9,10 @@ interface SchemeContactCardProps {
 }
 
 export default function SchemeContactCard({contact}: SchemeContactCardProps) {
+  if (!contact.address && !contact.phones?.length && !contact.emails?.length) {
+    return null;
+  }
+
   return (
     <Card
       className="p-4 flex flex-col gap-2"
