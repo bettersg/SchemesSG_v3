@@ -122,11 +122,11 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     // Properties from Scheme
     schemeType: Array.isArray(rawData["Scheme Type"]) ? rawData["Scheme Type"].join(", ") : rawData["Scheme Type"] || "",
     schemeName: rawData["Scheme"] || "",
-    targetAudience: rawData["Who's it for"] || "",
+    targetAudience: Array.isArray(rawData["Who's it for"]) ? rawData["Who's it for"].join(", ") : rawData["Who's it for"] || "",
     agency: rawData["Agency"] || "",
     description: rawData["Description"] || "",
     scrapedText: rawData["scraped_text"] || "",
-    benefits: rawData["What it gives"] || "",
+    benefits: Array.isArray(rawData["What it gives"]) ? rawData["What it gives"].join(", ") : rawData["What it gives"] || "",
     link: rawData["Link"] || "",
     image: rawData["Image"] || "",
     searchBooster: rawData["search_booster(WL)"] || "",
