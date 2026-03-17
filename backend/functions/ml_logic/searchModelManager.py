@@ -228,7 +228,7 @@ class SearchModel:
                 - 'combined_scores': Weighted sum of vector and BM25 scores.
         """
         docs = [
-            Document(page_content=content, metadata={"id": sid})
+            Document(page_content=content or "", metadata={"id": sid})
             for sid, content in zip(results["scheme_id"], results["search_booster"])
         ]
         retriever = BM25Retriever.from_documents(docs)
