@@ -120,7 +120,7 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
   }
   return {
     // Properties from Scheme
-    schemeType: rawData["Scheme Type"] || "",
+    schemeType: Array.isArray(rawData["Scheme Type"]) ? rawData["Scheme Type"].join(", ") : rawData["Scheme Type"] || "",
     schemeName: rawData["Scheme"] || "",
     targetAudience: rawData["Who's it for"] || "",
     agency: rawData["Agency"] || "",
