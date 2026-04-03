@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from uuid import uuid1
 
 from firebase_functions import https_fn, options
 from utils.auth import verify_auth_token
@@ -95,19 +96,16 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
+    # Match schemes_search behavior: generate a sessionID for fresh requests.
     if not session_id:
-        return https_fn.Response(
-            response=json.dumps({"error": "'sessionID' is required"}),
-            status=400,
-            mimetype="application/json",
-            headers=headers,
-        )
+        session_id = str(uuid1())
 
     try:
         if stream:
 
             def generate():
                 emitted_chunk = False
+                yield f"data: {safe_json_dumps({'type': AgentStreamEventType.STATUS, 'data': {'phase': 'session_started', 'sessionID': session_id, 'label': 'Session started'}})}\n\n"
                 for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
                     event_type = event.get("type", "")
                     event_data = event.get("data", {})
@@ -188,6 +186,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
 
         response_payload = {
             "response": True,
+            "sessionID": session_id,
             "message": assistant_text,
             "schemes": final_schemes,
             "total_count": len(final_schemes),
