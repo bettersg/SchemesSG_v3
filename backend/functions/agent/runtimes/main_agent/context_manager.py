@@ -73,6 +73,10 @@ class MainAgentContextManager:
         return self.compact_schemes(self.get_latest_schemes(), max_items=max_items)
 
     def get_current_schemes_for_prompt(self) -> list[dict]:
+        schemes_from_history = self.get_latest_schemes()
+        if schemes_from_history:
+            return schemes_from_history
+
         current_results_json = self._state.get("current_results_json", "")
         if isinstance(current_results_json, str) and current_results_json.strip():
             try:
@@ -82,7 +86,7 @@ class MainAgentContextManager:
                     return schemes
             except Exception:
                 pass
-        return self.get_latest_schemes()
+        return []
 
     @staticmethod
     def parse_tool_payload(content: Any) -> dict[str, Any]:

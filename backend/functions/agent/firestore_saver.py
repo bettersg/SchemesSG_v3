@@ -175,11 +175,15 @@ class FirestoreChatSaver(BaseCheckpointSaver):
         tool_history = channel_values.get("tool_history", []) if isinstance(channel_values, dict) else []
         schemes_history = channel_values.get("schemes_history", []) if isinstance(channel_values, dict) else []
 
-        latest_schemes = []
-        if isinstance(schemes_history, list) and schemes_history:
-            last = schemes_history[-1]
-            if isinstance(last, list):
-                latest_schemes = last
+        # Firestore does not allow nested arrays (list[list[...]]). Mirror schemes
+        # history as an array of objects to keep it readable and queryable.
+        schemes_history_docs = []
+        if isinstance(schemes_history, list):
+            for turn in schemes_history:
+                if isinstance(turn, list):
+                    schemes_history_docs.append({"schemes": [s for s in turn if isinstance(s, dict)]})
+                else:
+                    schemes_history_docs.append({"schemes": []})
 
         data = {
             "v": checkpoint.get("v", 4),  # Include version field
@@ -189,9 +193,8 @@ class FirestoreChatSaver(BaseCheckpointSaver):
             # Readable mirrors for quick inspection in Firestore UI.
             "search_history": search_history if isinstance(search_history, list) else [],
             "tool_history": tool_history if isinstance(tool_history, list) else [],
+            "schemes_history": schemes_history_docs,
             "schemes_history_count": len(schemes_history) if isinstance(schemes_history, list) else 0,
-            "latest_schemes": latest_schemes if isinstance(latest_schemes, list) else [],
-            "latest_schemes_count": len(latest_schemes) if isinstance(latest_schemes, list) else 0,
             "last_updated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
             "checkpoint_id": checkpoint_id,
             "parent_checkpoint_id": parent_checkpoint_id,
@@ -246,16 +249,35 @@ class FirestoreChatSaver(BaseCheckpointSaver):
 
                 # Reconstruct checkpoint with proper version and structure
                 channel_values_data = raw_data.get("channel_values")
+                mirror_schemes_history = raw_data.get("schemes_history", [])
+                mirror_search_history = raw_data.get("search_history", [])
+                mirror_tool_history = raw_data.get("tool_history", [])
+
+                reconstructed_schemes_history = []
+                if isinstance(mirror_schemes_history, list):
+                    for item in mirror_schemes_history:
+                        if isinstance(item, dict) and isinstance(item.get("schemes"), list):
+                            reconstructed_schemes_history.append(
+                                [s for s in item.get("schemes", []) if isinstance(s, dict)]
+                            )
+
+                fallback_channel_values = {
+                    "messages": raw_data.get("messages", []),
+                    "search_history": mirror_search_history if isinstance(mirror_search_history, list) else [],
+                    "tool_history": mirror_tool_history if isinstance(mirror_tool_history, list) else [],
+                    "schemes_history": reconstructed_schemes_history,
+                }
+
                 if isinstance(channel_values_data, str):
                     try:
                         channel_values = self.serializer.loads(channel_values_data)
                     except Exception as e:
                         logger.warning(f"Could not deserialize channel_values: {e}")
-                        channel_values = {"messages": raw_data.get("messages", [])}
+                        channel_values = fallback_channel_values
                 elif isinstance(channel_values_data, dict):
                     channel_values = channel_values_data
                 else:
-                    channel_values = {"messages": raw_data.get("messages", [])}
+                    channel_values = fallback_channel_values
 
                 checkpoint = {
                     "v": raw_data.get("v", 4),
