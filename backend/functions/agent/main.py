@@ -112,6 +112,18 @@ def _extract_latest_schemes(values: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _extract_schemes_history(values: dict[str, Any]) -> list[list[dict[str, Any]]]:
+    history = values.get("schemes_history", [])
+    if not isinstance(history, list):
+        return []
+
+    normalized: list[list[dict[str, Any]]] = []
+    for item in history:
+        if isinstance(item, list):
+            normalized.append([scheme for scheme in item if isinstance(scheme, dict)])
+    return normalized
+
+
 def _build_schemes_signature(schemes: list[dict[str, Any]]) -> str:
     if not schemes:
         return ""
@@ -170,6 +182,7 @@ async def stream_chat_events(input_text: str, session_id: str) -> AsyncIterator[
     - status
     - chunk
     - schemes_update
+    - schemes
     - assistant
     - followups
     - done
@@ -241,13 +254,13 @@ async def stream_chat_events(input_text: str, session_id: str) -> AsyncIterator[
     assistant_text = _extract_latest_assistant_text(messages)
     followups = await runtime.followup_engine.generate_kv_async(messages)
     final_schemes = _extract_latest_schemes(values if isinstance(values, dict) else {})
+    schemes_history = _extract_schemes_history(values if isinstance(values, dict) else {})
 
     yield _event(AgentStreamEventType.ASSISTANT, {"text": assistant_text})
     yield _event(
-        AgentStreamEventType.STATE,
+        AgentStreamEventType.SCHEMES,
         {
-            "search_history": values.get("search_history", []) if isinstance(values, dict) else [],
-            "tool_history": values.get("tool_history", []) if isinstance(values, dict) else [],
+            "schemes_history": schemes_history,
             "total_count": len(final_schemes),
         },
     )

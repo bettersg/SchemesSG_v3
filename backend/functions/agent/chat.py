@@ -146,6 +146,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
 
         assistant_text = ""
         final_schemes = []
+        schemes_history = []
         search_history = []
         tool_history = []
         followups = {}
@@ -169,13 +170,12 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
                 history = event_data.get("search_history", [])
                 if isinstance(history, list):
                     search_history = history
-            elif event_type == AgentStreamEventType.STATE:
-                history = event_data.get("search_history", [])
-                tools = event_data.get("tool_history", [])
+            elif event_type == AgentStreamEventType.SCHEMES:
+                history = event_data.get("schemes_history", [])
                 if isinstance(history, list):
-                    search_history = history
-                if isinstance(tools, list):
-                    tool_history = tools
+                    schemes_history = history
+                    if history and isinstance(history[-1], list):
+                        final_schemes = history[-1]
             elif event_type == AgentStreamEventType.FOLLOWUPS:
                 items = event_data.get("items", {})
                 if isinstance(items, dict):
@@ -189,6 +189,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             "sessionID": session_id,
             "message": assistant_text,
             "schemes": final_schemes,
+            "schemes_history": schemes_history,
             "total_count": len(final_schemes),
             "search_history": search_history,
             "tool_history": tool_history,

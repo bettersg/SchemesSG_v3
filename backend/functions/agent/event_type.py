@@ -13,6 +13,7 @@ class AgentStreamEventType(_StringEnum):
     STATUS = "status"
     CHUNK = "chunk"
     SCHEMES_UPDATE = "schemes_update"
+    SCHEMES = "schemes"
     ASSISTANT = "assistant"
     STATE = "state"
     FOLLOWUPS = "followups"
