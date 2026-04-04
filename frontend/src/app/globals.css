@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+<<<<<<< HEAD
   --radius: 0.625rem;
   --background: oklch(0.975 0.001 100);
   --foreground: oklch(0.145 0 0);
@@ -93,3 +94,55 @@ body {
     scroll-behavior: smooth;
   }
 }
+=======
+  --b50: #E6F1FB; --b100: #B5D4F4; --b200: #85B7EB; --b400: #378ADD; --b600: #185FA5; --b800: #0C447C; --b900: #042C53;
+  --a50: #FAEEDA; --a100: #FAC775; --a200: #EF9F27; --a400: #BA7517; --a600: #854F0B;
+  --p50: #EEEDFE; --p100: #CECBF6; --p400: #7F77DD; --p600: #534AB7;
+  --g50: #F1EFE8; --g100: #D3D1C7; --g300: #B4B2A9; --g500: #5F5E5A; --g700: #444441; --g900: #1A1A1A;
+  --teal: #1D9E75; --green-dark: #3B6D11;
+  --background: #ffffff; --foreground: #1A1A1A;
+
+  .successMessage { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+  .errorMessage { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --background: #ffffff; --foreground: #1A1A1A; }
+}
+
+body { color: var(--foreground); background: var(--background); font-family: 'Open Sans', sans-serif; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.thin-scrollbar::-webkit-scrollbar { width: 4px; }
+.thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.thin-scrollbar::-webkit-scrollbar-thumb { background: var(--g100); border-radius: 2px; }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track { display: flex; gap: 2rem; animation: marquee 28s linear infinite; width: max-content; }
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+
+.faded-element {
+  mask-image: linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%);
+}
+
+.carousel-track { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+.carousel-track > * { scroll-snap-align: start; }
+
+.markdown-content ul { list-style-type: disc; list-style-position: inside; }
+.markdown-content li::marker { color: #64748b; }
+.markdown-content li > p { display: inline; }
+.markdown-content hr { margin: 1rem 0; border: 0; border-top: 1px solid rgb(229,231,235); }
+.markdown-content p { margin-bottom: 0.5rem; }
+.markdown-content strong { font-weight: 600; }
+
+@layer utilities {
+  .animation-paused div { animation-play-state: paused; }
+  .animation-play div { animation-play-state: running; }
+  .font-lexend { font-family: 'Lexend', sans-serif !important; }
+}
+>>>>>>> 5bcdda1 (New design initial draft)

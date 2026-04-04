@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { Avatar, Card, CardBody } from "@heroui/react";
 import ReactMarkdown from "react-markdown";
 import { Message } from "@/app/(main)/providers";
+=======
+import { Avatar, Card } from "@heroui/react";
+import ReactMarkdown from "react-markdown";
+import { Message } from "@/providers";
+>>>>>>> 5bcdda1 (New design initial draft)
 import { RefObject } from "react";
 import clsx from "clsx";
 
@@ -45,9 +51,15 @@ export default function ChatList({
             radius="lg"
             shadow="none"
           >
+<<<<<<< HEAD
             <CardBody className="px-2 py-1">
               <ReactMarkdown>{msg.text}</ReactMarkdown>
             </CardBody>
+=======
+            <Card.Content className="px-2 py-1">
+              <ReactMarkdown>{msg.text}</ReactMarkdown>
+            </Card.Content>
+>>>>>>> 5bcdda1 (New design initial draft)
           </Card>
         </div>
       ))}
@@ -66,9 +78,15 @@ export default function ChatList({
             radius="lg"
             shadow="none"
           >
+<<<<<<< HEAD
             <CardBody className="px-2 py-1">
               <ReactMarkdown>{streamingMessage}</ReactMarkdown>
             </CardBody>
+=======
+            <Card.Content className="px-2 py-1">
+              <ReactMarkdown>{streamingMessage}</ReactMarkdown>
+            </Card.Content>
+>>>>>>> 5bcdda1 (New design initial draft)
           </Card>
         </div>
       )}

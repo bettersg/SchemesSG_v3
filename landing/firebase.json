@@ -1,0 +1,78 @@
+{
+  "hosting": [
+    {
+      "target": "staging",
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "asia-southeast1"
+      },
+      "rewrites": [
+        {
+          "source": "/schemes/**",
+          "function": "ssrschemessgv3dev"
+        },
+        {
+          "source": "/_next/**",
+          "destination": "/_next/**"
+        },
+        {
+          "source": "**",
+          "function": "index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/_next/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "prod",
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "asia-southeast1"
+      },
+      "rewrites": [
+        {
+          "source": "/schemes/**",
+          "function": "ssrschemessg"
+        },
+        {
+          "source": "/_next/**",
+          "destination": "/_next/**"
+        },
+        {
+          "source": "**",
+          "function": "index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/_next/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

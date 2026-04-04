@@ -1,0 +1,51 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development next dev",
+    "build": "npm run clean && npm install && next build",
+    "start": "cross-env NODE_ENV=production next start",
+    "start:staging": "cross-env NODE_ENV=staging next start",
+    "lint": "next lint",
+    "build:staging": "cross-env APP_ENV=staging next build",
+    "build:prod": "cross-env APP_ENV=production next build",
+    "test-build:staging": "npm run build:staging && npx serve@latest out",
+    "test-build:prod": "npm run build:prod && npx serve@latest out",
+    "clean": "rm -rf node_modules .next out dist"
+  },
+  "dependencies": {
+    "@heroui/react": "^3.0.1",
+    "@heroui/styles": "^3.0.1",
+    "@tailwindcss/postcss": "^4.2.2",
+    "autoprefixer": "^10.4.27",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "firebase": "^12.11.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.525.0",
+    "matter-js": "^0.19.0",
+    "next": "^16.2.1",
+    "poly-decomp": "^0.3.0",
+    "radix-ui": "^1.4.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "sharp": "^0.34.5",
+    "svg-path-commander": "^2.1.6",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/matter-js": "^0.19.7",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-icons": "^3.0.0",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.1.0",
+    "eslint-config-next": "16.2.1",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2"
+  }
+}

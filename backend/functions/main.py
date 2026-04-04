@@ -47,6 +47,10 @@ import json
 import sys
 
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
+<<<<<<< HEAD
+=======
+from agent.chat import agent_chat_message  # noqa: F401
+>>>>>>> 5bcdda1 (New design initial draft)
 from chat.chat import chat_message  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
 from feedback.feedback import feedback  # noqa: F401

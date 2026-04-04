@@ -19,6 +19,13 @@
         {
           "source": "/_next/**",
           "destination": "/_next/**"
+<<<<<<< HEAD
+=======
+        },
+        {
+          "source": "**",
+          "function": "index.html"
+>>>>>>> 5bcdda1 (New design initial draft)
         }
       ],
       "headers": [
@@ -52,6 +59,13 @@
         {
           "source": "/_next/**",
           "destination": "/_next/**"
+<<<<<<< HEAD
+=======
+        },
+        {
+          "source": "**",
+          "function": "index.html"
+>>>>>>> 5bcdda1 (New design initial draft)
         }
       ],
       "headers": [
