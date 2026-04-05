@@ -6,7 +6,7 @@ import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list";
 import { Button, Spacer } from "@heroui/react";
 import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
-import UserQuery from "./user-query";
+import UserQuery from "./drafts/user-query";
 import { FilterObjType } from "@/app/interfaces/filter";
 import clsx from "clsx";
 import { MinimizeIcon } from "@/assets/icons/minimize-icon";

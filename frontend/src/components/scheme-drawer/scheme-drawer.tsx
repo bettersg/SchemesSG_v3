@@ -127,7 +127,7 @@ export default function SchemeDrawer({ schemeId, onClose }: SchemeDrawerProps) {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="absolute inset-0 bg-[#042C53]/30 backdrop-blur-[1.5px] z-20 hidden md:block"
+            className="absolute inset-0 bg-[#042C53]/30 backdrop-blur-[1.5px] z-20 hidden lg:block"
             onClick={onClose}
           />
 
@@ -135,7 +135,7 @@ export default function SchemeDrawer({ schemeId, onClose }: SchemeDrawerProps) {
           <motion.div
             initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 340, damping: 34 }}
-            className="absolute top-0 left-0 bottom-0 w-[380px] md:w-full bg-white z-30 shadow-[8px_0_40px_rgba(0,0,0,0.13)] overflow-y-auto thin-scrollbar hidden md:flex flex-col"
+            className="absolute top-0 left-0 bottom-0 w-[380px] lg:w-full bg-white z-30 shadow-[8px_0_40px_rgba(0,0,0,0.13)] overflow-y-auto thin-scrollbar hidden lg:flex flex-col"
           >
             <DrawerContent
               scheme={scheme} isLoading={isLoading} onClose={onClose}
@@ -148,7 +148,7 @@ export default function SchemeDrawer({ schemeId, onClose }: SchemeDrawerProps) {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 bg-[#042C53]/35 backdrop-blur-[2px] z-40 md:hidden"
+            className="fixed inset-0 bg-[#042C53]/35 backdrop-blur-[2px] z-40 lg:hidden"
             onClick={onClose}
           />
 
@@ -156,9 +156,11 @@ export default function SchemeDrawer({ schemeId, onClose }: SchemeDrawerProps) {
           <motion.div
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            className="fixed left-0 right-0 bottom-0 h-[88vh] bg-white z-50 rounded-t-[20px] shadow-[0_-8px_40px_rgba(0,0,0,0.15)] overflow-y-auto thin-scrollbar flex flex-col md:hidden"
+            className="fixed left-0 right-0 bottom-0 h-[88vh] bg-white z-50 rounded-t-[20px] shadow-[0_-8px_40px_rgba(0,0,0,0.15)] overflow-y-auto thin-scrollbar flex flex-col lg:hidden"
           >
-            <div className="w-9 h-1 rounded-full bg-[#D3D1C7] mx-auto mt-3 shrink-0" />
+            <div className="bg-[#E6F1FB]">
+				<div className="w-9 h-1 rounded-full bg-[#D3D1C7] mx-auto mt-3 shrink-0" />
+			</div>
             <DrawerContent
               scheme={scheme} isLoading={isLoading} onClose={onClose}
               types={types} targetItems={targetItems} benefitItems={benefitItems}
@@ -194,7 +196,7 @@ function DrawerContent({
   return (
     <div className="flex flex-col flex-1">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#E6F1FB] to-[#f0f6ff] px-5 py-5 border-b border-[#e0eef8] relative shrink-0">
+      <div className="bg-[#E6F1FB] px-5 py-5 border-b border-[#e0eef8] relative shrink-0">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/6 hover:bg-black/10 flex items-center justify-center text-[#5F5E5A] transition-colors"

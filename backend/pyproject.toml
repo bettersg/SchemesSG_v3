@@ -5,23 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-<<<<<<< HEAD
-=======
     "ddgs>=9.6.1",
->>>>>>> 5bcdda1 (New design initial draft)
     "en-core-web-sm",
     "firebase-admin>=6.0.0",
     "firebase-functions~=0.5.0",
     "flask-cors==5.0.0",
     "flask==3.0.3",
     "google-cloud-firestore>=2.16.0",
-<<<<<<< HEAD
-    "langchain-community==0.3.25",
-    "langchain-core==0.3.72",
-=======
     "langchain-community==0.3.31",
     "langchain-core==0.3.78",
->>>>>>> 5bcdda1 (New design initial draft)
     "langchain-openai==0.2.5",
     "langchain==0.3.27",
     "langgraph==0.6.6",
@@ -29,10 +21,7 @@ dependencies = [
     "numpy>=1.26.2",
     "pandas==2.2.2",
     "python-dotenv==1.0.1",
-<<<<<<< HEAD
-=======
     "rank-bm25>=0.2.2",
->>>>>>> 5bcdda1 (New design initial draft)
     "requests>=2.32.0",
     "slack-sdk>=3.33.0",
     "spacy==3.7.5",

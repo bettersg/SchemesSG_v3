@@ -12,7 +12,7 @@ import {
   useMemo,
 } from "react";
 import { useInView } from "framer-motion";
-import { useChat } from "@/providers";
+import { useChat, useSchemes } from "@/providers";
 import { FilterObjType } from "@/types/types";
 import clsx from "clsx";
 import { parseArrayString } from "@/lib/helper";
@@ -64,7 +64,7 @@ export default function ExploreList({
   const listBottomRef = useRef<HTMLDivElement>(null);
   const bottomReached = useInView(listBottomRef);
   const [isLoadingMoreSchemes, setIsLoadingMoreSchemes] = useState(false);
-  const { schemes, setSchemes, sessionId, totalCount, userQuery, nextCursor, setNextCursor } = useChat();
+  const { schemes, setSchemes, sessionId, totalCount, userQuery, nextCursor, setNextCursor } = useSchemes();
 
   const filteredSchemes = useMemo(
     () =>

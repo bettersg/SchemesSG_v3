@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useChat } from "@/app/(main)/providers";
-=======
 import { useChat } from "@/providers";
->>>>>>> 5bcdda1 (New design initial draft)
 import { Button } from "@heroui/react";
 
 interface queryPromptsProps {

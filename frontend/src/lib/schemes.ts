@@ -23,68 +23,62 @@ export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => ({
 
 export const getSchemes = async (
   userQuery: string,
-  sessionId = "",
-): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> => {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/agent_chat_message`;
+  nextCursor = ""
+): Promise<{
+  schemesRes: SearchResScheme[];
+  sessionId: string;
+  totalCount: number;
+  nextCursor: string;
+}> => {
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
+
+  const requestBody = {
+    query: userQuery,
+    limit: 20,
+    top_k: 50,
+    similarity_threshold: 0,
+    cursor: nextCursor || null, // Send null instead of empty string
+  };
+
   try {
-    const body: { message: string; sessionID?: string } = {
-      message: userQuery,
-    };
-    if (sessionId) {
-      body["sessionID"] = sessionId;
-    }
     const response = await fetchWithAuth(url, {
       method: "POST",
-      body: JSON.stringify({
-        message: userQuery,
-      }),
+      body: JSON.stringify(requestBody),
     });
-    const res = await fetchWithAuth(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/agent_chat_message`,
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
-    );
-    const reader = res.body?.getReader();
-    if (!reader) throw new Error("No reader");
-    return reader;
 
-    // let payloads = []
-    // while (true) {
-    //   const { done, value } = await reader.read();
-    //   let jsonStr = "";
-    //   if (done) {
-    //     if (jsonStr) {
-    //       payloads.push(JSON.parse(jsonStr))
-    //     }
-    //     break
-    //   };
-    //   decoder.decode(value).split("\n").forEach((line) => {
-    // // console.log('line', line)
-    //     if (line.startsWith("data: ")) {
-    //       try {
-    //         if (jsonStr) {
-    //           payloads.push(JSON.parse(jsonStr))
-    //         }
-    //         jsonStr = line.slice(6);
-    //       //   setStreamingMessage(full);
-    //       } catch (e) {
-    //         console.error(`Error: ${e}`)
-    //       }
-    //     } else {
-    //       jsonStr += line;
-    //     }
-    //   });
-    // }
-    // // console.log(payloads)
-    // for (const payload of payloads) {
-    //   if (payload.type == 'chunk') {
-    //     console.log(payload.data.chunk)
-    //   }
-    // }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const res = (await response.json()) as SearchResponse;
+    console.log("Search response:", res); // Debug
+
+    const sessionId: string = res.sessionID || "";
+    const totalCount: number = res.total_count || 0;
+    const hasMore: boolean = res.has_more || false;
+    const nextCursor: string =
+      res.next_cursor && hasMore ? res.next_cursor : "";
+
+    // Check if data exists in the response
+    if (res.data) {
+      let schemesData;
+      // Handle both array and single object responses
+      if (Array.isArray(res.data)) {
+        schemesData = res.data;
+      } else {
+        // If it's a single object, convert to array
+        schemesData = [res.data];
+      }
+
+      const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
+      console.log("Mapped schemes:", schemesRes); // Debug
+      return { schemesRes, sessionId, totalCount, nextCursor };
+    } else {
+      console.error("Unexpected response format:", res);
+      return { schemesRes: [], sessionId, totalCount, nextCursor };
+    }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error making POST request:", error);
     return { schemesRes: [], sessionId: "", totalCount: 0, nextCursor: "" };
   }
 };

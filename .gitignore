@@ -260,17 +260,4 @@ dataset_worfklow/schemes-dev-firestore-structure.json
 
 generate_token.sh
 test_*.sh
-<<<<<<< HEAD
 jwt_token.txt
-
-# Landing site (Vite/React)
-landing/dist/
-landing/dist-ssr/
-landing/.claude/
-landing/screenshot-*.png
-!landing/pnpm-lock.yaml
-!landing/src/lib/
-!frontend/src/lib/
-=======
-jwt_token.txt
->>>>>>> 5bcdda1 (New design initial draft)

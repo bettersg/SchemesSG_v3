@@ -17,7 +17,7 @@ export default function QuickReplyChips({
 }: QuickReplyChipsProps) {
   if (!suggestions.length) return null;
   return (
-    <div className="flex flex-col md:flex-row items-start gap-2 px-4 py-2 overflow-x-auto no-scrollbar shrink-0 flex-wrap">
+    <div className="flex flex-col sm:flex-row items-start gap-2 px-4 py-2 overflow-x-auto no-scrollbar shrink-0 flex-wrap">
       {suggestions.map((s) => (
         <Chip
           key={s.label}

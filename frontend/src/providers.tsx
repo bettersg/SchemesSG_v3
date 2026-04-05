@@ -31,18 +31,18 @@ type ChatContextType = {
 //   setUserQuery: React.Dispatch<React.SetStateAction<string>>;
 };
 
-// type ExploreContextType = {
-//   sessionId: string;
-//   setSessionId: React.Dispatch<React.SetStateAction<string>>;
-//   totalCount: number;
-//   setTotalCount: React.Dispatch<React.SetStateAction<number>>;
-//   nextCursor: string;
-//   setNextCursor: React.Dispatch<React.SetStateAction<string>>;
-//   schemes: SearchResScheme[];
-//   setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
-//   userQuery: string;
-//   setUserQuery: React.Dispatch<React.SetStateAction<string>>;
-// };
+type SchemesContextType = {
+  sessionId: string;
+  setSessionId: React.Dispatch<React.SetStateAction<string>>;
+  totalCount: number;
+  setTotalCount: React.Dispatch<React.SetStateAction<number>>;
+  nextCursor: string;
+  setNextCursor: React.Dispatch<React.SetStateAction<string>>;
+  schemes: SearchResScheme[];
+  setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
+  userQuery: string;
+  setUserQuery: React.Dispatch<React.SetStateAction<string>>;
+};
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
@@ -231,42 +231,42 @@ export const useChat = (): ChatContextType => {
   return context;
 };
 
-// const ExploreContext = createContext<ExploreContextType | undefined>(undefined);
+const SchemesContext = createContext<SchemesContextType | undefined>(undefined);
 
-// export const ExploreProvider = ({ children }: { children: ReactNode }) => {
-//   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
-//   const [sessionId, setSessionId] = useState("");
-//   const [totalCount, setTotalCount] = useState(0);
-//   const [nextCursor, setNextCursor] = useState("");
-//   const [userQuery, setUserQuery] = useState("");
+export const ExploreProvider = ({ children }: { children: ReactNode }) => {
+  const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
+  const [sessionId, setSessionId] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextCursor, setNextCursor] = useState("");
+  const [userQuery, setUserQuery] = useState("");
 
-//   return (
-//     <ExploreContext
-//       value={{
-//         schemes,
-//         setSchemes,
-//         sessionId,
-//         setSessionId,
-//         totalCount,
-//         setTotalCount,
-//         nextCursor,
-//         setNextCursor,
-//         userQuery,
-//         setUserQuery,
-//       }}
-//     >
-//       {children}
-//     </ExploreContext>
-//   );
-// };
+  return (
+    <SchemesContext
+      value={{
+        schemes,
+        setSchemes,
+        sessionId,
+        setSessionId,
+        totalCount,
+        setTotalCount,
+        nextCursor,
+        setNextCursor,
+        userQuery,
+        setUserQuery,
+      }}
+    >
+      {children}
+    </SchemesContext>
+  );
+};
 
-// export const useExplore = (): ExploreContextType => {
-//   const context = useContext(ExploreContext);
-//   if (!context) {
-//     throw new Error("useChat must be used within a ChatProvider");
-//   }
-//   return context;
-// };
+export const useSchemes = (): SchemesContextType => {
+  const context = useContext(SchemesContext);
+  if (!context) {
+    throw new Error("useChat must be used within a ChatProvider");
+  }
+  return context;
+};
 
 // Combined Providers
 // export function Providers({ children }: { children: React.ReactNode }) {

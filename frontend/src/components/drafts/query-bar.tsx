@@ -1,16 +1,8 @@
-<<<<<<< HEAD
-import { useChat } from "@/app/(main)/providers";
-import { Button, Spinner, Textarea } from "@heroui/react";
-import { MutableRefObject, useState } from "react";
-import { SearchIcon } from "../assets/icons/search-icon";
-import { getSchemes } from "./main-chat";
-=======
 import { useChat } from "@/providers";
 import { Button, Spinner, TextArea } from "@heroui/react";
 import { MutableRefObject, useState } from "react";
 import { SearchIcon } from "../assets/icons/search-icon";
 import { getSchemes } from "@/lib/schemes";
->>>>>>> 5bcdda1 (New design initial draft)
 
 interface QueryBarProps {
   searchbarRef: MutableRefObject<HTMLTextAreaElement | null>;
@@ -67,11 +59,7 @@ export default function QueryBar({ searchbarRef }: QueryBarProps) {
 
   return (
     <>
-<<<<<<< HEAD
-      <Textarea
-=======
       <TextArea
->>>>>>> 5bcdda1 (New design initial draft)
         value={userQuery}
         onChange={(e) => setUserQuery(e.target.value)}
         onKeyDown={async (e) => {

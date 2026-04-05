@@ -1,6 +1,5 @@
 	"use client";
 import { useChat } from "@/providers";
-import { getSchemes, initiateChat } from "@/lib/schemes";
 import { useRef, useState } from "react";
 import { Spinner } from "@heroui/react";
 
@@ -80,7 +79,7 @@ export default function ChatLanding() {
 					  disabled={isLoading}
 					  className="shrink-0 px-5 py-2.5 rounded-xl bg-[#185FA5] text-white text-sm font-semibold hover:bg-[#0C447C] transition-colors flex items-center gap-2 mt-0.5 disabled:opacity-60"
 					>
-					  {isLoading ? <Spinner size="sm" color="white" /> : (
+					  {isLoading ? <Spinner size="sm"/> : (
 						<>
 						  Search
 						  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">

@@ -1,11 +1,7 @@
 "use client";
 import { useChat } from "@/providers";
 import { Button, Popover } from "@heroui/react";
-import { navigate } from "next/dist/client/components/segment-cache/navigation";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import SchemeCard from "../schemes/scheme-card";
-import Link from "next/link";
 import SchemesList from "./schemes-list";
 
 function CategoryTag({ label }: { label: string }) {

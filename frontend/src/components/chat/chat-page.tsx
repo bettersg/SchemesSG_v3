@@ -155,7 +155,7 @@ export default function ChatPage() {
           <p className="text-sm font-semibold text-[#042C53] truncate">{userQuery}</p>
         </div> */}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
           <Button
             size="sm"
             variant="outline"
