@@ -19,10 +19,6 @@
         {
           "source": "/_next/**",
           "destination": "/_next/**"
-        },
-        {
-          "source": "**",
-          "function": "index.html"
         }
       ],
       "headers": [
@@ -56,10 +52,6 @@
         {
           "source": "/_next/**",
           "destination": "/_next/**"
-        },
-        {
-          "source": "**",
-          "function": "index.html"
         }
       ],
       "headers": [

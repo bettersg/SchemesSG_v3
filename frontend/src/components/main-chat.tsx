@@ -16,7 +16,7 @@ import { RawSchemeData, SearchResponse } from "@/app/interfaces/schemes";
 
 export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
   return {
-    schemeType: toStringArray(rawData["scheme_type"] ?? rawData["Scheme Type"]),
+    schemeType: (() => { const v = rawData["scheme_type"] || rawData["Scheme Type"]; return Array.isArray(v) ? v.join(", ") : v || ""; })(),
     schemeName: rawData["scheme"] || rawData["Scheme"] || "",
     targetAudience: toStringArray(rawData["who_is_it_for"] ?? rawData["Who's it for"]),
     agency: rawData["agency"] || rawData["Agency"] || "",
