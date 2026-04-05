@@ -16,7 +16,7 @@ import { RawSchemeData, SearchResponse } from "@/app/interfaces/schemes";
 
 export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => {
   return {
-    schemeType: (() => { const v = rawData["scheme_type"] || rawData["Scheme Type"]; return Array.isArray(v) ? v.join(", ") : v || ""; })(),
+    schemeType: (() => { const v = rawData["scheme_type"] || rawData["Scheme Type"]; return Array.isArray(v) ? v : v ? [v] : []; })(),
     schemeName: rawData["scheme"] || rawData["Scheme"] || "",
     targetAudience: toStringArray(rawData["who_is_it_for"] ?? rawData["Who's it for"]),
     agency: rawData["agency"] || rawData["Agency"] || "",
@@ -124,7 +124,8 @@ export default function MainChat({
     ) {
       fetchBotResponse(messages[0].text);
     }
-  }, [messages]); // Minimal dependency array
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   useEffect(() => {
     handleScrollToBottom();

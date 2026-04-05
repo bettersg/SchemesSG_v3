@@ -108,7 +108,9 @@ export const MatterBody = ({
       ...props,
     })
 
-    return () => context.unregisterElement(idRef.current)
+    const id = idRef.current
+    return () => context.unregisterElement(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props, children, matterBodyOptions, isDraggable])
 
   return (
@@ -374,6 +376,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
         runner.current.enabled = true
         startEngine()
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [updateElements, debug, autoStart])
 
     // Clear the Matter.js world
@@ -428,7 +431,8 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
       }
       frameId.current = requestAnimationFrame(updateElements)
       isRunning.current = true
-    }, [updateElements, canvasSize])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [updateElements])
 
     const stopEngine = useCallback(() => {
       if (!isRunning.current) return
@@ -465,6 +469,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
       })
       updateElements()
       handleResize()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useImperativeHandle(
@@ -474,6 +479,7 @@ const Gravity = forwardRef<GravityRef, GravityProps>(
         stop: stopEngine,
         reset,
       }),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       [startEngine, stopEngine]
     )
 

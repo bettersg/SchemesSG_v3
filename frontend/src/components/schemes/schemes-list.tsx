@@ -102,6 +102,7 @@ export default function SchemesList({
     if (bottomReached && nextCursor) {
       loadMoreSchemes()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomReached]);
 
   const loadMoreSchemes = () => {
