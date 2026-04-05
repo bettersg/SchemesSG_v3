@@ -27,7 +27,7 @@ import { LinkIcon } from "@/assets/icons/link-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { parseArrayString, toStringArray } from "@/app/utils/helper";
+import { parseArrayString } from "@/app/utils/helper";
 import SchemeContactCard from "@/components/schemes/scheme-contact-card";
 
 // Type for full scheme properties
@@ -120,13 +120,13 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
   }
   return {
     // Properties from Scheme
-    schemeType: Array.isArray(rawData["Scheme Type"]) ? rawData["Scheme Type"].join(", ") : rawData["Scheme Type"] || "",
+    schemeType: Array.isArray(rawData["Scheme Type"]) ? rawData["Scheme Type"] : rawData["Scheme Type"] ? [rawData["Scheme Type"]] : [],
     schemeName: rawData["Scheme"] || "",
-    targetAudience: Array.isArray(rawData["Who's it for"]) ? rawData["Who's it for"].join(", ") : rawData["Who's it for"] || "",
+    targetAudience: Array.isArray(rawData["Who's it for"]) ? rawData["Who's it for"] : rawData["Who's it for"] ? [rawData["Who's it for"]] : [],
     agency: rawData["Agency"] || "",
     description: rawData["Description"] || "",
     scrapedText: rawData["scraped_text"] || "",
-    benefits: Array.isArray(rawData["What it gives"]) ? rawData["What it gives"].join(", ") : rawData["What it gives"] || "",
+    benefits: Array.isArray(rawData["What it gives"]) ? rawData["What it gives"] : rawData["What it gives"] ? [rawData["What it gives"]] : [],
     link: rawData["Link"] || "",
     image: rawData["Image"] || "",
     searchBooster: rawData["search_booster(WL)"] || "",

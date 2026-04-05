@@ -47,6 +47,7 @@ export default function Home() {
         setSchemes(schemesRes);
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const searchbarRef = useRef<HTMLTextAreaElement | null>(null);
