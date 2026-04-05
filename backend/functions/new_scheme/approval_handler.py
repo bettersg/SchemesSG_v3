@@ -253,13 +253,12 @@ def extract_form_data(state: dict) -> Dict[str, Any]:
         action = block.get(action_id, {})
         return action.get("value", "")
 
-    def get_multi_select_as_string(block_id: str, action_id: str) -> str:
-        """Get multi-select values as comma-separated string."""
+    def get_multi_select_as_list(block_id: str, action_id: str) -> list:
+        """Get multi-select values as a list of strings."""
         block = state.get(block_id, {})
         action = block.get(action_id, {})
         selected = action.get("selected_options", [])
-        values = [opt.get("value", "") for opt in selected if opt.get("value")]
-        return ", ".join(values) if values else ""
+        return [opt.get("value", "") for opt in selected if opt.get("value")]
 
     return {
         "scheme_name": get_value("scheme_name_block", "scheme_name"),
@@ -270,9 +269,9 @@ def extract_form_data(state: dict) -> Dict[str, Any]:
         "phone": get_value("phone_block", "phone"),
         "email": get_value("email_block", "email"),
         "planning_area": get_value("planning_area_block", "planning_area"),
-        "who_is_it_for": get_multi_select_as_string("who_is_it_for_block", "who_is_it_for"),
-        "what_it_gives": get_multi_select_as_string("what_it_gives_block", "what_it_gives"),
-        "scheme_type": get_multi_select_as_string("scheme_type_block", "scheme_type"),
+        "who_is_it_for": get_multi_select_as_list("who_is_it_for_block", "who_is_it_for"),
+        "what_it_gives": get_multi_select_as_list("what_it_gives_block", "what_it_gives"),
+        "scheme_type": get_multi_select_as_list("scheme_type_block", "scheme_type"),
         "llm_description": get_value("llm_description_block", "llm_description"),
         "eligibility": get_value("eligibility_block", "eligibility"),
         "how_to_apply": get_value("how_to_apply_block", "how_to_apply"),

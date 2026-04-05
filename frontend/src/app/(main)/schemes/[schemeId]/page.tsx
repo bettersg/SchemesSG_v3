@@ -27,7 +27,7 @@ import { LinkIcon } from "@/assets/icons/link-icon";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { parseArrayString } from "@/app/utils/helper";
+import { parseArrayString, toStringArray } from "@/app/utils/helper";
 import SchemeContactCard from "@/components/schemes/scheme-contact-card";
 
 // Type for full scheme properties
@@ -65,14 +65,14 @@ interface FullSchemeData extends RawSchemeData {
 }
 
 interface ApiSchemeData {
-  scheme_type?: string;
+  scheme_type?: string | string[];
   scheme?: string;
-  who_is_it_for?: string;
+  who_is_it_for?: string | string[];
   agency?: string;
   description?: string;
   llm_description?: string;
   scraped_text?: string;
-  what_it_gives?: string;
+  what_it_gives?: string | string[];
   link?: string;
   image?: string;
   search_booster?: string;
@@ -318,10 +318,10 @@ export default function SchemePage() {
                       <span className="font-bold uppercase text-xs text-slate-500">
                         Who is it for
                       </span>
-                      {scheme.targetAudience && (
+                      {scheme.targetAudience.length > 0 && (
                         <ul className="list-disc list-inside marker:text-slate-500">
-                          {scheme.targetAudience.split(",").map((target) => (
-                            <li key={target}>{target.trim()}</li>
+                          {scheme.targetAudience.map((target) => (
+                            <li key={target}>{target}</li>
                           ))}
                         </ul>
                       )}
@@ -331,10 +331,10 @@ export default function SchemePage() {
                       <span className="font-bold uppercase text-xs text-slate-500">
                         What it gives
                       </span>
-                      {scheme.benefits && (
+                      {scheme.benefits.length > 0 && (
                         <ul className="list-disc list-inside marker:text-slate-500">
-                          {scheme.benefits.split(",").map((benefit) => (
-                            <li key={benefit}>{benefit.trim()}</li>
+                          {scheme.benefits.map((benefit) => (
+                            <li key={benefit}>{benefit}</li>
                           ))}
                         </ul>
                       )}
@@ -360,9 +360,9 @@ export default function SchemePage() {
                     <span className="font-bold uppercase text-xs text-slate-500">
                       Type
                     </span>
-                    {scheme.schemeType && (
+                    {scheme.schemeType.length > 0 && (
                       <div className="flex flex-wrap gap-2">
-                        {scheme.schemeType.split(",").map((type) => (
+                        {scheme.schemeType.map((type) => (
                           <Chip
                             key={type}
                             size="sm"
@@ -370,7 +370,7 @@ export default function SchemePage() {
                             color="primary"
                             variant="flat"
                           >
-                            {type.trim()}
+                            {type}
                           </Chip>
                         ))}
                       </div>

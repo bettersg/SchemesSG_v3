@@ -41,7 +41,8 @@ def build_desc_booster(row) -> str:
         "service_area",
     ]:
         if pd.notna(row.get(field)):
-            components.append(str(row[field]))
+            value = row[field]
+            components.append(", ".join(value) if isinstance(value, list) else str(value))
     return " ".join(components)
 
 

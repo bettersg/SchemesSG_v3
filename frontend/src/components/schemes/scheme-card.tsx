@@ -34,7 +34,7 @@ function SchemeCard({scheme}: SchemeCardProps) {
         </CardHeader>
         <CardBody>
           <div className="flex flex-wrap gap-2 h-[1lh] overflow-y-hidden">
-            {scheme.schemeType && scheme.schemeType.split(",").slice(0,3).map((type) => (
+            {scheme.schemeType.length > 0 && scheme.schemeType.slice(0,3).map((type) => (
               <Chip
                 key={type}
                 size="sm"

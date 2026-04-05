@@ -325,9 +325,9 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     "image_url": existing.get("image_url", ""),
                     "phone": existing.get("phone", ""),
                     "address": existing.get("address", ""),
-                    "who_is_it_for": existing.get("who_is_it_for", ""),
-                    "what_it_gives": existing.get("what_it_gives", ""),
-                    "scheme_type": existing.get("scheme_type", ""),
+                    "who_is_it_for": existing.get("who_is_it_for", []),
+                    "what_it_gives": existing.get("what_it_gives", []),
+                    "scheme_type": existing.get("scheme_type", []),
                     "llm_description": existing.get("llm_description", existing.get("scraped_text", "")),
                     "eligibility": existing.get("eligibility", ""),
                     "how_to_apply": existing.get("how_to_apply", ""),
@@ -614,27 +614,24 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
             phone = state.get("phone_block", {}).get("phone", {}).get("value", "")
             address = state.get("address_block", {}).get("address", {}).get("value", "")
 
-            # Dropdowns
-            who_is_it_for_obj = state.get("who_is_it_for_block", {}).get("who_is_it_for", {})
-            who_is_it_for = (
-                who_is_it_for_obj.get("selected_option", {}).get("value", "")
-                if who_is_it_for_obj.get("selected_option")
-                else ""
-            )
+            # Multi-select dropdowns — return lists
+            who_is_it_for = [
+                opt.get("value", "")
+                for opt in state.get("who_is_it_for_block", {}).get("who_is_it_for", {}).get("selected_options", [])
+                if opt.get("value")
+            ]
 
-            what_it_gives_obj = state.get("what_it_gives_block", {}).get("what_it_gives", {})
-            what_it_gives = (
-                what_it_gives_obj.get("selected_option", {}).get("value", "")
-                if what_it_gives_obj.get("selected_option")
-                else ""
-            )
+            what_it_gives = [
+                opt.get("value", "")
+                for opt in state.get("what_it_gives_block", {}).get("what_it_gives", {}).get("selected_options", [])
+                if opt.get("value")
+            ]
 
-            scheme_type_obj = state.get("scheme_type_block", {}).get("scheme_type", {})
-            scheme_type = (
-                scheme_type_obj.get("selected_option", {}).get("value", "")
-                if scheme_type_obj.get("selected_option")
-                else ""
-            )
+            scheme_type = [
+                opt.get("value", "")
+                for opt in state.get("scheme_type_block", {}).get("scheme_type", {}).get("selected_options", [])
+                if opt.get("value")
+            ]
 
             # Text areas
             llm_description = state.get("llm_description_block", {}).get("llm_description", {}).get("value", "")
