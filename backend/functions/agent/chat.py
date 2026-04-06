@@ -105,30 +105,43 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
 
             def generate():
                 emitted_chunk = False
+                done_emitted = False
                 yield f"data: {safe_json_dumps({'type': AgentStreamEventType.STATUS, 'data': {'phase': 'session_started', 'sessionID': session_id, 'label': 'Session started'}})}\n\n"
-                for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
-                    event_type = event.get("type", "")
-                    event_data = event.get("data", {})
-                    if not isinstance(event_data, dict):
-                        event_data = {}
+                try:
+                    for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
+                        event_type = event.get("type", "")
+                        event_data = event.get("data", {})
+                        if not isinstance(event_data, dict):
+                            event_data = {}
 
-                    if event_type == AgentStreamEventType.CHUNK:
-                        chunk_value = str(event_data.get("chunk", "") or "")
-                        for piece in _split_stream_chunk(chunk_value):
-                            yield f"data: {safe_json_dumps({'type': AgentStreamEventType.CHUNK, 'data': {'chunk': piece}})}\n\n"
-                            emitted_chunk = True
-                        continue
+                        if event_type == AgentStreamEventType.DONE:
+                            done_emitted = True
 
-                    # Some runs may only surface final assistant text.
-                    if event_type == AgentStreamEventType.ASSISTANT:
-                        assistant_text = str(event_data.get("text", "") or "")
-                        if not emitted_chunk:
-                            for piece in _split_stream_chunk(assistant_text):
+                        if event_type == AgentStreamEventType.CHUNK:
+                            chunk_value = str(event_data.get("chunk", "") or "")
+                            for piece in _split_stream_chunk(chunk_value):
                                 yield f"data: {safe_json_dumps({'type': AgentStreamEventType.CHUNK, 'data': {'chunk': piece}})}\n\n"
-                        continue
+                                emitted_chunk = True
+                            continue
 
-                    # Forward non-chunk events with explicit type/data for frontend handling.
-                    yield f"data: {safe_json_dumps({'type': event_type, 'data': event_data})}\n\n"
+                        # Some runs may only surface final assistant text.
+                        if event_type == AgentStreamEventType.ASSISTANT:
+                            assistant_text = str(event_data.get("text", "") or "")
+                            if not emitted_chunk:
+                                for piece in _split_stream_chunk(assistant_text):
+                                    yield f"data: {safe_json_dumps({'type': AgentStreamEventType.CHUNK, 'data': {'chunk': piece}})}\n\n"
+                            continue
+
+                        # Forward non-chunk events with explicit type/data for frontend handling.
+                        yield f"data: {safe_json_dumps({'type': event_type, 'data': event_data})}\n\n"
+                except GeneratorExit:
+                    raise
+                except Exception as exc:
+                    logger.exception("Error while streaming agent chat events", exc)
+                    yield f"data: {safe_json_dumps({'type': AgentStreamEventType.STATUS, 'data': {'phase': 'error', 'label': 'Stream interrupted'}})}\n\n"
+
+                if not done_emitted:
+                    yield f"data: {safe_json_dumps({'type': AgentStreamEventType.DONE, 'data': {}})}\n\n"
 
             stream_headers = {
                 **headers,

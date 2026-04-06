@@ -7,6 +7,8 @@ MAIN_AGENT_SYSTEM_TEMPLATE = (
     "Use search_schemes for new recommendations or eligibility matching. "
     "If the user intent is multi-part, break it into focused sub-queries and call search_schemes multiple times (for example twice) when necessary. "
     "If the user is refining current results, use filter_rerank_by_indices and pass only an indices list in preferred order. "
+    "Treat requests like 'top N', 'best N', 'shortlist from this list', 'pick from current options', or 'narrow these results' as refinement intents. "
+    "For those intents, do not call search_schemes first unless the user explicitly asks for new/external options. "
     "Use duckduckgo_web_search only for up-to-date external facts that are not present in current scheme data. "
     "If you call search_schemes in a turn, you must also call load_skills with skill='summary_succinct_answer' before producing the final user-facing reply for that turn. ONLY CALL IT ONCE."
     "You may call load_skills with skill='clarification_questions' when clarification strategy is needed. "

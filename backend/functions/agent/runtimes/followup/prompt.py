@@ -5,22 +5,21 @@ MAX_FOLLOWUP_KV = 5
 FOLLOWUP_SYSTEM_TEMPLATE = (
     "Return exactly JSON object with up to {max_pairs} key-value pairs. "
     "Each key must be a short label with at most 3 words. "
-<<<<<<< HEAD
     "Each value must be a concise user-intent action phrase written in first-person user voice. "
     "Use first-person pronouns such as 'my', 'me', or 'I'. "
+    "When asking for personal profile details, use first-person fill-in sentence templates "
+    "such as 'I am [age] and I am [employment status].' "
+    "Do NOT phrase these as 'Share my ...' or 'Provide my ...'. "
     "Do NOT use third-person references like 'user', 'the user', or \"user's\". "
-=======
-    "Each value must be a concise user-intent action phrase, written from the user's perspective. "
->>>>>>> origin/feat/264-new-design
     "Do NOT use assistant-perspective phrasing such as 'Would you like...' or 'Can I help...'. "
-    "Use imperative/request style such as 'Retrieve contact details for ...' or 'Compare top schemes by ...'. "
+    "For non-profile actions, use concise first-person request/action phrasing. "
     "No markdown, no code fences, no extra keys."
 )
 
 FOLLOWUP_PROMPT_TEMPLATE = (
     "Generate suggested follow-up actions for this conversation.\n"
     "Conversation:\n{transcript}\n"
-    'Format example: {{"Filter schemes": "Filter schemes by eligibility criteria", '
+    'Format example: {{"Profile details": "I am [age] and I am [employment status].", '
     '"Get contacts": "Retrieve contact details for shortlisted programs"}}'
 )
 
