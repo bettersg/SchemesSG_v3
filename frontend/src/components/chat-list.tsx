@@ -1,6 +1,6 @@
-import { Avatar, Card, CardBody } from "@heroui/react";
+import { Avatar, Card } from "@heroui/react";
 import ReactMarkdown from "react-markdown";
-import { Message } from "@/app/(main)/providers";
+import { Message } from "@/providers";
 import { RefObject } from "react";
 import clsx from "clsx";
 
@@ -45,9 +45,9 @@ export default function ChatList({
             radius="lg"
             shadow="none"
           >
-            <CardBody className="px-2 py-1">
+            <Card.Content className="px-2 py-1">
               <ReactMarkdown>{msg.text}</ReactMarkdown>
-            </CardBody>
+            </Card.Content>
           </Card>
         </div>
       ))}
@@ -66,9 +66,9 @@ export default function ChatList({
             radius="lg"
             shadow="none"
           >
-            <CardBody className="px-2 py-1">
+            <Card.Content className="px-2 py-1">
               <ReactMarkdown>{streamingMessage}</ReactMarkdown>
-            </CardBody>
+            </Card.Content>
           </Card>
         </div>
       )}

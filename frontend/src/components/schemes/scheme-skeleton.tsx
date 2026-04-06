@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from '@heroui/react'
+import { Skeleton } from "@heroui/react";
 
 export default function SchemeSkeleton() {
   return (
@@ -28,7 +28,7 @@ export default function SchemeSkeleton() {
         <Skeleton className="h-5 w-full mb-2 rounded-lg" />
       </div>
 
-      {/* details section */}
+      {/* Details section */}
       <div className="p-6 mt-4 sm:flex gap-7">
         {/* main */}
         <div className="flex-[2]">
@@ -43,35 +43,23 @@ export default function SchemeSkeleton() {
             <div className="flex-1 sm:mb-0 mb-4">
               <Skeleton className="h-4 w-20 mb-3 rounded-lg" />
               <div className="pl-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3 rounded-full" />
-                  <Skeleton className="h-4 w-40 rounded-lg" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3 rounded-full" />
-                  <Skeleton className="h-4 w-40 rounded-lg" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3 rounded-full" />
-                  <Skeleton className="h-4 w-40 rounded-lg" />
-                </div>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-3 w-3 rounded-full" />
+                    <Skeleton className="h-4 w-40 rounded-lg" />
+                  </div>
+                ))}
               </div>
             </div>
             <div className="flex-1">
               <Skeleton className="h-4 w-20 mb-3 rounded-lg" />
               <div className="pl-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3 rounded-full" />
-                  <Skeleton className="h-4 w-40 rounded-lg" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3 rounded-full" />
-                  <Skeleton className="h-4 w-40 rounded-lg" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-3 w-3 rounded-full" />
-                  <Skeleton className="h-4 w-40 rounded-lg" />
-                </div>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-3 w-3 rounded-full" />
+                    <Skeleton className="h-4 w-40 rounded-lg" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -85,11 +73,9 @@ export default function SchemeSkeleton() {
 
           <div className="mb-4">
             <Skeleton className="h-4 w-20 mb-3 rounded-lg" />
-            <Skeleton className="h-4 w-full mb-2 rounded-lg" />
-            <Skeleton className="h-4 w-full mb-2 rounded-lg" />
-            <Skeleton className="h-4 w-full mb-2 rounded-lg" />
-            <Skeleton className="h-4 w-full mb-2 rounded-lg" />
-            <Skeleton className="h-4 w-full mb-2 rounded-lg" />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-4 w-full mb-2 rounded-lg" />
+            ))}
           </div>
         </div>
 
@@ -106,18 +92,12 @@ export default function SchemeSkeleton() {
             </div>
           </div>
           <div className="mt-6">
-            <div className="flex flex-col gap-2 w-full mt-4">
-              <Skeleton className="h-5 w-32 rounded-lg" />
-              <Skeleton className="h-5 w-full rounded-lg" />
-            </div>
-            <div className="flex flex-col gap-2 w-full mt-4">
-              <Skeleton className="h-5 w-32 rounded-lg" />
-              <Skeleton className="h-5 w-full rounded-lg" />
-            </div>
-            <div className="flex flex-col gap-2 w-full mt-4">
-              <Skeleton className="h-5 w-32 rounded-lg" />
-              <Skeleton className="h-5 w-full rounded-lg" />
-            </div>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex flex-col gap-2 w-full mt-4">
+                <Skeleton className="h-5 w-32 rounded-lg" />
+                <Skeleton className="h-5 w-full rounded-lg" />
+              </div>
+            ))}
           </div>
         </div>
       </div>

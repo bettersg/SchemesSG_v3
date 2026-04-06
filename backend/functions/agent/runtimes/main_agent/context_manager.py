@@ -229,4 +229,8 @@ class MainAgentContextManager:
                 "removed_messages_count": len(remove_ops),
                 "tool_messages_count": len(tool_messages),
             },
+<<<<<<< HEAD
         }
+=======
+        }
+>>>>>>> origin/feat/264-new-design

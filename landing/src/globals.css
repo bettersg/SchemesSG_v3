@@ -1,0 +1,190 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* ── Tailwind v4 design tokens ───────────────────────────── */
+@theme {
+  /* Brand blues */
+  --color-b-50:  #E6F1FB;
+  --color-b-100: #B5D4F4;
+  --color-b-200: #85B7EB;
+  --color-b-400: #378ADD;
+  --color-b-600: #185FA5;
+  --color-b-800: #0C447C;
+  --color-b-900: #042C53;
+
+  /* Amber / CTA */
+  --color-a-50:  #FAEEDA;
+  --color-a-100: #FAC775;
+  --color-a-200: #EF9F27;
+  --color-a-400: #BA7517;
+  --color-a-600: #854F0B;
+
+  /* Accent purple */
+  --color-p-50:  #EEEDFE;
+  --color-p-100: #CECBF6;
+  --color-p-400: #7F77DD;
+  --color-p-600: #534AB7;
+
+  /* Neutrals */
+  --color-g-50:  #F1EFE8;
+  --color-g-100: #D3D1C7;
+  --color-g-300: #B4B2A9;
+  --color-g-500: #5F5E5A;
+  --color-g-700: #444441;
+  --color-g-900: #1A1A1A;
+
+  /* Semantic */
+  --color-teal:       #1D9E75;
+  --color-green-dark: #3B6D11;
+
+  /* Tailwind.config.ts tokens (migrated) */
+  --color-background:        #ffffff;
+  --color-foreground:        #1A1A1A;
+  --color-schemes-lightgray: #fafbfe;
+  --color-schemes-gray:      #a1a1aa;
+  --color-schemes-darkgray:  #718096;
+  --color-schemes-blue:      #185FA5;
+  --color-schemes-lightblue: #E6F1FB;
+  --color-schemes-darkblue:  #042C53;
+
+  /* Typography */
+  --font-head:          'Lexend', sans-serif;
+  --font-body:          'Open Sans', sans-serif;
+  --font-landing-serif: 'Lexend', sans-serif;
+
+  /* Animations (from tailwind.config.ts) */
+  --animate-slide: slide 15s linear forwards infinite;
+}
+
+@keyframes slide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+/* ── CSS runtime variables ───────────────────────────────── */
+:root {
+  --background: #ffffff;
+  --foreground: #1A1A1A;
+
+  /* Shadcn/radix token aliases used by landing components */
+  --muted-foreground:  #5F5E5A;
+  --primary:           #185FA5;
+  --primary-foreground:#ffffff;
+  --ring:              #378ADD;
+  --destructive:       #dc2626;
+  --accent:            #E6F1FB;
+  --accent-foreground: #185FA5;
+  --secondary:         #F1EFE8;
+  --secondary-foreground: #444441;
+  --input:             #e0eaf5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --background: #ffffff; --foreground: #1A1A1A; }
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-body, 'Open Sans', sans-serif);
+}
+
+/* ── Tailwind utilities (hoverOnlyWhenSupported equivalent) ─ */
+@variant hover {
+  @media (hover: hover) {
+    &:hover { @slot; }
+  }
+}
+
+/* ── Status messages ──────────────────────────────────────── */
+.successMessage { background-color:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+.errorMessage   { background-color:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+
+/* ── Scrollbars ───────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display:none; }
+.no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+.thin-scrollbar::-webkit-scrollbar { width:4px; }
+.thin-scrollbar::-webkit-scrollbar-track { background:transparent; }
+.thin-scrollbar::-webkit-scrollbar-thumb { background:#D3D1C7; border-radius:2px; }
+
+/* ── Horizontal marquee (original app) ───────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track { display:flex; gap:2rem; animation:marquee 28s linear infinite; width:max-content; }
+.marquee-wrap:hover .marquee-track { animation-play-state:paused; }
+
+/* ── Fade edge mask ───────────────────────────────────────── */
+.faded-element {
+  mask-image: linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%);
+}
+
+/* ── Carousel snap ────────────────────────────────────────── */
+.carousel-track { scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
+.carousel-track > * { scroll-snap-align:start; }
+
+/* ── Markdown ─────────────────────────────────────────────── */
+.markdown-content ul { list-style-type:disc; list-style-position:inside; }
+.markdown-content li::marker { color:#64748b; }
+.markdown-content li > p { display:inline; }
+.markdown-content hr { margin:1rem 0; border:0; border-top:1px solid rgb(229 231 235); }
+.markdown-content p { margin-bottom:0.5rem; }
+.markdown-content strong { font-weight:600; }
+
+/* ── Accordion animation ──────────────────────────────────── */
+@keyframes accordion-down {
+  from { height: 0; }
+  to   { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to   { height: 0; }
+}
+.animate-accordion-down { animation: accordion-down 0.2s ease-out; }
+.animate-accordion-up   { animation: accordion-up 0.2s ease-out; }
+
+/* ── Grain overlay for hero ───────────────────────────────── */
+.grain-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Spinner ──────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { display:inline-block; border-radius:50%; border:2px solid currentColor; border-top-color:transparent; animation:spin 0.7s linear infinite; }
+.spinner-sm { width:16px; height:16px; }
+.spinner-md { width:22px; height:22px; }
+.spinner-lg { width:32px; height:32px; }
+.spinner-white   { color:#fff; }
+.spinner-primary { color:#185FA5; }
+
+/* ── Skeleton ─────────────────────────────────────────────── */
+@keyframes skeleton-pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+.skeleton { background:#E2E8F0; border-radius:0.5rem; animation:skeleton-pulse 1.5s ease-in-out infinite; }
+
+/* ── Utilities ────────────────────────────────────────────── */
+@layer utilities {
+  .animation-paused div { animation-play-state:paused; }
+  .animation-play div   { animation-play-state:running; }
+  .font-lexend          { font-family:'Lexend',sans-serif; }
+  .text-muted-foreground { color: var(--muted-foreground); }
+}
+
+/* ── MagicUI Marquee keyframes ───────────────────────────── */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-100% - var(--gap))); }
+}
+@keyframes marquee-y {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(-100% - var(--gap))); }
+}
+.animate-marquee     { animation: marquee-x var(--duration) linear infinite; }
+.animate-marquee-vertical { animation: marquee-y var(--duration) linear infinite; }

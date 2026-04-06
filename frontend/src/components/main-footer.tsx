@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Divider } from "@heroui/react";
 
 const data = [
   {
@@ -17,13 +16,11 @@ const data = [
 
 export default function MainFooter() {
   const groups = data.map((group) => {
-    const links = group.links.map((link, idx) => {
-      return (
-        <Link key={idx} href={link.link} className="text-schemes-gray text-xs py-1 hover:underline">
-          {link.label}
-        </Link>
-      );
-    });
+    const links = group.links.map((link, idx) => (
+      <Link key={idx} href={link.link} className="text-schemes-gray text-xs py-1 hover:underline">
+        {link.label}
+      </Link>
+    ));
 
     return (
       <div className="flex flex-col w-[160px]" key={group.title}>
@@ -34,11 +31,11 @@ export default function MainFooter() {
   });
 
   return (
-    <footer className="bg-schemes-darkblue text-white mt-4 p-8 md:mt-8 md:px-[6rem] md:py-2 flex justify-center">
+    <footer className="bg-schemes-darkblue text-white mt-4 p-8 md:mt-8 md:px-[6rem] md:py-2 flex justify-center items-center gap-8">
       <div className="flex justify-between">
         <div className="flex flex-wrap gap-2">{groups}</div>
       </div>
-      <Divider orientation="vertical" className="divide-white" />
+      <div className="self-stretch w-px bg-white/20" />
       <p className="text-xs">© 2025 Schemes SG.</p>
     </footer>
   );

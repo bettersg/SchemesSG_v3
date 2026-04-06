@@ -1,9 +1,5 @@
-import {
-  Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@heroui/react";
+"use client";
+import { Button, Popover } from "@heroui/react";
 import { InfoIcon } from "../../assets/icons/info-icon";
 
 interface QuerySuggestionsProps {
@@ -17,13 +13,9 @@ const QuerySuggestions = ({ setUserInput }: QuerySuggestionsProps) => {
     "What are the typical processing times and next steps after applying?",
   ];
 
-  const handleSuggestionClick = (query: string) => {
-    setUserInput(query);
-  };
-
   return (
-    <Popover placement="bottom" showArrow={false}>
-      <PopoverTrigger>
+    <Popover placement="bottom">
+      <Popover.Trigger>
         <Button
           isIconOnly
           size="sm"
@@ -32,23 +24,23 @@ const QuerySuggestions = ({ setUserInput }: QuerySuggestionsProps) => {
         >
           <InfoIcon />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[320px] rounded-xl shadow-md">
-        <div className="p-4">
+      </Popover.Trigger>
+      <Popover.Content className="w-[320px]">
+        <Popover.Dialog className="p-4">
           <h3 className="text-lg mb-3 text-schemes-darkblue">Suggested Questions</h3>
           <ul className="flex flex-col gap-1.5">
             {suggestions.map((query, index) => (
               <li
                 key={index}
-                onClick={() => handleSuggestionClick(query)}
+                onClick={() => setUserInput(query)}
                 className="text-schemes-darkgray px-3 py-2 rounded-md cursor-pointer hover:bg-schemes-lightgray hover:text-schemes-blue"
               >
                 {query}
               </li>
             ))}
           </ul>
-        </div>
-      </PopoverContent>
+        </Popover.Dialog>
+      </Popover.Content>
     </Popover>
   );
 };
