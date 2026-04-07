@@ -1,0 +1,66 @@
+@base=http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1
+@token=
+
+### Healthcheck
+GET {{base}}/health
+Authorization: Bearer {{token}}
+
+### Retrieve all schemes
+GET {{base}}/catalog
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes with limit
+GET {{base}}/catalog?limit=2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes with limit and cursor
+GET {{base}}/catalog?limit=2&cursor=
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes sorted by agency
+GET {{base}}/catalog?agency=fei+yue
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by agency (e.g., Fei Yue) with limit
+GET {{base}}/catalog?agency=fei+yue&limit=1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by agency (e.g., Fei Yue) with limit and cursor
+GET {{base}}/catalog?agency=fei+yue&limit=1&cursor=
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes sorted by planning area (e.g., choa chu kang)
+GET {{base}}/catalog?area=choa+chu+kang
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes by planning with limit
+GET {{base}}/catalog?area=choa+chu+kang&limit=2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes by planning with limit and cursor
+GET {{base}}/catalog?area=choa+chu+kang&limit=1&cursor=
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes by scheme type
+GET {{base}}/catalog?scheme_type=healthcare
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes by scheme type with limit
+GET {{base}}/catalog?scheme_type=healthcare&limit=2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve all schemes by scheme type with limit and cursor
+GET {{base}}/catalog?scheme_type=healthcare&limit=1&cursor=
+Authorization: Bearer {{token}}
+Content-Type: application/json

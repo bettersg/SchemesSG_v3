@@ -13,11 +13,8 @@ def test_chatbot_config_defaults():
     """Test ChatbotConfig initializes with correct default values."""
     config = ChatbotConfig()
 
-    assert config.temperature == 0.1
-    assert config.top_p == 0.9
-    assert config.presence_penalty == 0.2
-    assert config.frequency_penalty == 0.2
-    assert config.max_tokens == 512
+    assert config.temperature == 1.0
+    assert config.max_completion_tokens == 4096
 
 
 def test_clean_scraped_text():
