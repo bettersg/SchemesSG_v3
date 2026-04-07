@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { searchSchemes } from "@/lib/schemes";
 import { SearchResScheme } from "@/types/types";
-import SchemeDrawer from "@/components/scheme-drawer/scheme-drawer";
+import SchemeDrawer from "@/components/schemes/scheme-drawer";
 import { Spinner } from "@heroui/react";
 import { useInView } from "framer-motion";
 import Link from "next/link";
@@ -142,7 +142,7 @@ export default function ExplorePage() {
         )}
 
         <div ref={bottomRef} className="flex justify-center py-6">
-          {isLoadingMore && <Spinner />}
+          {!isLoading && isLoadingMore && <Spinner />}
         </div>
 
       </div>

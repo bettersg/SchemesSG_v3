@@ -15,7 +15,7 @@ import { useInView } from "framer-motion";
 import { useChat, useSchemes } from "@/providers";
 import { FilterObjType } from "@/types/types";
 import clsx from "clsx";
-import { parseArrayString } from "@/lib/helper";
+import { parseArrayString } from "@/lib/utils";
 import { getSchemes } from "@/lib/schemes";
 
 export type SearchResScheme = {

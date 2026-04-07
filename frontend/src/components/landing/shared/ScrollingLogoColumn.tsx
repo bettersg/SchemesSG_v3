@@ -1,7 +1,7 @@
 "use client"
 
 import { MapPin } from "lucide-react"
-import { cn } from "@/lib/landing-utils"
+import { cn } from "@/lib/utils"
 import type { Agency } from "@/data/landing-agencies"
 import { Marquee } from "./Marquee"
 

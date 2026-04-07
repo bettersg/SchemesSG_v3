@@ -4,7 +4,7 @@ import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { FilterObjType } from "@/types/filter";
 import { FilterIcon } from "@/assets/icons/filter-icon";
 import clsx from "clsx";
-import { parseArrayString } from "@/lib/helper";
+import { parseArrayString } from "@/lib/utils";
 
 interface SchemesFilterProps {
   schemes: SearchResScheme[];

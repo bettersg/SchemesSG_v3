@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
 import { motion, useInView, useReducedMotion } from "framer-motion"
-import { cn } from "@/lib/landing-utils"
+import { cn } from "@/lib/utils"
 
 interface MarqueeProps<T> {
   items: T[]

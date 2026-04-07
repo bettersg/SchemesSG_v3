@@ -23,7 +23,7 @@ export function HowItWorksSection() {
           >
             {t.howItWorks.badge}
           </Badge>
-          <h2 className="font-landing-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
+          <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
             {t.howItWorks.heading}
           </h2>
         </motion.div>

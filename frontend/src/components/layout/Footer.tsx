@@ -1,7 +1,7 @@
 "use client"
 
 import { ArrowUpRight } from "lucide-react"
-import { Separator } from "@/components/landing/ui/separator"
+import { Separator } from "@heroui/react"
 import { useLanguage } from "@/lib/landing-i18n"
 
 function FooterLinkColumn({ heading, links }: { heading: string; links: { label: string; href: string; comingSoon?: boolean }[] }) {
@@ -44,7 +44,7 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <a href="/" className="flex items-center gap-2 font-landing-serif text-xl tracking-tight">
+            <a href="/" className="flex items-center gap-2 font-serif text-xl tracking-tight">
               <img src="/landing/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
               <span className="text-white font-bold">Schemes</span>
               <span className="text-neutral-500 -ml-1">.sg</span>

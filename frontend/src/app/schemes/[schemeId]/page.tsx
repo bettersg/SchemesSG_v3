@@ -1,6 +1,6 @@
 "use client";
 import { fetchWithAuth } from "@/lib/api";
-import { parseArrayString } from "@/lib/helper";
+import { parseArrayString } from "@/lib/utils";
 import { Spinner } from "@heroui/react";
 import Markdown from "react-markdown";
 import Link from "next/link";

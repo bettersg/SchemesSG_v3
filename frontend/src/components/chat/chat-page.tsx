@@ -7,7 +7,7 @@ import SchemesPopoverButton from "@/components/chat/schemes-popover-button";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
 import QuickReplyChips, { QuickReply } from "@/components/chat/quick-reply-chips";
-import SchemeDrawer from "@/components/scheme-drawer/scheme-drawer";
+import SchemeDrawer from "@/components/schemes/scheme-drawer";
 import { Button } from "@heroui/react";
 import ResetQueryModal from "@/components/reset-query-modal";
 import { mapToScheme, streamChat } from "@/lib/schemes";

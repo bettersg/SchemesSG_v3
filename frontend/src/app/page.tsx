@@ -6,8 +6,6 @@ import dynamic from "next/dynamic";
 import ChatPage from "@/components/chat/chat-page";
 import ChatLanding from "@/components/chat/chat-landing";
 
-const LandingPage = dynamic(() => import("@/components/drafts/landing/landing-page"), { ssr: false });
-
 export default function Home() {
   const { messages } = useChat();
 //   const [isLoadingSchemes, setIsLoadingSchemes] = useState(false);

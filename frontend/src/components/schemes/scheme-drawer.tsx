@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
-import { parseArrayString } from "@/lib/helper";
+import { parseArrayString } from "@/lib/utils";
 import { BranchContact } from "@/types/types";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
