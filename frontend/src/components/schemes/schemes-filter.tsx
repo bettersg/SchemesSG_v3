@@ -4,7 +4,11 @@ import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
 import { FilterIcon } from "@/assets/icons/filter-icon";
 import clsx from "clsx";
+<<<<<<< HEAD
 import { parseArrayString } from "@/app/utils/helper";
+=======
+import { parseArrayString } from "@/lib/utils";
+>>>>>>> f8cdbe2 (Removed separate landing page app, revert old about page)
 
 interface SchemesFilterProps {
   schemes: SearchResScheme[];

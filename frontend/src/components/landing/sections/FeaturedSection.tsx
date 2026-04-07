@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useLanguage } from "@/lib/landing-i18n"
-import { cn } from "@/lib/landing-utils"
+import { cn } from "@/lib/utils"
 
 const featuredLogos = [
   { name: "Channel NewsAsia", src: "/landing/featured/cna-logo.fe6e55ec.svg" },

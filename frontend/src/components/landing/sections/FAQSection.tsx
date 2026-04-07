@@ -1,16 +1,11 @@
 "use client"
 
 import { motion } from "framer-motion"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/landing/ui/accordion"
-import { MessageCircle } from "lucide-react"
+import { Accordion } from "@heroui/react"
 import { Button } from "@/components/landing/ui/button"
 import { SectionWrapper } from "@/components/landing/shared/SectionWrapper"
 import { useLanguage } from "@/lib/landing-i18n"
+import { ChevronDown, MessageCircle } from "lucide-react"
 
 export function FAQSection() {
   const { t } = useLanguage()
@@ -24,7 +19,7 @@ export function FAQSection() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="font-landing-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
+          <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
             {t.faq.heading}
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
@@ -41,20 +36,24 @@ export function FAQSection() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Accordion type="single" collapsible className="flex flex-col gap-3">
+          <Accordion className="flex flex-col gap-3">
             {t.faq.items.map((item, index) => (
-              <AccordionItem
+              <Accordion.Item
                 key={index}
-                value={`item-${index}`}
-                className="rounded-xl border border-neutral-200/80 bg-white px-6 shadow-sm data-[state=open]:shadow-md transition-shadow duration-200"
+                className="rounded-xl border border-neutral-200/80 bg-white shadow-sm"
               >
-                <AccordionTrigger className="text-left font-semibold text-[15px] hover:no-underline cursor-pointer py-5">
-                  {item.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed text-[15px] pb-5">
-                  {item.answer}
-                </AccordionContent>
-              </AccordionItem>
+                <Accordion.Heading>
+					<Accordion.Trigger className="text-left font-semibold text-[15px] hover:no-underline cursor-pointer py-5">
+					  {item.question}
+					  <Accordion.Indicator><ChevronDown/></Accordion.Indicator>
+					</Accordion.Trigger>
+				</Accordion.Heading>
+                <Accordion.Panel>
+					<Accordion.Body className="text-muted-foreground leading-relaxed text-[15px] pb-5">
+					  {item.answer}
+					</Accordion.Body>
+				</Accordion.Panel>
+              </Accordion.Item>
             ))}
           </Accordion>
         </motion.div>
@@ -90,7 +89,6 @@ export function FAQSection() {
 
             <Button
               className="rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-6 py-5 text-sm font-semibold cursor-pointer shadow-none"
-              asChild
             >
               <a href="/contribute" target="_blank" rel="noopener noreferrer">
                 {t.faq.sidebar.cta}

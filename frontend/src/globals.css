@@ -1,0 +1,198 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* ─── Theme ─────────────────────────────────────────────────────────────── */
+@theme {
+  /* Semantic tokens (mapped to CSS vars) */
+  --color-background:          var(--background);
+  --color-foreground:          var(--foreground);
+  --color-card:                var(--card);
+  --color-card-foreground:     var(--card-foreground);
+  --color-primary:             var(--primary);
+  --color-primary-foreground:  var(--primary-foreground);
+  --color-secondary:           var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:               var(--muted);
+  --color-muted-foreground:    var(--muted-foreground);
+  --color-accent:              var(--accent);
+  --color-accent-foreground:   var(--accent-foreground);
+  --color-destructive:         var(--destructive);
+  --color-border:              var(--border);
+  --color-input:               var(--input);
+  --color-ring:                var(--ring);
+
+  /* Brand colors */
+  --color-schemes-lightgray:  #fafbfe;
+  --color-schemes-gray:       #a1a1aa;
+  --color-schemes-darkgray:   #718096;
+  --color-schemes-blue:       #008aff;
+  --color-schemes-lightblue:  #d9e8ff;
+  --color-schemes-darkblue:   #171347;
+
+  /* Border radius */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Font families */
+  --font-landing-sans: "var(--font-landing-sans)", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "system-ui", sans-serif;
+  --font-landing-serif: "var(--font-serif)", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Georgia", serif;
+
+  /* Animations */
+  --animate-slide: slide 15s linear forwards infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes slide {
+    from { transform: translateX(0); }
+    to   { transform: translateX(100%); }
+  }
+
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(-2deg); }
+    50%       { transform: translateY(-20px) rotate(3deg); }
+  }
+}
+
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  /* Blue scale */
+  --b50:  #e6f1fb;
+  --b100: #b5d4f4;
+  --b200: #85b7eb;
+  --b400: #378add;
+  --b600: #185fa5;
+  --b800: #0c447c;
+  --b900: #042c53;
+
+  /* Amber scale */
+  --a50:  #faeeda;
+  --a100: #fac775;
+  --a200: #ef9f27;
+  --a400: #ba7517;
+  --a600: #854f0b;
+
+  /* Purple scale */
+  --p50:  #eeedfe;
+  --p100: #cecbf6;
+  --p400: #7f77dd;
+  --p600: #534ab7;
+
+  /* Gray scale */
+  --g50:  #f1efe8;
+  --g100: #d3d1c7;
+  --g300: #b4b2a9;
+  --g500: #5f5e5a;
+  --g700: #444441;
+  --g900: #1a1a1a;
+
+  /* Misc */
+  --teal:       #1d9e75;
+  --green-dark: #3b6d11;
+
+  /* Base */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+}
+
+/* Keep light mode forced (dark mode intentionally mirrors light) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #1a1a1a;
+  }
+}
+
+/* ─── Tailwind v4: hover only when supported ─────────────────────────────── */
+@variant hover (&:hover);
+
+/* ─── Base styles ────────────────────────────────────────────────────────── */
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Open Sans", sans-serif;
+}
+
+/* ─── Component classes ──────────────────────────────────────────────────── */
+.successMessage {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* ─── Scrollbar utilities ────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.thin-scrollbar::-webkit-scrollbar       { width: 4px; }
+.thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--g100);
+  border-radius: 2px;
+}
+
+/* ─── Marquee ────────────────────────────────────────────────────────────── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  gap: 2rem;
+  animation: marquee 28s linear infinite;
+  width: max-content;
+}
+.marquee-wrap:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ─── Mask / fade ────────────────────────────────────────────────────────── */
+.faded-element {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%, white 15%, white 85%, transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%, white 15%, white 85%, transparent 100%
+  );
+}
+
+/* ─── Carousel ───────────────────────────────────────────────────────────── */
+.carousel-track {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.carousel-track > * {
+  scroll-snap-align: start;
+}
+
+/* ─── Markdown ───────────────────────────────────────────────────────────── */
+.markdown-content ul        { list-style-type: disc; list-style-position: inside; }
+.markdown-content li::marker { color: #64748b; }
+.markdown-content li > p    { display: inline; }
+.markdown-content hr        { margin: 1rem 0; border: 0; border-top: 1px solid rgb(229 231 235); }
+.markdown-content p         { margin-bottom: 0.5rem; }
+.markdown-content strong    { font-weight: 600; }
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+@layer utilities {
+  .animation-paused div { animation-play-state: paused; }
+  .animation-play div   { animation-play-state: running; }
+  .font-lexend          { font-family: "Lexend", sans-serif !important; }
+}

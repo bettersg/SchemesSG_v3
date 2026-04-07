@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/landing/ui/button"
 import { useLanguage } from "@/lib/landing-i18n"
+import Link from "next/link"
 
 export function CTASection() {
   const { t } = useLanguage()
@@ -21,22 +22,21 @@ export function CTASection() {
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.6 }}
       >
-        <h2 className="font-landing-serif text-3xl font-bold text-white tracking-tight md:text-4xl lg:text-5xl">
+        <h2 className="font-serif text-3xl font-bold text-white tracking-tight md:text-4xl lg:text-5xl">
           {t.cta.headline}
         </h2>
         <p className="mt-5 text-neutral-400 text-lg leading-relaxed max-w-xl mx-auto">
           {t.cta.subtitle}
         </p>
-        <Button
-          size="lg"
-          className="mt-9 rounded-full bg-amber-400 text-neutral-900 hover:bg-amber-500 px-10 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer transition-all duration-200 border-0"
-          asChild
-        >
-          <a href="/">
-            {t.cta.button}
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </Button>
+        <Link href="/">
+			<Button
+			  size="lg"
+			  className="mt-9 rounded-full bg-amber-400 text-neutral-900 hover:bg-amber-500 px-10 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer transition-all duration-200 border-0"
+			>
+				{t.cta.button}
+				<ArrowRight className="h-4 w-4" />
+			</Button>
+		</Link>
         <p className="mt-4 text-sm text-neutral-500">{t.cta.note}</p>
       </motion.div>
     </section>

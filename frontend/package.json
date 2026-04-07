@@ -22,6 +22,7 @@
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+<<<<<<< HEAD
     "firebase": "^11.6.0",
     "framer-motion": "^11.9.0",
     "lodash": "^4.17.23",
@@ -36,6 +37,18 @@
     "sharp": "^0.33.5",
     "svg-path-commander": "^2.1.11",
     "tailwind-merge": "^3.5.0"
+=======
+    "firebase": "^12.11.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.7.0",
+    "next": "^16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^3.5.0",
+    "tailwind-variants": "^3.2.2"
+>>>>>>> f8cdbe2 (Removed separate landing page app, revert old about page)
   },
   "devDependencies": {
     "@types/lodash": "^4.17.24",

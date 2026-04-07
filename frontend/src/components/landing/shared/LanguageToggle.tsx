@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useLanguage, type Locale } from "@/lib/landing-i18n"
-import { cn } from "@/lib/landing-utils"
+import { cn } from "@/lib/utils"
 
 const languages: { code: Locale; label: string }[] = [
   { code: "en", label: "EN" },

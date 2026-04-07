@@ -4,8 +4,7 @@ import { motion, useReducedMotion } from "framer-motion"
 import { Search, SlidersHorizontal, Sparkles, Globe, UserCheck } from "lucide-react"
 import { SectionWrapper } from "@/components/landing/shared/SectionWrapper"
 import { useLanguage } from "@/lib/landing-i18n"
-import Gravity, { MatterBody } from "../ui/gravity"
-import { cn } from "@/lib/landing-utils"
+import { cn } from "@/lib/utils"
 
 /* ------------------------------------------------------------------ */
 /*  Decorative illustration components for each bento card             */
@@ -111,7 +110,6 @@ function DatabaseIllustration() {
       textStyle: 'bg-teal-100 text-teal-600'
     }
   ]
-  if (shouldReduceMotion) {
     return (
 
       <div className="relative flex items-center justify-center py-4">
@@ -128,27 +126,6 @@ function DatabaseIllustration() {
         </div>
       </div>
     )
-  } else {
-    return (
-      <Gravity gravity={{ x: 0, y: 1 }} className="w-full h-full relative">
-        {cards.map(card => (
-          <MatterBody
-          matterBodyOptions={{ friction: 0.5, restitution: 0.2 }}
-          x={card.posStyle.left}
-          y={card.posStyle.top}
-          key={card.text}
-        >
-          <div className={cn("rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm")}>
-            <div className="flex items-center gap-1.5">
-              <div className={cn("w-5 h-5 sm:w-8 sm:h-8 rounded bg-blue-100 flex items-center justify-center text-[8px] sm:text-[12px] font-bold", card.textStyle)}>{card.text.charAt(0)}</div>
-              <span className="text-[10px] sm:text-[14px] font-medium text-neutral-700">{card.text}</span>
-            </div>
-          </div>
-        </MatterBody>
-        ))}
-      </Gravity>
-    )
-  }
 }
 
 function FilterIllustration() {
@@ -273,7 +250,7 @@ export function FeaturesSection() {
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="font-landing-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
+          <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
             {t.features.heading}
           </h2>
           <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">

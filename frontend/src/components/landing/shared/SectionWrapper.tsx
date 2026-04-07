@@ -1,6 +1,6 @@
 "use client"
 
-import { cn } from "@/lib/landing-utils"
+import { cn } from "@/lib/utils"
 
 interface SectionWrapperProps {
   children: React.ReactNode
