@@ -37,7 +37,7 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 left-0 right-0 z-50 transition-all duration-300",
+        "h-nav sticky top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
           ? "bg-white/70 backdrop-blur-xl border-b border-neutral-200/60 shadow-sm"
           : "bg-transparent",
@@ -50,7 +50,7 @@ export function Navbar() {
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
           <img
-            src="/landing/logo.svg"
+            src="logo.svg"
             alt="Schemes.sg"
             className="h-7 w-auto"
           />

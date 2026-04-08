@@ -1,4 +1,4 @@
-import { useChat } from "@/app/(main)/providers";
+import { useChat } from "@/providers";
 import { ResetIcon } from "@/assets/icons/reset-icon";
 import { EditIcon } from "@/assets/icons/edit-icon";
 import { ConfirmIcon } from "@/assets/icons/confirm-icon";

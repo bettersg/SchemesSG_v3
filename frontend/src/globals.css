@@ -29,6 +29,9 @@
   --color-schemes-lightblue:  #d9e8ff;
   --color-schemes-darkblue:   #171347;
 
+  /* Distances */
+  --spacing-nav: 70px;
+
   /* Border radius */
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);

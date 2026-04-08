@@ -64,7 +64,7 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="h-[calc(100vh-60px)] bg-[#f4f7fb] relative flex flex-col">
+    <div className="bg-[#f4f7fb] relative flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-br from-[#042C53] to-[#185FA5] px-4 sm:px-8 lg:px-16 pt-10 pb-8">
         <div className="max-w-[960px] mx-auto">
@@ -93,7 +93,7 @@ export default function ExplorePage() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white border-b border-[#e8eef6] sticky top-[60px] z-10">
+      <div className="bg-white border-b border-[#e8eef6] sticky top-[70px] z-10">
         <div className="max-w-[960px] mx-auto px-4 py-2.5 flex gap-2 overflow-x-auto no-scrollbar flex-wrap">
           {CATEGORIES.map(cat => (
             <button
@@ -112,7 +112,7 @@ export default function ExplorePage() {
       </div>
 
       {/* Results */}
-      <div className="max-w-[960px] w-full h-full grow overflow-y-scroll mx-auto px-4 sm:px-8 py-6">
+      <div className="max-w-[960px] w-full grow mx-auto px-4 sm:px-8 py-6">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-semibold text-[#444441]">
             {searchQuery ? `Results for "${searchQuery}"` : activeCategory === "All" ? "All schemes" : activeCategory}

@@ -1,4 +1,3 @@
-import MainHeader from "@/components/main-header";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import {
@@ -78,7 +77,6 @@ export default function RootLayout({
               <div className="min-h-screen flex flex-col bg-[#f4f7fb]">
                 <Navbar />
                 <div className="flex-1 flex flex-col">{children}</div>
-                <Footer />
               </div>
             </ChatProvider>
           </AuthProvider>

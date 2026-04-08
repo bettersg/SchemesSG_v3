@@ -6,7 +6,7 @@ import { agencies } from "@/data/landing-agencies";
 import type { Agency } from "@/data/landing-agencies";
 import { useLanguage } from "@/lib/landing-i18n";
 import { ArrowRight } from "lucide-react";
-import { ScrollVelocityContainer, ScrollVelocityRow } from "@/components/magicui/scroll-based-velocity";
+import { ScrollVelocityContainer, ScrollVelocityRow } from "@/components/animations/scroll-based-velocity";
 import Link from "next/link";
 
 // Build 3 rows from the 24 agencies (8 per row), tripled for overflow

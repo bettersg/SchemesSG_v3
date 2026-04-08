@@ -1,4 +1,4 @@
-import { auth } from "../firebaseConfig";
+import { auth } from "../app/firebaseConfig";
 import { signInAnonymously, User, UserCredential } from "firebase/auth";
 
 export async function getAuthToken(): Promise<string> {

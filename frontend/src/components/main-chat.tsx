@@ -1,7 +1,7 @@
 "use client";
 
-import { useChat } from "@/app/(main)/providers";
-import { fetchWithAuth } from "@/app/utils/api";
+import { useChat } from "@/providers";
+import { fetchWithAuth } from "@/lib/api";
 import ChatBar from "@/components/chat-bar/chat-bar";
 import ChatList from "@/components/chat-list";
 import { Button, Spacer } from "@heroui/react";

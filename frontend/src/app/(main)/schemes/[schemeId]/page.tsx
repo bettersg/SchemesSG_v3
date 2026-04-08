@@ -7,7 +7,7 @@ import {
   RawSchemeData,
 } from "@/app/interfaces/schemes";
 import styles from "./scheme.module.css";
-import { fetchWithAuth } from "@/app/utils/api";
+import { fetchWithAuth } from "@/lib/api";
 import { SearchResScheme } from "@/components/schemes/schemes-list";
 import {
   Button,

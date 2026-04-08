@@ -1,6 +1,6 @@
 import { Avatar, Card, CardBody } from "@heroui/react";
 import ReactMarkdown from "react-markdown";
-import { Message } from "@/app/(main)/providers";
+import { Message } from "@/providers";
 import { RefObject } from "react";
 import clsx from "clsx";
 

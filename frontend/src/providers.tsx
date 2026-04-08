@@ -1,7 +1,6 @@
 "use client";
 
-import { SearchResScheme } from "@/components/schemes/schemes-list";
-import { HeroUIProvider } from "@heroui/react";
+import { SearchResScheme } from "@/types/types";
 import React, {
   createContext,
   ReactNode,
@@ -9,7 +8,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { analytics } from "../firebaseConfig";
+import { analytics } from "./app/firebaseConfig"; // Adjust path as needed
 
 // Chat Context
 export type Message = {
@@ -20,6 +19,19 @@ export type Message = {
 type ChatContextType = {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  sessionId: string;
+  setSessionId: React.Dispatch<React.SetStateAction<string>>;
+//   totalCount: number;
+//   setTotalCount: React.Dispatch<React.SetStateAction<number>>;
+//   nextCursor: string;
+//   setNextCursor: React.Dispatch<React.SetStateAction<string>>;
+  schemes: SearchResScheme[];
+  setSchemes: React.Dispatch<React.SetStateAction<SearchResScheme[]>>;
+//   userQuery: string;
+//   setUserQuery: React.Dispatch<React.SetStateAction<string>>;
+};
+
+type SchemesContextType = {
   sessionId: string;
   setSessionId: React.Dispatch<React.SetStateAction<string>>;
   totalCount: number;
@@ -64,10 +76,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
   const [sessionId, setSessionId] = useState("");
-  const [totalCount, setTotalCount] = useState(0);
-  const [nextCursor, setNextCursor] = useState("");
+//   const [totalCount, setTotalCount] = useState(0);
+//   const [nextCursor, setNextCursor] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
-  const [userQuery, setUserQuery] = useState("");
+//   const [userQuery, setUserQuery] = useState("");
 
   // Load data from sessionStorage on mount
   useEffect(() => {
@@ -76,9 +88,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         const storedSchemes = sessionStorage.getItem("schemes");
         const storedMessages = sessionStorage.getItem("userMessages");
         const storedSessionId = sessionStorage.getItem("sessionID");
-        const storedUserQuery = sessionStorage.getItem("userQuery");
-        const storedTotalCount = sessionStorage.getItem("totalCount");
-        const storedNextCursor = sessionStorage.getItem("nextCursor");
+        // const storedUserQuery = sessionStorage.getItem("userQuery");
+        // const storedTotalCount = sessionStorage.getItem("totalCount");
+        // const storedNextCursor = sessionStorage.getItem("nextCursor");
 
         if (storedSchemes) {
           const parsedSchemes = JSON.parse(storedSchemes);
@@ -99,25 +111,25 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             setSessionId(parsedSessionId);
           }
         }
-        if (storedUserQuery) {
-          const parsedUserQuery = JSON.parse(storedUserQuery);
-          setUserQuery(parsedUserQuery);
-        }
-        if (storedTotalCount) {
-          const parsedTotalCount = JSON.parse(storedTotalCount);
-          setTotalCount(parsedTotalCount);
-        }
-        if (storedNextCursor && storedNextCursor.trim() !== "") {
-          const parsedNextCursor = JSON.parse(storedNextCursor);
-          // Only restore sessionId if it looks like a valid UUID
-          if (
-            parsedNextCursor &&
-            typeof parsedNextCursor === "string" &&
-            parsedNextCursor.length > 10
-          ) {
-            setNextCursor(parsedNextCursor);
-          }
-        }
+        // if (storedUserQuery) {
+        //   const parsedUserQuery = JSON.parse(storedUserQuery);
+        //   setUserQuery(parsedUserQuery);
+        // }
+        // if (storedTotalCount) {
+        //   const parsedTotalCount = JSON.parse(storedTotalCount);
+        //   setTotalCount(parsedTotalCount);
+        // }
+        // if (storedNextCursor && storedNextCursor.trim() !== "") {
+        //   const parsedNextCursor = JSON.parse(storedNextCursor);
+        //   // Only restore sessionId if it looks like a valid UUID
+        //   if (
+        //     parsedNextCursor &&
+        //     typeof parsedNextCursor === "string" &&
+        //     parsedNextCursor.length > 10
+        //   ) {
+        //     setNextCursor(parsedNextCursor);
+        //   }
+        // }
         setIsInitialized(true);
       } catch (error) {
         console.error("Error loading from sessionStorage:", error);
@@ -155,45 +167,82 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [sessionId, isInitialized]);
 
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-        if (userQuery) {
-          sessionStorage.setItem("userQuery", JSON.stringify(userQuery));
-        } else {
-          sessionStorage.removeItem("userQuery");
-        }
-      } catch (error) {
-        console.error("Error saving userQuery to sessionStorage:", error);
-      }
-    }
-  }, [userQuery, isInitialized]);
+//   useEffect(() => {
+//     if (isInitialized) {
+//       try {
+//         if (userQuery) {
+//           sessionStorage.setItem("userQuery", JSON.stringify(userQuery));
+//         } else {
+//           sessionStorage.removeItem("userQuery");
+//         }
+//       } catch (error) {
+//         console.error("Error saving userQuery to sessionStorage:", error);
+//       }
+//     }
+//   }, [userQuery, isInitialized]);
 
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-        sessionStorage.setItem("totalCount", JSON.stringify(totalCount));
-      } catch (error) {
-        console.error("Error saving totalCount to sessionStorage:", error);
-      }
-    }
-  }, [totalCount, isInitialized]);
+//   useEffect(() => {
+//     if (isInitialized) {
+//       try {
+//         sessionStorage.setItem("totalCount", JSON.stringify(totalCount));
+//       } catch (error) {
+//         console.error("Error saving totalCount to sessionStorage:", error);
+//       }
+//     }
+//   }, [totalCount, isInitialized]);
 
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-        sessionStorage.setItem("nextCursor", JSON.stringify(nextCursor));
-      } catch (error) {
-        console.error("Error saving nextCursor to sessionStorage:", error);
-      }
-    }
-  }, [nextCursor, isInitialized]);
+//   useEffect(() => {
+//     if (isInitialized) {
+//       try {
+//         sessionStorage.setItem("nextCursor", JSON.stringify(nextCursor));
+//       } catch (error) {
+//         console.error("Error saving nextCursor to sessionStorage:", error);
+//       }
+//     }
+//   }, [nextCursor, isInitialized]);
 
   return (
-    <ChatContext.Provider
+    <ChatContext
       value={{
         messages,
         setMessages,
+        schemes,
+        setSchemes,
+        sessionId,
+        setSessionId,
+        // totalCount,
+        // setTotalCount,
+        // nextCursor,
+        // setNextCursor,
+        // userQuery,
+        // setUserQuery,
+      }}
+    >
+      {children}
+    </ChatContext>
+  );
+};
+
+export const useChat = (): ChatContextType => {
+  const context = useContext(ChatContext);
+  if (!context) {
+    throw new Error("useChat must be used within a ChatProvider");
+  }
+  return context;
+};
+
+const SchemesContext = createContext<SchemesContextType | undefined>(undefined);
+
+export const ExploreProvider = ({ children }: { children: ReactNode }) => {
+  const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
+  const [sessionId, setSessionId] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextCursor, setNextCursor] = useState("");
+  const [userQuery, setUserQuery] = useState("");
+
+  return (
+    <SchemesContext
+      value={{
         schemes,
         setSchemes,
         sessionId,
@@ -207,12 +256,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
-    </ChatContext.Provider>
+    </SchemesContext>
   );
 };
 
-export const useChat = (): ChatContextType => {
-  const context = useContext(ChatContext);
+export const useSchemes = (): SchemesContextType => {
+  const context = useContext(SchemesContext);
   if (!context) {
     throw new Error("useChat must be used within a ChatProvider");
   }
@@ -220,17 +269,15 @@ export const useChat = (): ChatContextType => {
 };
 
 // Combined Providers
-export function Providers({ children }: { children: React.ReactNode }) {
-  // Firebase Analytics
-  useEffect(() => {
-    if (analytics) {
-      console.log("Firebase Analytics initialized.");
-    }
-  }, []);
+// export function Providers({ children }: { children: React.ReactNode }) {
+//   // Firebase Analytics
+//   useEffect(() => {
+//     if (analytics) {
+//       console.log("Firebase Analytics initialized.");
+//     }
+//   }, []);
 
-  return (
-    <HeroUIProvider>
-      <ChatProvider>{children}</ChatProvider>
-    </HeroUIProvider>
-  );
-}
+//   return (
+// 	<ChatProvider>{children}</ChatProvider>
+//   );
+// }
