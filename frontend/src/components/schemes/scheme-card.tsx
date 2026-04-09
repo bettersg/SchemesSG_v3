@@ -4,6 +4,7 @@ import { Card, Chip } from "@heroui/react";
 import Image from "next/image";
 import { useState } from "react";
 import clsx from "clsx";
+import SchemeLogo from "./scheme-logo";
 
 interface SchemeCardProps {
   scheme: SearchResScheme;
@@ -16,11 +17,11 @@ function SchemeCard({ scheme, onSelect, className }: SchemeCardProps) {
   return (
 	<button
 	  onClick={onSelect}
-	  className={clsx("shrink-0 text-left bg-white border border-[#e4edf7] rounded-xl p-4 hover:border-[#B5D4F4] hover:shadow-[0_2px_12px_rgba(24,95,165,0.1)] hover:-translate-y-0.5 transition-all group relative overflow-hidden", className)}
+	  className={clsx("max-w-sm shrink-0 text-left bg-white border border-[#e4edf7] rounded-xl p-4 hover:border-[#B5D4F4] hover:shadow-[0_2px_12px_rgba(24,95,165,0.1)] hover:-translate-y-0.5 transition-all group relative overflow-hidden", className)}
 	>
 	  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#378ADD] opacity-0 group-hover:opacity-100 transition-opacity rounded-l-xl" />
 	  <div className="flex gap-2.5 items-start mb-2.5">
-		<AgencyLogo agency={scheme.agency} image={scheme.image} />
+		<SchemeLogo agency={scheme.agency} image={scheme.image} />
 		<div className="flex-1 min-w-0">
 		  <p className="text-[12.5px] font-semibold text-[#042C53] leading-snug line-clamp-2">{scheme.schemeName}</p>
 		  <p className="text-[10.5px] text-[#B4B2A9] mt-0.5">{scheme.agency}</p>
@@ -31,19 +32,6 @@ function SchemeCard({ scheme, onSelect, className }: SchemeCardProps) {
 	  </div>
 	  <p className="text-xs text-[#5F5E5A] leading-relaxed line-clamp-2">{scheme.summary || scheme.description}</p>
 	</button>
-  );
-}
-
-function AgencyLogo({ agency, image }: { agency: string; image?: string }) {
-	const [imageError, setImageError] = useState(false)
-	if (!imageError) {
-		return <img className="w-8 h-8" src={image} alt={`${agency} image`} onError={() => setImageError(true)}/>
-	}
-  const initials = agency.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
-  return (
-    <div className="w-8 h-8 rounded-lg bg-[#E6F1FB] border border-[#B5D4F4] flex items-center justify-center text-[10px] font-bold text-[#185FA5] shrink-0">
-      {initials}
-    </div>
   );
 }
 

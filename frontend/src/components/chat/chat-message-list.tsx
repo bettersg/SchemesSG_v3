@@ -1,7 +1,7 @@
 "use client";
 import ReactMarkdown from "react-markdown";
 import { Message } from "@/providers";
-import { RefObject } from "react";
+import { RefObject, useEffect, useRef } from "react";
 import Image from "next/image";
 import { TextShimmerWave } from "../animations/text-shimmer-wave";
 
@@ -28,7 +28,6 @@ interface ChatMessageListProps {
   streamingMessage?: string;
   statusMessage?: string;
   isGenerating?: boolean;
-  scrollableDivRef: RefObject<HTMLDivElement | null>;
 }
 
 export default function ChatMessageList({
@@ -36,11 +35,25 @@ export default function ChatMessageList({
   streamingMessage,
   statusMessage,
   isGenerating,
-  scrollableDivRef,
 }: ChatMessageListProps) {
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const handleScrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+  useEffect(() => {
+    handleScrollToBottom()
+  }, [messages]);
+
+
   return (
     <div
-      ref={scrollableDivRef}
+      ref={scrollRef}
       className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 thin-scrollbar"
     >
       {messages.map((msg, i) => (

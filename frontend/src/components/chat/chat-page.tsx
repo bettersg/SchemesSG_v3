@@ -15,18 +15,34 @@ import ResetQueryModal from "@/components/reset-query-modal";
 import { mapToScheme, streamChat } from "@/lib/schemes";
 
 export default function ChatPage() {
-  const { messages, setMessages, sessionId, setSchemes, setSessionId } =
-    useChat();
+  const {
+    messages,
+    setMessages,
+    sessionId,
+    schemes,
+    setSchemes,
+    setSessionId,
+  } = useChat();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
-  const [selectedSchemeId, setSelectedSchemeId] = useState<string | null>(null);
+  const [selectedScheme, setSelectedScheme] = useState<SearchResScheme | null>(
+    null,
+  );
   const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const streamingMessageRef = useRef("");
+
+  // Pushed streamed message to message list
+  const checkMessageEnd = () => {
+    if (streamingMessageRef.current.length > 0) {
+      addBotMessage(streamingMessageRef.current);
+      streamingMessageRef.current = "";
+    }
+  };
 
   const handleStreamStart = () => {
     setIsGenerating(true);
@@ -35,42 +51,42 @@ export default function ChatPage() {
   const handleStreamChunk = (text: string) => {
     const json = JSON.parse(text);
     const data = json.data;
-    switch (json.type) {
-      case "status":
-        console.log(data.label);
-        if (data.phase == "session_started") {
-          setSessionId(data.sessionID);
-        }
-        setStatusMessage(data.label);
-        break;
-      case "chunk":
-        const textChunk = json.data.chunk;
-        setStreamingMessage((prevMsg) => prevMsg + textChunk);
-        streamingMessageRef.current += textChunk;
-        break;
-      case "schemes_update":
-        if (data.schemes && data.schemes.length > 0) {
-          console.log(data.schemes);
-          const parsedSchemes: SearchResScheme[] = data.schemes.map(
-            (scheme: RawSchemeData) => mapToScheme(scheme),
+    if (json.type == "chunk") {
+      const textChunk = data.chunk;
+      setStreamingMessage((prevMsg) => prevMsg + textChunk);
+      streamingMessageRef.current += textChunk;
+    } else {
+      // push message to message list if messaged finished chunking
+      checkMessageEnd();
+      switch (json.type) {
+        case "status":
+          if (data.phase == "session_started") {
+            setSessionId(data.sessionID);
+          }
+          setStatusMessage(data.label);
+          break;
+        case "schemes_update":
+          if (data.schemes && data.schemes.length > 0) {
+            const parsedSchemes: SearchResScheme[] = data.schemes.map(
+              (scheme: RawSchemeData) => mapToScheme(scheme),
+            );
+            setSchemes(parsedSchemes);
+          }
+          break;
+        case "followups":
+          const quickReplies: QuickReply[] = Object.entries(data.items).map(
+            ([key, value]) => {
+              return {
+                label: key,
+                value: value as string,
+              };
+            },
           );
-          setSchemes(parsedSchemes);
-        }
-        break;
-      case "followups":
-        console.log("followup", data);
-        const quickReplies: QuickReply[] = Object.entries(data.items).map(
-          ([key, value]) => {
-            return {
-              label: key,
-              value: value as string,
-            };
-          },
-        );
-        setQuickReplies(quickReplies);
-        break;
-      case "done":
-        break;
+          setQuickReplies(quickReplies);
+          break;
+        case "done":
+          break;
+      }
     }
   };
 
@@ -80,11 +96,10 @@ export default function ChatPage() {
   };
 
   const handleStreamEnd = () => {
-    addBotMessage(streamingMessageRef.current);
-    setIsGenerating(false);
-    setStreamingMessage("");
+    checkMessageEnd();
     setStatusMessage("");
-    streamingMessageRef.current = "";
+    setStreamingMessage("")
+    setIsGenerating(false);
   };
 
   const fetchResponse = async (userMessage: string, sessionId?: string) => {
@@ -102,9 +117,7 @@ export default function ChatPage() {
 
   const addBotMessage = (text: string) => {
     setMessages((prev) => {
-      const last = prev[prev.length - 1];
-      if (last?.type === "user") return [...prev, { type: "bot", text }];
-      return prev;
+      return [...prev, { type: "bot", text: text }];
     });
   };
 
@@ -114,13 +127,13 @@ export default function ChatPage() {
     await fetchResponse(input, sessionId);
   };
 
-  const handleDrawerOpen = (schemeId: string) => {
-    setSelectedSchemeId(schemeId);
+  const handleDrawerOpen = (scheme: SearchResScheme) => {
+      setSelectedScheme(scheme);
     // window.history.replaceState(null, "", `/schemes/${schemeId}`);
   };
 
   const handleDrawerClose = () => {
-    setSelectedSchemeId(null);
+    setSelectedScheme(null);
     // window.history.replaceState(null, "", "/");
   };
 
@@ -132,12 +145,12 @@ export default function ChatPage() {
   }, []);
 
   // Auto-scroll
-  useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, streamingMessage]);
+  // useEffect(() => {
+  //   scrollRef.current?.scrollTo({
+  //     top: scrollRef.current.scrollHeight,
+  //     behavior: "smooth",
+  //   });
+  // }, [messages, streamingMessage]);
 
   // Quick replies after each bot turn
   useEffect(() => {
@@ -160,9 +173,9 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="w-full max-w-7xl h-[calc(100vh-70px)] mx-auto flex flex-col bg-[#f7f9fc] overflow-hidden">
+    <div className="w-full max-w-[1400px] h-full mx-auto flex flex-col bg-[#f7f9fc] overflow-hidden">
       {/* Desktop: Split layout: Chat + SchemeList */}
-      <div className="hidden md:flex flex-1 overflow-hidden ">
+      <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Chat column — position:relative so the left drawer can anchor to it */}
         <div className="basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">
           {/* Messages */}
@@ -171,7 +184,6 @@ export default function ChatPage() {
             streamingMessage={streamingMessage}
             statusMessage={statusMessage}
             isGenerating={isGenerating}
-            scrollableDivRef={scrollRef}
           />
 
           {/* Quick replies */}
@@ -188,27 +200,21 @@ export default function ChatPage() {
           {/* Input */}
           <ChatInputBar onSend={handleSend} isGenerating={isGenerating} />
 
-          {/* Left-side drawer — position:absolute, anchored inside this column.
-              On desktop it overlays only the chat column; on mobile it's a fixed bottom sheet. */}
-          <SchemeDrawer
-            schemeId={selectedSchemeId}
-            onClose={handleDrawerClose}
-          />
+          <SchemeDrawer scheme={selectedScheme} onClose={handleDrawerClose} />
         </div>
 
         {/* Right scheme list — desktop only */}
         <SchemesList
           handleNewChat={() => setIsOpen(true)}
           isGenerating={isGenerating}
-          selectedSchemeId={selectedSchemeId}
-          onSelectScheme={(id) => handleDrawerOpen(id)}
+          setSelectedScheme={(scheme) => handleDrawerOpen(scheme)}
         />
       </div>
 
       {/* Mobile:  Tabs layout */}
       <div className="relative md:hidden h-full">
         <Tabs className="w-full h-full flex flex-col">
-          <Tabs.ListContainer className="px-4 flex gap-2 items-center">
+          <Tabs.ListContainer className="p-4 flex gap-2 items-center">
             <Tabs.List aria-label="Options">
               <Tabs.Tab id="chat">
                 Chat
@@ -220,13 +226,13 @@ export default function ChatPage() {
               </Tabs.Tab>
             </Tabs.List>
             <Button
-            size="sm"
-            variant="outline"
-            className="border-[#e0eaf5] text-[#5F5E5A] text-xs shrink-0"
-            onPress={() => setIsOpen(true)}
-          >
-            New chat
-          </Button>
+              size="sm"
+              variant="outline"
+              className="border-[#e0eaf5] text-[#5F5E5A] text-xs shrink-0"
+              onPress={() => setIsOpen(true)}
+            >
+              New chat
+            </Button>
           </Tabs.ListContainer>
           <Tabs.Panel className="flex-1 min-h-0" id="chat">
             <div className="h-full basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">
@@ -236,7 +242,6 @@ export default function ChatPage() {
                 streamingMessage={streamingMessage}
                 statusMessage={statusMessage}
                 isGenerating={isGenerating}
-                scrollableDivRef={scrollRef}
               />
 
               {/* Quick replies */}
@@ -258,12 +263,10 @@ export default function ChatPage() {
             <SchemesList
               handleNewChat={() => setIsOpen(true)}
               isGenerating={isGenerating}
-              selectedSchemeId={selectedSchemeId}
               onSelectScheme={(id) => handleDrawerOpen(id)}
             />
           </Tabs.Panel>
         </Tabs>
-        <SchemeDrawer schemeId={selectedSchemeId} onClose={handleDrawerClose} />
       </div>
 
       {/* Reset modal */}

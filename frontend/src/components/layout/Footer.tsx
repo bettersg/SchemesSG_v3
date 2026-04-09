@@ -45,11 +45,11 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-2 font-serif text-xl tracking-tight">
-              <img src="/landing/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
+              <img src="/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
               <span className="text-white font-bold">Schemes</span>
               <span className="text-neutral-500 -ml-1">.sg</span>
             </a>
-            <p className="mt-4 text-sm leading-relaxed text-neutral-500 max-w-[260px]">
+            <p className="mt-4 text-sm leading-relaxed text-neutral-500">
               {t.footer.tagline}
             </p>
           </div>

@@ -4,7 +4,8 @@ import clsx from "clsx";
 import Link from "next/link";
 import SchemeCard from "../schemes/scheme-card";
 import { HTMLAttributes } from "react";
-import { Button, Spinner } from "@heroui/react";
+import { Button, ScrollShadow, Spinner } from "@heroui/react";
+import { SearchResScheme } from "@/types/types";
 
 function CategoryTag({ label }: { label: string }) {
   const palettes = [
@@ -25,16 +26,14 @@ function CategoryTag({ label }: { label: string }) {
 
 interface SchemesListProps {
   isGenerating: boolean;
-  selectedSchemeId?: string | null;
-  onSelectScheme: (schemeId: string) => void;
+  setSelectedScheme: (scheme: SearchResScheme) => void;
   handleNewChat: () => void;
   className?: string;
 }
 
 export default function SchemesList({
   isGenerating,
-  selectedSchemeId,
-  onSelectScheme,
+  setSelectedScheme,
   handleNewChat,
   className,
 }: SchemesListProps) {
@@ -72,16 +71,18 @@ export default function SchemesList({
 
       {/* Scrollable list */}
       {isGenerating || !schemes.length ? (
-        <Spinner />
+        <div className="flex-1 flex justify-center items-center">
+          <Spinner size="xl"/>
+        </div>
       ) : (
-        <div className="flex-1 overflow-y-scroll p-2 thin-scrollbar ">
+        <ScrollShadow className="flex-1 overflow-y-scroll p-2 thin-scrollbar ">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
             {schemes.map((scheme) => {
               return (
                 <SchemeCard
                   key={scheme.schemeId}
                   scheme={scheme}
-                  onSelect={() => onSelectScheme(scheme.schemeId)}
+                  onSelect={() => setSelectedScheme(scheme)}
                   className="col-span-1"
                 />
                 // <button
@@ -107,7 +108,7 @@ export default function SchemesList({
               );
             })}
           </div>
-        </div>
+        </ScrollShadow>
       )}
 
       {/* Footer */}

@@ -30,7 +30,6 @@ export interface RawSchemeData {
   planning_area?: string;
 }
 
-
 export interface EligibilityType {
   criteria: string;
   requiredDocuments: string[];
@@ -73,7 +72,7 @@ export interface AdditionalInfoType {
 // export type ChatResponse = ChunkResponse | UpdateResponse | AssistantResponse | StateResponse | FollowupResponse
 
 // export interface ChatResponse {
-// 	type: 
+// 	type:
 // 	STATUS = "status"
 //     CHUNK = "chunk"
 //     SCHEMES_UPDATE = "schemes_update"
@@ -119,6 +118,14 @@ export type SearchResScheme = {
   quintile: number;
   planningArea: string | string[];
   summary: string;
+  contact: BranchContact[];
+  howToApply: string;
+  eligibility?: EligibilityType;
+  eligibilityText: string;
+  lastUpdated: string;
+  application?: ApplicationType;
+  additionalInfo?: AdditionalInfoType;
+  serviceArea: string;
 };
 
 export type BranchContact = {
@@ -140,11 +147,28 @@ export type Scheme = SearchResScheme & {
 };
 
 export interface ApiSchemeData {
-  scheme_type?: string; scheme?: string; who_is_it_for?: string; agency?: string;
-  description?: string; llm_description?: string; scraped_text?: string;
-  what_it_gives?: string; link?: string; image?: string; search_booster?: string;
-  scheme_id?: string; query?: string; similarity?: number; quintile?: number;
-  phone?: string | string[]; email?: string | string[]; address?: string | string[];
-  how_to_apply?: string; eligibility?: string; last_modified_date?: number;
-  planning_area?: string; service_area?: string; summary?: string;
+  scheme_type?: string;
+  scheme?: string;
+  who_is_it_for?: string;
+  agency?: string;
+  description?: string;
+  llm_description?: string;
+  scraped_text?: string;
+  what_it_gives?: string;
+  link?: string;
+  image?: string;
+  search_booster?: string;
+  scheme_id?: string;
+  query?: string;
+  similarity?: number;
+  quintile?: number;
+  phone?: string | string[];
+  email?: string | string[];
+  address?: string | string[];
+  how_to_apply?: string;
+  eligibility?: string;
+  last_modified_date?: number;
+  planning_area?: string;
+  service_area?: string;
+  summary?: string;
 }

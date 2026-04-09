@@ -1,7 +1,7 @@
 "use client";
 
-import { LanguageProvider } from "@/lib/landing-i18n";
 import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 
 export default function LandingLayout({
   children,
@@ -9,11 +9,10 @@ export default function LandingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <LanguageProvider>
-      <div className="min-h-screen bg-background text-foreground font-landing-sans">
+      <>
+        <Navbar fixed/>
         <main>{children}</main>
         <Footer />
-      </div>
-    </LanguageProvider>
+      </>
   );
 }

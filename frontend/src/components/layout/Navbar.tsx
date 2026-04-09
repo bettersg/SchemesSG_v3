@@ -14,7 +14,7 @@ type NavLink = {
   disabled?: boolean;
 };
 
-export function Navbar() {
+export function Navbar({ fixed = false }: { fixed?: boolean }) {
   const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,7 +37,8 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "h-nav sticky top-0 left-0 right-0 z-50 transition-all duration-300",
+        fixed ? "fixed" : "sticky",
+        "h-nav top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
           ? "bg-white/70 backdrop-blur-xl border-b border-neutral-200/60 shadow-sm"
           : "bg-transparent",
@@ -49,37 +50,43 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
-          <img
-            src="logo.svg"
-            alt="Schemes.sg"
-            className="h-7 w-auto"
-          />
+          <img src="/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
           <span className="text-neutral-900 font-bold">Schemes</span>
           <span className="text-neutral-400 -ml-1">.sg</span>
         </a>
 
         {/* Center pill nav - desktop */}
         <div className="hidden md:flex items-center gap-1 rounded-full bg-neutral-100/80 backdrop-blur-sm px-2 py-1.5 border border-neutral-200/60">
-          {navLinks.map((link) =>
+          {navLinks.map((link) => (
             <div key={link.label}>
-				{link.href === "/" ? (
-				  <a
-					href={link.href}
-					className="px-4 py-1.5 text-sm font-semibold text-neutral-900 rounded-full cursor-pointer transition-all duration-200 bg-amber-400 hover:bg-amber-500"
-				  >
-					{link.label}
-					<ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
-				  </a>
-				) : (
-				  <a
-					href={link.href}
-					className="px-4 py-1.5 text-sm font-medium text-neutral-500 rounded-full cursor-pointer transition-all duration-200 hover:bg-neutral-200/80 hover:text-neutral-900"
-				  >
-					{link.label}
-				  </a>
-				)}
-			</div>
-          )}
+              {link.disabled ? (
+                <span
+                  key={link.label}
+                  className="relative px-4 py-1.5 text-sm font-medium text-neutral-300 cursor-default rounded-full flex flex-col items-center"
+                >
+                  {link.label}
+                  <span className="text-[8px] tracking-wider font-semibold text-neutral-400 leading-none">
+                    {t.nav.comingSoon}
+                  </span>
+                </span>
+              ) : link.href === "/" ? (
+                <a
+                  href={link.href}
+                  className="px-4 py-1.5 text-sm font-semibold text-neutral-900 rounded-full cursor-pointer transition-all duration-200 bg-amber-400 hover:bg-amber-500"
+                >
+                  {link.label}
+                  <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
+                </a>
+              ) : (
+                <a
+                  href={link.href}
+                  className="px-4 py-1.5 text-sm font-medium text-neutral-500 rounded-full cursor-pointer transition-all duration-200 hover:bg-neutral-200/80 hover:text-neutral-900"
+                >
+                  {link.label}
+                </a>
+              )}
+            </div>
+          ))}
         </div>
 
         {/* Language toggle - desktop */}
