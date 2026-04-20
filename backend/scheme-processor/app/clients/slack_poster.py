@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from app.clients.slack_blocks import build_new_scheme_review_message
+from app.clients.slack_blocks import build_scheme_review_message
 from loguru import logger
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
@@ -51,8 +51,8 @@ def post_to_slack_for_review(doc_id: str, processed_data: Dict[str, Any], db=Non
             logger.warning("Slack not configured, skipping notification")
             return None
 
-        # Build Slack message
-        message = build_new_scheme_review_message(doc_id, processed_data)
+        flavor = (processed_data.get("type_of_request") or "new").lower()
+        message = build_scheme_review_message(doc_id, processed_data, flavor=flavor)
 
         # Post to Slack
         response = slack_client.chat_postMessage(channel=channel, **message)

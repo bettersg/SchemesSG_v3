@@ -97,11 +97,13 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         logger.info(f"Skipping warmup/test entry: {doc_id}")
         return
 
-    # Only process new scheme submissions (not edit requests)
-    type_of_request = data.get("typeOfRequest", "").lower()
-    if type_of_request != "new":
-        logger.info(f"Skipping non-new entry (type={type_of_request}): {doc_id}")
+    # Only process new scheme submissions and update-in-place requests
+    type_of_request = (data.get("typeOfRequest") or "").lower()
+    if type_of_request not in ("new", "update"):
+        logger.info(f"Skipping non-new/update entry (type={type_of_request}): {doc_id}")
         return
+
+    target_scheme_id = data.get("targetSchemeId") if type_of_request == "update" else None
 
     # Check if already processed (prevent duplicate processing)
     if data.get("pipeline_status") == "processed":
@@ -110,7 +112,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
 
     # Check for duplicate URL (keep this in Firebase Functions for speed)
     link = data.get("Link", "")
-    duplicate = check_duplicate_scheme(link)
+    duplicate = check_duplicate_scheme(link, exclude_doc_id=target_scheme_id)
     if duplicate:
         logger.warning(f"Duplicate URL detected for {doc_id}: {duplicate}")
 
@@ -154,6 +156,8 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
                 "scheme_name": data.get("Scheme", "Unknown"),
                 "scheme_url": data.get("Link", ""),
                 "original_data": serialized_data,
+                "type_of_request": type_of_request,
+                "target_scheme_id": target_scheme_id,
             },
             headers=headers,
             timeout=300,  # 5 minute timeout
