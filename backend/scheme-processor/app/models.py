@@ -1,6 +1,6 @@
 """Pydantic models for API request/response."""
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -12,6 +12,8 @@ class ProcessRequest(BaseModel):
     scheme_name: str
     scheme_url: str
     original_data: dict = {}
+    type_of_request: Literal["new", "update"] = "new"
+    target_scheme_id: Optional[str] = None
 
 
 class ProcessResponse(BaseModel):

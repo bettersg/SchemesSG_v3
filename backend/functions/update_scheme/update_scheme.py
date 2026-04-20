@@ -79,6 +79,8 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         userName = request_json.get("userName")
         userEmail = request_json.get("userEmail")
         typeOfRequest = request_json.get("typeOfRequest")
+        targetSchemeId = request_json.get("targetSchemeId")
+        oldLink = request_json.get("oldLink")
         is_warmup = request_json.get("is_warmup", False)
         timestamp = datetime.now(timezone.utc)
 
@@ -91,6 +93,37 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
                 headers=headers,
             )
 
+        type_lower = (typeOfRequest or "").lower()
+
+        if type_lower == "update":
+            if not targetSchemeId or not isinstance(targetSchemeId, str):
+                return https_fn.Response(
+                    response=json.dumps({
+                        "success": False,
+                        "message": "targetSchemeId (string) is required when typeOfRequest is 'update'",
+                    }),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
+            target_snap = (
+                firebase_manager.firestore_client
+                .collection("schemes")
+                .document(targetSchemeId)
+                .get()
+            )
+            if not target_snap.exists:
+                return https_fn.Response(
+                    response=json.dumps({
+                        "success": False,
+                        "message": f"Target scheme '{targetSchemeId}' not found in schemes/",
+                    }),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
         # Prepare the data for Firestore
         update_scheme_data = {
             "Changes": changes,
@@ -99,6 +132,8 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             "Scheme": scheme,
             "Status": status,
             "entryId": entryId,
+            "targetSchemeId": targetSchemeId,
+            "oldLink": oldLink,
             "timestamp": timestamp,
             "userName": userName,
             "userEmail": userEmail,
@@ -112,7 +147,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
 
         # In local dev mode (without Firestore emulator), triggers don't fire
         # So we call the pipeline in a background thread for new scheme submissions
-        if is_local_dev() and typeOfRequest and typeOfRequest.lower() == "new":
+        if is_local_dev() and type_lower in ("new", "update"):
             logger.info(f"Local dev mode: calling pipeline in background for {doc_id}")
 
             def run_pipeline():

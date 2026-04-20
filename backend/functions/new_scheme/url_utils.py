@@ -92,7 +92,9 @@ def extract_domain(url: str) -> str:
     return hostname
 
 
-def check_duplicate_scheme(url: str) -> Optional[Dict[str, Any]]:
+def check_duplicate_scheme(
+    url: str, exclude_doc_id: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """
     Check if a scheme with the same URL already exists.
 
@@ -105,6 +107,9 @@ def check_duplicate_scheme(url: str) -> Optional[Dict[str, Any]]:
 
     Args:
         url: The URL to check
+        exclude_doc_id: when set, matches on this `schemes/` document ID
+            are ignored. Used by the update-in-place flow so a scheme's
+            own URL (unchanged) doesn't self-flag as a duplicate.
 
     Returns:
         Dict with existing scheme info if duplicate found, None otherwise
@@ -122,6 +127,8 @@ def check_duplicate_scheme(url: str) -> Optional[Dict[str, Any]]:
     docs = schemes_ref.stream()
 
     for doc in docs:
+        if exclude_doc_id and doc.id == exclude_doc_id:
+            continue
         data = doc.to_dict()
         existing_link = data.get("link", "")
         existing_normalized = normalize_url(existing_link)
