@@ -22,27 +22,35 @@ def truncate_text(text: str, max_length: int = 500) -> str:
     return text[:max_length] + "..."
 
 
-def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any]) -> dict:
+def build_scheme_review_message(
+    doc_id: str,
+    processed_data: Dict[str, Any],
+    flavor: str = "new",
+) -> dict:
     """
     Build Slack message showing processed scheme data for human review.
 
+    The body (scraped preview, LLM fields, description) is identical for
+    both flavors; only the header, context line, top section (update adds
+    target ID + old URL), button labels, and summary text differ.
+
     Args:
         doc_id: Document ID from schemeEntries collection
-        processed_data: Result from run_scheme_processing_pipeline
+        processed_data: Result from processing pipeline
+        flavor: "new" for new-submission review, "update" for update-in-place
 
     Returns:
         Slack message payload with blocks
     """
+    is_update = flavor == "update"
+
     scheme_name = processed_data.get("scheme_name", "(No Name)")
     scheme_url = processed_data.get("scheme_url", "")
     scraped_text = processed_data.get("scraped_text", "")
-    llm_fields = processed_data.get("llm_fields", {})
+    llm_fields = processed_data.get("llm_fields", {}) or {}
     planning_area = processed_data.get("planning_area", "Not Available")
     processing_status = processed_data.get("processing_status", "unknown")
     error = processed_data.get("error")
-
-    # New scheme submissions are from anonymous users (public form)
-    # Don't display user info that may be test data
 
     # Build status indicator
     if processing_status == "completed":
@@ -51,17 +59,39 @@ def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any])
     elif processing_status == "scraping_failed":
         status_emoji = ":warning:"
         status_text = f"Scraping failed: {error}"
+    elif processing_status == "needs_review":
+        status_emoji = ":eyes:"
+        status_text = f"Needs manual review: {error}"
     else:
         status_emoji = ":x:"
         status_text = f"Processing failed: {error}"
 
+    # Flavor-specific header + top section + submitter + summary text
+    if is_update:
+        target_scheme_id = processed_data.get("target_scheme_id") or "?"
+        original_data = processed_data.get("original_data", {}) or {}
+        old_url = original_data.get("oldLink") or original_data.get("oldUrl") or ""
+        header_text = "Scheme Update — Replace Dead Link"
+        top_section_text = (
+            f"*{scheme_name}*  (`{target_scheme_id}`)\n"
+            f"*Old URL (dead):* {old_url or '_unknown_'}\n"
+            f"*Proposed URL:* <{scheme_url}|{scheme_url}>"
+        )
+        submitter_text = "Submitted by: automated recovery bot"
+        summary_text = f"Scheme update proposal: {scheme_name} ({target_scheme_id})"
+    else:
+        header_text = "New Scheme Submission"
+        top_section_text = f"*{scheme_name}*\n<{scheme_url}|View Original Link>"
+        submitter_text = "Submitted by: Anonymous user"
+        summary_text = f"New scheme submission: {scheme_name}"
+
     blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": "New Scheme Submission", "emoji": True}},
-        {"type": "section", "text": {"type": "mrkdwn", "text": f"*{scheme_name}*\n<{scheme_url}|View Original Link>"}},
+        {"type": "header", "text": {"type": "plain_text", "text": header_text, "emoji": True}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": top_section_text}},
         {
             "type": "context",
             "elements": [
-                {"type": "mrkdwn", "text": "Submitted by: Anonymous user"},
+                {"type": "mrkdwn", "text": submitter_text},
                 {"type": "mrkdwn", "text": f"{status_emoji} {status_text}"},
             ],
         },
@@ -140,21 +170,25 @@ def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any])
 
     blocks.append({"type": "divider"})
 
-    # Add action buttons
+    # Flavor-specific button labels. action_ids are identical across flavors;
+    # the approval handler branches on the entry's typeOfRequest, not the button id.
+    approve_label = "Approve Update" if is_update else "Review & Approve"
+    reject_label = "Reject Update" if is_update else "Reject"
+
     blocks.append(
         {
             "type": "actions",
             "elements": [
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "Review & Approve", "emoji": True},
+                    "text": {"type": "plain_text", "text": approve_label, "emoji": True},
                     "style": "primary",
                     "action_id": "review_new_scheme",
                     "value": doc_id,
                 },
                 {
                     "type": "button",
-                    "text": {"type": "plain_text", "text": "Reject", "emoji": True},
+                    "text": {"type": "plain_text", "text": reject_label, "emoji": True},
                     "style": "danger",
                     "action_id": "reject_new_scheme",
                     "value": doc_id,
@@ -164,11 +198,16 @@ def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any])
     )
 
     return {
-        "text": f"New scheme submission: {scheme_name}",
+        "text": summary_text,
         "blocks": blocks,
         "unfurl_links": False,
         "unfurl_media": False,
     }
+
+
+def build_new_scheme_review_message(doc_id: str, processed_data: Dict[str, Any]) -> dict:
+    """Backward-compatible wrapper — flavor='new'."""
+    return build_scheme_review_message(doc_id, processed_data, flavor="new")
 
 
 def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any]) -> dict:
@@ -465,34 +504,33 @@ def build_new_scheme_review_modal(metadata: str, processed_data: Dict[str, Any])
 
 
 def build_new_scheme_approved_message(
-    doc_id: str, scheme_name: str, scheme_url: str, reviewer_id: str, reviewed_at: str, new_scheme_id: str
+    doc_id: str,
+    scheme_name: str,
+    scheme_url: str,
+    reviewer_id: str,
+    reviewed_at: str,
+    new_scheme_id: str,
+    *,
+    flavor: str = "new",
 ) -> dict:
-    """
-    Build message confirming scheme was approved and added.
-
-    Args:
-        doc_id: Original schemeEntries document ID
-        scheme_name: Approved scheme name
-        scheme_url: Scheme URL
-        reviewer_id: Slack user ID of reviewer
-        reviewed_at: ISO timestamp of approval
-        new_scheme_id: New document ID in schemes collection
-
-    Returns:
-        Slack message payload
-    """
+    """Build message confirming scheme was approved. flavor="update" for update-in-place."""
     reviewed_by = f"<@{reviewer_id}>" if reviewer_id else "a reviewer"
-
+    if flavor == "update":
+        summary = f"Scheme update approved: {scheme_name}"
+        headline = (
+            f":white_check_mark: *UPDATE APPROVED* — *{scheme_name}* "
+            f"(`{new_scheme_id}`)\nNew URL: <{scheme_url}|{scheme_url}>"
+        )
+    else:
+        summary = f"New scheme '{scheme_name}' has been approved and added."
+        headline = (
+            f":white_check_mark: *New scheme approved and added!*\n\n"
+            f"*{scheme_name}*\n<{scheme_url}|View Scheme>"
+        )
     return {
-        "text": f"New scheme '{scheme_name}' has been approved and added.",
+        "text": summary,
         "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f":white_check_mark: *New scheme approved and added!*\n\n*{scheme_name}*\n<{scheme_url}|View Scheme>",
-                },
-            },
+            {"type": "section", "text": {"type": "mrkdwn", "text": headline}},
             {
                 "type": "context",
                 "elements": [
@@ -507,33 +545,30 @@ def build_new_scheme_approved_message(
 
 
 def build_new_scheme_rejected_message(
-    doc_id: str, scheme_name: str, reviewer_id: str, reason: Optional[str] = None
+    doc_id: str,
+    scheme_name: str,
+    reviewer_id: str,
+    reason: Optional[str] = None,
+    *,
+    flavor: str = "new",
+    target_scheme_id: Optional[str] = None,
 ) -> dict:
-    """
-    Build message confirming scheme was rejected.
-
-    Args:
-        doc_id: schemeEntries document ID
-        scheme_name: Rejected scheme name
-        reviewer_id: Slack user ID of reviewer
-        reason: Optional rejection reason
-
-    Returns:
-        Slack message payload
-    """
+    """Build message confirming scheme was rejected. flavor="update" for update-in-place."""
     reviewed_by = f"<@{reviewer_id}>" if reviewer_id else "a reviewer"
     reason_text = f"\nReason: {reason}" if reason else ""
-
+    if flavor == "update":
+        summary = f"Scheme update rejected: {scheme_name}"
+        headline = (
+            f":x: *UPDATE REJECTED* — *{scheme_name}* "
+            f"(`{target_scheme_id}`){reason_text}"
+        )
+    else:
+        summary = f"Scheme submission '{scheme_name}' was rejected."
+        headline = f":x: *Scheme submission rejected*\n\n*{scheme_name}*{reason_text}"
     return {
-        "text": f"Scheme submission '{scheme_name}' was rejected.",
+        "text": summary,
         "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f":x: *Scheme submission rejected*\n\n*{scheme_name}*{reason_text}",
-                },
-            },
+            {"type": "section", "text": {"type": "mrkdwn", "text": headline}},
             {
                 "type": "context",
                 "elements": [
@@ -600,3 +635,46 @@ def build_new_scheme_duplicate_message(
             },
         ],
     }
+
+
+def build_scheme_update_review_message(doc_id: str, processed_data: Dict[str, Any]) -> dict:
+    """Backward-compatible wrapper — flavor='update'."""
+    return build_scheme_review_message(doc_id, processed_data, flavor="update")
+
+
+def build_scheme_update_approved_message(
+    doc_id: str,
+    scheme_name: str,
+    target_scheme_id: str,
+    new_url: str,
+    reviewer_id: str,
+    reviewed_at: str,
+) -> dict:
+    """Thin wrapper — flavor='update' for approved builder."""
+    return build_new_scheme_approved_message(
+        doc_id=doc_id,
+        scheme_name=scheme_name,
+        scheme_url=new_url,
+        reviewer_id=reviewer_id,
+        reviewed_at=reviewed_at,
+        new_scheme_id=target_scheme_id,
+        flavor="update",
+    )
+
+
+def build_scheme_update_rejected_message(
+    doc_id: str,
+    scheme_name: str,
+    target_scheme_id: str,
+    reviewer_id: str,
+    reason: Optional[str] = None,
+) -> dict:
+    """Thin wrapper — flavor='update' for rejected builder."""
+    return build_new_scheme_rejected_message(
+        doc_id=doc_id,
+        scheme_name=scheme_name,
+        reviewer_id=reviewer_id,
+        reason=reason,
+        flavor="update",
+        target_scheme_id=target_scheme_id,
+    )

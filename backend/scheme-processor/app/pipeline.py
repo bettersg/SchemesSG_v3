@@ -5,7 +5,7 @@ Orchestrates scraping, LLM extraction, and Slack posting.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from app.clients.firestore import get_firestore_client, update_scheme_entry
 from app.clients.onemap import PlanningAreaService
@@ -17,7 +17,12 @@ from loguru import logger
 
 
 async def process_scheme(
-    doc_id: str, scheme_name: str, scheme_url: str, original_data: Dict[str, Any]
+    doc_id: str,
+    scheme_name: str,
+    scheme_url: str,
+    original_data: Dict[str, Any],
+    type_of_request: str = "new",
+    target_scheme_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Run full processing pipeline for a scheme submission.
@@ -104,6 +109,8 @@ async def process_scheme(
             "original_data": original_data,
             "processing_status": processing_status,
             "error": error_msg,
+            "type_of_request": type_of_request,
+            "target_scheme_id": target_scheme_id,
         }
 
         # Step 5: Update Firestore
