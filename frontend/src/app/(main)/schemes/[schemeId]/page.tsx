@@ -92,7 +92,10 @@ interface ApiSchemeData {
 
 const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
   const contacts: BranchContact[] = [];
-  const planningArea = rawData.planning_area && rawData.planning_area !== "No Location" && parseArrayString(rawData.planning_area)
+  const planningArea =
+    rawData.planning_area &&
+    rawData.planning_area !== "No Location" &&
+    parseArrayString(rawData.planning_area);
   // address field is defined. No of branch is length of address array
   if (planningArea) {
     for (let i = 0; i < planningArea.length; i++) {
@@ -120,13 +123,19 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
   }
   return {
     // Properties from Scheme
-    schemeType: Array.isArray(rawData["Scheme Type"]) ? rawData["Scheme Type"].join(", ") : rawData["Scheme Type"] || "",
+    schemeType: Array.isArray(rawData["Scheme Type"])
+      ? rawData["Scheme Type"].join(", ")
+      : rawData["Scheme Type"] || "",
     schemeName: rawData["Scheme"] || "",
-    targetAudience: Array.isArray(rawData["Who's it for"]) ? rawData["Who's it for"].join(", ") : rawData["Who's it for"] || "",
+    targetAudience: Array.isArray(rawData["Who's it for"])
+      ? rawData["Who's it for"].join(", ")
+      : rawData["Who's it for"] || "",
     agency: rawData["Agency"] || "",
     description: rawData["Description"] || "",
     scrapedText: rawData["scraped_text"] || "",
-    benefits: Array.isArray(rawData["What it gives"]) ? rawData["What it gives"].join(", ") : rawData["What it gives"] || "",
+    benefits: Array.isArray(rawData["What it gives"])
+      ? rawData["What it gives"].join(", ")
+      : rawData["What it gives"] || "",
     link: rawData["Link"] || "",
     image: rawData["Image"] || "",
     searchBooster: rawData["search_booster(WL)"] || "",
@@ -171,7 +180,7 @@ export default function SchemePage() {
         console.log("Fetching scheme data for ID:", id);
 
         const response = await fetchWithAuth(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes/${id}`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes/${id}`,
         );
         if (!response.ok) {
           throw new Error("Failed to fetch scheme");
@@ -201,14 +210,14 @@ export default function SchemePage() {
           "Last Updated": schemeData.last_modified_date
             ? new Date(schemeData.last_modified_date).toLocaleString()
             : "",
-                  // Add additional fields from API response directly here instead of later
-        phone: parseArrayString(schemeData.phone),
-        email: parseArrayString(schemeData.email),
-        address: parseArrayString(schemeData.address),
-        how_to_apply: schemeData.how_to_apply || "",
-        eligibility: schemeData.eligibility || "",
-        planning_area: schemeData.planning_area || "",
-        service_area: schemeData.service_area || "",
+          // Add additional fields from API response directly here instead of later
+          phone: parseArrayString(schemeData.phone),
+          email: parseArrayString(schemeData.email),
+          address: parseArrayString(schemeData.address),
+          how_to_apply: schemeData.how_to_apply || "",
+          eligibility: schemeData.eligibility || "",
+          planning_area: schemeData.planning_area || "",
+          service_area: schemeData.service_area || "",
         };
         // Map from our formatted object
         const schemeRes = mapToFullScheme(fullSchemeData) as Scheme; // Use type assertion for the whole object
@@ -254,9 +263,8 @@ export default function SchemePage() {
           <div
             className={clsx(
               "text-center sm:text-left gap-4 mb-8",
-              "flex flex-col sm:flex-row items-center"
-            )}
-          >
+              "flex flex-col sm:flex-row items-center",
+            )}>
             <Image
               width={120}
               height={120}
@@ -281,8 +289,7 @@ export default function SchemePage() {
                   variant="light"
                   as={Link}
                   href={scheme.link}
-                  isExternal
-                >
+                  isExternal>
                   Find out more
                 </Button>
               )}
@@ -296,7 +303,7 @@ export default function SchemePage() {
             </CardHeader>
             <CardBody>
               {scheme.description && (
-                <Markdown className={`mb-5 ${styles.showMarker}`}>
+                <Markdown className={`${styles.showMarker}`}>
                   {scheme.description}
                 </Markdown>
               )}
@@ -319,7 +326,7 @@ export default function SchemePage() {
                         Who is it for
                       </span>
                       {scheme.targetAudience && (
-                        <ul className="list-disc list-inside marker:text-slate-500">
+                        <ul className="list-disc list-inside marker:text-slate-500 flex flex-col gap-1">
                           {scheme.targetAudience.split(",").map((target) => (
                             <li key={target}>{target.trim()}</li>
                           ))}
@@ -332,7 +339,7 @@ export default function SchemePage() {
                         What it gives
                       </span>
                       {scheme.benefits && (
-                        <ul className="list-disc list-inside marker:text-slate-500">
+                        <ul className="list-disc list-inside marker:text-slate-500 flex flex-col gap-1">
                           {scheme.benefits.split(",").map((benefit) => (
                             <li key={benefit}>{benefit.trim()}</li>
                           ))}
@@ -340,18 +347,26 @@ export default function SchemePage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500">
-                      Who can apply
-                    </span>
-                    {scheme.eligibilityText && <p>{scheme.eligibilityText}</p>}
-                  </div>
-                  <div className="flex flex-col gap-2 mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500">
-                      How to apply
-                    </span>
-                    {scheme.howToApply && <p>{scheme.howToApply}</p>}
-                  </div>
+                  {scheme.eligibilityText && (
+                    <div className="flex flex-col gap-2 mb-4">
+                      <span className="font-bold uppercase text-xs text-slate-500">
+                        Who can apply
+                      </span>
+                      <Markdown className={`${styles.showMarker}`}>
+                        {scheme.eligibilityText}
+                      </Markdown>
+                    </div>
+                  )}
+                  {scheme.howToApply && (
+                    <div className="flex flex-col gap-2 mb-4">
+                      <span className="font-bold uppercase text-xs text-slate-500">
+                        How to apply
+                      </span>
+                      <Markdown className={`${styles.showMarker}`}>
+                        {scheme.howToApply}
+                      </Markdown>
+                    </div>
+                  )}
                 </div>
                 {/* other details */}
                 <div className="flex flex-col flex-1 overflow-y-hidden">
@@ -368,8 +383,7 @@ export default function SchemePage() {
                             size="sm"
                             radius="sm"
                             color="primary"
-                            variant="flat"
-                          >
+                            variant="flat">
                             {type.trim()}
                           </Chip>
                         ))}
@@ -379,10 +393,10 @@ export default function SchemePage() {
                   {/* service area */}
                   {scheme.serviceArea && (
                     <div className="flex flex-col gap-2 mb-4">
-                    <span className="font-bold uppercase text-xs text-slate-500">
-                      Service Area
-                    </span>
-                    <p>{scheme.serviceArea}</p>
+                      <span className="font-bold uppercase text-xs text-slate-500">
+                        Service Area
+                      </span>
+                      <p>{scheme.serviceArea}</p>
                     </div>
                   )}
                   {/* contacts */}
@@ -395,23 +409,31 @@ export default function SchemePage() {
                       {typeof scheme.planningArea == "object" ? (
                         <Accordion
                           defaultExpandedKeys={
-                            Array.from(new Set(scheme.planningArea)).length === 1
+                            Array.from(new Set(scheme.planningArea)).length ===
+                            1
                               ? Array.from(new Set(scheme.planningArea))
                               : []
-                          }
-                        >
-                          {Array.from(new Set(scheme.planningArea)).map((area) => (
-                            <AccordionItem key={area} title={area}>
-                              <div className="flex flex-col gap-4">
-                                {scheme.contact && scheme.contact.filter(contact => contact.planningArea == area).map((contact, index) => (
-                                  <SchemeContactCard
-                                    contact={contact}
-                                    key={index}
-                                  />
-                                ))}
-                              </div>
-                            </AccordionItem>
-                          ))}
+                          }>
+                          {Array.from(new Set(scheme.planningArea)).map(
+                            (area) => (
+                              <AccordionItem key={area} title={area}>
+                                <div className="flex flex-col gap-4">
+                                  {scheme.contact &&
+                                    scheme.contact
+                                      .filter(
+                                        (contact) =>
+                                          contact.planningArea == area,
+                                      )
+                                      .map((contact, index) => (
+                                        <SchemeContactCard
+                                          contact={contact}
+                                          key={index}
+                                        />
+                                      ))}
+                                </div>
+                              </AccordionItem>
+                            ),
+                          )}
                         </Accordion>
                       ) : (
                         // one or no planning areas
@@ -434,8 +456,7 @@ export default function SchemePage() {
                   variant="solid"
                   as={Link}
                   href={scheme.link}
-                  isExternal
-                >
+                  isExternal>
                   Find out more
                 </Button>
               )}
