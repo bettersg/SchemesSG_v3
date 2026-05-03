@@ -1,6 +1,13 @@
+.showMarker {
+  white-space: pre-wrap;
+}
+
 .showMarker ul {
   list-style-type: disc;
   list-style-position: inside;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 .showMarker li::marker {
   color: #64748b;
