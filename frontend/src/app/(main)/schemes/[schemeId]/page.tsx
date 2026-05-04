@@ -126,13 +126,13 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     schemeType: Array.isArray(rawData["Scheme Type"])
       ? rawData["Scheme Type"]
       : rawData["Scheme Type"]
-        ? [rawData["Scheme Type"]]
+        ? rawData["Scheme Type"].split(", ")
         : [],
     schemeName: rawData["Scheme"] || "",
     targetAudience: Array.isArray(rawData["Who's it for"])
       ? rawData["Who's it for"]
       : rawData["Who's it for"]
-        ? [rawData["Who's it for"]]
+        ? rawData["Who's it for"].split(", ")
         : [],
     agency: rawData["Agency"] || "",
     description: rawData["Description"] || "",
@@ -140,7 +140,7 @@ const mapToFullScheme = (rawData: FullSchemeData): Scheme => {
     benefits: Array.isArray(rawData["What it gives"])
       ? rawData["What it gives"]
       : rawData["What it gives"]
-        ? [rawData["What it gives"]]
+        ? rawData["What it gives"].split(", ")
         : [],
     link: rawData["Link"] || "",
     image: rawData["Image"] || "",
