@@ -4,7 +4,57 @@ Slack Block Kit builders for link check & reindex batch job.
 Builds summary messages for link health check results.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
+
+
+MAX_LINKS_PER_BLOCK = 10
+SLACK_MAX_BLOCKS = 50
+
+
+def _format_dead_link(link: Dict[str, Any]) -> str:
+    doc_id = link.get("doc_id", "Unknown")
+    scheme_name = link.get("scheme_name", "Unknown")
+    link_url = link.get("link", "")
+    error = link.get("error", "Unknown error")
+    return f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Error: _{error}_"
+
+
+def _format_restored_link(link: Dict[str, Any]) -> str:
+    doc_id = link.get("doc_id", "Unknown")
+    scheme_name = link.get("scheme_name", "Unknown")
+    link_url = link.get("link", "")
+    previous_error = link.get("previous_error", "Unknown")
+    return f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Previous error: _{previous_error}_"
+
+
+def _chunked_link_blocks(links: List[Dict[str, Any]], formatter: Callable[[Dict[str, Any]], str]) -> List[dict]:
+    """Group links into Slack section blocks, up to MAX_LINKS_PER_BLOCK per block."""
+    blocks = []
+    for i in range(0, len(links), MAX_LINKS_PER_BLOCK):
+        chunk = links[i : i + MAX_LINKS_PER_BLOCK]
+        text = "\n".join(formatter(link) for link in chunk)
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text}})
+    return blocks
+
+
+def _enforce_block_cap(blocks: List[dict]) -> List[dict]:
+    """Truncate blocks to Slack's 50-block limit, adding an overflow notice if truncated."""
+    if len(blocks) <= SLACK_MAX_BLOCKS:
+        return blocks
+    omitted = len(blocks) - (SLACK_MAX_BLOCKS - 1)
+    truncated = blocks[: SLACK_MAX_BLOCKS - 1]
+    truncated.append(
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": f":warning: _… and {omitted} more entries omitted. Check GCP logs for the full list._",
+                }
+            ],
+        }
+    )
+    return truncated
 
 
 def build_link_check_summary_message(
@@ -65,19 +115,7 @@ def build_link_check_summary_message(
                 "text": {"type": "mrkdwn", "text": f"*Restored Links ({len(restored_links)}) - previously inactive:*"},
             }
         )
-
-        for link in restored_links:
-            doc_id = link.get("doc_id", "Unknown")
-            scheme_name = link.get("scheme_name", "Unknown")
-            link_url = link.get("link", "")
-            previous_error = link.get("previous_error", "Unknown")
-
-            restored_text = (
-                f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Previous error: _{previous_error}_"
-            )
-
-            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": restored_text}})
-
+        blocks.extend(_chunked_link_blocks(restored_links, _format_restored_link))
         blocks.append(
             {
                 "type": "context",
@@ -91,18 +129,7 @@ def build_link_check_summary_message(
         blocks.append(
             {"type": "section", "text": {"type": "mrkdwn", "text": f"*Dead Links Detected ({len(dead_links)}):*"}}
         )
-
-        # Build dead links list - each as a separate section to avoid text limits
-        for link in dead_links:
-            doc_id = link.get("doc_id", "Unknown")
-            scheme_name = link.get("scheme_name", "Unknown")
-            link_url = link.get("link", "")
-            error = link.get("error", "Unknown error")
-
-            dead_link_text = f"• *{scheme_name}*\n  ID: `{doc_id}`\n  Link: {link_url}\n  Error: _{error}_"
-
-            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": dead_link_text}})
-
+        blocks.extend(_chunked_link_blocks(dead_links, _format_dead_link))
         blocks.append(
             {
                 "type": "context",
@@ -129,7 +156,12 @@ def build_link_check_summary_message(
     if restored_count > 0:
         fallback_text += f", {restored_count} restored"
 
-    return {"text": fallback_text, "blocks": blocks, "unfurl_links": False, "unfurl_media": False}
+    return {
+        "text": fallback_text,
+        "blocks": _enforce_block_cap(blocks),
+        "unfurl_links": False,
+        "unfurl_media": False,
+    }
 
 
 def build_link_check_error_message(error: str) -> dict:
