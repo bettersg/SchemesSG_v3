@@ -40,9 +40,13 @@ def build_desc_booster(row) -> str:
         "scheme_type",
         "service_area",
     ]:
-        if pd.notna(row.get(field)):
-            value = row[field]
-            components.append(", ".join(value) if isinstance(value, list) else str(value))
+        value = row.get(field)
+        if isinstance(value, list):
+            items = [str(v).strip() for v in value if v is not None and str(v).strip()]
+            if items:
+                components.append(", ".join(items))
+        elif pd.notna(value) and str(value).strip():
+            components.append(str(value))
     return " ".join(components)
 
 
