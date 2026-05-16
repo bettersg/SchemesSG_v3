@@ -5,17 +5,17 @@ import { useLanguage } from "@/lib/landing-i18n"
 import { cn } from "@/lib/utils"
 
 const featuredLogos = [
-  { name: "Channel NewsAsia", src: "/landing/featured/cna-logo.fe6e55ec.svg" },
-  { name: "Lianhe Zaobao", src: "/landing/featured/lianhe-zaobao-logo.c41c922e.svg" },
-  { name: "Money FM", src: "/landing/featured/moneyfm-logo.c4778b09.svg" },
+  { name: "Channel NewsAsia", src: "/landing/featured/cna-logo.svg" },
+  { name: "Lianhe Zaobao", src: "/landing/featured/lianhe-zaobao-logo.svg" },
+  { name: "Money FM", src: "/landing/featured/moneyfm-logo.svg" },
   { name: "Better.sg", src: "/landing/featured/bettersg-logo.svg" },
-  { name: "Sengkang Town Council", src: "/landing/featured/sengkang-logo.4fef7e5f.svg" },
+  { name: "Sengkang Town Council", src: "/landing/featured/sengkang-logo.svg" },
   { name: "Hatch", src: "/landing/featured/hatch-logo.png" },
 ]
 
 const partnerLogos = [
-  { name: "Singapore Association of Social Workers", src: "/landing/featured/sasw.a489ae5f.png" },
-  { name: "Care Corner Singapore", src: "/landing/featured/carecorner.cf5eba1a.png" },
+  { name: "Singapore Association of Social Workers", src: "/landing/featured/sasw.png" },
+  { name: "Care Corner Singapore", src: "/landing/featured/carecorner.png" },
 ]
 
 export function FeaturedSection() {

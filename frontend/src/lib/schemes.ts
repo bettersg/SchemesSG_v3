@@ -15,8 +15,6 @@ export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
     rawData["search_booster"] || rawData["search_booster(WL)"] || "",
   schemeId: rawData["scheme_id"] || "",
   query: rawData["query"] || "",
-  similarity: rawData["Similarity"] || 0,
-  quintile: rawData["Quintile"] || 0,
   planningArea: rawData["planning_area"] || "",
   summary: rawData["summary"] || "",
   contact: [],

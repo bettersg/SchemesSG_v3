@@ -18,7 +18,7 @@ export const productCard =
 
 export const productCardPadded = cn(productCard, "p-6");
 
-export const productButtonBase =
+const productButtonBase =
   "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-[background-color,border-color,color,opacity] disabled:cursor-not-allowed disabled:opacity-45";
 
 export const productButtonPrimary = cn(
@@ -39,17 +39,6 @@ export const productButtonTertiary = cn(
 export const productButtonSm = "h-9 px-3 py-1.5 text-xs";
 export const productButtonMd = "px-4 py-2";
 export const productButtonLg = "px-6 py-3";
-export const productIconButton = "h-8 w-8 rounded-lg p-0";
-
-export const productActionChip = cn(
-  productButtonBase,
-  "rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-3 py-1.5 text-xs text-(--schemes-blue-800) hover:bg-white",
-);
-
-export const productSelectTrigger =
-  "rounded-lg border border-(--schemes-border) bg-white font-semibold text-(--schemes-blue-900) shadow-none hover:bg-(--schemes-blue-50)";
-
-export const productSelectPopover = "bg-white text-(--schemes-ink)";
 
 export const productSegmentedList =
   "rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50) p-1";

@@ -402,7 +402,6 @@ export default function ChatPage() {
             onValueChange={setDraftMessage}
           />
 
-          {/* <SchemeDrawer scheme={selectedScheme} onClose={handleDrawerClose} /> */}
         </div>
 
         {/* Right scheme list — desktop only */}
