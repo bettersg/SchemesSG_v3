@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { SectionWrapper } from "@/components/landing/shared/SectionWrapper"
-import { useLanguage } from "@/lib/landing-i18n"
+import { motion } from "framer-motion";
+import { SectionWrapper } from "@/components/landing/shared/SectionWrapper";
+import { useLanguage } from "@/lib/landing-i18n";
 
 export function TestimonialSection() {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <SectionWrapper className="bg-white">
@@ -20,21 +20,27 @@ export function TestimonialSection() {
             transition={{ duration: 0.6, delay: index * 0.15 }}
           >
             {/* Quote */}
-            <blockquote className="flex-1 font-serif text-lg leading-relaxed tracking-tight text-foreground lg:text-xl">
+            <blockquote className="flex-1 font-sans text-foreground text-lg leading-relaxed tracking-tight">
               &ldquo;{item.quote}&rdquo;
             </blockquote>
 
             {/* Author */}
             <div className="mt-6 flex items-center gap-3">
               {item.avatar ? (
-                <img src={item.avatar} alt={item.author} className="h-10 w-10 shrink-0 rounded-lg object-contain bg-white shadow-sm" />
+                <img
+                  src={item.avatar}
+                  alt={item.author}
+                  className="h-10 w-10 shrink-0 object-contain"
+                />
               ) : (
                 <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-neutral-900 font-bold text-sm shadow-sm">
                   {item.author.charAt(0)}
                 </div>
               )}
               <div>
-                <p className="text-sm font-semibold text-foreground">{item.author}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {item.author}
+                </p>
                 <p className="text-xs text-muted-foreground">{item.role}</p>
               </div>
             </div>
@@ -42,5 +48,5 @@ export function TestimonialSection() {
         ))}
       </div>
     </SectionWrapper>
-  )
+  );
 }

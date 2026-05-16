@@ -1,18 +1,27 @@
 "use client";
 import { useChat } from "@/providers";
-import { RawSchemeData, SearchResScheme } from "@/types/types";
-import { useEffect, useRef, useState } from "react";
+import type { BotMessage, QuickReplySuggestion } from "@/providers";
+import { RawSchemeData, Scheme } from "@/types/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SchemesList from "@/components/chat/schemes-list";
-import SchemesPopoverButton from "@/components/chat/schemes-popover-button";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
-import QuickReplyChips, {
-  QuickReply,
-} from "@/components/chat/quick-reply-chips";
-import SchemeDrawer from "@/components/schemes/scheme-drawer";
 import { Button, Tabs } from "@heroui/react";
 import ResetQueryModal from "@/components/reset-query-modal";
-import { mapToScheme, streamChat } from "@/lib/schemes";
+import { ChatStreamEvent, mapToScheme, streamChat } from "@/lib/schemes";
+import {
+  productButtonSecondary,
+  productButtonSm,
+  productSegmentedIndicator,
+  productSegmentedList,
+  productSegmentedTab,
+} from "@/lib/design-system/product-styles";
+import { FollowUpSuggestions } from "@/components/chat/follow-up-suggestions";
+import { SchemesPanelPulse } from "@/components/chat/schemes-panel-pulse";
+import { StreamStatusStep } from "@/components/chat/stream-status-steps";
+import { StreamingErrorCard } from "@/components/chat/streaming-error-card";
+
+const initialChatRequestKeys = new Set<string>();
 
 export default function ChatPage() {
   const {
@@ -22,141 +31,295 @@ export default function ChatPage() {
     schemes,
     setSchemes,
     setSessionId,
+    quickReplies,
+    setQuickReplies,
+    showQuickReplies,
+    setShowQuickReplies,
+    draftMessage,
+    setDraftMessage,
   } = useChat();
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [streamingMessage, setStreamingMessage] = useState("");
-  const [statusMessage, setStatusMessage] = useState("");
-  const [selectedScheme, setSelectedScheme] = useState<SearchResScheme | null>(
-    null,
-  );
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
-  const [showQuickReplies, setShowQuickReplies] = useState(false);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const streamingMessageRef = useRef("");
+  const [statusSteps, setStatusSteps] = useState<StreamStatusStep[]>([]);
+  const [streamError, setStreamError] = useState<string | null>(null);
+  const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
+  const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
+  const streamingBlocksRef = useRef<string[]>([]);
 
-  // Pushed streamed message to message list
-  const checkMessageEnd = () => {
-    if (streamingMessageRef.current.length > 0) {
-      addBotMessage(streamingMessageRef.current);
-      streamingMessageRef.current = "";
+  // tracks number of schemes found when schemes list updates
+  const schemesFoundCountRef = useRef(0);
+
+  // guard against stale requests
+  const activeRequestIdRef = useRef(0);
+  // controller to abort requests on error / cancel
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // snapshots chat state before sending request
+  const schemesBeforeActiveRequestRef = useRef<Scheme[]>([]);
+  const quickRepliesBeforeActiveRequestRef = useRef<QuickReplySuggestion[]>([]);
+  const showQuickRepliesBeforeActiveRequestRef = useRef(false);
+  const lastUserMessageRef = useRef("");
+  const hasVisibleQuickReplies =
+    showQuickReplies && !isGenerating && quickReplies.length > 0;
+  const schemesListIsLoading = isGenerating || schemes.length === 0;
+
+  // Initial user message fetches response on component mount
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].type === "user") {
+      const requestKey = `${sessionId || "new"}:${messages[0].text}`;
+      if (initialChatRequestKeys.has(requestKey)) return;
+      initialChatRequestKeys.add(requestKey);
+      fetchResponse(messages[0].text).finally(() => {
+        initialChatRequestKeys.delete(requestKey);
+      });
     }
+  }, []);
+
+  const handleSend = async (input: string) => {
+    const trimmed = input.trim();
+    if (!trimmed || isGenerating) return;
+    setMessages((prev) => [...prev, { type: "user", text: trimmed }]);
+    setDraftMessage("");
+    await fetchResponse(trimmed, sessionId);
   };
+
+  const handleStopGenerating = () => {
+    abortControllerRef.current?.abort();
+    rollbackActiveRequest();
+  };
+
+  const fetchResponse = async (userMessage: string, sessionId?: string) => {
+    // snapshots chat state
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const requestId = activeRequestIdRef.current + 1;
+    activeRequestIdRef.current = requestId;
+    schemesBeforeActiveRequestRef.current = schemes;
+    quickRepliesBeforeActiveRequestRef.current = quickReplies;
+    showQuickRepliesBeforeActiveRequestRef.current = showQuickReplies;
+    lastUserMessageRef.current = userMessage;
+    resetStreamUi();
+    setDraftMessage("");
+    setQuickReplies([]);
+    setShowQuickReplies(false);
+
+    await streamChat(
+      userMessage,
+      {
+        onStart: handleStreamStart,
+        onEvent: (event) => handleStreamEvent(event, requestId),
+        onError: () => {
+          if (activeRequestIdRef.current === requestId) {
+            handleStreamError();
+          }
+        },
+        onEnd: () => {
+          if (activeRequestIdRef.current === requestId) {
+            handleStreamEnd();
+          }
+        },
+      },
+      sessionId,
+      controller.signal,
+    );
+  };
+
+  const resetStreamUi = useCallback(() => {
+    streamingBlocksRef.current = [];
+    schemesFoundCountRef.current = 0;
+    setStreamingBlocks([]);
+    setStatusSteps([]);
+    setPendingSchemesTabPulse(false);
+    setStreamError(null);
+  }, []);
 
   const handleStreamStart = () => {
     setIsGenerating(true);
   };
 
-  const handleStreamChunk = (text: string) => {
-    const json = JSON.parse(text);
-    const data = json.data;
-    if (json.type == "chunk") {
-      const textChunk = data.chunk;
-      setStreamingMessage((prevMsg) => prevMsg + textChunk);
-      streamingMessageRef.current += textChunk;
-    } else {
-      // push message to message list if messaged finished chunking
-      checkMessageEnd();
-      switch (json.type) {
-        case "status":
-          if (data.phase == "session_started") {
-            setSessionId(data.sessionID);
-          }
-          setStatusMessage(data.label);
-          break;
-        case "schemes_update":
-          if (data.schemes && data.schemes.length > 0) {
-            const parsedSchemes: SearchResScheme[] = data.schemes.map(
-              (scheme: RawSchemeData) => mapToScheme(scheme),
-            );
-            setSchemes(parsedSchemes);
-          }
-          break;
-        case "followups":
-          const quickReplies: QuickReply[] = Object.entries(data.items).map(
-            ([key, value]) => {
-              return {
-                label: key,
-                value: value as string,
-              };
-            },
+  const handleStreamEvent = (event: ChatStreamEvent, requestId: number) => {
+    if (activeRequestIdRef.current !== requestId) return;
+
+    switch (event.type) {
+      case "chunk": {
+        const data = (event.data ?? {}) as {
+          chunk?: string;
+          content?: string;
+          text?: string;
+          blockIndex?: number;
+          block_index?: number;
+          messageIndex?: number;
+          message_index?: number;
+        };
+        appendStreamingChunk(
+          data.chunk ?? data.content ?? data.text ?? "",
+          data.blockIndex ??
+            data.block_index ??
+            data.messageIndex ??
+            data.message_index,
+        );
+        break;
+      }
+      case "status": {
+        const data = (event.data ?? {}) as {
+          label?: string;
+          phase?: string;
+          sessionID?: string;
+          sessionId?: string;
+        };
+        if (data.phase === "session_started") {
+          const nextSessionId = data.sessionID ?? data.sessionId;
+          if (nextSessionId) setSessionId(nextSessionId);
+        }
+        if (data.label) {
+          const step: StreamStatusStep = {
+            id: `${requestId}-${Date.now()}-${data.phase ?? data.label}`,
+            label: data.label,
+            phase: data.phase,
+          };
+          setStatusSteps((prev) => {
+            if (prev.at(-1)?.label === step.label) return prev;
+            return [...prev, step];
+          });
+        }
+        break;
+      }
+      case "schemes_update": {
+        const data = (event.data ?? {}) as { schemes?: RawSchemeData[] };
+        const rawSchemes = data.schemes;
+        if (rawSchemes) {
+          const parsedSchemes: Scheme[] = rawSchemes.map((scheme) =>
+            mapToScheme(scheme as RawSchemeData),
           );
-          setQuickReplies(quickReplies);
-          break;
-        case "done":
-          break;
+          setSchemes(parsedSchemes);
+          schemesFoundCountRef.current = parsedSchemes.length;
+          setPendingSchemesTabPulse(parsedSchemes.length > 0);
+        }
+        break;
+      }
+      case "followups": {
+        const data = (event.data ?? {}) as {
+          items?: Record<string, string>;
+        };
+        const items = data.items ?? {};
+        const replies = Object.entries(items).map(([key, value]) => ({
+          label: key,
+          value: String(value),
+        }));
+        setQuickReplies(replies);
+        break;
+      }
+      case "done": {
+        commitStreamingBlocks(true);
+        setStatusSteps([]);
+        setIsGenerating(false);
+        setShowQuickReplies(true);
+        break;
       }
     }
   };
 
+  const appendStreamingChunk = (chunk: string, blockIndex?: number) => {
+    if (!chunk) return;
+
+    const blocks = [...streamingBlocksRef.current];
+    const targetIndex =
+      typeof blockIndex === "number" && blockIndex >= 0
+        ? blockIndex
+        : Math.max(blocks.length - 1, 0);
+
+    while (blocks.length <= targetIndex) {
+      blocks.push("");
+    }
+
+    blocks[targetIndex] = `${blocks[targetIndex] ?? ""}${chunk}`;
+    streamingBlocksRef.current = blocks;
+    setStreamingBlocks(blocks);
+  };
+
+  const commitStreamingBlocks = useCallback(
+    (includeSchemeUpdate = false) => {
+      const blocks = streamingBlocksRef.current
+        .map((block) => block.trim())
+        .filter(Boolean);
+
+      if (blocks.length > 0) {
+        const schemeUpdateCount = includeSchemeUpdate
+          ? schemesFoundCountRef.current
+          : 0;
+        const newBotMessages = blocks.map((text, index) => ({
+          type: "bot" as const,
+          text,
+          ...(schemeUpdateCount > 0 && index === blocks.length - 1
+            ? { schemeUpdateCount }
+            : {}),
+        })) as BotMessage[];
+        setMessages((prev) => [...prev, ...newBotMessages]);
+      }
+
+      if (includeSchemeUpdate) {
+        schemesFoundCountRef.current = 0;
+      }
+      streamingBlocksRef.current = [];
+      setStreamingBlocks([]);
+    },
+    [setMessages],
+  );
+
   const handleStreamError = () => {
-    addBotMessage("Sorry, something went wrong. Please try again.");
-    setIsGenerating(false);
-  };
-
-  const handleStreamEnd = () => {
-    checkMessageEnd();
-    setStatusMessage("");
-    setStreamingMessage("")
-    setIsGenerating(false);
-  };
-
-  const fetchResponse = async (userMessage: string, sessionId?: string) => {
-    await streamChat(
-      userMessage,
-      {
-        onStart: handleStreamStart,
-        onChunk: handleStreamChunk,
-        onError: handleStreamError,
-        onEnd: handleStreamEnd,
-      },
-      sessionId,
+    rollbackActiveRequest(
+      "The connection dropped before the response finished. Send it again when ready.",
     );
   };
 
-  const addBotMessage = (text: string) => {
-    setMessages((prev) => {
-      return [...prev, { type: "bot", text: text }];
-    });
+  const handleStreamEnd = () => {
+    commitStreamingBlocks(true);
+    setStatusSteps([]);
+    setIsGenerating(false);
   };
 
-  const handleSend = async (input: string) => {
-    if (!input.trim()) return;
-    setMessages((prev) => [...prev, { type: "user", text: input }]);
-    await fetchResponse(input, sessionId);
-  };
-
-  const handleDrawerOpen = (scheme: SearchResScheme) => {
-      setSelectedScheme(scheme);
-    // window.history.replaceState(null, "", `/schemes/${schemeId}`);
-  };
-
-  const handleDrawerClose = () => {
-    setSelectedScheme(null);
-    // window.history.replaceState(null, "", "/");
-  };
-
-  // Trigger first AI response on mount
-  useEffect(() => {
-    if (messages.length === 1 && messages[0].type === "user") {
-      fetchResponse(messages[0].text);
-    }
-  }, []);
-
-  // Auto-scroll
-  // useEffect(() => {
-  //   scrollRef.current?.scrollTo({
-  //     top: scrollRef.current.scrollHeight,
-  //     behavior: "smooth",
-  //   });
-  // }, [messages, streamingMessage]);
-
-  // Quick replies after each bot turn
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    setShowQuickReplies(!!last && last.type === "bot");
-  }, [messages]);
+  const rollbackActiveRequest = useCallback(
+    (errorMessage?: string) => {
+      activeRequestIdRef.current += 1;
+      setDraftMessage(lastUserMessageRef.current);
+      setMessages((prev) => {
+        const next = [...prev];
+        let lastUserIndex = -1;
+        for (let index = next.length - 1; index >= 0; index -= 1) {
+          const message = next[index];
+          if (
+            message.type === "user" &&
+            message.text === lastUserMessageRef.current
+          ) {
+            lastUserIndex = index;
+            break;
+          }
+        }
+        if (lastUserIndex >= 0) {
+          next.splice(lastUserIndex, 1);
+        }
+        return next;
+      });
+      setSchemes(schemesBeforeActiveRequestRef.current);
+      setQuickReplies(quickRepliesBeforeActiveRequestRef.current);
+      setShowQuickReplies(showQuickRepliesBeforeActiveRequestRef.current);
+      streamingBlocksRef.current = [];
+      setStreamingBlocks([]);
+      setStatusSteps([]);
+      setIsGenerating(false);
+      schemesFoundCountRef.current = 0;
+      setPendingSchemesTabPulse(false);
+      setStreamError(errorMessage ?? null);
+    },
+    [
+      setMessages,
+      setSchemes,
+      setQuickReplies,
+      setDraftMessage,
+      setShowQuickReplies,
+    ],
+  );
 
   const handleReset = () => {
     [
@@ -166,14 +329,39 @@ export default function ChatPage() {
       "userQuery",
       "totalCount",
       "nextCursor",
+      "quickReplies",
     ].forEach((k) => sessionStorage.removeItem(k));
     setSchemes([]);
     setMessages([]);
     setSessionId("");
+    abortControllerRef.current?.abort();
+    resetStreamUi();
+    setQuickReplies([]);
+    setDraftMessage("");
+    setIsGenerating(false);
+    setShowQuickReplies(false);
   };
 
+  // pulse schemes tab in mobile view when schemes list updated
+  const [pulseSchemesTab, setPulseSchemesTab] = useState(false);
+  const [pendingSchemesTabPulse, setPendingSchemesTabPulse] = useState(false);
+  // pulse schemes tab in mobile view if schemes list updated
+  useEffect(() => {
+    if (!pendingSchemesTabPulse || schemesListIsLoading) {
+      return;
+    }
+    setPulseSchemesTab(true);
+    setPendingSchemesTabPulse(false);
+  }, [pendingSchemesTabPulse, schemesListIsLoading]);
+  // clear pulsing schemes tab in mobile view after 2.2s
+  useEffect(() => {
+    if (!pulseSchemesTab) return;
+    const timeout = setTimeout(() => setPulseSchemesTab(false), 2200);
+    return () => clearTimeout(timeout);
+  }, [pulseSchemesTab]);
+
   return (
-    <div className="w-full max-w-[1400px] h-full mx-auto flex flex-col bg-[#f7f9fc] overflow-hidden">
+    <div className="w-full max-w-[1400px] h-full mx-auto flex flex-col bg-(--schemes-bg) overflow-hidden">
       {/* Desktop: Split layout: Chat + SchemeList */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Chat column — position:relative so the left drawer can anchor to it */}
@@ -181,14 +369,15 @@ export default function ChatPage() {
           {/* Messages */}
           <ChatMessageList
             messages={messages}
-            streamingMessage={streamingMessage}
-            statusMessage={statusMessage}
+            streamingBlocks={streamingBlocks}
+            statusSteps={statusSteps}
             isGenerating={isGenerating}
+            hasQuickReplies={hasVisibleQuickReplies}
           />
 
           {/* Quick replies */}
-          {showQuickReplies && !isGenerating && (
-            <QuickReplyChips
+          {hasVisibleQuickReplies && (
+            <FollowUpSuggestions
               suggestions={quickReplies}
               onSelect={(s) => {
                 setShowQuickReplies(false);
@@ -197,56 +386,70 @@ export default function ChatPage() {
             />
           )}
 
-          {/* Input */}
-          <ChatInputBar onSend={handleSend} isGenerating={isGenerating} />
+          {streamError && (
+            <StreamingErrorCard
+              message={streamError}
+              onNewChat={() => setResetModalIsOpen(true)}
+            />
+          )}
 
-          <SchemeDrawer scheme={selectedScheme} onClose={handleDrawerClose} />
+          {/* Input */}
+          <ChatInputBar
+            onSend={handleSend}
+            onStop={handleStopGenerating}
+            isGenerating={isGenerating}
+            value={draftMessage}
+            onValueChange={setDraftMessage}
+          />
+
+          {/* <SchemeDrawer scheme={selectedScheme} onClose={handleDrawerClose} /> */}
         </div>
 
         {/* Right scheme list — desktop only */}
         <SchemesList
-          handleNewChat={() => setIsOpen(true)}
+          handleNewChat={() => setResetModalIsOpen(true)}
           isGenerating={isGenerating}
-          setSelectedScheme={(scheme) => handleDrawerOpen(scheme)}
         />
       </div>
-
       {/* Mobile:  Tabs layout */}
       <div className="relative md:hidden h-full">
-        <Tabs className="w-full h-full flex flex-col">
+        <Tabs className="w-full h-full flex flex-col gap-0!">
           <Tabs.ListContainer className="p-4 flex gap-2 items-center">
-            <Tabs.List aria-label="Options">
-              <Tabs.Tab id="chat">
+            <Tabs.List aria-label="Options" className={productSegmentedList}>
+              <Tabs.Tab id="chat" className={productSegmentedTab}>
                 Chat
-                <Tabs.Indicator />
+                <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
-              <Tabs.Tab id="schemes">
-                Schemes
-                <Tabs.Indicator />
+              <Tabs.Tab id="schemes" className={productSegmentedTab}>
+                <SchemesPanelPulse active={pulseSchemesTab}>
+                  Schemes
+                </SchemesPanelPulse>
+                <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
             </Tabs.List>
             <Button
               size="sm"
               variant="outline"
-              className="border-[#e0eaf5] text-[#5F5E5A] text-xs shrink-0"
-              onPress={() => setIsOpen(true)}
+              className={`${productButtonSecondary} ${productButtonSm} shrink-0`}
+              onPress={() => setResetModalIsOpen(true)}
             >
               New chat
             </Button>
           </Tabs.ListContainer>
-          <Tabs.Panel className="flex-1 min-h-0" id="chat">
+          <Tabs.Panel className="flex-1 min-h-0 p-0!" id="chat">
             <div className="h-full basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">
               {/* Messages */}
               <ChatMessageList
                 messages={messages}
-                streamingMessage={streamingMessage}
-                statusMessage={statusMessage}
+                streamingBlocks={streamingBlocks}
+                statusSteps={statusSteps}
                 isGenerating={isGenerating}
+                hasQuickReplies={hasVisibleQuickReplies}
               />
 
               {/* Quick replies */}
-              {showQuickReplies && !isGenerating && (
-                <QuickReplyChips
+              {hasVisibleQuickReplies && (
+                <FollowUpSuggestions
                   suggestions={quickReplies}
                   onSelect={(s) => {
                     setShowQuickReplies(false);
@@ -255,15 +458,27 @@ export default function ChatPage() {
                 />
               )}
 
+              {streamError && (
+                <StreamingErrorCard
+                  message={streamError}
+                  onNewChat={() => setResetModalIsOpen(true)}
+                />
+              )}
+
               {/* Input */}
-              <ChatInputBar onSend={handleSend} isGenerating={isGenerating} />
+              <ChatInputBar
+                onSend={handleSend}
+                onStop={handleStopGenerating}
+                isGenerating={isGenerating}
+                value={draftMessage}
+                onValueChange={setDraftMessage}
+              />
             </div>
           </Tabs.Panel>
-          <Tabs.Panel className="flex-1 min-h-0" id="schemes">
+          <Tabs.Panel className="flex-1 min-h-0 !p-0" id="schemes">
             <SchemesList
-              handleNewChat={() => setIsOpen(true)}
+              handleNewChat={() => setResetModalIsOpen(true)}
               isGenerating={isGenerating}
-              onSelectScheme={(id) => handleDrawerOpen(id)}
             />
           </Tabs.Panel>
         </Tabs>
@@ -271,8 +486,8 @@ export default function ChatPage() {
 
       {/* Reset modal */}
       <ResetQueryModal
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
+        isOpen={resetModalIsOpen}
+        onOpenChange={setResetModalIsOpen}
         handleReset={handleReset}
       />
     </div>

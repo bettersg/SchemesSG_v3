@@ -1,42 +1,41 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { searchSchemes } from "@/lib/schemes";
-import { SearchResScheme } from "@/types/types";
-import SchemeDrawer from "@/components/schemes/scheme-drawer";
+import { Scheme } from "@/types/types";
 import { Spinner } from "@heroui/react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import SchemeCard from "@/components/schemes/scheme-card";
+import { SCHEME_CATEGORIES } from "@/lib/design-system/categories";
+import {
+  productButtonPrimary,
+  productButtonSm,
+  productCard,
+  productHeading,
+  productPageContent,
+  productPageShell,
+  productSubheading,
+} from "@/lib/design-system/product-styles";
+import { ArrowUpRight } from "lucide-react";
 
-const CATEGORIES = [
-  "All",
-  "Financial Assistance",
-  "Mental Health",
-  "Family",
-  "Healthcare",
-  "Housing",
-  "Employment",
-  "Food Support",
-  "Education",
-  "Eldercare",
-  "Disability",
-];
+const CATEGORIES = ["All", ...SCHEME_CATEGORIES] as const;
 
 export default function ExplorePage() {
-  const [schemes, setSchemes] = useState<SearchResScheme[]>([]);
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [nextCursor, setNextCursor] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [hasSelectedCategory, setHasSelectedCategory] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [inputValue, setInputValue] = useState("");
-  const [selectedScheme, setSelectedScheme] = useState<SearchResScheme | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const bottomInView = useInView(bottomRef);
 
   // Initial load
   useEffect(() => {
+    if (!hasSelectedCategory) return;
     setIsLoading(true);
     searchSchemes(activeCategory === "All" ? "" : activeCategory).then((r) => {
       setSchemes(r.schemes);
@@ -44,7 +43,7 @@ export default function ExplorePage() {
       setTotal(r.total);
       setIsLoading(false);
     });
-  }, [activeCategory]);
+  }, [activeCategory, hasSelectedCategory]);
 
   // Load more when bottom in view
   useEffect(() => {
@@ -59,12 +58,12 @@ export default function ExplorePage() {
         setIsLoadingMore(false);
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomInView]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveCategory("All");
+    setHasSelectedCategory(true);
     setIsLoading(true);
     searchSchemes(inputValue).then((r) => {
       setSchemes(r.schemes);
@@ -75,15 +74,53 @@ export default function ExplorePage() {
     });
   };
 
+  const handleSelectCategory = (label: string) => {
+    setActiveCategory(label);
+    setHasSelectedCategory(true);
+    setInputValue("");
+    setSearchQuery("");
+  };
+
+  if (!hasSelectedCategory) {
+    return (
+      <div className={productPageShell}>
+        <div className={productPageContent}>
+          <p className="mb-2 text-[10px] font-semibold tracking-widest text-(--schemes-muted) uppercase">
+            Scheme Directory
+          </p>
+          <h1 className={`${productHeading} mb-2`}>Explore all schemes</h1>
+          <p className={`${productSubheading} mb-8`}>
+            Pick a category to browse social assistance schemes available in
+            Singapore.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleSelectCategory(cat)}
+                className={`${productCard} group flex flex-col items-start gap-3 p-5 text-left transition-[border-color,box-shadow,transform,color,background-color] hover:-translate-y-0.5 hover:border-(--schemes-blue-100) hover:shadow-[0_4px_20px_rgba(24,95,165,0.08)]`}
+              >
+                <span className="text-sm font-semibold text-(--schemes-blue-900) group-hover:text-(--schemes-blue-600)">
+                  {cat === "All" ? "All Schemes" : cat}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-full bg-[#f4f7fb] relative flex flex-col">
+    <div className={`${productPageShell} relative flex flex-col`}>
       {/* Header */}
       {/* <div className="bg-gradient-to-br from-[#042C53] to-[#185FA5] px-4 sm:px-8 lg:px-16 pt-10 pb-8">
         <div className="max-w-[960px] mx-auto">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">
             Scheme Directory
           </p>
-          <h1 className="font-[var(--font-head)] text-2xl sm:text-3xl font-bold text-white mb-2">
+          <h1 className="mb-2 font-(--font-head) text-2xl font-bold text-white sm:text-3xl">
             Explore all schemes
           </h1>
           <p className="text-sm text-white/65 mb-5">
@@ -94,27 +131,11 @@ export default function ExplorePage() {
             onSubmit={handleSearch}
             className="flex gap-2 bg-white/12 border border-white/20 rounded-xl px-4 py-2.5 max-w-[520px] backdrop-blur-sm"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              className="mt-0.5 shrink-0"
-            >
-              <circle
-                cx="7"
-                cy="7"
-                r="5.5"
-                stroke="rgba(255,255,255,0.6)"
-                strokeWidth="1.5"
-              />
-              <path
-                d="M11 11L14.5 14.5"
-                stroke="rgba(255,255,255,0.6)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Search
+              size={16}
+              strokeWidth={1.5}
+              className="mt-0.5 shrink-0 text-white/60"
+            />
             <input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -143,20 +164,16 @@ export default function ExplorePage() {
       </div> */}
 
       {/* Filter bar */}
-      <div className="bg-white border-b border-[#e8eef6] z-10">
-        <div className="max-w-[960px] mx-auto px-4 py-2.5 flex gap-2 overflow-x-auto no-scrollbar flex-wrap">
+      <div className="z-10">
+        <div className="no-scrollbar mx-auto flex max-w-5xl flex-wrap gap-2 overflow-x-auto px-4 py-2.5 sm:px-8">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
-              onClick={() => {
-                setActiveCategory(cat);
-                setInputValue("");
-                setSearchQuery("");
-              }}
-              className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
+              onClick={() => handleSelectCategory(cat)}
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-[background-color,border-color,color] ${
                 activeCategory === cat
-                  ? "bg-[#185FA5] text-white border-[#185FA5]"
-                  : "bg-[#F1EFE8] text-[#5F5E5A] border-[#D3D1C7] hover:bg-[#E6F1FB] hover:text-[#185FA5] hover:border-[#B5D4F4]"
+                  ? "border-(--schemes-blue-600) bg-(--schemes-blue-600) text-white"
+                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)"
               }`}
             >
               {cat}
@@ -166,44 +183,26 @@ export default function ExplorePage() {
       </div>
 
       <motion.div className="flex">
-        {/* Scheme drawer */}
-        {selectedScheme && <div className="h-[calc(100vh-var(--spacing-nav))]  sticky top-nav w-full flex-1">
-          <SchemeDrawer
-            scheme={selectedScheme}
-            onClose={() => setSelectedScheme(null)}
-          />
-        </div>}
-
         {/* Results */}
-        <div 
-          className="flex-1 max-w-[960px] mx-auto px-4 sm:px-8 py-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-[#444441]">
+        <div className="mx-auto max-w-5xl flex-1 px-4 py-6 sm:px-8">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm font-semibold text-(--schemes-ink-soft)">
               {searchQuery
                 ? `Results for "${searchQuery}"`
                 : activeCategory === "All"
                   ? "All schemes"
                   : activeCategory}
               {!isLoading && (
-                <span className="ml-2 text-[#185FA5]">
+                <span className="ml-2 text-(--schemes-blue-600)">
                   ({schemes.length} shown)
                 </span>
               )}
             </p>
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#EF9F27] px-3 py-1.5 rounded-lg hover:bg-[#BA7517] transition-colors"
+              className={`${productButtonPrimary} ${productButtonSm}`}
             >
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M2 10L12 2M7 2h5v5"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <ArrowUpRight size={14} strokeWidth={2} />
               Find with AI
             </Link>
           </div>
@@ -212,18 +211,14 @@ export default function ExplorePage() {
               <Spinner size="lg" />
             </div>
           ) : schemes.length === 0 ? (
-            <div className="text-center py-20 text-[#B4B2A9]">
-              <p className="text-lg mb-2">No schemes found</p>
+            <div className="py-20 text-center text-(--schemes-muted)">
+              <p className="mb-2 text-lg">No schemes found</p>
               <p className="text-sm">Try a different search or category</p>
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
               {schemes.map((s) => (
-                <SchemeCard
-                  key={s.schemeId}
-                  scheme={s}
-                  onSelect={() => setSelectedScheme(s)}
-                />
+                <SchemeCard key={s.schemeId} scheme={s} />
               ))}
             </div>
           )}

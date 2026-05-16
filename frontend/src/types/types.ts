@@ -69,19 +69,6 @@ export interface AdditionalInfoType {
   languageOptions?: string[];
 }
 
-// export type ChatResponse = ChunkResponse | UpdateResponse | AssistantResponse | StateResponse | FollowupResponse
-
-// export interface ChatResponse {
-// 	type:
-// 	STATUS = "status"
-//     CHUNK = "chunk"
-//     SCHEMES_UPDATE = "schemes_update"
-//     ASSISTANT = "assistant"
-//     STATE = "state"
-//     FOLLOWUPS = "followups"
-//     DONE = "done"
-// }
-
 export interface SearchResponse {
   sessionID?: string;
   data?: Array<RawSchemeData> | RawSchemeData;
@@ -90,18 +77,12 @@ export interface SearchResponse {
   has_more?: boolean;
 }
 
-// export interface SearchResponse {
-//   sessionID?: string;
-//   data?: Array<RawSchemeData> | RawSchemeData;
-//   mh?: number;
-// }
-
 export type FilterObjType = {
   planningArea?: Set<string>;
   agency?: Set<string>;
 };
 
-export type SearchResScheme = {
+export interface Scheme {
   schemeId: string;
   schemeType: string[];
   schemeName: string;
@@ -114,8 +95,6 @@ export type SearchResScheme = {
   image: string;
   searchBooster: string;
   query: string;
-  similarity: number;
-  quintile: number;
   planningArea: string | string[];
   summary: string;
   contact: BranchContact[];
@@ -126,7 +105,7 @@ export type SearchResScheme = {
   application?: ApplicationType;
   additionalInfo?: AdditionalInfoType;
   serviceArea: string;
-};
+}
 
 export type BranchContact = {
   planningArea?: string;
@@ -135,40 +114,34 @@ export type BranchContact = {
   address?: string;
 };
 
-export type Scheme = SearchResScheme & {
-  lastUpdated?: string;
-  eligibility?: EligibilityType;
-  application?: ApplicationType;
-  contact?: BranchContact[];
-  additionalInfo?: AdditionalInfoType;
-  howToApply?: string;
-  eligibilityText?: string;
-  serviceArea?: string;
-};
+export interface FirestoreTimestamp {
+  _seconds: number;
+  _nanoseconds: number;
+}
 
-export interface ApiSchemeData {
-  scheme_type?: string;
+export interface RawScheme {
   scheme?: string;
-  who_is_it_for?: string;
   agency?: string;
   description?: string;
   llm_description?: string;
   scraped_text?: string;
-  what_it_gives?: string;
   link?: string;
   image?: string;
   search_booster?: string;
-  scheme_id?: string;
-  query?: string;
-  similarity?: number;
-  quintile?: number;
-  phone?: string | string[];
-  email?: string | string[];
-  address?: string | string[];
-  how_to_apply?: string;
-  eligibility?: string;
-  last_modified_date?: number;
-  planning_area?: string;
-  service_area?: string;
   summary?: string;
+  service_area?: string;
+  scheme_type?: string[];
+  who_is_it_for?: string[];
+  what_it_gives?: string[];
+  planning_area?: string | string[];
+  phone?: string | string[] | null;
+  email?: string | string[] | null;
+  address?: string | string[] | null;
+  how_to_apply?: string | null;
+  eligibility?: string | null;
+  last_link_check?: string;
+  last_scraped_update?: FirestoreTimestamp;
+  last_llm_processed_update?: FirestoreTimestamp;
+  link_check_status_code?: number;
+  scheme_id?: string;
 }

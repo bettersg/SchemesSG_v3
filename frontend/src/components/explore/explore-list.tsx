@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
 import SchemeCard from "../schemes/scheme-card";
 import ExploreFilter from "./explore-filter";
 import {
@@ -17,25 +16,7 @@ import { FilterObjType } from "@/types/types";
 import clsx from "clsx";
 import { parseArrayString } from "@/lib/utils";
 import { getSchemes } from "@/lib/schemes";
-
-export type SearchResScheme = {
-  schemeId: string;
-  schemeType: string;
-  schemeName: string;
-  agency: string;
-  description: string;
-  targetAudience: string;
-  scrapedText: string;
-  benefits: string;
-  link: string;
-  image: string;
-  searchBooster: string;
-  query: string;
-  similarity: number;
-  quintile: number;
-  planningArea: string | string[];
-  summary: string;
-};
+import { Spinner } from "@heroui/react";
 
 interface SchemesListProps {
   isLoadingSchemes: boolean;
@@ -64,7 +45,15 @@ export default function ExploreList({
   const listBottomRef = useRef<HTMLDivElement>(null);
   const bottomReached = useInView(listBottomRef);
   const [isLoadingMoreSchemes, setIsLoadingMoreSchemes] = useState(false);
-  const { schemes, setSchemes, sessionId, totalCount, userQuery, nextCursor, setNextCursor } = useSchemes();
+  const {
+    schemes,
+    setSchemes,
+    sessionId,
+    totalCount,
+    userQuery,
+    nextCursor,
+    setNextCursor,
+  } = useSchemes();
 
   const filteredSchemes = useMemo(
     () =>
@@ -73,16 +62,18 @@ export default function ExploreList({
           if (
             !scheme.planningArea ||
             filterObj.planningArea.intersection(
-              new Set(parseArrayString(scheme.planningArea))
+              new Set(parseArrayString(scheme.planningArea)),
             ).size === 0
-          ) return false;
+          )
+            return false;
         }
         if (filterObj.agency && filterObj.agency.size > 0) {
-          if (!scheme.agency || !filterObj.agency.has(scheme.agency)) return false;
+          if (!scheme.agency || !filterObj.agency.has(scheme.agency))
+            return false;
         }
         return true;
       }),
-    [schemes, filterObj]
+    [schemes, filterObj],
   );
 
   useEffect(() => {
@@ -91,7 +82,7 @@ export default function ExploreList({
 
   useEffect(() => {
     if (bottomReached && nextCursor) loadMoreSchemes();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bottomReached]);
 
   const loadMoreSchemes = () => {
@@ -105,9 +96,9 @@ export default function ExploreList({
   };
 
   return (
-    <div className="overflow-y-hidden flex flex-col relative">
-      <div className="flex gap-2 justify-between">
-        <div className="flex flex-col gap-1 shrink-0 p-2">
+    <div className="relative flex flex-col overflow-y-hidden">
+      <div className="flex justify-between gap-2">
+        <div className="flex shrink-0 flex-col gap-1 p-2">
           <p className="text-base font-semibold">Search Results</p>
           <p className="text-xs text-slate-500">
             Showing {filteredSchemes.length} of {totalCount} schemes
@@ -128,15 +119,27 @@ export default function ExploreList({
 
       <div
         className={clsx(
-          "p-2 overflow-x-hidden overflow-y-auto",
-          "grid grid-cols-1 lg:grid-cols-2 gap-2"
+          "overflow-x-hidden overflow-y-auto p-2",
+          "grid grid-cols-1 gap-2 lg:grid-cols-2",
         )}
       >
-        <div className={clsx("p-2 flex justify-center", "col-span-1 lg:col-span-2")} ref={listTopRef} />
+        <div
+          className={clsx(
+            "flex justify-center p-2",
+            "col-span-1 lg:col-span-2",
+          )}
+          ref={listTopRef}
+        />
         {filteredSchemes.map((scheme) => (
           <SchemeCard key={scheme.schemeId} scheme={scheme} />
         ))}
-        <div className={clsx("p-2 flex justify-center", "col-span-1 lg:col-span-2")} ref={listBottomRef}>
+        <div
+          className={clsx(
+            "flex justify-center p-2",
+            "col-span-1 lg:col-span-2",
+          )}
+          ref={listBottomRef}
+        >
           {isLoadingMoreSchemes && <Spinner />}
         </div>
       </div>
@@ -144,9 +147,9 @@ export default function ExploreList({
       {isLoadingSchemes && (
         <div
           className={clsx(
-            "w-full h-full p-2 z-50",
+            "z-50 h-full w-full p-2",
             "absolute bg-white/70",
-            "flex justify-center items-center"
+            "flex items-center justify-center",
           )}
         >
           <Spinner size="lg" />

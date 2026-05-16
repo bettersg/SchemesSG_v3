@@ -1,13 +1,13 @@
-import { Button, Label, ListBox, Select } from "@heroui/react";
-import { SearchResScheme } from "./schemes-list";
-import { Dispatch, SetStateAction, useMemo, useState } from "react";
-import { FilterObjType } from "@/types/filter";
-import { FilterIcon } from "@/assets/icons/filter-icon";
-import clsx from "clsx";
+import { Button, Label, ListBox, Popover, Select } from "@heroui/react";
+import { Scheme } from "@/types/types";
+import type { Key } from "react";
+import { Dispatch, SetStateAction, useMemo } from "react";
+import { FilterObjType } from "@/types/types";
+import { Funnel } from "lucide-react";
 import { parseArrayString } from "@/lib/utils";
 
 interface SchemesFilterProps {
-  schemes: SearchResScheme[];
+  schemes: Scheme[];
   setFilterObj: Dispatch<SetStateAction<FilterObjType>>;
   selectedLocations: Set<string>;
   setSelectedLocations: Dispatch<SetStateAction<Set<string>>>;
@@ -25,13 +25,13 @@ export default function ExploreFilter({
   setSelectedAgencies,
   resetFilters,
 }: SchemesFilterProps) {
-  const [showFilter, setShowFilter] = useState(false);
-
   const allLocations: string[] = useMemo(() => {
     const locationSet = new Set<string>();
     schemes.forEach((scheme) => {
       if (scheme.planningArea) {
-        new Set(parseArrayString(scheme.planningArea)).forEach((pa) => locationSet.add(pa));
+        new Set(parseArrayString(scheme.planningArea)).forEach((pa) =>
+          locationSet.add(pa),
+        );
       }
     });
     if (locationSet.has("No Location")) {
@@ -43,7 +43,7 @@ export default function ExploreFilter({
 
   const allAgencies = useMemo(
     () => Array.from(new Set(schemes.map((s) => s.agency))).sort(),
-    [schemes]
+    [schemes],
   );
 
   const filteredAgencies = useMemo(() => {
@@ -52,7 +52,9 @@ export default function ExploreFilter({
     schemes.forEach((scheme) => {
       if (!scheme.planningArea) return;
       if (
-        selectedLocations.intersection(new Set(parseArrayString(scheme.planningArea))).size > 0 &&
+        selectedLocations.intersection(
+          new Set(parseArrayString(scheme.planningArea)),
+        ).size > 0 &&
         scheme.agency
       ) {
         set.add(scheme.agency);
@@ -66,7 +68,9 @@ export default function ExploreFilter({
     const set = new Set<string>();
     schemes.forEach((scheme) => {
       if (selectedAgencies.has(scheme.agency) && scheme.planningArea) {
-        new Set(parseArrayString(scheme.planningArea)).forEach((pa) => set.add(pa));
+        new Set(parseArrayString(scheme.planningArea)).forEach((pa) =>
+          set.add(pa),
+        );
       }
     });
     return Array.from(set).sort();
@@ -82,92 +86,123 @@ export default function ExploreFilter({
     resetFilters();
   };
 
+  const selectionToStringSet = (keys: "all" | Iterable<Key>) => {
+    if (keys === "all") {
+      return new Set<string>();
+    }
+    return new Set(Array.from(keys).map(String));
+  };
+
+  const renderFilterControls = () => (
+    <>
+      {/* Locations Select */}
+      <Select
+        className="w-full min-w-[150px]"
+        placeholder="All"
+        selectionMode="multiple"
+        selectedKeys={selectedLocations}
+        onSelectionChange={(keys: "all" | Iterable<Key>) =>
+          setSelectedLocations(selectionToStringSet(keys))
+        }
+      >
+        <Label>Locations</Label>
+        <Select.Trigger className="border border-(--schemes-blue-100) bg-gradient-to-b from-white to-(--schemes-status-info-bg) text-(--schemes-blue-900) font-semibold shadow-none">
+          <Select.Value className="text-(--schemes-blue-900)" />
+          <Select.Indicator className="text-(--schemes-blue-900)" />
+        </Select.Trigger>
+        <Select.Popover className="bg-white text-(--schemes-ink)">
+          <ListBox className="text-(--schemes-ink)">
+            {filteredLocations.map((location) => (
+              <ListBox.Item
+                key={location}
+                id={location}
+                textValue={location}
+                className="text-(--schemes-ink) data-[focused]:bg-(--schemes-blue-50) data-[selected]:text-(--schemes-blue-900)"
+              >
+                <Label className="text-(--schemes-ink)">{location}</Label>
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Select.Popover>
+      </Select>
+
+      {/* Agencies Select */}
+      <Select
+        className="w-full min-w-[150px]"
+        placeholder="All"
+        selectionMode="multiple"
+        selectedKeys={selectedAgencies}
+        onSelectionChange={(keys: "all" | Iterable<Key>) =>
+          setSelectedAgencies(selectionToStringSet(keys))
+        }
+      >
+        <Label>Agencies</Label>
+        <Select.Trigger className="border border-(--schemes-blue-100) bg-gradient-to-b from-white to-(--schemes-status-info-bg) text-(--schemes-blue-900) font-semibold shadow-none">
+          <Select.Value className="text-(--schemes-blue-900)" />
+          <Select.Indicator className="text-(--schemes-blue-900)" />
+        </Select.Trigger>
+        <Select.Popover className="max-w-[300px] bg-white text-(--schemes-ink)">
+          <ListBox className="text-(--schemes-ink)">
+            {filteredAgencies.map((agency) => (
+              <ListBox.Item
+                key={agency}
+                id={agency}
+                textValue={agency}
+                className="text-(--schemes-ink) data-[focused]:bg-(--schemes-blue-50) data-[selected]:text-(--schemes-blue-900)"
+              >
+                <Label className="text-(--schemes-ink)">{agency}</Label>
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Select.Popover>
+      </Select>
+
+      <div className="flex gap-2">
+        <Button
+          variant="primary"
+          className="bg-(--schemes-amber-400) text-(--schemes-ink) hover:bg-(--schemes-amber-100) font-semibold"
+          onPress={handleFilter}
+        >
+          Filter
+        </Button>
+        <Button
+          isDisabled={
+            selectedLocations.size === 0 && selectedAgencies.size === 0
+          }
+          variant="outline"
+          className="border-(--schemes-border-neutral) bg-white text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) disabled:bg-gray-200 disabled:border-gray-200 disabled:text-gray-500"
+          onPress={handleClear}
+        >
+          Clear
+        </Button>
+      </div>
+    </>
+  );
+
   return (
-    <div className="w-full flex gap-2 flex-wrap relative items-center xl:justify-end">
-      <Button
-        color="primary"
-        isIconOnly
-        variant="light"
-        className="xl:hidden"
-        onPress={() => setShowFilter(!showFilter)}
-      >
-        <FilterIcon />
-      </Button>
-      <div
-        className={clsx(
-          "max-xl:bg-schemes-lightgray max-xl:p-2 max-xl:rounded-lg max-xl:shadow-md",
-          "absolute top-14 z-50",
-          showFilter ? "flex" : "hidden",
-          "flex-col gap-2 items-end",
-          "xl:static xl:flex xl:flex-row"
-        )}
-      >
-        {/* Locations Select */}
-        <Select
-          className="w-full min-w-[150px]"
-          placeholder="All"
-          selectionMode="multiple"
-          selectedKeys={selectedLocations}
-          onSelectionChange={(keys) =>
-            setSelectedLocations(new Set(Array.from(keys) as string[]))
-          }
-        >
-          <Label>Locations</Label>
-          <Select.Trigger className="bg-schemes-lightblue">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover>
-            <ListBox>
-              {filteredLocations.map((location) => (
-                <ListBox.Item key={location} id={location} textValue={location}>
-                  <Label>{location}</Label>
-                </ListBox.Item>
-              ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
-
-        {/* Agencies Select */}
-        <Select
-          className="w-full min-w-[150px]"
-          placeholder="All"
-          selectionMode="multiple"
-          selectedKeys={selectedAgencies}
-          onSelectionChange={(keys) =>
-            setSelectedAgencies(new Set(Array.from(keys) as string[]))
-          }
-        >
-          <Label>Agencies</Label>
-          <Select.Trigger className="bg-schemes-lightblue">
-            <Select.Value />
-            <Select.Indicator />
-          </Select.Trigger>
-          <Select.Popover className="max-w-[300px]">
-            <ListBox>
-              {filteredAgencies.map((agency) => (
-                <ListBox.Item key={agency} id={agency} textValue={agency}>
-                  <Label>{agency}</Label>
-                </ListBox.Item>
-              ))}
-            </ListBox>
-          </Select.Popover>
-        </Select>
-
-        <div className="flex gap-2">
-          <Button color="primary" onPress={handleFilter}>
-            Filter
-          </Button>
+    <div className="w-full flex gap-2 flex-wrap relative items-center lg:justify-end">
+      <div className="lg:hidden">
+        <Popover>
           <Button
-            isDisabled={selectedLocations.size === 0 && selectedAgencies.size === 0}
-            color="danger"
-            variant="light"
-            className="border-2 border-red-500 disabled:bg-gray-200 disabled:border-gray-200 disabled:text-gray-500"
-            onPress={handleClear}
+            isIconOnly
+            variant="ghost"
+            className="text-(--schemes-blue-900)"
+            aria-label="Filter schemes"
           >
-            Clear
+            <Funnel size={24} strokeWidth={2} />
           </Button>
-        </div>
+          <Popover.Content
+            placement="bottom start"
+            className="z-50 w-[min(78vw,320px)] rounded-xl border border-(--schemes-border) bg-(--schemes-surface) p-0 shadow-sm"
+          >
+            <Popover.Dialog className="m-0 flex flex-col items-end gap-2 p-3 outline-none">
+              {renderFilterControls()}
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      </div>
+      <div className="hidden items-end gap-2 lg:flex lg:flex-row">
+        {renderFilterControls()}
       </div>
     </div>
   );

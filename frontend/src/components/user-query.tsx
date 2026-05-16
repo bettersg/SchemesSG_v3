@@ -1,8 +1,5 @@
 import { useChat } from "@/providers";
-import { ResetIcon } from "@/assets/icons/reset-icon";
-import { EditIcon } from "@/assets/icons/edit-icon";
-import { ConfirmIcon } from "@/assets/icons/confirm-icon";
-import { CancelIcon } from "@/assets/icons/cancel-icon";
+import { Ban, Check, Pencil, RotateCcw } from "lucide-react";
 import { ButtonGroup, Card, CardBody, CardHeader, Input } from "@heroui/react";
 import { Button, Tooltip, useDisclosure } from "@heroui/react";
 import ResetQueryModal from "./reset-query-modal";
@@ -19,8 +16,16 @@ export default function UserQuery({
   resetFilters,
   setIsLoadingSchemes,
 }: userQueryProps) {
-  const { setSchemes, messages, setMessages, setSessionId, setTotalCount, setNextCursor, userQuery, setUserQuery } =
-    useChat();
+  const {
+    setSchemes,
+    messages,
+    setMessages,
+    setSessionId,
+    setTotalCount,
+    setNextCursor,
+    userQuery,
+    setUserQuery,
+  } = useChat();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const firstMessage = messages[0].text;
 
@@ -33,6 +38,7 @@ export default function UserQuery({
     sessionStorage.removeItem("userQuery");
     sessionStorage.removeItem("totalCount");
     sessionStorage.removeItem("nextCursor");
+    sessionStorage.removeItem("quickReplies");
     setSchemes([]);
     setMessages([]);
     setSessionId("");
@@ -55,15 +61,16 @@ export default function UserQuery({
           },
         ]);
         setIsLoadingSchemes(true);
-        const { schemesRes, sessionId, totalCount, nextCursor } = await getSchemes(query);
-        setTotalCount(totalCount)
-        setNextCursor(nextCursor)
-        
+        const { schemesRes, sessionId, totalCount, nextCursor } =
+          await getSchemes(query);
+        setTotalCount(totalCount);
+        setNextCursor(nextCursor);
+
         // Always set sessionId if it exists, regardless of results
         if (sessionId !== "") {
           setSessionId(sessionId);
         }
-        
+
         // Set schemes and reset filters if we have results
         if (schemesRes.length > 0) {
           setSchemes(schemesRes);
@@ -74,7 +81,7 @@ export default function UserQuery({
         }
         setIsLoadingSchemes(false);
       } else {
-        setIsEdit(false)
+        setIsEdit(false);
       }
     }
   };
@@ -84,7 +91,7 @@ export default function UserQuery({
       className={clsx(
         "w-full sm:w-[95%] p-[3px] my-2 sm:mx-2",
         "rounded-2xl text-sm shrink-0",
-        "bg-white"
+        "bg-white",
       )}
       fullWidth={false}
       radius="lg"
@@ -98,12 +105,12 @@ export default function UserQuery({
           <ButtonGroup variant="light" color="primary">
             <Tooltip content="Reset Query" offset={8}>
               <Button onPress={onOpen} isIconOnly radius="full">
-                <ResetIcon />
+                <RotateCcw size={24} strokeWidth={2} />
               </Button>
             </Tooltip>
             <Tooltip content="Edit Query" offset={8}>
               <Button onPress={() => setIsEdit(true)} isIconOnly radius="full">
-                <EditIcon />
+                <Pencil size={24} strokeWidth={2} />
               </Button>
             </Tooltip>
           </ButtonGroup>
@@ -111,12 +118,12 @@ export default function UserQuery({
           <ButtonGroup variant="light" color="primary">
             <Tooltip content="Confirm" offset={8}>
               <Button onPress={handleQueryChange} isIconOnly radius="full">
-                <ConfirmIcon />
+                <Check size={24} strokeWidth={2} />
               </Button>
             </Tooltip>
             <Tooltip content="Cancel" offset={8}>
               <Button onPress={() => setIsEdit(false)} isIconOnly radius="full">
-                <CancelIcon />
+                <Ban size={24} strokeWidth={2} />
               </Button>
             </Tooltip>
           </ButtonGroup>

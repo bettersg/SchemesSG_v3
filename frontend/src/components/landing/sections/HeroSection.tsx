@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ScrollingColumn } from "@/components/landing/shared/ScrollingColumn"
-import { ScrollingLogoColumn } from "@/components/landing/shared/ScrollingLogoColumn"
-import { useLanguage } from "@/lib/landing-i18n"
-import { agencies } from "@/data/landing-agencies"
-import ChatLandingInput from "@/components/chat/chat-landing-input"
-import { useChat } from "@/providers"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { ScrollingColumn } from "@/components/landing/shared/ScrollingColumn";
+import { ScrollingLogoColumn } from "@/components/landing/shared/ScrollingLogoColumn";
+import { useLanguage } from "@/lib/landing-i18n";
+import { agencies } from "@/data/landing-agencies";
+import ChatLandingInput from "@/components/chat/chat-landing-input";
+import { useChat } from "@/providers";
+import { useRouter } from "next/navigation";
 
-const heroAgencies = agencies.slice(0, 12)
+const heroAgencies = agencies.slice(0, 12);
 
 export function HeroSection() {
-  const { t } = useLanguage()
-  const [query, setQuery] = useState("")
-  const { setMessages } = useChat()
-  const router = useRouter()
+  const { t } = useLanguage();
+  const [query, setQuery] = useState("");
+  const { setMessages } = useChat();
+  const router = useRouter();
 
   function handleSubmit(e: React.SubmitEvent) {
-    e.preventDefault()
+    e.preventDefault();
     if (!query.trim()) return;
-    setMessages([{type: 'user', text: query}])
-    router.push('/')
+    setMessages([{ type: "user", text: query }]);
+    router.push("/");
   }
 
   return (
@@ -42,7 +42,7 @@ export function HeroSection() {
         </div>
 
         {/* Center content */}
-        <ChatLandingInput 
+        <ChatLandingInput
           query={query}
           setQuery={setQuery}
           handleSubmit={handleSubmit}
@@ -50,12 +50,9 @@ export function HeroSection() {
 
         {/* Right scrolling column — agency logos */}
         <div className="hidden lg:flex items-center justify-end">
-          <ScrollingLogoColumn
-            agencies={heroAgencies}
-            speed={32}
-          />
+          <ScrollingLogoColumn agencies={heroAgencies} speed={32} />
         </div>
       </div>
     </section>
-  )
+  );
 }

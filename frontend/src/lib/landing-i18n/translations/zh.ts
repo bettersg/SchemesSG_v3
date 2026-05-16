@@ -183,7 +183,7 @@ export const zh: Translations = {
     resourcesHeading: "\u8D44\u6E90",
     legalHeading: "\u6CD5\u5F8B",
     productLinks: [
-      { label: "\u641C\u7D22", href: "#" },
+      { label: "\u641C\u7D22", href: "/" },
       { label: "\u529F\u80FD", href: "#features" },
       { label: "\u5E38\u89C1\u95EE\u9898", href: "#faq" },
     ],
@@ -191,6 +191,7 @@ export const zh: Translations = {
       { label: "\u5173\u4E8E", href: "/about" },
       { label: "\u8D21\u732E", href: "/contribute" },
       { label: "\u53CD\u9988", href: "/feedback" },
+      { label: "\u7F51\u7AD9\u5730\u56FE", href: "/sitemap.xml" },
       { label: "\u8054\u7CFB\u6211\u4EEC", href: "#", comingSoon: true },
     ],
     legalLinks: [

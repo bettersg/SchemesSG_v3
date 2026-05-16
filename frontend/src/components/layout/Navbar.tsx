@@ -7,6 +7,8 @@ import { useLanguage } from "@/lib/landing-i18n";
 import { LanguageToggle } from "@/components/landing/shared/LanguageToggle";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Tabs } from "@heroui/react";
 
 type NavLink = {
   label: string;
@@ -14,8 +16,9 @@ type NavLink = {
   disabled?: boolean;
 };
 
-export function Navbar({ fixed = false }: { fixed?: boolean }) {
+export function Navbar() {
   const { t } = useLanguage();
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -25,6 +28,14 @@ export function Navbar({ fixed = false }: { fixed?: boolean }) {
     { label: t.nav.contribute, href: "/contribute" },
     { label: t.nav.about, href: "/about" },
   ];
+
+  // Determine selected tab from pathname
+  const selectedKey =
+    navLinks.find(
+      (link) =>
+        link.href === pathname ||
+        (link.href !== "/" && pathname.startsWith(link.href)),
+    )?.href ?? "/";
 
   useEffect(() => {
     function onScroll() {
@@ -37,8 +48,7 @@ export function Navbar({ fixed = false }: { fixed?: boolean }) {
   return (
     <header
       className={cn(
-        fixed ? "fixed" : "sticky",
-        "h-nav top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed h-nav top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
           ? "bg-white/70 backdrop-blur-xl border-b border-neutral-200/60 shadow-sm"
           : "bg-transparent",
@@ -55,38 +65,39 @@ export function Navbar({ fixed = false }: { fixed?: boolean }) {
           <span className="text-neutral-400 -ml-1">.sg</span>
         </a>
 
-        {/* Center pill nav - desktop */}
-        <div className="hidden md:flex items-center gap-1 rounded-full bg-neutral-100/80 backdrop-blur-sm px-2 py-1.5 border border-neutral-200/60">
-          {navLinks.map((link) => (
-            <div key={link.label}>
-              {link.disabled ? (
-                <span
-                  key={link.label}
-                  className="relative px-4 py-1.5 text-sm font-medium text-neutral-300 cursor-default rounded-full flex flex-col items-center"
-                >
-                  {link.label}
-                  <span className="text-[8px] tracking-wider font-semibold text-neutral-400 leading-none">
-                    {t.nav.comingSoon}
-                  </span>
-                </span>
-              ) : link.href === "/" ? (
-                <a
-                  href={link.href}
-                  className="px-4 py-1.5 text-sm font-semibold text-neutral-900 rounded-full cursor-pointer transition-all duration-200 bg-amber-400 hover:bg-amber-500"
-                >
-                  {link.label}
-                  <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
-                </a>
-              ) : (
-                <a
-                  href={link.href}
-                  className="px-4 py-1.5 text-sm font-medium text-neutral-500 rounded-full cursor-pointer transition-all duration-200 hover:bg-neutral-200/80 hover:text-neutral-900"
-                >
-                  {link.label}
-                </a>
-              )}
-            </div>
-          ))}
+        {/* Center pill nav - desktop (HeroUI Tabs) */}
+        <div className="hidden md:flex">
+          <Tabs selectedKey={selectedKey} aria-label="Navigation">
+            <Tabs.ListContainer>
+              <Tabs.List
+                aria-label="Navigation tabs"
+                className="rounded-full px-2 py-1.5 gap-1 bg-transparent"
+              >
+                {navLinks.map((link) => (
+                  <Tabs.Tab
+                    key={link.href}
+                    id={link.href}
+                    isDisabled={link.disabled}
+                    className={cn(
+                      "w-fit px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer",
+                      "text-neutral-500",
+                      "hover:text-neutral-900",
+                      "aria-selected:font-semibold aria-selected:text-neutral-900",
+                      "aria-disabled:text-neutral-300 aria-disabled:cursor-default",
+                    )}
+                  >
+                    <Link href={link.href}>
+                      {link.label}
+                      {link.href === "/" && (
+                        <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
+                      )}
+                      <Tabs.Indicator className="rounded-full bg-amber-400" />
+                    </Link>
+                  </Tabs.Tab>
+                ))}
+              </Tabs.List>
+            </Tabs.ListContainer>
+          </Tabs>
         </div>
 
         {/* Language toggle - desktop */}

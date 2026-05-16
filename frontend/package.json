@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@heroui/react": "3.0.2",
+    "@heroui/styles": "^3.0.4",
+    "@lottiefiles/dotlottie-react": "^0.19.2",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -37,7 +39,6 @@
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18",
-    "@types/react-icons": "^3.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "^16.2.3",

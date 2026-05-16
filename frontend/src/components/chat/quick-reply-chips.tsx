@@ -1,5 +1,6 @@
 "use client";
 import { Chip } from "@heroui/react";
+import { productActionChip } from "@/lib/design-system/product-styles";
 
 export type QuickReply = {
   label: string;
@@ -18,13 +19,13 @@ export default function QuickReplyChips({
   if (!suggestions.length) return null;
   return (
     <div className="flex flex-row flex-wrap items-start gap-2 px-4 py-2  no-scrollbar shrink-0">
-      {suggestions.map((s) => (
+      {suggestions.slice(0, 3).map((s) => (
         <Chip
           key={s.label}
           onClick={() => onSelect(s.value)}
           color="accent"
           variant="soft"
-          className="shrink-0 cursor-pointer whitespace-nowrap hover:bg-[#E6F1FB] transition-all"
+          className={`${productActionChip} shrink-0 cursor-pointer whitespace-nowrap`}
         >
           <Chip.Label>{s.label}</Chip.Label>
         </Chip>

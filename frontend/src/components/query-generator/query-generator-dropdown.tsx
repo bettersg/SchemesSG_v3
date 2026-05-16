@@ -13,13 +13,13 @@ function QueryGeneratorDropdown({label, value, tags, changeHandler, className}: 
     <Dropdown>
       <DropdownTrigger>
         <Button
-          className={`w-full sm:w-auto overflow-hidden self-start justify-start max-w-[160px] ${className}`}
-          variant="light"
+          className={`w-full sm:w-auto overflow-hidden self-start justify-start max-w-[160px] border border-(--schemes-border) bg-white text-(--schemes-ink) hover:bg-(--schemes-blue-50) ${className}`}
+          variant="outline"
         >
           <div className="flex flex-col text-left">
-            <span className="text-gray-500 text-xs">{label}</span>
+            <span className="text-(--schemes-muted) text-xs">{label}</span>
             <span
-              className={`text-sm font-medium truncate-first-word`}
+              className="text-sm font-semibold text-(--schemes-blue-900) truncate-first-word"
               style={{ maxWidth: "150px" }}
             >
               {value}
@@ -33,11 +33,13 @@ function QueryGeneratorDropdown({label, value, tags, changeHandler, className}: 
         selectionMode="single"
         onSelectionChange={changeHandler}
         classNames={{
-          base: 'max-h-[300px] overflow-y-auto'
+          base: "max-h-[300px] overflow-y-auto bg-white text-(--schemes-ink)"
         }}
       >
         {tags.map((tag) => (
-          <DropdownItem key={tag}>{tag}</DropdownItem>
+          <DropdownItem key={tag} className="text-(--schemes-ink)">
+            {tag}
+          </DropdownItem>
         ))}
       </DropdownMenu>
     </Dropdown>

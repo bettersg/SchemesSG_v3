@@ -1,7 +1,7 @@
 import { fetchWithAuth } from "@/lib/api";
-import { RawSchemeData, SearchResponse, SearchResScheme } from "../types/types";
+import { RawSchemeData, SearchResponse, Scheme } from "../types/types";
 
-export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => ({
+export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
   schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || [],
   schemeName: rawData["scheme"] || rawData["Scheme"] || "",
   targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || [],
@@ -19,13 +19,30 @@ export const mapToScheme = (rawData: RawSchemeData): SearchResScheme => ({
   quintile: rawData["Quintile"] || 0,
   planningArea: rawData["planning_area"] || "",
   summary: rawData["summary"] || "",
+  contact: [],
+  howToApply:
+    (rawData as Record<string, string | undefined>)["how_to_apply"] ||
+    (rawData as Record<string, string | undefined>)["How to apply"] ||
+    "",
+  eligibilityText:
+    (rawData as Record<string, string | undefined>)["eligibility_text"] ||
+    (rawData as Record<string, string | undefined>)["Eligibility"] ||
+    "",
+  lastUpdated:
+    (rawData as Record<string, string | undefined>)["last_updated"] ||
+    (rawData as Record<string, string | undefined>)["Last updated"] ||
+    "",
+  serviceArea:
+    (rawData as Record<string, string | undefined>)["service_area"] ||
+    (rawData as Record<string, string | undefined>)["Service area"] ||
+    "",
 });
 
 export const getSchemes = async (
   userQuery: string,
-  nextCursor = ""
+  nextCursor = "",
 ): Promise<{
-  schemesRes: SearchResScheme[];
+  schemesRes: Scheme[];
   sessionId: string;
   totalCount: number;
   nextCursor: string;
@@ -70,7 +87,7 @@ export const getSchemes = async (
         schemesData = [res.data];
       }
 
-      const schemesRes: SearchResScheme[] = schemesData.map(mapToScheme);
+      const schemesRes: Scheme[] = schemesData.map(mapToScheme);
       console.log("Mapped schemes:", schemesRes); // Debug
       return { schemesRes, sessionId, totalCount, nextCursor };
     } else {
@@ -85,15 +102,73 @@ export const getSchemes = async (
 
 type StreamCallbacks = {
   onStart?: () => void;
-  onChunk: (chunk: string) => void;
-  onError: () => void;
+  onEvent: (event: ChatStreamEvent) => void;
+  onError: (error: unknown) => void;
   onEnd?: () => void;
 };
+
+export type ChatStreamEvent =
+  | {
+      type: "chunk";
+      data: {
+        chunk?: string;
+        content?: string;
+        text?: string;
+        blockIndex?: number;
+        block_index?: number;
+        messageIndex?: number;
+        message_index?: number;
+      };
+    }
+  | {
+      type: "status";
+      data: {
+        label?: string;
+        phase?: string;
+        sessionID?: string;
+        sessionId?: string;
+      };
+    }
+  | {
+      type: "schemes_update";
+      data: {
+        schemes?: RawSchemeData[];
+      };
+    }
+  | {
+      type: "followups";
+      data: {
+        items?: Record<string, string>;
+      };
+    }
+  | {
+      type: "done";
+      data?: Record<string, unknown>;
+    }
+  | {
+      type: string;
+      data?: Record<string, unknown>;
+    };
+
+function parseStreamEvent(raw: string): ChatStreamEvent | null {
+  const payload = raw.trim();
+  if (!payload || payload === "[DONE]") {
+    return { type: "done" };
+  }
+
+  try {
+    return JSON.parse(payload) as ChatStreamEvent;
+  } catch (error) {
+    console.warn("Failed to parse chat stream event", { payload, error });
+    return null;
+  }
+}
 
 export async function streamChat(
   query: string,
   callbacks: StreamCallbacks,
   sessionId?: string,
+  signal?: AbortSignal,
 ) {
   try {
     const body: { message: string; sessionID?: string } = { message: query };
@@ -105,43 +180,59 @@ export async function streamChat(
       {
         method: "POST",
         body: JSON.stringify(body),
+        signal,
       },
     );
+    // throw new Error("test");
     if (!res.ok) throw new Error(`Request failed: ${res.status}`);
     const reader = res.body?.getReader();
     const decoder = new TextDecoder();
     if (!reader) throw new Error("No reader");
     callbacks.onStart?.();
 
-    let fullText = "";
+    let buffer = "";
+
+    const processEvent = (eventText: string) => {
+      const dataLines = eventText
+        .split(/\r?\n/)
+        .filter((line) => line.startsWith("data: "))
+        .map((line) => line.slice(6));
+
+      if (dataLines.length === 0) return false;
+
+      const event = parseStreamEvent(dataLines.join("\n"));
+      if (!event) return false;
+
+      callbacks.onEvent(event);
+      return event.type === "done";
+    };
+
     while (true) {
       const { done, value } = await reader.read();
-      // console.log("done", done);
       if (done) {
         break;
       }
-      decoder
-        .decode(value)
-        .split("\n\n")
-        .forEach((line) => {
-          // console.log(line)
-          if (line.startsWith("data: ")) {
-            if (fullText) {
-              callbacks.onChunk(fullText);
-            }
-            fullText = line.slice(6);
-          } else if (line) {
-            fullText += line;
-          }
-        });
-      if (fullText.startsWith('data: {"type": "done",')) {
-        console.log("chunks ended");
-        reader.cancel()
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split(/\r?\n\r?\n/);
+      buffer = events.pop() ?? "";
+
+      for (const eventText of events) {
+        if (processEvent(eventText)) {
+          await reader.cancel();
+          return;
+        }
       }
     }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) {
+      processEvent(buffer);
+    }
   } catch (e) {
-    console.error(e)
-    callbacks.onError();
+    if ((e as DOMException)?.name === "AbortError") return;
+    console.error(e);
+    callbacks.onError(e);
   } finally {
     callbacks.onEnd?.();
   }
@@ -150,7 +241,7 @@ export async function streamChat(
 export async function searchSchemes(
   query: string,
   cursor = "",
-): Promise<{ schemes: SearchResScheme[]; nextCursor: string; total: number }> {
+): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
   const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
   try {
     const res = await fetchWithAuth(url, {

@@ -1,7 +1,17 @@
+.showMarker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .showMarker ul {
   list-style-type: disc;
   list-style-position: inside;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
+
 .showMarker li::marker {
   color: #64748b;
 }
@@ -10,7 +20,6 @@
   display: inline;
 }
 
-/* Add styling for horizontal dividers in markdown content */
 .showMarker hr {
   margin-top: 1rem;
   margin-bottom: 1rem;

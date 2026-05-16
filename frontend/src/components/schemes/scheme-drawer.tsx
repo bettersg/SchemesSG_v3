@@ -1,7 +1,7 @@
 "use client";
 import { fetchWithAuth } from "@/lib/api";
 import { parseArrayString } from "@/lib/utils";
-import { BranchContact, SearchResScheme } from "@/types/types";
+import { BranchContact, Scheme } from "@/types/types";
 import Link from "next/link";
 import { Drawer, Spinner, useOverlayState } from "@heroui/react";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import SchemeLogo from "./scheme-logo";
 import { getSchemes } from "@/lib/schemes";
 import { useSchemes } from "@/providers";
 import SchemeContent from "./scheme-content";
+import { X } from "lucide-react";
 
 // interface DrawerScheme {
 //   scheme: string;
@@ -27,7 +28,7 @@ import SchemeContent from "./scheme-content";
 // }
 
 interface SchemeDrawerProps {
-  scheme: SearchResScheme | null;
+  scheme: Scheme | null;
   onClose: () => void;
 }
 
@@ -44,7 +45,6 @@ function useIsDesktop() {
 }
 
 export default function SchemeDrawer({ scheme, onClose }: SchemeDrawerProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const drawerState = useOverlayState({ defaultOpen: false });
   const isDesktop = useIsDesktop();
 
@@ -129,24 +129,15 @@ export default function SchemeDrawer({ scheme, onClose }: SchemeDrawerProps) {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", stiffness: 340, damping: 34 }}
-                className="h-full absolute top-0 left-0 bottom-0 w-[380px] lg:w-full bg-white z-30 overflow-y-auto thin-scrollbar hidden lg:flex flex-col"
+                className="thin-scrollbar absolute top-0 bottom-0 left-0 z-30 hidden h-full w-[380px] flex-col overflow-y-auto bg-white lg:flex lg:w-full"
               >
                 <button
                   onClick={onClose}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/6 hover:bg-black/10 flex items-center justify-center text-[#5F5E5A] transition-colors z-50"
+                  className="absolute top-4 right-4 z-50 flex h-8 w-8 items-center justify-center rounded-lg border border-(--schemes-border) bg-white text-(--schemes-muted) transition-colors hover:bg-(--schemes-blue-50)"
                 >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path
-                      d="M1 1l10 10M11 1L1 11"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <X size={12} strokeWidth={2} />
                 </button>
-                <SchemeContent
-                  scheme={scheme}
-                />
+                <SchemeContent scheme={scheme} />
               </motion.div>
             </motion.div>
           </>
@@ -168,7 +159,7 @@ export default function SchemeDrawer({ scheme, onClose }: SchemeDrawerProps) {
         <Drawer.Content placement={isDesktop ? "left" : "bottom"}>
           <Drawer.Dialog
             className={clsx(
-              "h-full p-0 overflow-hidden",
+              "h-full overflow-hidden p-0",
               isDesktop ? "w-1/2" : "w-full",
             )}
           >
@@ -177,9 +168,7 @@ export default function SchemeDrawer({ scheme, onClose }: SchemeDrawerProps) {
               <Drawer.Handle className="absolute left-1/2 top-3 z-50" />
             )}
             <Drawer.Body className="p-0">
-              <SchemeContent
-                scheme={scheme}
-              />
+              <SchemeContent scheme={scheme} />
             </Drawer.Body>
           </Drawer.Dialog>
         </Drawer.Content>

@@ -1,8 +1,14 @@
-import { useChat } from "@/providers";
-import { Button, Spinner, Textarea } from "@heroui/react";
+import { useChat, useSchemes } from "@/providers";
+import { Button, TextArea, Label, TextField } from "@heroui/react";
+import { Spinner } from "@heroui/react";
+
 import { MutableRefObject, useState } from "react";
-import { SearchIcon } from "../assets/icons/search-icon";
-import { getSchemes } from "./main-chat";
+import { Search } from "lucide-react";
+import {
+  productButtonPrimary,
+  productIconButton,
+  productInputText,
+} from "@/lib/design-system/product-styles";
 
 interface QueryBarProps {
   searchbarRef: MutableRefObject<HTMLTextAreaElement | null>;
@@ -22,7 +28,7 @@ export default function QueryBar({ searchbarRef }: QueryBarProps) {
     setSessionId,
     setTotalCount,
     setNextCursor,
-  } = useChat();
+  } = useSchemes();
   const [isBotResponseGenerating, setIsBotResponseGenerating] =
     useState<boolean>(false);
 
@@ -59,54 +65,45 @@ export default function QueryBar({ searchbarRef }: QueryBarProps) {
 
   return (
     <>
-      <Textarea
-        value={userQuery}
-        onChange={(e) => setUserQuery(e.target.value)}
-        onKeyDown={async (e) => {
-          if (e.key === "Enter" && !isBotResponseGenerating) {
-            e.preventDefault();
-            await handleSend();
-          }
-        }}
-        ref={searchbarRef}
-        classNames={{
-          input:
-            "placeholder:text-base placeholder:italic placeholder:text-black/20 text-base",
-          label: "text-base md:text-lg font-semibold",
-          description: "text-base",
-        }}
-        type="text"
-        size="md"
-        radius="lg"
-        color="primary"
-        label={LABEL}
-        labelPlacement="outside"
-        description={DESCRIPTION}
-        placeholder={PLACEHOLDER}
-        endContent={
-          <div className="flex items-end gap-2 h-full">
-            {isBotResponseGenerating ? (
-              <>
-                <span className="text-xs text-gray-500 whitespace-nowrap">
-                  Finding schemes...
-                </span>
-                <Spinner size="sm" className="mt-auto" />
-              </>
-            ) : (
-              <Button
-                color="primary"
-                isIconOnly
-                size="sm"
-                radius="full"
-                onPress={async () => await handleSend()}
-                className="mt-auto"
-              >
-                <SearchIcon size={16} />
-              </Button>
-            )}
-          </div>
-        }
-      />
+      <TextField>
+        <Label className="text-base md:text-lg font-semibold text-(--schemes-blue-900)">
+          {LABEL}
+        </Label>
+        <TextArea
+          value={userQuery}
+          onChange={(e) => setUserQuery(e.target.value)}
+          onKeyDown={async (e) => {
+            if (e.key === "Enter" && !isBotResponseGenerating) {
+              e.preventDefault();
+              await handleSend();
+            }
+          }}
+          ref={searchbarRef}
+          placeholder={PLACEHOLDER}
+          className={`${productInputText} text-base`}
+        />
+        <p className="text-base text-(--schemes-muted)">{DESCRIPTION}</p>
+        <div className="mt-2 flex justify-end gap-2">
+          {isBotResponseGenerating ? (
+            <>
+              <span className="text-xs text-(--schemes-muted) whitespace-nowrap">
+                Finding schemes...
+              </span>
+              <Spinner size="sm" />
+            </>
+          ) : (
+            <Button
+              variant="primary"
+              isIconOnly
+              size="sm"
+              onPress={async () => await handleSend()}
+              className={`${productButtonPrimary} ${productIconButton}`}
+            >
+              <Search size={16} strokeWidth={2} />
+            </Button>
+          )}
+        </div>
+      </TextField>
     </>
   );
 }

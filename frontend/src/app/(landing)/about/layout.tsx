@@ -9,10 +9,10 @@ export default function LandingLayout({
   children: React.ReactNode;
 }) {
   return (
-      <>
-        <Navbar fixed/>
-        <main>{children}</main>
-        <Footer />
-      </>
+    <>
+      <Navbar />
+      <main>{children}</main>
+      <Footer />
+    </>
   );
 }

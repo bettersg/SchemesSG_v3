@@ -8,10 +8,8 @@ import {
 } from "next/font/google";
 import React from "react";
 import "@/globals.css";
-import { ChatProvider } from "@/providers";
-import { AuthProvider } from "@/providers/AuthProvider";
-import { LanguageProvider } from "@/lib/landing-i18n";
-import { Navbar } from "@/components/layout/Navbar";
+import { AppProviders } from "@/providers";
+import { SCHEMES_SG_LOGO_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -45,14 +43,34 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SchemesSG — Find the right support",
-  description:
-	"Singapore's AI-powered directory of social assistance schemes. Find the right support for your situation — anonymously and for free.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SEO_COPY.homeTitle,
+    template: "%s",
+  },
+  description: SEO_COPY.homeDescription,
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-	title: "SchemesSG — Find the right support",
-	description:
-	  "500+ social assistance schemes across Singapore. AI-powered, anonymous, free.",
-	siteName: "SchemesSG",
+    title: SEO_COPY.homeTitle,
+    description: SEO_COPY.homeDescription,
+    url: "/",
+    siteName: SEO_COPY.productName,
+    type: "website",
+    locale: "en_SG",
+    images: [
+      {
+        url: SCHEMES_SG_LOGO_URL,
+        alt: "Schemes.sg logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_COPY.homeTitle,
+    description: SEO_COPY.homeDescription,
+    images: [SCHEMES_SG_LOGO_URL],
   },
 };
 
@@ -62,24 +80,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-	<html lang="en" className="p-0! overflow-visible!">
-	  <body
-		className={`${openSans.variable} ${lexend.variable} ${geistSans.variable} ${plusJakartaSans.variable} ${dmSerifDisplay.variable} antialiased text-foreground font-landing-sans`}
-		style={{
-		  fontFamily:
-			"var(--font-body), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
-		}}
-	  >
-		<LanguageProvider>
-		  <AuthProvider>
-			<ChatProvider>
-			  <div className="min-h-screen h-full">
-				{children}
-			  </div>
-			</ChatProvider>
-		  </AuthProvider>
-		</LanguageProvider>
-	  </body>
-	</html>
+    <html lang="en" className="!overflow-visible !p-0">
+      <body
+        className={`${openSans.variable} ${lexend.variable} ${geistSans.variable} ${plusJakartaSans.variable} ${dmSerifDisplay.variable} font-landing-sans text-foreground antialiased`}
+        style={{
+          fontFamily:
+            "var(--font-body), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
+        }}
+      >
+        <AppProviders>
+          <div className="h-full min-h-screen">{children}</div>
+        </AppProviders>
+      </body>
+    </html>
   );
 }

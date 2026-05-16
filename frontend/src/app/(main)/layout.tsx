@@ -9,7 +9,7 @@ export default function MainLayout({
 }) {
   return (
     <>
-      <Navbar fixed/>
+      <Navbar />
       <div className="h-nav"></div>
       <main className="h-[calc(100vh-var(--spacing-nav))]">{children}</main>
     </>

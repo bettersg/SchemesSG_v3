@@ -1,10 +1,17 @@
-"use client"
+"use client";
 
-import { motion, useReducedMotion } from "framer-motion"
-import { Search, SlidersHorizontal, Sparkles, Globe, UserCheck } from "lucide-react"
-import { SectionWrapper } from "@/components/landing/shared/SectionWrapper"
-import { useLanguage } from "@/lib/landing-i18n"
-import { cn } from "@/lib/utils"
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Globe,
+  MousePointer2,
+  UserCheck,
+} from "lucide-react";
+import { SectionWrapper } from "@/components/landing/shared/SectionWrapper";
+import { useLanguage } from "@/lib/landing-i18n";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /*  Decorative illustration components for each bento card             */
@@ -24,24 +31,43 @@ function SearchIllustration() {
       <div className="rounded-lg bg-white border border-neutral-200 p-3 shadow-sm">
         <div className="flex items-center gap-2">
           <Search className="h-3.5 w-3.5 text-neutral-400" />
-          <span className="text-xs text-neutral-500">I&rsquo;m a single mother looking for financial aid...</span>
+          <span className="text-xs text-neutral-500">
+            I&rsquo;m a single mother looking for financial aid...
+          </span>
         </div>
       </div>
       {/* Result cards */}
       <div className="mt-3 space-y-2">
         <div className="rounded-lg bg-white border border-neutral-200 p-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <img src="/landing/logos/msf.jpg" alt="" className="h-6 w-6 rounded-full" />
+            <img
+              src="/landing/logos/msf.jpg"
+              alt=""
+              className="h-6 w-6 rounded-full"
+            />
             <div>
-              <p className="text-xs font-semibold text-neutral-800">ComCare Short-to-Medium-Term</p>
-              <p className="text-[10px] text-neutral-400">Ministry of Social and Family Development</p>
+              <p className="text-xs font-semibold text-neutral-800">
+                ComCare Short-to-Medium-Term
+              </p>
+              <p className="text-[10px] text-neutral-400">
+                Ministry of Social and Family Development
+              </p>
             </div>
           </div>
-          <p className="mt-1.5 text-[10px] text-neutral-500 leading-relaxed">Financial assistance for lower-income families facing difficulties...</p>
+          <p className="mt-1.5 text-[10px] text-neutral-500 leading-relaxed">
+            Financial assistance for lower-income families facing
+            difficulties...
+          </p>
           <div className="mt-2 flex gap-1.5">
-            <span className="rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-medium text-amber-700">Financial Aid</span>
-            <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">Families</span>
-            <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">Monthly</span>
+            <span className="rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-medium text-amber-700">
+              Financial Aid
+            </span>
+            <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">
+              Families
+            </span>
+            <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">
+              Monthly
+            </span>
           </div>
         </div>
         <div className="rounded-lg bg-white/60 border border-neutral-100 p-3">
@@ -54,78 +80,97 @@ function SearchIllustration() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function DatabaseIllustration() {
-  const shouldReduceMotion = useReducedMotion()
+  const shouldReduceMotion = useReducedMotion();
   const cards = [
     {
       posStyle: {
-        top: '0%',
-        left: '10%',
-        rotate: '-6deg'
+        top: "0%",
+        left: "10%",
+        rotate: "-6deg",
       },
-      text: 'Healthcare',
-      textStyle: 'bg-blue-100 text-blue-600'
-    }, {
+      text: "Healthcare",
+      textStyle: "bg-blue-100 text-blue-600",
+    },
+    {
       posStyle: {
-        top: '0%',
-        left: '50%',
-        rotate: '4deg'
+        top: "0%",
+        left: "50%",
+        rotate: "4deg",
       },
-      text: 'Education',
-      textStyle: 'bg-amber-100 text-amber-600'
-    }, {
+      text: "Education",
+      textStyle: "bg-amber-100 text-amber-600",
+    },
+    {
       posStyle: {
-        top: '34%',
-        left: '2%',
-        rotate: '2deg'
+        top: "34%",
+        left: "2%",
+        rotate: "2deg",
       },
-      text: 'Financial Aid',
-      textStyle: 'bg-red-100 text-red-600'
-    }, {
+      text: "Financial Aid",
+      textStyle: "bg-red-100 text-red-600",
+    },
+    {
       posStyle: {
-        top: '36%',
-        left: '56%',
-        rotate: '-3deg'
+        top: "36%",
+        left: "56%",
+        rotate: "-3deg",
       },
-      text: 'Disability',
-      textStyle: 'bg-purple-100 text-purple-600'
-    }, {
+      text: "Disability",
+      textStyle: "bg-purple-100 text-purple-600",
+    },
+    {
       posStyle: {
-        top: '70%',
-        left: '50%',
-        rotate: '5deg'
+        top: "70%",
+        left: "50%",
+        rotate: "5deg",
       },
-      text: 'Childcare',
-      textStyle: 'bg-rose-100 text-rose-600'
-    }, {
+      text: "Childcare",
+      textStyle: "bg-rose-100 text-rose-600",
+    },
+    {
       posStyle: {
-        top: '70%',
-        left: '10%',
-        rotate: '-2deg'
+        top: "70%",
+        left: "10%",
+        rotate: "-2deg",
       },
-      text: 'Eldercare',
-      textStyle: 'bg-teal-100 text-teal-600'
-    }
-  ]
-    return (
-
-      <div className="relative flex items-center justify-center py-4">
-        {/* Scattered scheme category cards */}
-        <div className="relative h-40 w-full">
-          {cards.map(card => (
-            <div key={card.text} className={cn("absolute rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm")} style={{...card.posStyle}}>
+      text: "Eldercare",
+      textStyle: "bg-teal-100 text-teal-600",
+    },
+  ];
+  return (
+    <div className="relative flex items-center justify-center py-4">
+      {/* Scattered scheme category cards */}
+      <div className="relative h-40 w-full">
+        {cards.map((card) => (
+          <div
+            key={card.text}
+            className={cn(
+              "absolute rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm",
+            )}
+            style={{ ...card.posStyle }}
+          >
             <div className="flex items-center gap-1.5">
-              <div className={cn("w-5 h-5 sm:w-8 sm:h-8 rounded bg-blue-100 flex items-center justify-center text-[8px] sm:text-[12px] font-bold", card.textStyle)}>{card.text.charAt(0)}</div>
-              <span className="text-[10px] sm:text-[14px] font-medium text-neutral-700">{card.text}</span>
+              <div
+                className={cn(
+                  "w-5 h-5 sm:w-8 sm:h-8 rounded bg-blue-100 flex items-center justify-center text-[8px] sm:text-[12px] font-bold",
+                  card.textStyle,
+                )}
+              >
+                {card.text.charAt(0)}
+              </div>
+              <span className="text-[10px] sm:text-[14px] font-medium text-neutral-700">
+                {card.text}
+              </span>
             </div>
           </div>
-          ))}
-        </div>
+        ))}
       </div>
-    )
+    </div>
+  );
 }
 
 function FilterIllustration() {
@@ -134,10 +179,26 @@ function FilterIllustration() {
       {/* Agency logo row + filter */}
       <div className="flex items-center gap-4">
         <div className="flex items-center">
-          <img src="/landing/logos/hdb.jpg" alt="" className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm" />
-          <img src="/landing/logos/MOH.jpg" alt="" className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2" />
-          <img src="/landing/logos/cpf.jpg" alt="" className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2" />
-          <img src="/landing/logos/msf.jpg" alt="" className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2" />
+          <img
+            src="/landing/logos/hdb.jpg"
+            alt=""
+            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm"
+          />
+          <img
+            src="/landing/logos/MOH.jpg"
+            alt=""
+            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
+          />
+          <img
+            src="/landing/logos/cpf.jpg"
+            alt=""
+            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
+          />
+          <img
+            src="/landing/logos/msf.jpg"
+            alt=""
+            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
+          />
         </div>
         <div className="relative">
           <div className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
@@ -145,20 +206,33 @@ function FilterIllustration() {
             <span className="text-xs font-medium text-neutral-600">Filter</span>
           </div>
           {/* Mouse cursor */}
-          <svg className="absolute -bottom-2 -right-1 h-4 w-4 text-neutral-700 drop-shadow-sm" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M1 1l5.5 14 2.2-5.8L14.5 7z" />
-          </svg>
+          <MousePointer2
+            className="absolute -bottom-2 -right-1 h-4 w-4 text-neutral-700 drop-shadow-sm"
+            strokeWidth={2}
+          />
         </div>
       </div>
       {/* Category pills */}
       <div className="flex flex-wrap gap-2">
         <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-          <img src="/landing/logos/sgenable.jpg" alt="" className="h-5 w-5 rounded-full" />
-          <span className="text-xs font-medium text-neutral-700">Disability Support</span>
+          <img
+            src="/landing/logos/sgenable.jpg"
+            alt=""
+            className="h-5 w-5 rounded-full"
+          />
+          <span className="text-xs font-medium text-neutral-700">
+            Disability Support
+          </span>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-          <img src="/landing/logos/aic.jpg" alt="" className="h-5 w-5 rounded-full" />
-          <span className="text-xs font-medium text-neutral-700">Eldercare</span>
+          <img
+            src="/landing/logos/aic.jpg"
+            alt=""
+            className="h-5 w-5 rounded-full"
+          />
+          <span className="text-xs font-medium text-neutral-700">
+            Eldercare
+          </span>
         </div>
       </div>
       {/* Tags row */}
@@ -171,7 +245,7 @@ function FilterIllustration() {
         <Sparkles className="h-3.5 w-3.5 text-neutral-300" />
       </div>
     </div>
-  )
+  );
 }
 
 function SuggestSchemeIllustration() {
@@ -179,11 +253,15 @@ function SuggestSchemeIllustration() {
     <div className="relative rounded-xl bg-neutral-50 border border-neutral-100 p-3.5 overflow-hidden">
       {/* Step 1: User submits URL */}
       <div className="flex items-center gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200 text-neutral-500 text-[10px] font-bold">1</div>
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200 text-neutral-500 text-[10px] font-bold">
+          1
+        </div>
         <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
           <div className="flex items-center gap-1.5">
             <Globe className="h-3 w-3 shrink-0 text-neutral-400" />
-            <span className="text-[10px] text-neutral-500 truncate">https://gov.sg/schemes/new-grant</span>
+            <span className="text-[10px] text-neutral-500 truncate">
+              https://gov.sg/schemes/new-grant
+            </span>
           </div>
         </div>
       </div>
@@ -192,16 +270,26 @@ function SuggestSchemeIllustration() {
 
       {/* Step 2: AI agents extract */}
       <div className="flex items-center gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">2</div>
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+          2
+        </div>
         <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
           <div className="flex items-center gap-1.5">
             <Sparkles className="h-3 w-3 shrink-0 text-blue-600" />
-            <span className="text-[10px] text-neutral-700 font-medium">AI extracting scheme details</span>
+            <span className="text-[10px] text-neutral-700 font-medium">
+              AI extracting scheme details
+            </span>
           </div>
           <div className="mt-1.5 flex gap-1">
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">Eligibility</span>
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">Benefits</span>
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">Agency</span>
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">
+              Eligibility
+            </span>
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">
+              Benefits
+            </span>
+            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">
+              Agency
+            </span>
           </div>
         </div>
       </div>
@@ -210,27 +298,39 @@ function SuggestSchemeIllustration() {
 
       {/* Step 3: Slack approval */}
       <div className="flex items-start gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-800 text-white text-[10px] font-bold">3</div>
+        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-800 text-white text-[10px] font-bold">
+          3
+        </div>
         <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
           <div className="flex items-center gap-1.5 mb-1.5">
             <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none">
-              <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm6.33 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 20.206 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zm-1.272 0a2.528 2.528 0 0 1-2.52 2.521 2.527 2.527 0 0 1-2.521-2.521V2.522A2.527 2.527 0 0 1 11.372 0a2.528 2.528 0 0 1 2.52 2.522v6.312zm-2.52 6.33a2.528 2.528 0 0 1 2.52 2.52 2.527 2.527 0 0 1-2.52 2.522 2.527 2.527 0 0 1-2.521-2.522v-2.52h2.52zm0-1.272a2.528 2.528 0 0 1-2.521-2.52 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 11.372a2.528 2.528 0 0 1-2.522 2.52h-6.312z" fill="#E01E5A"/>
+              <path
+                d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm6.33 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 20.206 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zm-1.272 0a2.528 2.528 0 0 1-2.52 2.521 2.527 2.527 0 0 1-2.521-2.521V2.522A2.527 2.527 0 0 1 11.372 0a2.528 2.528 0 0 1 2.52 2.522v6.312zm-2.52 6.33a2.528 2.528 0 0 1 2.52 2.52 2.527 2.527 0 0 1-2.52 2.522 2.527 2.527 0 0 1-2.521-2.522v-2.52h2.52zm0-1.272a2.528 2.528 0 0 1-2.521-2.52 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 11.372a2.528 2.528 0 0 1-2.522 2.52h-6.312z"
+                fill="#E01E5A"
+              />
             </svg>
-            <span className="text-[10px] font-semibold text-neutral-700">#scheme-reviews</span>
+            <span className="text-[10px] font-semibold text-neutral-700">
+              #scheme-reviews
+            </span>
           </div>
           <div className="rounded bg-neutral-50 border border-neutral-100 px-2 py-1.5">
-            <p className="text-[10px] text-neutral-600"><span className="font-semibold">New Housing Grant 2025</span> — HDB</p>
+            <p className="text-[10px] text-neutral-600">
+              <span className="font-semibold">New Housing Grant 2025</span> —
+              HDB
+            </p>
             <div className="mt-1.5 flex gap-1.5">
               <span className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-[9px] font-semibold text-white">
                 <UserCheck className="h-2.5 w-2.5" /> Approve
               </span>
-              <span className="rounded bg-white border border-neutral-200 px-2 py-0.5 text-[9px] text-neutral-500">Reject</span>
+              <span className="rounded bg-white border border-neutral-200 px-2 py-0.5 text-[9px] text-neutral-500">
+                Reject
+              </span>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -238,8 +338,7 @@ function SuggestSchemeIllustration() {
 /* ------------------------------------------------------------------ */
 
 export function FeaturesSection() {
-
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <SectionWrapper id="features" className="bg-neutral-50 overflow-hidden">
@@ -339,9 +438,8 @@ export function FeaturesSection() {
               {t.features.cards.filter.description}
             </p>
           </motion.div>
-
         </div>
       </div>
     </SectionWrapper>
-  )
+  );
 }

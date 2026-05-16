@@ -4,6 +4,20 @@ import { Button, Card, Input, Label, TextArea, TextField } from "@heroui/react";
 import { useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
+import {
+  productButtonLg,
+  productButtonPrimary,
+  productCardPadded,
+  productFormAlertMessage,
+  productFormContent,
+  productFormInfoMessage,
+  productFormLabel,
+  productHeading,
+  productInputSurface,
+  productInputText,
+  productPageShell,
+  productSubheading,
+} from "@/lib/design-system/product-styles";
 
 export default function FeedbackPage() {
   const [feedbackText, setFeedbackText] = useState("");
@@ -11,18 +25,24 @@ export default function FeedbackPage() {
   const [userEmail, setUserEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
-    type: "success" | "error" | null;
+    type: "success" | "error";
     message: string;
-  }>({ type: null, message: "" });
+  } | null>(null);
 
   const validateForm = () => {
     if (!userName.trim() || !userEmail.trim() || !feedbackText.trim()) {
-      setSubmitStatus({ type: "error", message: "Please fill in all required fields" });
+      setSubmitStatus({
+        type: "error",
+        message: "Please fill in all required fields",
+      });
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userEmail)) {
-      setSubmitStatus({ type: "error", message: "Please enter a valid email address" });
+      setSubmitStatus({
+        type: "error",
+        message: "Please enter a valid email address",
+      });
       return false;
     }
     return true;
@@ -38,80 +58,97 @@ export default function FeedbackPage() {
         {
           method: "POST",
           body: JSON.stringify({ feedbackText, userName, userEmail }),
-        }
+        },
       );
       const data = await response.json();
       if (response.ok) {
-        setSubmitStatus({ type: "success", message: "Thank you for your feedback!" });
+        setSubmitStatus({
+          type: "success",
+          message: "Thank you for your feedback!",
+        });
         setFeedbackText("");
         setUserName("");
         setUserEmail("");
       } else {
-        setSubmitStatus({ type: "error", message: data.message || "Failed to submit feedback" });
+        setSubmitStatus({
+          type: "error",
+          message: data.message || "Failed to submit feedback",
+        });
       }
     } catch {
-      setSubmitStatus({ type: "error", message: "An error occurred while submitting feedback" });
+      setSubmitStatus({
+        type: "error",
+        message: "An error occurred while submitting feedback",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="w-full overflow-y-auto">
-      <div className={clsx("overflow-y-auto max-w-[400px] sm:max-w-[600px]", "mx-auto p-2 sm:p-4")}>
-        <div className={clsx("text-center my-8", "flex flex-col gap-4")}>
-          <p className="text-2xl sm:text-3xl font-extrabold text-schemes-blue">
-            Share Your <span>Feedback</span>
-          </p>
-          <p className="font-medium text-center text-schemes-darkblue">
-            Help us improve Schemes SG with your valuable input
+    <div className={productPageShell}>
+      <div className={productFormContent}>
+        <div className="mb-6 flex flex-col gap-2 text-left">
+          <h1 className={productHeading}>Share feedback</h1>
+          <p className={productSubheading}>
+            Help us improve Schemes.sg with your valuable input
           </p>
         </div>
-        <Card className="p-8 border border-schemes-lightgray shadow-none">
+        <Card className={`${productCardPadded} shadow-none`}>
           <Card.Content>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <TextField isRequired>
-					<Label>Name</Label>
-					<Input
-					  placeholder="Enter your name"
-					  value={userName}
-					  onChange={(e) => setUserName(e.target.value)}
-					  variant="primary"
-					/>
-				</TextField>
+                  <Label className={productFormLabel}>Name</Label>
+                  <Input
+                    placeholder="Enter your name"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    variant="primary"
+                    className={`${productInputSurface} ${productInputText}`}
+                  />
+                </TextField>
                 <TextField isRequired>
-					<Label>Email</Label>
-					<Input
-					  placeholder="Enter your email"
-					  type="email"
-					  value={userEmail}
-					  onChange={(e) => setUserEmail(e.target.value)}
-					  variant="primary"
-					/>
-				</TextField>
+                  <Label className={productFormLabel}>Email</Label>
+                  <Input
+                    placeholder="Enter your email"
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    variant="primary"
+                    className={`${productInputSurface} ${productInputText}`}
+                  />
+                </TextField>
               </div>
               <TextField isRequired>
-				<Label>Your Feedback</Label>
-				<TextArea
-				  placeholder="Please share your thoughts, suggestions, or concerns"
-				  value={feedbackText}
-				  onChange={(e) => setFeedbackText(e.target.value)}
-				  variant="primary"
-				  rows={6}
-				/>
-			  </TextField>
-              {submitStatus.message && (
+                <Label className={productFormLabel}>Your feedback</Label>
+                <TextArea
+                  placeholder="Please share your thoughts, suggestions, or concerns"
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  variant="primary"
+                  className={`${productInputSurface} ${productInputText}`}
+                  rows={6}
+                />
+              </TextField>
+              {submitStatus && (
                 <div
                   className={clsx(
-                    "p-4 rounded-lg",
-                    submitStatus.type === "success" ? "successMessage" : "errorMessage"
+                    "leading-5",
+                    submitStatus.type === "success"
+                      ? productFormInfoMessage
+                      : productFormAlertMessage,
                   )}
                 >
                   {submitStatus.message}
                 </div>
               )}
-              <Button type="submit" variant="primary" isPending={isSubmitting}>
+              <Button
+                type="submit"
+                variant="primary"
+                isPending={isSubmitting}
+                className={`${productButtonPrimary} ${productButtonLg} w-full sm:w-fit sm:self-end`}
+              >
                 {isSubmitting ? "Submitting..." : "Submit Feedback"}
               </Button>
             </form>

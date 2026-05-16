@@ -1,19 +1,21 @@
-import { ShieldIcon } from "@/assets/icons/shield-icon";
-import { StackIcon } from "@/assets/icons/stack-icon";
-import { DataIcon } from "@/assets/icons/data-icon";
-import { CheckIcon } from "@/assets/icons/check-icon";
 import { AIFileIcon } from "@/assets/icons/ai-file-icon";
-import { PeopleIcon } from "@/assets/icons/people-icon";
-import { ChatIcon } from "@/assets/icons/chat-icon";
-import { RepeatIcon } from "@/assets/icons/repeat-icon";
+import {
+  CircleCheck,
+  Database,
+  Layers,
+  MessageCircle,
+  Repeat2,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { Button } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import StatsCard from "./stats-card";
 import Carousel from "./carousel";
 import AboutContent from "./about-content";
 import InfoCard from "./info-card";
-import aboutusImg1 from '@/assets/about-section/about-us1.svg'
-import aboutusImg2 from '@/assets/about-section/about-us2.svg'
+import aboutusImg1 from "@/assets/about-section/about-us1.svg";
+import aboutusImg2 from "@/assets/about-section/about-us2.svg";
 import clsx from "clsx";
 
 function AboutSection() {
@@ -24,7 +26,7 @@ function AboutSection() {
       <section
         className={clsx(
           "flex flex-col items-center gap-6",
-          "py-6 sm:py-9 md:py-12"
+          "py-6 sm:py-9 md:py-12",
         )}
       >
         <div className="flex flex-col gap-4 items-center">
@@ -39,25 +41,34 @@ function AboutSection() {
         </div>
         <div className="w-full flex flex-col sm:flex-row gap-4 justify-center items-center sm:items-stretch">
           <StatsCard title="400+" subtitle="social schemes listed">
-            <StackIcon size={50} className="fill-schemes-blue" />
+            <Layers size={50} className="text-schemes-blue" strokeWidth={2} />
           </StatsCard>
           <StatsCard title="300+" subtitle="users monthly">
-            <PeopleIcon size={50} className="fill-schemes-blue" />
+            <Users size={50} className="text-schemes-blue" strokeWidth={2} />
           </StatsCard>
           <StatsCard title="privacy-first" subtitle="secure and anonymous chat">
-            <ShieldIcon size={50} className="fill-schemes-blue" />
+            <ShieldCheck
+              size={50}
+              className="text-schemes-blue"
+              strokeWidth={2}
+            />
           </StatsCard>
         </div>
       </section>
       <section className="flex justify-center">
-        <div className={clsx("w-screen shrink-0 bg-schemes-lightblue overflow-hidden", "py-6 sm:py-9 md:py-12")}>
+        <div
+          className={clsx(
+            "w-screen shrink-0 bg-schemes-lightblue overflow-hidden",
+            "py-6 sm:py-9 md:py-12",
+          )}
+        >
           <Carousel />
         </div>
       </section>
       <section
         className={clsx(
           "flex flex-col items-center gap-4",
-          "py-6 sm:py-9 md:py-12"
+          "py-6 sm:py-9 md:py-12",
         )}
       >
         <h2 className="text-2xl md:text-3xl font-bold text-schemes-blue text-center">
@@ -76,14 +87,13 @@ function AboutSection() {
           text="Social assistance information is often fragmented, hard to search, and slow to update. Schemes SG pulls everything into one trusted place, keeps it fresh with community input, and makes it navigable with AI-powered search and smart filters."
           src={aboutusImg2}
           alt="Illustration of a large central search bar surrounded by documents, servers, and charts, conveying digital collaboration."
-          
           orderFlipped={true}
         />
       </section>
       <section
         className={clsx(
           "flex flex-col gap-4 items-center",
-          "py-6 sm:py-9 md:py-12"
+          "py-6 sm:py-9 md:py-12",
         )}
       >
         <h2 className="text-2xl md:text-3xl font-bold text-schemes-blue text-center">
@@ -94,20 +104,20 @@ function AboutSection() {
             className={clsx(
               "flex justify-start p-4",
               "lg:grid lg:grid-cols-[repeat(3,fit-content(100%))] lg:justify-center",
-              "gap-4 md:gap-6"
+              "gap-4 md:gap-6",
             )}
           >
             <InfoCard
               title="Gather credible data"
               text="We gather scheme details from official websites, public sources, and community submissions."
             >
-              <DataIcon className="fill-white" size={50} />
+              <Database className="text-white" size={50} strokeWidth={2} />
             </InfoCard>
             <InfoCard
               title="Check for accuracy"
               text="Entries are reviewed by volunteer team against source materials"
             >
-              <CheckIcon className="fill-white" size={50} />
+              <CircleCheck className="text-white" size={50} strokeWidth={2} />
             </InfoCard>
             <InfoCard
               title="Enrich with AI"
@@ -119,19 +129,19 @@ function AboutSection() {
               title="Community feedback"
               text="Our users contribute new schemes and help us spot missing or outdated information fast. "
             >
-              <PeopleIcon className="fill-white" size={50} />
+              <Users className="text-white" size={50} strokeWidth={2} />
             </InfoCard>
             <InfoCard
               title="Smart search assistant"
               text="Looking for something specific? Our chatbot helps you find relevant schemes without guesswork."
             >
-              <ChatIcon className="fill-white" size={50} />
+              <MessageCircle className="text-white" size={50} strokeWidth={2} />
             </InfoCard>
             <InfoCard
               title="Up to date information"
               text="We run frequent refreshes to find the latest support programs and policy changes"
             >
-              <RepeatIcon className="fill-white" size={50} />
+              <Repeat2 className="text-white" size={50} strokeWidth={2} />
             </InfoCard>
           </div>
         </div>
@@ -158,4 +168,3 @@ function AboutSection() {
 }
 
 export default AboutSection;
-

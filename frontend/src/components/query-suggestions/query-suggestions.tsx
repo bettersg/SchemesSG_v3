@@ -1,10 +1,5 @@
-import {
-  Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@heroui/react";
-import { InfoIcon } from "../../assets/icons/info-icon";
+import { Button, Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
+import { Info } from "lucide-react";
 
 interface QuerySuggestionsProps {
   setUserInput: (input: string) => void;
@@ -30,12 +25,14 @@ const QuerySuggestions = ({ setUserInput }: QuerySuggestionsProps) => {
           variant="light"
           className="text-schemes-darkgray hover:text-schemes-darkblue"
         >
-          <InfoIcon />
+          <Info size={24} strokeWidth={2} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] rounded-xl shadow-md">
         <div className="p-4">
-          <h3 className="text-lg mb-3 text-schemes-darkblue">Suggested Questions</h3>
+          <h3 className="text-lg mb-3 text-schemes-darkblue">
+            Suggested Questions
+          </h3>
           <ul className="flex flex-col gap-1.5">
             {suggestions.map((query, index) => (
               <li

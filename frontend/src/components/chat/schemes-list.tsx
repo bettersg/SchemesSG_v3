@@ -1,88 +1,188 @@
 "use client";
 import { useChat } from "@/providers";
 import clsx from "clsx";
-import Link from "next/link";
 import SchemeCard from "../schemes/scheme-card";
-import { HTMLAttributes } from "react";
+import { useMemo, useState } from "react";
 import { Button, ScrollShadow, Spinner } from "@heroui/react";
-import { SearchResScheme } from "@/types/types";
+import { SearchX } from "lucide-react";
+import { FilterObjType } from "@/types/types";
+import SchemesFilter from "../schemes/schemes-filter";
+import { parseArrayString } from "@/lib/utils";
+import {
+  productButtonSecondary,
+  productButtonSm,
+} from "@/lib/design-system/product-styles";
 
-function CategoryTag({ label }: { label: string }) {
-  const palettes = [
-    "bg-[#E6F1FB] text-[#185FA5] border-[#B5D4F4]",
-    "bg-[#FAEEDA] text-[#BA7517] border-[#FAC775]",
-    "bg-[#EEEDFE] text-[#534AB7] border-[#CECBF6]",
-    "bg-[#EAF3DE] text-[#3B6D11] border-[#C0DD97]",
-  ];
-  const idx = label.charCodeAt(0) % palettes.length;
+function EmptySchemesState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
-    <span
-      className={`inline-flex text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${palettes[idx]} whitespace-nowrap`}
-    >
-      {label.trim()}
-    </span>
+    <div className="flex flex-1 items-center justify-center px-4 py-8">
+      <div className="w-full max-w-sm rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-5 text-center">
+        <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full bg-white text-(--schemes-status-info-text)">
+          <SearchX size={20} strokeWidth={2} />
+        </div>
+        <h3 className="text-sm font-semibold text-(--schemes-blue-900)">
+          {title}
+        </h3>
+        <p className="mt-1 text-xs leading-5 text-(--schemes-muted)">
+          {description}
+        </p>
+      </div>
+    </div>
   );
 }
 
 interface SchemesListProps {
-  isGenerating: boolean;
-  setSelectedScheme: (scheme: SearchResScheme) => void;
-  handleNewChat: () => void;
+  isGenerating?: boolean;
+  handleNewChat?: () => void;
   className?: string;
+  selectedSchemeId?: string | null;
+  onSelectScheme?: (schemeId: string) => void;
 }
 
 export default function SchemesList({
-  isGenerating,
-  setSelectedScheme,
+  isGenerating = false,
   handleNewChat,
   className,
+  selectedSchemeId,
+  onSelectScheme,
 }: SchemesListProps) {
   const { schemes } = useChat();
+  const [filterObj, setFilterObj] = useState<FilterObjType>({});
+  const [selectedLocations, setSelectedLocations] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedAgencies, setSelectedAgencies] = useState<Set<string>>(
+    new Set(),
+  );
+  const resetFilters = () => {
+    setSelectedLocations(new Set());
+    setSelectedAgencies(new Set());
+    setFilterObj({});
+  };
+  const filteredSchemes = useMemo(
+    () =>
+      schemes.filter((scheme) => {
+        if (filterObj.planningArea && filterObj.planningArea.size > 0) {
+          if (
+            !scheme.planningArea ||
+            filterObj.planningArea.intersection(
+              new Set(parseArrayString(scheme.planningArea)),
+            ).size == 0
+          ) {
+            return false;
+          }
+        }
+        if (filterObj.agency && filterObj.agency.size > 0) {
+          if (!scheme.agency || !filterObj.agency.has(scheme.agency)) {
+            return false;
+          }
+        }
+        return true;
+      }),
+    [schemes, filterObj],
+  );
+  const hasActiveFilters =
+    selectedLocations.size > 0 || selectedAgencies.size > 0;
 
   return (
     <div
       className={clsx(
-        "flex-1 w-full h-full max-w-3xl bg-white border-l border-[#e8eef6]",
+        "h-full w-full max-w-3xl flex-1 border-l border-(--schemes-border) bg-white",
         "flex flex-col overflow-hidden",
         className,
       )}
     >
       {/* Header */}
-      <div className="px-4 py-2 border-b border-[#eef2f7] shrink-0 flex justify-between items-center">
-        <div>
-          <div className="text-sm font-semibold text-[#185FA5] mb-0.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-(--schemes-border) px-4 py-2">
+        <div className="min-w-0">
+          <div className="mb-0.5 text-sm font-semibold text-(--schemes-blue-600)">
             {schemes.length} schemes found
           </div>
-          <p className="text-xs text-[#B4B2A9]">
-            Click any scheme to view details
+          <p className="text-xs text-(--schemes-muted)">
+            {isGenerating
+              ? "Searching for relevant schemes"
+              : schemes.length > 0
+                ? "Click any scheme to view details"
+                : "No matching schemes returned for this chat"}
           </p>
         </div>
-        <div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="hidden md:block border-[#e0eaf5] text-[#5F5E5A] text-xs shrink-0"
-            onPress={handleNewChat}
-          >
-            New chat
-          </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {schemes.length > 0 && (
+            <SchemesFilter
+              mode="compact"
+              className="lg:hidden"
+              schemes={schemes}
+              setFilterObj={setFilterObj}
+              selectedLocations={selectedLocations}
+              setSelectedLocations={setSelectedLocations}
+              selectedAgencies={selectedAgencies}
+              setSelectedAgencies={setSelectedAgencies}
+              resetFilters={resetFilters}
+            />
+          )}
+          {handleNewChat && (
+            <div className="hidden md:block">
+              <Button
+                size="sm"
+                variant="outline"
+                className={`${productButtonSecondary} ${productButtonSm} shrink-0`}
+                onPress={handleNewChat}
+              >
+                New chat
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Filter */}
+      {schemes.length > 0 && (
+        <SchemesFilter
+          mode="toolbar"
+          className="hidden lg:flex"
+          schemes={schemes}
+          setFilterObj={setFilterObj}
+          selectedLocations={selectedLocations}
+          setSelectedLocations={setSelectedLocations}
+          selectedAgencies={selectedAgencies}
+          setSelectedAgencies={setSelectedAgencies}
+          resetFilters={resetFilters}
+        />
+      )}
+
       {/* Scrollable list */}
-      {isGenerating || !schemes.length ? (
-        <div className="flex-1 flex justify-center items-center">
-          <Spinner size="xl"/>
+      {isGenerating ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Spinner size="lg" />
         </div>
+      ) : schemes.length === 0 ? (
+        <EmptySchemesState
+          title="No schemes found"
+          description="Try asking with a broader need, fewer conditions, or a different support area."
+        />
+      ) : filteredSchemes.length === 0 ? (
+        <EmptySchemesState
+          title="No schemes match the selected filters"
+          description={
+            hasActiveFilters
+              ? "Clear one or more filters to see the schemes from this chat."
+              : "Try adjusting the filter options to broaden the list."
+          }
+        />
       ) : (
-        <ScrollShadow className="flex-1 overflow-y-scroll p-2 thin-scrollbar ">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
-            {schemes.map((scheme) => {
+        <ScrollShadow className="thin-scrollbar flex-1 overflow-y-scroll p-2">
+          <div className="grid grid-cols-1 gap-1 lg:grid-cols-2">
+            {filteredSchemes.map((scheme) => {
               return (
                 <SchemeCard
                   key={scheme.schemeId}
                   scheme={scheme}
-                  onSelect={() => setSelectedScheme(scheme)}
                   className="col-span-1"
                 />
                 // <button
