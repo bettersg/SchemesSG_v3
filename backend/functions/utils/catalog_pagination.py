@@ -181,4 +181,8 @@ def get_paginated_results(
         next_cursor = _encode_cursor(docs[-1].id)
         docs = docs[:-1]
 
-    return PaginationResult(data=[doc.to_dict() for doc in docs], next_cursor=next_cursor, has_more=has_more)
+    return PaginationResult(
+        data=[{"scheme_id": doc.id, **doc.to_dict()} for doc in docs],
+        next_cursor=next_cursor,
+        has_more=has_more,
+    )
