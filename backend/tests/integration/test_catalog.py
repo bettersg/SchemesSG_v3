@@ -1,8 +1,15 @@
 """Tests for the catalog endpoint."""
 
 import json
+from collections import Counter
 
-from schemes.catalog import CatalogRequestParams, _handle_catalog_request, _parse_query_params, catalog
+from new_scheme.constants import SCHEME_CATEGORY_MAPPING, SCHEME_TYPE
+from schemes.catalog import (
+    CatalogRequestParams,
+    _handle_catalog_request,
+    _parse_query_params,
+    catalog,
+)
 from utils.catalog_pagination import PaginationResult
 from werkzeug.datastructures import MultiDict
 
@@ -40,7 +47,9 @@ def test_catalog_invalid_query(mock_request, mock_https_response, mock_auth, moc
     mock_manager = mocker.MagicMock()
     mocker.patch("schemes.catalog.create_firebase_manager", return_value=mock_manager)
 
-    request = mock_request(method="GET", args={"area": "TAMPINES", "category": "healthcare"})
+    request = mock_request(
+        method="GET", args={"area": "TAMPINES", "category": "health & wellbeing"}
+    )
 
     response = catalog(request)
 
@@ -49,7 +58,9 @@ def test_catalog_invalid_query(mock_request, mock_https_response, mock_auth, moc
     assert "Error parsing query parameters" in response_data["error"]
 
 
-def test_catalog_successful_category_fetch(mock_request, mock_https_response, mock_auth, mocker):
+def test_catalog_successful_category_fetch(
+    mock_request, mock_https_response, mock_auth, mocker
+):
     """Test successful catalog fetch with category filtering."""
     mock_collection = mocker.MagicMock()
     mock_query = mocker.MagicMock()
@@ -59,7 +70,9 @@ def test_catalog_successful_category_fetch(mock_request, mock_https_response, mo
     mock_manager.firestore_client.collection.return_value = mock_collection
 
     mocker.patch("schemes.catalog.create_firebase_manager", return_value=mock_manager)
-    field_filter = mocker.patch("schemes.catalog.FieldFilter", return_value="category-filter")
+    field_filter = mocker.patch(
+        "schemes.catalog.FieldFilter", return_value="category-filter"
+    )
     mocker.patch(
         "schemes.catalog.get_paginated_results",
         return_value=PaginationResult(
@@ -69,7 +82,9 @@ def test_catalog_successful_category_fetch(mock_request, mock_https_response, mo
         ),
     )
 
-    request = mock_request(method="GET", args={"category": "healthcare", "limit": "2"})
+    request = mock_request(
+        method="GET", args={"category": "health & wellbeing", "limit": "2"}
+    )
 
     response = catalog(request)
 
@@ -80,7 +95,14 @@ def test_catalog_successful_category_fetch(mock_request, mock_https_response, mo
     assert response_data["has_more"] is True
     mock_manager.firestore_client.collection.assert_called_once_with("schemes")
     field_filter.assert_called_once_with(
-        "scheme_type", "array_contains_any", ["Healthcare", "End-of-Life/Palliative Care"]
+        "scheme_type",
+        "array_contains_any",
+        [
+            "Healthcare",
+            "Mental Health",
+            "End-of-Life/Palliative Care",
+            "Counselling and Emotional Support",
+        ],
     )
     mock_collection.where.assert_called_once_with(filter="category-filter")
 
@@ -89,9 +111,11 @@ def test_catalog_not_found(mock_request, mock_https_response, mock_auth, mocker)
     """Test catalog endpoint when no schemes are found."""
     mock_manager = mocker.MagicMock()
     mocker.patch("schemes.catalog.create_firebase_manager", return_value=mock_manager)
-    mocker.patch("schemes.catalog.get_paginated_results", return_value=PaginationResult(data=[]))
+    mocker.patch(
+        "schemes.catalog.get_paginated_results", return_value=PaginationResult(data=[])
+    )
 
-    request = mock_request(method="GET", args={"category": "healthcare"})
+    request = mock_request(method="GET", args={"category": "health & wellbeing"})
 
     response = catalog(request)
 
@@ -111,7 +135,7 @@ def test_catalog_firestore_error(mock_request, mock_https_response, mock_auth, m
     mocker.patch("schemes.catalog.create_firebase_manager", return_value=mock_manager)
     mocker.patch("schemes.catalog.FieldFilter", return_value="category-filter")
 
-    request = mock_request(method="GET", args={"category": "healthcare"})
+    request = mock_request(method="GET", args={"category": "health & wellbeing"})
 
     response = catalog(request)
 
@@ -127,16 +151,27 @@ def test_catalog_cors_preflight(mock_request, mock_https_response, mock_auth, mo
     response = catalog(request)
 
     assert response.status_code == 204
-    assert response.headers.get("Access-Control-Allow-Origin") == "http://localhost:3000"
+    assert (
+        response.headers.get("Access-Control-Allow-Origin") == "http://localhost:3000"
+    )
 
 
 def test_parse_query_params_category():
     """Parse a category catalog request."""
-    params = _parse_query_params(MultiDict([("category", "healthcare"), ("limit", "5"), ("cursor", "abc")]))
+    params = _parse_query_params(
+        MultiDict(
+            [("category", "health & wellbeing"), ("limit", "5"), ("cursor", "abc")]
+        )
+    )
 
     assert isinstance(params, CatalogRequestParams)
     assert params.filter_name == "category"
-    assert params.filter_value == ["Healthcare", "End-of-Life/Palliative Care"]
+    assert params.filter_value == [
+        "Healthcare",
+        "Mental Health",
+        "End-of-Life/Palliative Care",
+        "Counselling and Emotional Support",
+    ]
     assert params.limit == 5
     assert params.cursor == "abc"
 
@@ -144,7 +179,9 @@ def test_parse_query_params_category():
 def test_parse_query_params_rejects_multiple_filters():
     """Reject requests that mix catalog filter types."""
     try:
-        _parse_query_params(MultiDict([("area", "TAMPINES"), ("category", "healthcare")]))
+        _parse_query_params(
+            MultiDict([("area", "TAMPINES"), ("category", "health & wellbeing")])
+        )
         assert False, "Expected ValueError for multiple filters"
     except ValueError as exc:
         assert "'area', 'category'" in str(exc)
@@ -152,8 +189,39 @@ def test_parse_query_params_rejects_multiple_filters():
 
 def test_parse_query_params_category_lookup_is_case_insensitive():
     """Category lookup accepts any casing from the client."""
-    params = _parse_query_params(MultiDict([("category", "HEALTHCARE")]))
-    assert params.filter_value == ["Healthcare", "End-of-Life/Palliative Care"]
+    params = _parse_query_params(MultiDict([("category", "HEALTH & WELLBEING")]))
+    assert params.filter_value == [
+        "Healthcare",
+        "Mental Health",
+        "End-of-Life/Palliative Care",
+        "Counselling and Emotional Support",
+    ]
+
+
+def test_category_mapping_covers_each_scheme_type_once():
+    """Every raw scheme_type is assigned to exactly one public category."""
+    mapped_types = [
+        scheme_type
+        for values in SCHEME_CATEGORY_MAPPING.values()
+        for scheme_type in values
+    ]
+
+    assert set(mapped_types) == set(SCHEME_TYPE)
+    assert Counter(mapped_types) == Counter(SCHEME_TYPE)
+
+
+def test_category_mapping_has_no_duplicate_scheme_types():
+    """No raw scheme_type appears in more than one public category."""
+    mapped_types = [
+        scheme_type
+        for values in SCHEME_CATEGORY_MAPPING.values()
+        for scheme_type in values
+    ]
+    duplicate_types = [
+        scheme_type for scheme_type, count in Counter(mapped_types).items() if count > 1
+    ]
+
+    assert duplicate_types == []
 
 
 def test_parse_query_params_rejects_unknown_category():
@@ -165,19 +233,28 @@ def test_parse_query_params_rejects_unknown_category():
         assert "Unknown category" in str(exc)
 
 
-def test_handle_catalog_request_uses_array_contains_any_for_category(mocker, mock_firebase_manager):
+def test_handle_catalog_request_uses_array_contains_any_for_category(
+    mocker, mock_firebase_manager
+):
     """Build a Firestore array_contains_any query for category."""
     mock_collection = mocker.MagicMock()
     mock_query = mocker.MagicMock()
     mock_collection.where.return_value = mock_query
     mock_firebase_manager.firestore_client.collection.return_value = mock_collection
 
-    field_filter = mocker.patch("schemes.catalog.FieldFilter", return_value="category-filter")
+    field_filter = mocker.patch(
+        "schemes.catalog.FieldFilter", return_value="category-filter"
+    )
     get_paginated_results = mocker.patch("schemes.catalog.get_paginated_results")
 
     query_params = CatalogRequestParams(
         filter_name="category",
-        filter_value=["Healthcare", "End-of-Life/Palliative Care"],
+        filter_value=[
+            "Healthcare",
+            "Mental Health",
+            "End-of-Life/Palliative Care",
+            "Counselling and Emotional Support",
+        ],
         limit=3,
         cursor="next-page",
     )
@@ -186,7 +263,14 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(mocker, moc
 
     mock_firebase_manager.firestore_client.collection.assert_called_once_with("schemes")
     field_filter.assert_called_once_with(
-        "scheme_type", "array_contains_any", ["Healthcare", "End-of-Life/Palliative Care"]
+        "scheme_type",
+        "array_contains_any",
+        [
+            "Healthcare",
+            "Mental Health",
+            "End-of-Life/Palliative Care",
+            "Counselling and Emotional Support",
+        ],
     )
     mock_collection.where.assert_called_once_with(filter="category-filter")
     get_paginated_results.assert_called_once_with(

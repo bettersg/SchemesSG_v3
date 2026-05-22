@@ -128,51 +128,48 @@ SCHEME_CATEGORY_MAPPING = {
         "Financial Assistance",
         "Low Income",
         "COVID-19 Support",
-        "General Public Support",
     ],
-    "Mental Health": [
-        "Mental Health",
-        "Counselling and Emotional Support",
-    ],
-    "Family": [
+    "Family & Children": [
         "Family",
         "Children",
-        "Single Parents",
         "Youth",
         "Youth-at-Risk",
-        "Abuse/Family Violence",
+        "Single Parents",
         "Women",
-        "Legal Aid",
     ],
-    "Healthcare": [
+    "Health & Wellbeing": [
         "Healthcare",
+        "Mental Health",
         "End-of-Life/Palliative Care",
+        "Counselling and Emotional Support",
     ],
-    "Housing": [
+    "Housing & Food": [
         "Housing/Shelter",
-    ],
-    "Employment": [
-        "Employment Support",
-        "Vocational Training",
-        "Ex-offender Support",
-    ],
-    "Food Support": [
         "Food Support",
     ],
     "Education": [
         "Education Support",
-        "Youth-at-Risk",
-        "Vocational Training",
     ],
-    "Eldercare": [
+    "Employment & Training": [
+        "Employment Support",
+        "Vocational Training",
+        "Ex-offender Support",
+    ],
+    "Seniors & Caregiving": [
         "Elderly",
         "Caregiver Support",
-        "Transport Support",
     ],
-    "Disability": [
+    "Disability & Transport": [
         "Persons with Disabilities (PWD)",
         "Special Needs",
         "Transport Support",
+    ],
+    "Legal & Safety": [
+        "Legal Aid",
+        "Abuse/Family Violence",
+    ],
+    "Community Support": [
+        "General Public Support",
     ],
 }
 
