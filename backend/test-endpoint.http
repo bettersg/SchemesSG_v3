@@ -50,17 +50,47 @@ GET {{base}}/catalog?area=choa+chu+kang&limit=1&cursor=
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-### Retrieve all schemes by scheme type
-GET {{base}}/catalog?scheme_type=healthcare
+### Retrieve schemes by category (e.g., Healthcare)
+GET {{base}}/catalog?category=healthcare
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-### Retrieve all schemes by scheme type with limit
-GET {{base}}/catalog?scheme_type=healthcare&limit=2
+### Retrieve schemes by category with limit
+GET {{base}}/catalog?category=healthcare&limit=2
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-### Retrieve all schemes by scheme type with limit and cursor
-GET {{base}}/catalog?scheme_type=healthcare&limit=1&cursor=
+### Retrieve schemes by category with limit and cursor
+GET {{base}}/catalog?category=healthcare&limit=1&cursor=
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by category - Financial Assistance
+GET {{base}}/catalog?category=financial+assistance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by category - Family
+GET {{base}}/catalog?category=family
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by category - Employment
+GET {{base}}/catalog?category=employment
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by category - Eldercare
+GET {{base}}/catalog?category=eldercare
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Retrieve schemes by category - Disability
+GET {{base}}/catalog?category=disability
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Invalid category - expect 400
+GET {{base}}/catalog?category=unknown
 Authorization: Bearer {{token}}
 Content-Type: application/json
