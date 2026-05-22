@@ -45,7 +45,9 @@ class CatalogRequestParams:
     filter_value: str | list[str] | None = None
 
 
-_CATEGORY_LOOKUP = {cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()}
+_CATEGORY_LOOKUP = {
+    cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()
+}
 
 
 def _expand_category(value: str) -> list[str]:
@@ -53,6 +55,36 @@ def _expand_category(value: str) -> list[str]:
     if types is None:
         raise ValueError(f"Unknown category: '{value}'")
     return types
+
+
+def _filter_scheme_types_for_category(
+    results: PaginationResult, category_scheme_types: list[str]
+) -> PaginationResult:
+    """Trim scheme_type values in category catalog responses to the matched category."""
+
+    category_scheme_type_set = set(category_scheme_types)
+    filtered_data = []
+
+    for item in results.data:
+        scheme_type = item.get("scheme_type")
+        if not isinstance(scheme_type, list):
+            filtered_data.append(item)
+            continue
+
+        filtered_data.append(
+            {
+                **item,
+                "scheme_type": [
+                    value for value in scheme_type if value in category_scheme_type_set
+                ],
+            }
+        )
+
+    return PaginationResult(
+        data=filtered_data,
+        next_cursor=results.next_cursor,
+        has_more=results.has_more,
+    )
 
 
 FILTER_SPECS = {
@@ -264,9 +296,16 @@ def _handle_catalog_request(
         )
     )
 
-    return get_paginated_results(
+    results = get_paginated_results(
         collection_ref=col,
         base_query=query,
         cursor=query_params.cursor,
         limit=query_params.limit,
     )
+
+    if query_params.filter_name == "category" and isinstance(
+        query_params.filter_value, list
+    ):
+        return _filter_scheme_types_for_category(results, query_params.filter_value)
+
+    return results

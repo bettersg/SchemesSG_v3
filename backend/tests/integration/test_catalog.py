@@ -76,14 +76,19 @@ def test_catalog_successful_category_fetch(
     mocker.patch(
         "schemes.catalog.get_paginated_results",
         return_value=PaginationResult(
-            data=[{"scheme_name": "Test Scheme", "scheme_type": ["Healthcare"]}],
+            data=[
+                {
+                    "scheme_name": "Test Scheme",
+                    "scheme_type": ["Children", "Caregiver Support"],
+                }
+            ],
             next_cursor="next-page",
             has_more=True,
         ),
     )
 
     request = mock_request(
-        method="GET", args={"category": "health & wellbeing", "limit": "2"}
+        method="GET", args={"category": "seniors & caregiving", "limit": "2"}
     )
 
     response = catalog(request)
@@ -91,18 +96,14 @@ def test_catalog_successful_category_fetch(
     assert response.status_code == 200
     response_data = json.loads(response.get_data())
     assert response_data["data"][0]["scheme_name"] == "Test Scheme"
+    assert response_data["data"][0]["scheme_type"] == ["Caregiver Support"]
     assert response_data["next_cursor"] == "next-page"
     assert response_data["has_more"] is True
     mock_manager.firestore_client.collection.assert_called_once_with("schemes")
     field_filter.assert_called_once_with(
         "scheme_type",
         "array_contains_any",
-        [
-            "Healthcare",
-            "Mental Health",
-            "End-of-Life/Palliative Care",
-            "Counselling and Emotional Support",
-        ],
+        ["Elderly", "Caregiver Support"],
     )
     mock_collection.where.assert_called_once_with(filter="category-filter")
 
@@ -245,32 +246,34 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(
     field_filter = mocker.patch(
         "schemes.catalog.FieldFilter", return_value="category-filter"
     )
-    get_paginated_results = mocker.patch("schemes.catalog.get_paginated_results")
+    get_paginated_results = mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        return_value=PaginationResult(
+            data=[
+                {
+                    "scheme_name": "Test Scheme",
+                    "scheme_type": ["Children", "Caregiver Support"],
+                }
+            ],
+            next_cursor="next-page",
+            has_more=True,
+        ),
+    )
 
     query_params = CatalogRequestParams(
         filter_name="category",
-        filter_value=[
-            "Healthcare",
-            "Mental Health",
-            "End-of-Life/Palliative Care",
-            "Counselling and Emotional Support",
-        ],
+        filter_value=["Elderly", "Caregiver Support"],
         limit=3,
         cursor="next-page",
     )
 
-    _handle_catalog_request(mock_firebase_manager, query_params)
+    results = _handle_catalog_request(mock_firebase_manager, query_params)
 
     mock_firebase_manager.firestore_client.collection.assert_called_once_with("schemes")
     field_filter.assert_called_once_with(
         "scheme_type",
         "array_contains_any",
-        [
-            "Healthcare",
-            "Mental Health",
-            "End-of-Life/Palliative Care",
-            "Counselling and Emotional Support",
-        ],
+        ["Elderly", "Caregiver Support"],
     )
     mock_collection.where.assert_called_once_with(filter="category-filter")
     get_paginated_results.assert_called_once_with(
@@ -279,3 +282,57 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(
         cursor="next-page",
         limit=3,
     )
+    assert results.data == [
+        {"scheme_name": "Test Scheme", "scheme_type": ["Caregiver Support"]}
+    ]
+    assert results.next_cursor == "next-page"
+    assert results.has_more is True
+
+
+def test_handle_catalog_request_preserves_scheme_types_for_area_filter(
+    mocker, mock_firebase_manager
+):
+    """Only category catalog requests trim scheme_type values."""
+    mock_collection = mocker.MagicMock()
+    mock_query = mocker.MagicMock()
+    mock_collection.where.return_value = mock_query
+    mock_firebase_manager.firestore_client.collection.return_value = mock_collection
+
+    field_filter = mocker.patch(
+        "schemes.catalog.FieldFilter", return_value="area-filter"
+    )
+    get_paginated_results = mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        return_value=PaginationResult(
+            data=[
+                {
+                    "scheme_name": "Test Scheme",
+                    "scheme_type": ["Children", "Caregiver Support"],
+                }
+            ],
+            next_cursor="next-page",
+            has_more=True,
+        ),
+    )
+
+    query_params = CatalogRequestParams(
+        filter_name="area",
+        filter_value="TAMPINES",
+        limit=3,
+        cursor="next-page",
+    )
+
+    results = _handle_catalog_request(mock_firebase_manager, query_params)
+
+    field_filter.assert_called_once_with("planning_area", "array_contains", "TAMPINES")
+    get_paginated_results.assert_called_once_with(
+        collection_ref=mock_collection,
+        base_query=mock_query,
+        cursor="next-page",
+        limit=3,
+    )
+    assert results.data == [
+        {"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}
+    ]
+    assert results.next_cursor == "next-page"
+    assert results.has_more is True
