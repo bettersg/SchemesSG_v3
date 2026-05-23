@@ -115,6 +115,7 @@ export default function MainChat({
   const [userInput, setUserInput] = useState("");
   const [isBotResponseGenerating, setIsBotResponseGenerating] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState("");
+  const [streamBuffer, setStreamBuffer] = useState("");
   const scrollableDivRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,8 +131,49 @@ export default function MainChat({
   useEffect(() => {
     handleScrollToBottom();
   }, [messages]);
+  
+  useEffect(() => {
+    if (streamBuffer === "") return;
 
+    // 1. Calculate how far behind we are (The "Tension")
+    const bufferLength = streamBuffer.length;
+    const currentLength = currentStreamingMessage.length;
+    const distance = bufferLength - currentLength;
+
+    if (distance > 0) {
+      const normalDelay = 15;
+      // fasterDelay when there is greater backlog
+      const fasterDelay = Math.max(1, normalDelay - Math.floor(distance / 5)); 
+
+      const timeoutId = setTimeout(() => {
+        setCurrentStreamingMessage((prev) => {
+          // "Types" 1 character at a time unless there is a huge backlog, then double speed
+          const charTypeRate = distance > 100 ? 2 : 1; 
+          return streamBuffer.slice(0, prev.length + charTypeRate);
+        });
+        handleScrollToBottom(); //auto-scrolls to buttom
+      }, fasterDelay);
+
+      return () => clearTimeout(timeoutId);
+    } else if (!isBotResponseGenerating && bufferLength > 0) {
+      handleBotResponse(currentStreamingMessage);
+      setCurrentStreamingMessage("");
+      setStreamBuffer("");
+    }
+  }, [streamBuffer, currentStreamingMessage, isBotResponseGenerating]);
+
+  
   const handleUserInput = async (input: string) => {
+    if (
+      streamBuffer !== "" && 
+      streamBuffer.length > currentStreamingMessage.length
+    ) {
+      const fullPrevMsg = streamBuffer;
+      setStreamBuffer("");
+      setCurrentStreamingMessage("");
+      handleBotResponse(fullPrevMsg);
+    } 
+
     setMessages((prevMessages) => [
       ...prevMessages,
       { type: "user", text: input },
@@ -154,6 +196,7 @@ export default function MainChat({
   const fetchBotResponse = async (userMessage: string) => {
     setIsBotResponseGenerating(true);
     setCurrentStreamingMessage("");
+    setStreamBuffer("");
 
     // Prevent chat if no valid sessionId exists
     if (!sessionId || sessionId.trim() === "") {
@@ -210,20 +253,18 @@ export default function MainChat({
             try {
               const data = JSON.parse(line.slice(6));
               fullMessage += data.chunk;
-              setCurrentStreamingMessage(fullMessage);
+              setStreamBuffer((prev) => prev + data.chunk);
             } catch (e) {
               console.error("Error parsing SSE data:", e);
             }
           }
         });
       }
-      handleBotResponse(fullMessage);
     } catch (error) {
       console.error("Error fetching bot response:", error);
       handleBotResponse("Sorry, something went wrong. Please try again.");
     } finally {
       setIsBotResponseGenerating(false);
-      setCurrentStreamingMessage("");
     }
   };
 
