@@ -1,58 +1,68 @@
 import Link from "next/link";
-import { SearchResScheme } from "./schemes-list";
-import { Card, CardBody, CardHeader, Chip, Image, Spacer } from "@heroui/react";
+import { Scheme } from "@/types/types";
+import { Chip } from "@heroui/react";
+import clsx from "clsx";
+import SchemeLogo from "./scheme-logo";
+import {
+  getSchemeCategoryChipClassName,
+  normalizeSchemeCategory,
+} from "@/lib/design-system/categories";
+import { productCard } from "@/lib/design-system/product-styles";
 
 interface SchemeCardProps {
-  scheme: SearchResScheme;
+  scheme: Scheme;
+  className?: string;
 }
 
-function SchemeCard({scheme}: SchemeCardProps) {
+function SchemeCard({ scheme, className }: SchemeCardProps) {
+  const types = scheme.schemeType.slice(0, 2);
   return (
     <Link
       href={`/schemes/${scheme.schemeId}`}
-      className="w-full"
       target="_blank"
-      draggable="false"
+      rel="noopener noreferrer"
+      className={clsx(
+        productCard,
+        "shrink-0 text-left p-4 hover:border-(--schemes-blue-100) hover:shadow-[0_2px_12px_rgba(24,95,165,0.1)] hover:-translate-y-0.5 transition-[border-color,box-shadow,transform] group relative overflow-hidden",
+        className,
+      )}
     >
-      <Card shadow="sm" className="w-full h-full" isHoverable>
-        <CardHeader className="flex gap-3 font-semibold">
-          <Image
-            src={scheme.image}
-            alt={`${scheme.agency} logo`}
-            height={60}
-            width={60}
-            radius="sm"
-            classNames={{
-              wrapper: 'shrink-0',
-              img: 'object-contain'
-            }}
-          />
-          <div className="flex flex-col">
-              <p className="text-md">{scheme.schemeName}</p>
-              <p className="text-small text-default-500">{scheme.agency}</p>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <div className="flex flex-wrap gap-2 h-[1lh] overflow-y-hidden">
-            {scheme.schemeType && scheme.schemeType.split(",").slice(0,3).map((type) => (
-              <Chip
-                key={type}
-                size="sm"
-                radius="sm"
-                color="primary"
-                variant="flat"
-              >
-                {type.trim()}
-              </Chip>
-            ))}
-          </div>
-          <Spacer y={2}/>
-          <p className="text-small">
-            {scheme.summary}
+      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-(--schemes-blue-400) opacity-0 group-hover:opacity-100 transition-opacity rounded-l-xl" />
+      <div className="flex gap-2.5 items-start mb-2.5">
+        <SchemeLogo agency={scheme.agency} image={scheme.image} />
+        <div className="flex-1 min-w-0">
+          <p className="text-[12.5px] font-semibold text-(--schemes-blue-900) leading-snug line-clamp-2">
+            {scheme.schemeName}
           </p>
-        </CardBody>
-      </Card>
+          <p className="text-xs text-(--schemes-muted) mt-0.5">
+            {scheme.agency}
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-1 flex-wrap mb-2">
+        {types.map((t) => (
+          <CategoryTag key={t} label={t} />
+        ))}
+      </div>
+      <p className="text-xs text-(--schemes-muted) leading-relaxed line-clamp-2">
+        {scheme.summary || scheme.description}
+      </p>
     </Link>
+  );
+}
+
+function CategoryTag({ label }: { label: string }) {
+  const normalizedLabel = normalizeSchemeCategory(label);
+  return (
+    <Chip
+      className={getSchemeCategoryChipClassName(
+        label,
+        "text-[10px] px-2 py-0.5 font-semibold",
+      )}
+      size="sm"
+    >
+      {normalizedLabel}
+    </Chip>
   );
 }
 

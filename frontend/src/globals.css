@@ -1,0 +1,210 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+@plugin "tailwindcss-animate";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --spacing-nav: 70px;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-landing-sans:
+    var(--font-body), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    system-ui, sans-serif;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --schemes-bg: #fafafa;
+  --schemes-surface: #ffffff;
+  --schemes-ink: #1a1a1a;
+  --schemes-ink-soft: #444441;
+  --schemes-muted: #5f5e5a;
+  --schemes-muted-light: #b4b2a9;
+  --schemes-border: #e4edf7;
+  --schemes-border-neutral: #e5e7eb;
+  --schemes-blue-50: #e6f1fb;
+  --schemes-blue-100: #b5d4f4;
+  --schemes-blue-400: #378add;
+  --schemes-blue-600: hsl(210, 75%, 37%);
+  --schemes-blue-800: #0c447c;
+  --schemes-blue-900: #042c53;
+  --schemes-amber-100: #f1cf82;
+  --schemes-amber-400: #facc15;
+  --schemes-status-info-bg: #f3f8fd;
+  --schemes-status-info-border: #b5d4f4;
+  --schemes-status-info-text: #0c447c;
+  --schemes-status-alert-bg: #fff8df;
+  --schemes-status-alert-border: #f1cf82;
+  --schemes-status-alert-text: #604108;
+  --schemes-category-financial-bg: #e6f1fb;
+  --schemes-category-financial-border: #b5d4f4;
+  --schemes-category-financial-text: #0c447c;
+  --schemes-category-mental-bg: #eeedfe;
+  --schemes-category-mental-border: #cecbf6;
+  --schemes-category-mental-text: #3c3489;
+  --schemes-category-family-bg: #fbeaf0;
+  --schemes-category-family-border: #f4c0d1;
+  --schemes-category-family-text: #72243e;
+  --schemes-category-healthcare-bg: #e1f5ee;
+  --schemes-category-healthcare-border: #9fe1cb;
+  --schemes-category-healthcare-text: #085041;
+  --schemes-category-housing-bg: #f5edfb;
+  --schemes-category-housing-border: #dfb8f0;
+  --schemes-category-housing-text: #521f62;
+  --schemes-category-employment-bg: #e8f4fa;
+  --schemes-category-employment-border: #a8d6ee;
+  --schemes-category-employment-text: #0f3f5a;
+  --schemes-category-food-bg: #faede8;
+  --schemes-category-food-border: #f0b9a5;
+  --schemes-category-food-text: #5c1f0e;
+  --schemes-category-education-bg: #eaf3de;
+  --schemes-category-education-border: #b8da8c;
+  --schemes-category-education-text: #173404;
+  --schemes-category-eldercare-bg: #eef3fb;
+  --schemes-category-eldercare-border: #bdcce8;
+  --schemes-category-eldercare-text: #223866;
+  --schemes-category-disability-bg: #f4edf9;
+  --schemes-category-disability-border: #d7bce8;
+  --schemes-category-disability-text: #4d2763;
+
+  --background: oklch(0.975 0.001 100);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.968 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.968 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.828 0.189 68);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.975 0.001 100);
+    --foreground: oklch(0.145 0 0);
+  }
+}
+
+@variant hover (&:hover);
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family: "Open Sans", sans-serif;
+  }
+
+  input,
+  textarea {
+    color: var(--schemes-ink);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--schemes-muted);
+    opacity: 1;
+  }
+}
+
+.grain-overlay {
+  position: relative;
+}
+
+.grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d3d1c7;
+  border-radius: 2px;
+}
+
+.markdown-content ul {
+  list-style-type: disc;
+  list-style-position: inside;
+}
+
+.markdown-content li::marker {
+  color: #64748b;
+}
+
+.markdown-content li > p {
+  display: inline;
+}
+
+.markdown-content hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid rgb(229 231 235);
+}
+
+.markdown-content p {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+}

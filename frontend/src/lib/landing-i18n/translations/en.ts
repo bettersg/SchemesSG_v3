@@ -9,6 +9,17 @@ export const en: Translations = {
     searchSchemes: "Search Schemes",
   },
 
+  chat: {
+    headline: "SchemeSG",
+    subtitle:
+      "Let us know how we can help you. Please give us more details on which schemes best suit your needs.",
+    volunteerBanner: "Built by volunteers at",
+    getInvolved: "Get involved",
+    searchPlaceholder: "I'm a single parent looking for financial assistance...",
+    searchHint:
+      'Try: \u201Chealthcare subsidies for seniors\u201D or \u201Ceducation grants for low-income families\u201D',
+  },
+
   hero: {
     headline: "Find the Right\nSchemes, All in\nOne Place",
     subtitle:
@@ -183,7 +194,7 @@ export const en: Translations = {
     resourcesHeading: "RESOURCES",
     legalHeading: "LEGAL",
     productLinks: [
-      { label: "Search", href: "#" },
+      { label: "Search", href: "/" },
       { label: "Features", href: "#features" },
       { label: "FAQ", href: "#faq" },
     ],
@@ -191,6 +202,7 @@ export const en: Translations = {
       { label: "About", href: "/about" },
       { label: "Contribute", href: "/contribute" },
       { label: "Feedback", href: "/feedback" },
+      { label: "Sitemap", href: "/sitemap.xml" },
       { label: "Contact", href: "#", comingSoon: true },
     ],
     legalLinks: [

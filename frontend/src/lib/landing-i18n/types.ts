@@ -10,6 +10,15 @@ export interface Translations {
     searchSchemes: string
   }
 
+  chat: {
+    headline: string
+    subtitle: string
+    volunteerBanner: string
+    getInvolved: string
+    searchPlaceholder: string
+    searchHint: string
+  }
+
   hero: {
     headline: string
     subtitle: string
