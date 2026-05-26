@@ -24,9 +24,7 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "requests>=2.32.0",
     "slack-sdk>=3.33.0",
-    "spacy==3.7.5",
-    "torch==2.2.2",
-    "transformers==4.44.0",
+    "spacy==3.7.5"
 ]
 
 [tool.uv.sources]
