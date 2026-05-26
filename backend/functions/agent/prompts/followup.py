@@ -18,6 +18,7 @@ FOLLOWUP_SYSTEM_TEMPLATE = (
 
 FOLLOWUP_PROMPT_TEMPLATE = (
     "Generate suggested follow-up actions for this conversation.\n"
+    "Schemes found:\n{schemes_json}\n"
     "Conversation:\n{transcript}\n"
     'Format example: {{"Filter schemes": "Filter schemes by eligibility criteria", '
     '"Get contacts": "Retrieve contact details for shortlisted programs"}}'

@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
 from integrations import FirebaseManager
 
-logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
+logger = setup_logging()
 
 ACTION_MESSAGE_ON_START = 'Finding the top {top_k} schemes that best match "{query}"'
 ACTION_MESSAGE_ON_END = 'Found {result_count} schemes matching "{query}".'
@@ -76,17 +76,17 @@ def _search_schemes_sync(
 
 async def _search_schemes_async(query: str, top_k: int = 30) -> dict[str, Any]:
     logger.info("search_schemes async wrapper invoked")
-    # Emit input to stream
-    try:
-        write = get_stream_writer()
-        write(
-            {
-                "type": "action_message",
-                "message": ACTION_MESSAGE_ON_START.format(query=query, top_k=top_k),
-            },
-        )
-    except Exception as e:
-        logger.debug(f"Failed to emit search input to stream: {e}")
+    # # Emit input to stream on async is ignored for now since the sync version already emits messages and doing it in async wrapper causes duplicate messages. In future, we can refactor to only emit from async wrapper if needed.
+    # try:
+    #     write = get_stream_writer()
+    #     write(
+    #         {
+    #             "type": "action_message",
+    #             "message": ACTION_MESSAGE_ON_START.format(query=query, top_k=top_k),
+    #         },
+    #     )
+    # except Exception as e:
+    #     logger.debug(f"Failed to emit search input to stream: {e}")
     try:
         result = await asyncio.wait_for(asyncio.to_thread(_search_schemes_sync, query, top_k), timeout=8.0)
         return result

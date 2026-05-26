@@ -2,16 +2,19 @@
 
 import asyncio
 import json
-import os
 from typing import Any
 
 from langchain_core.tools import StructuredTool
+from langgraph.config import get_stream_writer
 from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
 
 
-logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
-
+logger = setup_logging()
+# To be used as a fallback message if LLM doesn't provide an action_message in the tool call input.
+DEFAULT_LLM_ACTION_MESSAGE = "Based on your current context and preferences."
+ACTION_MESSAGE_ON_START = "Filtering and re-ranking existing schemes.\n {action_message}"
+ACTION_MESSAGE_ON_END = "Filtered and re-ranked schemes list to {num_items} items."
 
 _CURRENT_RESULTS_JSON = ""
 
@@ -56,7 +59,16 @@ def _filter_rerank_by_indices_sync(
     indices: list[int],
     action_message: str = "",
 ) -> dict[str, Any]:
-    logger.info("filter_rerank_by_indices tool invoked")
+    try:
+        write = get_stream_writer()
+        write(
+            {
+                "type": "action_message",
+                "message": ACTION_MESSAGE_ON_START.format(action_message=action_message or DEFAULT_LLM_ACTION_MESSAGE),
+            },
+        )
+    except Exception as e:
+        logger.debug(f"Failed to emit filter_rerank_by_indices action message to stream: {e}")
 
     results_json = _CURRENT_RESULTS_JSON
     if not results_json:
@@ -115,7 +127,16 @@ def _filter_rerank_by_indices_sync(
     out_payload["invalid_indices"] = invalid_indices
     out_payload["action_message"] = action_message
 
-    logger.info("filter_rerank_by_indices tool completed")
+    try:
+        write = get_stream_writer()
+        write(
+            {
+                "type": "action_message",
+                "message": ACTION_MESSAGE_ON_END.format(num_items=len(selected)),
+            },
+        )
+    except Exception as e:
+        logger.debug(f"Failed to emit filter_rerank_by_indices completion message to stream: {e}")
     return out_payload
 
 
