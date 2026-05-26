@@ -10,7 +10,7 @@ from langgraph.cache.memory import InMemoryCache
 from langgraph.checkpoint.serde.base import SerializerProtocol
 from utils.logging_setup import setup_logging
 
-from .runtimes.main_agent.context_manager import MainAgentState
+from .context_manager import MainAgentState
 
 
 logger = setup_logging()

@@ -6,6 +6,7 @@ Supports both sync and async LangGraph checkpoint APIs.
 
 import asyncio
 import base64
+import json
 import threading
 from datetime import datetime, timezone
 from typing import Any, List, Optional, Tuple
@@ -42,18 +43,60 @@ class FirestoreSerializer:
         return self.serde.loads_typed((type_name, serialized_obj))
 
     def dumps(self, obj):
-        data = self.serde.dumps(obj)
-        data_base64 = base64.b64encode(data).decode("utf-8")
-        return data_base64
+        """Serialize objects using typed serde payloads.
+
+        JsonPlusSerializer exposes dumps_typed/loads_typed (not dumps/loads).
+        Persist as JSON so Firestore stores a plain string.
+        """
+        type_name, data = self.serde.dumps_typed(obj)
+        payload = {
+            "__type__": type_name,
+            "__data__": base64.b64encode(data).decode("utf-8"),
+        }
+        return json.dumps(payload)
 
     def loads(self, serialized_obj):
-        # serialized_obj is {'step': 1, 'source': 'loop', 'parents': {}}
-        # Check if serialized_obj is already a dict (not base64 encoded)
+        """Deserialize typed payload strings with legacy fallbacks.
+
+        Supports:
+        - current typed JSON envelope
+        - already-materialized dict objects
+        - legacy base64 strings (best-effort)
+        """
         if isinstance(serialized_obj, dict):
+            type_name = serialized_obj.get("__type__")
+            data_b64 = serialized_obj.get("__data__")
+            if isinstance(type_name, str) and isinstance(data_b64, str):
+                data = base64.b64decode(data_b64.encode("utf-8"))
+                return self.serde.loads_typed((type_name, data))
             return serialized_obj
-        # If it's a string, decode it
-        serialized_obj = base64.b64decode(serialized_obj.encode("utf-8"))
-        return self.serde.loads(serialized_obj)
+
+        if not isinstance(serialized_obj, str):
+            return serialized_obj
+
+        try:
+            parsed = json.loads(serialized_obj)
+            if isinstance(parsed, dict):
+                type_name = parsed.get("__type__")
+                data_b64 = parsed.get("__data__")
+                if isinstance(type_name, str) and isinstance(data_b64, str):
+                    data = base64.b64decode(data_b64.encode("utf-8"))
+                    return self.serde.loads_typed((type_name, data))
+                return parsed
+        except Exception:
+            pass
+
+        # Legacy fallback: raw base64 payload.
+        try:
+            raw = base64.b64decode(serialized_obj.encode("utf-8"))
+            if hasattr(self.serde, "loads"):
+                return self.serde.loads(raw)
+            try:
+                return json.loads(raw.decode("utf-8"))
+            except Exception:
+                return raw.decode("utf-8", errors="ignore")
+        except Exception:
+            return serialized_obj
 
 
 class FirestoreChatSaver(BaseCheckpointSaver):

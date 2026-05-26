@@ -17,7 +17,7 @@ from utils.json_utils import safe_json_dumps
 from utils.logging_setup import setup_logging
 
 from .event_type import AgentStreamEventType
-from .main import stream_chat_events_sync
+from .engine_old import stream_chat_events_sync
 
 
 logger = setup_logging()

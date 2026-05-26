@@ -20,8 +20,10 @@ from fb_manager.firebaseManager import FirebaseManager
 from langchain_core.messages import HumanMessage
 
 from agent.event_type import AgentStreamEventType
-from agent.runtimes.followup.engine import FollowupEngine
 from agent.runtimes.main_agent.engine import MainAgentEngine
+from agent.followup_agent import FollowupSubgraph
+from agent.runtimes.followup.context_manager import normalize_followups_map
+from agent.runtimes.followup.prompt import DEFAULT_FOLLOWUP_KV, MAX_FOLLOWUP_KV
 
 
 load_dotenv(find_dotenv())
@@ -31,7 +33,6 @@ load_dotenv(find_dotenv())
 class _RuntimeBundle:
     firebase_manager: FirebaseManager
     engine: MainAgentEngine
-    followup_engine: FollowupEngine
 
 
 _runtime_singleton: _RuntimeBundle | None = None
@@ -61,11 +62,9 @@ def _get_runtime_bundle() -> _RuntimeBundle:
 
         firebase_manager = FirebaseManager()
         engine = MainAgentEngine(firestore_client=firebase_manager.firestore_client)
-        followup_engine = FollowupEngine()
         _runtime_singleton = _RuntimeBundle(
             firebase_manager=firebase_manager,
             engine=engine,
-            followup_engine=followup_engine,
         )
         return _runtime_singleton
 
@@ -309,7 +308,31 @@ async def stream_chat_events(input_text: str, session_id: str) -> AsyncIterator[
     messages = messages if isinstance(messages, list) else []
 
     assistant_text = _extract_latest_assistant_text(messages)
-    followups = await runtime.followup_engine.generate_kv_async(messages)
+
+    # Generate followups using the integrated followup subgraph
+    try:
+        followup_subgraph = FollowupSubgraph().get_subgraph()
+        result = followup_subgraph.invoke({"messages": messages})
+        # Extract the LLM response content
+        followup_items = {}
+        if isinstance(result, dict):
+            msgs = result.get("messages") or []
+            if isinstance(msgs, list) and msgs:
+                last = msgs[-1]
+                content = getattr(last, "content", None) or last
+                if isinstance(content, list):
+                    content = "\n".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in content])
+                try:
+                    parsed = json.loads(str(content)) if isinstance(content, str) else None
+                except Exception:
+                    parsed = None
+
+                if isinstance(parsed, dict):
+                    followup_items = normalize_followups_map(parsed, max_items=MAX_FOLLOWUP_KV)
+        if not followup_items:
+            followup_items = dict(list(DEFAULT_FOLLOWUP_KV.items())[:MAX_FOLLOWUP_KV])
+    except Exception:
+        followup_items = dict(list(DEFAULT_FOLLOWUP_KV.items())[:MAX_FOLLOWUP_KV])
     final_values = values if isinstance(values, dict) else {}
     final_schemes = _extract_latest_schemes(final_values)
     schemes_history = _extract_schemes_history(final_values)

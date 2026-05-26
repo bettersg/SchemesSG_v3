@@ -11,17 +11,19 @@ from langchain_core.messages import AIMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.types import CachePolicy
-from ...firestore_saver import FirestoreChatSaver
-from ...tools.filter_rerank import filter_rerank_by_indices_tool, set_filter_rerank_context
-from ...tools.load_skill import load_skills_tool
-from ...tools.search import search_schemes_tool
-from ...tools.websearch import duckduckgo_web_search_tool
+from .firestore_saver import FirestoreChatSaver
+from .tools import (
+    search_schemes_tool,
+    filter_rerank_by_indices_tool,
+    set_filter_rerank_context,
+    duckduckgo_web_search_tool,
+    load_skills_tool,
+)
 from .context_manager import MainAgentContextManager, MainAgentState
-from .helpers import log_agent_debug, log_postprocess_debug, summarize_debug
-from .prompt import render_main_agent_system_prompt
 
-from agent.followup_agent import FollowupSubgraph
-from agent.cache import InMemoryCacheWithMaxsize
+from .prompts.main import render_main_agent_system_prompt
+from .followup_agent import FollowupSubgraph
+from .cache import InMemoryCacheWithMaxsize
 from integrations import LLMManager
 
 CONTENT_FILTER_FALLBACK_TEXT = (
@@ -200,8 +202,8 @@ def _sanitize_messages_for_llm(messages: list[Any]) -> list[Any]:
     return sanitized
 
 
-class MainAgentEngine:
-    """Main chat runtime engine that encapsulates graph nodes and routing."""
+class MainAgentGraph:
+    """Main agent graph that encapsulates the full agent loop with tools and follow-up logic."""
 
     def __init__(self, *, firestore_client: Any | None = None, cache_maxsize: int = 1000):
         self._tools = [
@@ -246,9 +248,7 @@ class MainAgentEngine:
         system = SystemMessage(
             content=render_main_agent_system_prompt(
                 search_history_summary=context.summarize_search_history(),
-                compact_schemes_json=summarize_debug(
-                    context.compact_schemes(current_schemes, max_items=10), max_len=1000
-                ),
+                compact_schemes_json=context.compact_schemes(current_schemes, max_items=10),
             )
         )
         try:
@@ -259,7 +259,6 @@ class MainAgentEngine:
             else:
                 raise
 
-        log_agent_debug(response)
         return {"messages": [response]}
 
     def sync_current_results_from_tools(self, state: MainAgentState) -> dict[str, Any]:
@@ -269,10 +268,6 @@ class MainAgentEngine:
         updates = MainAgentContextManager(state).build_postprocess_update()
         if not updates:
             return {}
-
-        meta = updates.pop("meta", {})
-        if isinstance(meta, dict):
-            log_postprocess_debug(meta)
         return updates
 
     @staticmethod
@@ -319,65 +314,3 @@ class MainAgentEngine:
         builder.add_edge("postprocess", "followup_subgraph")
         builder.add_edge("followup_subgraph", END)
         return builder.compile(checkpointer=self._checkpointer, cache=self._cache)
-
-
-# Use MainAgentEngine
-if __name__ == "__main__":
-    import asyncio
-    import re
-    from agent.tracing import load_langfuse_client_and_handler
-
-    def split_collated_chunk(collated_chunk: str) -> tuple[str, str]:
-        match = re.search(r"([.?!])(?=[^.?!]*$)", collated_chunk)
-
-        if match:
-            idx = match.end()
-            sent = collated_chunk[:idx]
-            remainder = collated_chunk[idx:]
-
-        else:
-            sent = ""
-            remainder = collated_chunk
-
-        return sent, remainder
-
-    async def test_engine():
-        main_agent_engine = MainAgentEngine()
-        graph = main_agent_engine.graph
-
-        langfuse_client, langfuse_handler = load_langfuse_client_and_handler()
-
-        demo_state = {
-            "messages": [
-                {"type": "human", "content": "What schemes are available for small businesses affected by COVID-19?"}
-            ],
-            "search_history": [],
-            "tool_history": [],
-            "current_results_json": "",
-        }
-
-        collated_chunk = ""
-        async for chunk in graph.astream(
-            demo_state,
-            config={"callbacks": [langfuse_handler] if langfuse_handler else []},
-            stream_mode=["messages", "custom"],
-            version="v2",
-        ):
-            if isinstance(chunk, dict) and chunk.get("type") == "messages":
-                data = chunk.get("data") or []
-                content = data[0].content if data else ""
-                if len(str(content).strip()) > 0 and len(str(content).strip()) < 500:
-                    collated_chunk += str(content)
-                    if len(collated_chunk) > 200:
-                        sent, remainder = split_collated_chunk(collated_chunk)
-                        print({"type": "chunk", "data": {"chunk": sent}})
-                        collated_chunk = remainder
-            else:
-                # release the remainder
-                if len(collated_chunk.strip()) > 0:
-                    print({"type": "chunk", "data": {"chunk": collated_chunk}})
-                    collated_chunk = ""
-            if isinstance(chunk, dict) and chunk.get("type") == "custom":
-                print(chunk.get("data"))
-
-    asyncio.run(test_engine())
