@@ -23,7 +23,6 @@ from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
 from werkzeug.datastructures import MultiDict
 
-
 DEFAULT_LIMIT = 10
 
 
@@ -85,7 +84,10 @@ def create_firebase_manager() -> FirebaseManager:
 def _supported_catalog_query_message() -> str:
     """Return the standard validation error for supported catalog query shapes."""
 
-    supported_queries = ["/catalog", *[f"/catalog?{name}=<{name}>" for name in FILTER_SPECS]]
+    supported_queries = [
+        "/catalog",
+        *[f"/catalog?{name}=<{name}>" for name in FILTER_SPECS],
+    ]
     return f"Error parsing query parameters; only {', '.join(supported_queries)} are supported"
 
 
@@ -121,7 +123,9 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
 
     if not req.method == "GET":
         return https_fn.Response(
-            response=json.dumps({"error": "Invalid request method; only GET is supported"}),
+            response=json.dumps(
+                {"error": "Invalid request method; only GET is supported"}
+            ),
             status=405,
             mimetype="application/json",
             headers=headers,
@@ -143,11 +147,7 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
     except ValueError as e:
         logger.exception("Error parsing query parameters", e)
         return https_fn.Response(
-            response=json.dumps(
-                {
-                    "error": _supported_catalog_query_message()
-                }
-            ),
+            response=json.dumps({"error": _supported_catalog_query_message()}),
             status=400,
             mimetype="application/json",
             headers=headers,
@@ -158,7 +158,11 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Unable to fetch scheme from firestore", e)
         return https_fn.Response(
-            response=json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
+            response=json.dumps(
+                {
+                    "error": "Internal server error, unable to fetch scheme from firestore"
+                }
+            ),
             status=500,
             mimetype="application/json",
             headers=headers,
@@ -197,11 +201,15 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
     # Validate unknown query parameters
     unknown_params = set(query_params.keys()) - ALLOWED_QUERY_PARAMS
     if unknown_params:
-        raise ValueError(f"Unsupported query parameter(s): {', '.join(sorted(unknown_params))}")
+        raise ValueError(
+            f"Unsupported query parameter(s): {', '.join(sorted(unknown_params))}"
+        )
 
     selected_filters = [name for name in FILTER_SPECS if query_params.get(name)]
     if len(selected_filters) > 1:
-        raise ValueError(f"Invalid query; {', '.join(repr(name) for name in selected_filters)} cannot be used together")
+        raise ValueError(
+            f"Invalid query; {', '.join(repr(name) for name in selected_filters)} cannot be used together"
+        )
 
     # Retrieve limit and cursor from query parameters
     limit = int(query_params.get("limit", DEFAULT_LIMIT))
@@ -250,7 +258,11 @@ def _handle_catalog_request(
         )
 
     spec = FILTER_SPECS[query_params.filter_name]
-    query = col.where(filter=FieldFilter(spec.firestore_field, spec.operator, query_params.filter_value))
+    query = col.where(
+        filter=FieldFilter(
+            spec.firestore_field, spec.operator, query_params.filter_value
+        )
+    )
 
     return get_paginated_results(
         collection_ref=col,

@@ -12,6 +12,7 @@ import {
   productButtonSecondary,
   productButtonSm,
 } from "@/lib/design-system/product-styles";
+import NewChatButton from "./new-chat-button";
 
 function EmptySchemesState({
   title,
@@ -128,14 +129,7 @@ export default function SchemesList({
           )}
           {handleNewChat && (
             <div className="hidden md:block">
-              <Button
-                size="sm"
-                variant="outline"
-                className={`${productButtonSecondary} ${productButtonSm} shrink-0`}
-                onPress={handleNewChat}
-              >
-                New chat
-              </Button>
+              <NewChatButton onPress={handleNewChat} />
             </div>
           )}
         </div>

@@ -22,11 +22,11 @@ export function StreamingAssistantMessage({
       {hasText && (
         <div className="markdown-content prose prose-sm max-w-none text-(--schemes-ink-soft)">
           <ReactMarkdown>{text}</ReactMarkdown>
-          {isStreaming && (
+          {/* {isStreaming && (
             <span className="ml-0.5 inline-block animate-pulse text-(--schemes-blue-600)">
               |
             </span>
-          )}
+          )} */}
         </div>
       )}
       {!hasText && (

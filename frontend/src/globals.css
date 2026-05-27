@@ -39,8 +39,19 @@
   }
 }
 
+@keyframes schemes-shiny-text {
+  0% {
+    background-position: 100%;
+  }
+
+  100% {
+    background-position: -100%;
+  }
+}
+
 :root {
   --radius: 0.625rem;
+  --schemes-mobile-nav-offset: 70px;
 
   --schemes-bg: #fafafa;
   --schemes-surface: #ffffff;
@@ -53,7 +64,7 @@
   --schemes-blue-50: #e6f1fb;
   --schemes-blue-100: #b5d4f4;
   --schemes-blue-400: #378add;
-  --schemes-blue-600: hsl(210, 75%, 37%);
+  --schemes-blue-600: #175ea6;
   --schemes-blue-800: #0c447c;
   --schemes-blue-900: #042c53;
   --schemes-amber-100: #f1cf82;
@@ -113,6 +124,19 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+}
+
+@media (max-width: 767px) {
+  :root[data-mobile-nav-hidden="true"] {
+    --schemes-mobile-nav-offset: 0px;
+  }
+}
+
+/* heroui components  */
+@layer components {
+  .spinner--accent {
+    color: var(--schemes-blue-400);
+  }
 }
 
 @media (prefers-color-scheme: dark) {

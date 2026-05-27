@@ -10,7 +10,6 @@ from typing import Any, Optional
 from google.cloud.firestore_v1 import CollectionReference, Query
 from loguru import logger
 
-
 # Secret key for cursor signature
 # In a production environment, this should be stored in environment variables
 # or a secure configuration system
@@ -41,7 +40,9 @@ def _encode_cursor(doc_id: str) -> str:
     cursor_json = json.dumps(cursor_data)
 
     # Create signature for verification
-    signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
+    signature = hmac.new(
+        CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256
+    ).hexdigest()
 
     # Combine cursor data and signature
     cursor_token = {"data": cursor_data, "signature": signature}
@@ -80,7 +81,9 @@ def _decode_cursor(cursor: str) -> Optional[str]:
 
         # Verify signature
         cursor_json = json.dumps(received_cursor_data)
-        expected_signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
+        expected_signature = hmac.new(
+            CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256
+        ).hexdigest()
 
         if not hmac.compare_digest(received_signature, expected_signature):
             logger.warning("Cursor signature verification failed")
@@ -120,11 +123,13 @@ def _get_paginated_query(
     # Order by newest updates first and add __name__ as a deterministic
     # ascending secondary sort key for documents sharing the same timestamp.
     q = (
-        base_query.order_by("last_scraped_update", direction=Query.DESCENDING)
-        .limit(limit + 1)
+        base_query.order_by("last_scraped_update", direction=Query.DESCENDING).limit(
+            limit + 1
+        )
         if base_query
-        else collection_ref.order_by("last_scraped_update", direction=Query.DESCENDING)
-        .limit(limit + 1)
+        else collection_ref.order_by(
+            "last_scraped_update", direction=Query.DESCENDING
+        ).limit(limit + 1)
     )
 
     if not cursor:
@@ -181,4 +186,8 @@ def get_paginated_results(
         next_cursor = _encode_cursor(docs[-1].id)
         docs = docs[:-1]
 
-    return PaginationResult(data=[doc.to_dict() for doc in docs], next_cursor=next_cursor, has_more=has_more)
+    return PaginationResult(
+        data=[{"scheme_id": doc.id, **doc.to_dict()} for doc in docs],
+        next_cursor=next_cursor,
+        has_more=has_more,
+    )

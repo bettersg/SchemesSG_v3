@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { capitalize, parseArrayString } from "@/lib/utils";
 import {
   productButtonPrimary,
+  productButtonPrimaryBlue,
   productButtonSecondary,
   productButtonSm,
   productButtonTertiary,
@@ -207,7 +208,9 @@ function SchemesFilter({
           </Select.Value>
           <Select.Indicator className="text-(--schemes-blue-600)" />
         </Select.Trigger>
-        <Select.Popover className={`w-max max-w-[300px] ${filterSelectPopover}`}>
+        <Select.Popover
+          className={`w-max max-w-[300px] ${filterSelectPopover}`}
+        >
           <ListBox selectionMode="multiple" className={filterListBoxClass}>
             {filteredAgencies.map((agency) => (
               <ListBox.Item
@@ -227,7 +230,7 @@ function SchemesFilter({
       <div className="flex gap-2 items-end">
         <Button
           variant="primary"
-          className={`${productButtonPrimary} ${productButtonSm}`}
+          className={`${productButtonPrimaryBlue} ${productButtonSm}`}
           onPress={handleFilter}
         >
           Filter
@@ -254,10 +257,10 @@ function SchemesFilter({
             size="sm"
             variant="outline"
             aria-label="Filter schemes"
-            className={`${productButtonSecondary} ${productButtonSm} h-9 min-h-0 shrink-0`}
+            className={`${productButtonPrimaryBlue} ${productButtonSm} h-9 min-h-0 shrink-0`}
           >
             <Funnel className="!h-4 !w-4 shrink-0" strokeWidth={2} />
-            Filter
+            <span className="hidden sm:block">Filter</span>
           </Button>
           <Popover.Content
             placement="bottom end"

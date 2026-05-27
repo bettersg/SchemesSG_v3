@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
 import { useLanguage } from "@/lib/landing-i18n";
 import { LanguageToggle } from "@/components/landing/shared/LanguageToggle";
@@ -21,6 +22,9 @@ export function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileHidden, setMobileHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+  const activeScrollTargetRef = useRef<EventTarget | null>(null);
 
   const navLinks: NavLink[] = [
     { label: t.nav.catalog, href: "/catalog" },
@@ -38,17 +42,103 @@ export function Navbar() {
     )?.href ?? "/";
 
   useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > 20);
+    setMobileHidden(false);
+    setMobileOpen(false);
+    lastScrollYRef.current = 0;
+    activeScrollTargetRef.current = null;
+  }, [pathname]);
+
+  useEffect(() => {
+    document.documentElement.dataset.mobileNavHidden =
+      mobileHidden && !mobileOpen ? "true" : "false";
+
+    return () => {
+      delete document.documentElement.dataset.mobileNavHidden;
+    };
+  }, [mobileHidden, mobileOpen]);
+
+  useEffect(() => {
+    function getScrollMetrics(event: Event) {
+      const target = event.target;
+
+      if (
+        target === document ||
+        target === document.documentElement ||
+        target === document.body
+      ) {
+        const scrollHeight = document.documentElement.scrollHeight;
+        return {
+          maxScrollTop: Math.max(scrollHeight - window.innerHeight, 0),
+          scrollTop: window.scrollY,
+          target,
+        };
+      }
+
+      if (target instanceof Element) {
+        return {
+          maxScrollTop: Math.max(target.scrollHeight - target.clientHeight, 0),
+          scrollTop: target.scrollTop,
+          target,
+        };
+      }
+
+      return {
+        maxScrollTop: Math.max(
+          document.documentElement.scrollHeight - window.innerHeight,
+          0,
+        ),
+        scrollTop: window.scrollY,
+        target,
+      };
     }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+
+    function onScroll(event: Event) {
+      const { maxScrollTop, scrollTop, target } = getScrollMetrics(event);
+      const scrollY = Math.max(scrollTop, 0);
+      const isScrollable = maxScrollTop > 0;
+
+      if (!isScrollable) return;
+
+      if (activeScrollTargetRef.current !== target) {
+        activeScrollTargetRef.current = target;
+        lastScrollYRef.current = scrollY;
+        setScrolled(window.scrollY > 20 || scrollY > 20);
+        return;
+      }
+
+      const delta = scrollY - lastScrollYRef.current;
+      const distanceFromBottom = maxScrollTop - scrollY;
+
+      setScrolled(window.scrollY > 20 || scrollY > 20);
+
+      if (scrollY <= 12 || mobileOpen) {
+        setMobileHidden(false);
+      } else if (delta > 6) {
+        setMobileHidden(true);
+      } else if (delta < -6 && distanceFromBottom > 24) {
+        setMobileHidden(false);
+      }
+
+      lastScrollYRef.current = scrollY;
+    }
+
+    document.addEventListener("scroll", onScroll, {
+      capture: true,
+      passive: true,
+    });
+
+    return () => {
+      document.removeEventListener("scroll", onScroll, { capture: true });
+    };
+  }, [mobileOpen]);
 
   return (
     <header
       className={cn(
-        "fixed h-nav top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-0 right-0 left-0 z-50 h-nav transition-all duration-300 md:translate-y-0",
+        mobileHidden && !mobileOpen
+          ? "max-md:-translate-y-full"
+          : "translate-y-0",
         scrolled
           ? "bg-white/70 backdrop-blur-xl border-b border-neutral-200/60 shadow-sm"
           : "bg-transparent",
@@ -91,7 +181,7 @@ export function Navbar() {
                       {link.href === "/" && (
                         <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
                       )}
-                      <Tabs.Indicator className="rounded-full bg-amber-400" />
+                      <Tabs.Indicator className="rounded-full bg-(--schemes-amber-400)" />
                     </Link>
                   </Tabs.Tab>
                 ))}
@@ -120,37 +210,60 @@ export function Navbar() {
       </nav>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-xl border-b border-neutral-200 px-6 pb-6">
-          <div className="flex flex-col items-center gap-1 w-full">
-            {navLinks
-              .filter((link) => link.href !== "/")
-              .map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-3 py-3 text-sm font-medium text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+      <AnimatePresence initial={false}>
+        {mobileOpen && (
+          <motion.div
+            key="mobile-menu"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="z-50 border-b border-neutral-200 bg-background px-6 pb-6 backdrop-blur-xl md:hidden"
+          >
+            <div className="flex w-full flex-col items-center gap-1">
+              {navLinks
+                .filter((link) => link.href !== "/")
+                .map((link) => {
+                  const isActive = selectedKey === link.href;
+
+                  return (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-(--schemes-amber-400) font-semibold text-neutral-900 hover:bg-(--schemes-amber-100)"
+                          : "text-neutral-900 hover:bg-neutral-100",
+                      )}
+                    >
+                      {link.label}
+                    </a>
+                  );
+                })}
+            </div>
+            <div className="mt-3 flex justify-center">
+              <LanguageToggle />
+            </div>
+            <div className="mt-3 flex justify-center">
+              <Link href="/">
+                <Button
+                  size="sm"
+                  className={cn(
+                    "w-full cursor-pointer gap-1.5 rounded-full font-semibold",
+                    selectedKey === "/"
+                      ? "bg-(--schemes-amber-400) text-neutral-900 hover:bg-(--schemes-amber-100)"
+                      : "bg-transparent text-neutral-900 shadow-none hover:bg-neutral-100",
+                  )}
                 >
-                  {link.label}
-                </a>
-              ))}
-          </div>
-          <div className="mt-3 flex justify-center">
-            <LanguageToggle />
-          </div>
-          <div className="mt-3 flex justify-center">
-            <Link href="/">
-              <Button
-                size="sm"
-                className="w-full rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 font-semibold gap-1.5 cursor-pointer"
-              >
-                {t.nav.searchSchemes} <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      )}
+                  {t.nav.searchSchemes} <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

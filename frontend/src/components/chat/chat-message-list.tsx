@@ -6,9 +6,13 @@ import Image from "next/image";
 import { ChatScrollAnchor } from "@/components/chat/chat-scroll-anchor";
 import { MessageEntrance } from "@/components/chat/message-entrance";
 import { StreamingAssistantMessage } from "@/components/chat/streaming-assistant-message";
-import { StreamStatusStep } from "@/components/chat/stream-status-steps";
+import {
+  StreamStatusStep,
+  StreamStatusSteps,
+} from "@/components/chat/stream-status-steps";
 import { SchemeUpdateNotice } from "@/components/chat/scheme-update-notice";
 import ChatSpinner from "@/components/chat/chat-spinner";
+import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
 
 const SchemesSGAvatar = () => (
   <div className="flex h-7 w-7 items-center justify-center">
@@ -17,7 +21,7 @@ const SchemesSGAvatar = () => (
       alt="Schemes.sg logo"
       width={24}
       height={24}
-      className="h-full"
+      className="h-full w-auto"
     />
   </div>
 );
@@ -74,6 +78,9 @@ export default function ChatMessageList({
   const displayedStreamingBlocks = nonEmptyStreamingBlocks.length
     ? nonEmptyStreamingBlocks
     : [""];
+  const latestBotMessageIndex = messages.findLastIndex(
+    (message) => message.type === "bot",
+  );
 
   return (
     <div
@@ -87,24 +94,27 @@ export default function ChatMessageList({
           className={`flex items-end gap-2.5 ${msg.type === "user" ? "flex-row-reverse" : "flex-row"}`}
         >
           {msg.type === "bot" && <SchemesSGAvatar />}
-          {msg.type === "user" && (
+          {/* {msg.type === "user" && (
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--schemes-blue-600) text-[10px] font-semibold text-white">
               U
             </div>
-          )}
+          )} */}
           {msg.type === "bot" ? (
             <div className="flex max-w-[76%] flex-col items-start gap-2">
+              {i === latestBotMessageIndex && msg.statusSteps?.length ? (
+                <StatusStepsAccordion steps={msg.statusSteps} />
+              ) : null}
               <div className="w-full break-words rounded-2xl rounded-bl-md border border-(--schemes-border) bg-white px-3.5 py-2.5 text-sm leading-relaxed text-(--schemes-ink-soft)">
                 <div className="markdown-content prose prose-sm max-w-none text-(--schemes-ink-soft)">
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
               </div>
-              {msg.schemeUpdateCount ? (
+              {i === latestBotMessageIndex && msg.schemeUpdateCount ? (
                 <SchemeUpdateNotice count={msg.schemeUpdateCount} />
               ) : null}
             </div>
           ) : (
-            <div className="max-w-[76%] break-words rounded-2xl rounded-br-md bg-(--schemes-blue-600) px-3.5 py-2.5 text-sm leading-relaxed text-white">
+            <div className="max-w-[76%] wrap-break-words rounded-2xl rounded-br-md bg-(--schemes-blue-600) px-3.5 py-2.5 text-sm leading-relaxed text-white">
               {msg.text}
             </div>
           )}

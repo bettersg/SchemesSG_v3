@@ -1,6 +1,6 @@
 "use client";
 
-import { TextShimmerWave } from "@/components/animations/text-shimmer-wave";
+import ShinyText from "@/components/animations/shiny-text";
 import { cn } from "@/lib/utils";
 
 type StatusTextShimmerProps = {
@@ -13,15 +13,13 @@ export function StatusTextShimmer({
   className,
 }: StatusTextShimmerProps) {
   return (
-    <TextShimmerWave
-      duration={1.2}
-      spread={1.4}
-      className={cn(
-        "[--base-color:var(--schemes-status-info-text)] [--base-gradient-color:var(--schemes-blue-400)]",
-        className,
-      )}
+    <ShinyText
+      speed={2}
+      color="var(--schemes-status-info-text)"
+      shineColor="var(--schemes-blue-400)"
+      className={cn("font-semibold", className)}
     >
       {children}
-    </TextShimmerWave>
+    </ShinyText>
   );
 }

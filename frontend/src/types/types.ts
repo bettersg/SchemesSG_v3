@@ -10,6 +10,7 @@ export interface RawSchemeData {
   Image?: string;
   "search_booster(WL)"?: string;
   scheme_id?: string;
+  id?: string;
   query?: string;
   Similarity?: number;
   Quintile?: number;

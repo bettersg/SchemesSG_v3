@@ -130,7 +130,7 @@ export default function ContributePage() {
                   </li>
                   <li>A volunteer reviews and approves the listing</li>
                 </ol>
-                <p className="mt-3 text-xs text-(--schemes-muted)">
+                <p className="mt-3 text-(--schemes-muted)">
                   Expected turnaround: ~1 week
                 </p>
               </div>

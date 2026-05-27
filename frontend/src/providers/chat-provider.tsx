@@ -14,10 +14,17 @@ export type UserMessage = {
   text: string;
 };
 
+export type BotStatusStep = {
+  id: string;
+  label: string;
+  phase?: string;
+};
+
 export type BotMessage = {
   type: "bot";
   text: string;
   schemeUpdateCount?: number;
+  statusSteps?: BotStatusStep[];
 };
 
 export type Message = UserMessage | BotMessage;

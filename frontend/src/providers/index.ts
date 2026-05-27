@@ -3,6 +3,7 @@ export { AuthProvider, useAuth } from "./auth-provider";
 export { ChatProvider, useChat } from "./chat-provider";
 export type {
   BotMessage,
+  BotStatusStep,
   Message,
   QuickReplySuggestion,
   UserMessage,

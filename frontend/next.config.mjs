@@ -5,7 +5,11 @@ const nextConfig = {
     APP_ENV: process.env.APP_ENV || "development",
   },
   images: {
-    domains: ["schemes.sg"],
+    remotePatterns: [
+      {
+        hostname: "schemes.sg",
+      },
+    ],
   },
   // You can add environment-specific configurations here if needed
   // For example:

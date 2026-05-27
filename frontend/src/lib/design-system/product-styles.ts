@@ -26,6 +26,11 @@ export const productButtonPrimary = cn(
   "bg-(--schemes-amber-400) text-(--schemes-ink) hover:bg-(--schemes-amber-100)",
 );
 
+export const productButtonPrimaryBlue = cn(
+  productButtonBase,
+  "bg-(--schemes-blue-600) text-white hover:bg-(--schemes-blue-800)",
+);
+
 export const productButtonSecondary = cn(
   productButtonBase,
   "border border-(--schemes-blue-100) bg-white text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)",

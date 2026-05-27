@@ -15,23 +15,27 @@ const openSans = Open_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
   variable: "--font-body",
+  preload: false,
 });
 
 const lexend = Lexend({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-head",
+  preload: false,
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  preload: false,
 });
 
 const dmSerifDisplay = DM_Serif_Display({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-serif",
+  preload: false,
 });
 
 // Keep Geist as fallback
@@ -40,6 +44,7 @@ const geistSans = localFont({
   variable: "--font-geist-sans",
   weight: "100 200 300 400 500 600 700 800 900",
   fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

@@ -20,6 +20,7 @@ import { FollowUpSuggestions } from "@/components/chat/follow-up-suggestions";
 import { SchemesPanelPulse } from "@/components/chat/schemes-panel-pulse";
 import { StreamStatusStep } from "@/components/chat/stream-status-steps";
 import { StreamingErrorCard } from "@/components/chat/streaming-error-card";
+import NewChatButton from "./new-chat-button";
 
 const initialChatRequestKeys = new Set<string>();
 
@@ -39,8 +40,11 @@ export default function ChatPage() {
     setDraftMessage,
   } = useChat();
 
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(
+    messages[messages.length - 1].type == "user",
+  );
   const [statusSteps, setStatusSteps] = useState<StreamStatusStep[]>([]);
+  const statusStepsRef = useRef<StreamStatusStep[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
   const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
@@ -128,6 +132,7 @@ export default function ChatPage() {
   const resetStreamUi = useCallback(() => {
     streamingBlocksRef.current = [];
     schemesFoundCountRef.current = 0;
+    statusStepsRef.current = [];
     setStreamingBlocks([]);
     setStatusSteps([]);
     setPendingSchemesTabPulse(false);
@@ -179,8 +184,13 @@ export default function ChatPage() {
             phase: data.phase,
           };
           setStatusSteps((prev) => {
-            if (prev.at(-1)?.label === step.label) return prev;
-            return [...prev, step];
+            if (prev.at(-1)?.label === step.label) {
+              statusStepsRef.current = prev;
+              return prev;
+            }
+            const next = [...prev, step];
+            statusStepsRef.current = next;
+            return next;
           });
         }
         break;
@@ -248,11 +258,17 @@ export default function ChatPage() {
         const schemeUpdateCount = includeSchemeUpdate
           ? schemesFoundCountRef.current
           : 0;
+        const completedStatusSteps = includeSchemeUpdate
+          ? statusStepsRef.current
+          : [];
         const newBotMessages = blocks.map((text, index) => ({
           type: "bot" as const,
           text,
           ...(schemeUpdateCount > 0 && index === blocks.length - 1
             ? { schemeUpdateCount }
+            : {}),
+          ...(completedStatusSteps.length > 0 && index === blocks.length - 1
+            ? { statusSteps: completedStatusSteps }
             : {}),
         })) as BotMessage[];
         setMessages((prev) => [...prev, ...newBotMessages]);
@@ -260,6 +276,7 @@ export default function ChatPage() {
 
       if (includeSchemeUpdate) {
         schemesFoundCountRef.current = 0;
+        statusStepsRef.current = [];
       }
       streamingBlocksRef.current = [];
       setStreamingBlocks([]);
@@ -306,6 +323,7 @@ export default function ChatPage() {
       setShowQuickReplies(showQuickRepliesBeforeActiveRequestRef.current);
       streamingBlocksRef.current = [];
       setStreamingBlocks([]);
+      statusStepsRef.current = [];
       setStatusSteps([]);
       setIsGenerating(false);
       schemesFoundCountRef.current = 0;
@@ -401,7 +419,6 @@ export default function ChatPage() {
             value={draftMessage}
             onValueChange={setDraftMessage}
           />
-
         </div>
 
         {/* Right scheme list — desktop only */}
@@ -426,14 +443,7 @@ export default function ChatPage() {
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
             </Tabs.List>
-            <Button
-              size="sm"
-              variant="outline"
-              className={`${productButtonSecondary} ${productButtonSm} shrink-0`}
-              onPress={() => setResetModalIsOpen(true)}
-            >
-              New chat
-            </Button>
+            <NewChatButton onPress={() => setResetModalIsOpen(true)} />
           </Tabs.ListContainer>
           <Tabs.Panel className="flex-1 min-h-0 p-0!" id="chat">
             <div className="h-full basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">

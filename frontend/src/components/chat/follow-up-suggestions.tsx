@@ -23,10 +23,11 @@ export function FollowUpSuggestions({
   if (!suggestions.length) return null;
 
   return (
-    <div className="flex flex-row flex-wrap items-start gap-2 px-4 py-2 no-scrollbar shrink-0">
+    <div className="no-scrollbar flex shrink-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-4 py-2 sm:flex-wrap sm:overflow-visible">
       {suggestions.slice(0, 3).map((suggestion, index) => (
         <motion.div
           key={suggestion.label}
+          className="shrink-0"
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.045, duration: 0.16 }}

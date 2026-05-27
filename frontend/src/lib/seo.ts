@@ -9,6 +9,9 @@ export const SEO_COPY = {
   aboutTitle: "About Schemes.sg | Find the Right Schemes, All in One Place",
   aboutDescription:
     "Schemes.sg is an AI-powered search engine that helps you discover public social assistance schemes you may be eligible for.",
+  catalogTitle: "Explore Social Assistance Schemes in Singapore | Schemes.sg",
+  catalogDescription:
+    "Browse 500+ government and community schemes from 200+ agencies, all in one searchable database.",
   schemeDescriptionFallback:
     "Access government and community schemes from agencies like MSF, MOH, HDB, CPF, and more, all in one searchable database.",
 };

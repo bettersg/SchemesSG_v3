@@ -15,6 +15,42 @@ export const SCHEME_CATEGORIES = [
 
 export type SchemeCategory = (typeof SCHEME_CATEGORIES)[number];
 
+export const CATALOG_CATEGORY_OPTIONS = ["All", ...SCHEME_CATEGORIES] as const;
+
+export type CatalogCategory = (typeof CATALOG_CATEGORY_OPTIONS)[number];
+
+export const CATALOG_CATEGORY_SLUGS: Record<CatalogCategory, string> = {
+  All: "all",
+  "Financial Assistance": "financial-assistance",
+  "Mental Health": "mental-health",
+  Family: "family",
+  Healthcare: "healthcare",
+  Housing: "housing",
+  Employment: "employment",
+  "Food Support": "food-support",
+  Education: "education",
+  Eldercare: "eldercare",
+  Disability: "disability",
+};
+
+export const CATALOG_CATEGORIES_BY_SLUG = Object.fromEntries(
+  CATALOG_CATEGORY_OPTIONS.map((category) => [
+    CATALOG_CATEGORY_SLUGS[category],
+    category,
+  ]),
+) as Record<string, CatalogCategory>;
+
+export const CATALOG_CATEGORY_ROUTES = CATALOG_CATEGORY_OPTIONS.map(
+  (category) => ({
+    category,
+    slug: CATALOG_CATEGORY_SLUGS[category],
+  }),
+);
+
+export function getCatalogCategoryFromSlug(slug: string) {
+  return CATALOG_CATEGORIES_BY_SLUG[slug] ?? null;
+}
+
 const CATEGORY_ALIASES: Record<string, SchemeCategory> = {
   "financial aid": "Financial Assistance",
   "financial assistance": "Financial Assistance",

@@ -19,7 +19,6 @@ export function StreamStatusSteps({
   isActive = false,
 }: StreamStatusStepsProps) {
   if (!steps.length) return null;
-
   // const visibleSteps = steps.slice(-3);
 
   return (

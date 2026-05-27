@@ -7,7 +7,6 @@ import Markdown from "react-markdown";
 import { ReactNode, useEffect, useState } from "react";
 import SchemeLogo from "@/components/schemes/scheme-logo";
 import {
-  ArrowRight,
   Check,
   ExternalLink,
   Info,
@@ -22,7 +21,7 @@ import {
 } from "@/lib/design-system/categories";
 import {
   productButtonLg,
-  productButtonPrimary,
+  productButtonPrimaryBlue,
   productButtonSecondary,
   productCardPadded,
   productHeading,
@@ -30,7 +29,6 @@ import {
   productPageShell,
 } from "@/lib/design-system/product-styles";
 import { capitalize } from "@/lib/utils";
-import clsx from "clsx";
 
 function Tag({ label }: { label: string }) {
   return (
@@ -45,17 +43,10 @@ function Tag({ label }: { label: string }) {
   );
 }
 
-function CheckItem({ children }: { children: ReactNode }) {
+function BulletItem({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-start gap-2.5 text-sm text-(--schemes-ink-soft)">
-      <div
-        className={clsx(
-          "mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center",
-          "rounded-[5px] border border-(--schemes-blue-100) bg-(--schemes-blue-50)",
-        )}
-      >
-        <Check size={9} strokeWidth={2} className="text-(--schemes-blue-600)" />
-      </div>
+      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" />
       <span className="leading-snug">{children}</span>
     </div>
   );
@@ -63,7 +54,7 @@ function CheckItem({ children }: { children: ReactNode }) {
 
 function MarkdownWrapper({ text }: { text: string }) {
   return (
-    <div className={`${styles.showMarker} text-sm text-(--schemes-muted)`}>
+    <div className={`${styles.showMarker} text-sm text-(--schemes-ink-soft)`}>
       <Markdown>{text}</Markdown>
     </div>
   );
@@ -113,7 +104,7 @@ function ShareButton({ scheme }: { scheme: Scheme }) {
     <button
       type="button"
       onClick={handleShare}
-      className={`${productButtonSecondary} ${productButtonLg}`}
+      className={`${productButtonSecondary} ${productButtonLg} w-full max-w-50`}
     >
       {copied ? (
         <>
@@ -131,19 +122,27 @@ function ShareButton({ scheme }: { scheme: Scheme }) {
 }
 
 function SectionLabel({
-  color,
+  color = "bg-(--schemes-blue-400)",
   children,
 }: {
-  color: string;
+  color?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <div className={`h-2 w-2 rounded-[3px] ${color}`} />
-      <span className="text-[10px] font-semibold tracking-[0.08em] text-(--schemes-muted) uppercase">
+      <span className={`h-2 w-2 rounded-[3px] ${color}`} />
+      <h3 className="text-sm font-semibold text-(--schemes-blue-900)">
         {children}
-      </span>
+      </h3>
     </div>
+  );
+}
+
+function CardHeading({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="mb-4 text-base font-semibold text-(--schemes-blue-900)">
+      {children}
+    </h2>
   );
 }
 
@@ -151,110 +150,110 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
   return (
     <div className={productPageShell}>
       <div className={productPageContent}>
-        <div className="mb-8 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
-          <SchemeLogo agency={scheme.agency} image={scheme.image} size="lg" />
-          <div className="flex flex-col items-center gap-2 sm:items-start">
-            {scheme.agency && (
-              <h1 className={productHeading}>{scheme.agency}</h1>
-            )}
-            {scheme.schemeName && (
-              <p className="text-base text-(--schemes-muted)">
-                {scheme.schemeName}
-              </p>
-            )}
+        <div className="mb-10 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
+            <SchemeLogo agency={scheme.agency} image={scheme.image} size="lg" />
+            <div className="flex flex-col items-center gap-4 sm:items-start">
+              {scheme.agency && (
+                <p className="text-sm font-semibold text-(--schemes-muted)">
+                  {scheme.agency}
+                </p>
+              )}
+              {scheme.schemeName && (
+                <h1 className={productHeading}>{scheme.schemeName}</h1>
+              )}
+              {scheme.schemeType && scheme.schemeType.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
+                  {scheme.schemeType.map((t) => (
+                    <Tag key={t} label={t} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex w-full flex-row flex-wrap justify-center gap-3 pt-1 sm:max-w-max sm:flex-col sm:pt-0">
             {scheme.link && (
               <Link
                 href={scheme.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-(--schemes-blue-600) transition-colors hover:text-(--schemes-blue-800)"
+                className={`${productButtonPrimaryBlue} ${productButtonLg} max-w-50 w-full no-underline hover:no-underline`}
               >
-                Find out more
                 <ExternalLink size={14} strokeWidth={2} />
+                Visit website
               </Link>
             )}
+            <ShareButton scheme={scheme} />
           </div>
         </div>
 
         {scheme.description && (
           <div className={`${productCardPadded} mb-6`}>
-            <SectionLabel color="bg-(--schemes-blue-400)">About</SectionLabel>
+            <CardHeading>Overview</CardHeading>
             <MarkdownWrapper text={scheme.description} />
           </div>
         )}
 
         <div className={`${productCardPadded} mb-6`}>
-          <div className="mb-5 flex items-center gap-2">
-            <span className="text-lg font-semibold text-(--schemes-blue-900)">
-              Details
-            </span>
-          </div>
+          <CardHeading>What this scheme covers</CardHeading>
 
-          <div className="flex flex-col gap-8 lg:flex-row">
-            <div className="flex flex-[2] flex-col gap-6">
-              <div className="flex flex-col gap-6 sm:flex-row">
-                {scheme.targetAudience && scheme.targetAudience.length > 0 && (
-                  <div className="flex-1">
-                    <SectionLabel color="bg-(--schemes-amber-400)">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 sm:flex-row">
+              {scheme.targetAudience && scheme.targetAudience.length > 0 && (
+                <div className="flex-1">
+                    <SectionLabel color="bg-(--schemes-category-healthcare-border)">
                       Who qualifies
                     </SectionLabel>
-                    <div className="flex flex-col gap-2">
-                      {scheme.targetAudience.map((t) => (
-                        <CheckItem key={t}>{t}</CheckItem>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {scheme.benefits && scheme.benefits.length > 0 && (
-                  <div className="flex-1">
-                    <SectionLabel color="bg-(--schemes-blue-400)">
-                      What you receive
-                    </SectionLabel>
-                    <div className="flex flex-col gap-2">
-                      {scheme.benefits.map((b) => (
-                        <CheckItem key={b}>{b}</CheckItem>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {scheme.eligibilityText && (
-                <div>
-                  <SectionLabel color="bg-(--schemes-blue-400)">
-                    Eligibility
-                  </SectionLabel>
-                  <MarkdownWrapper text={scheme.eligibilityText} />
-                </div>
-              )}
-
-              {scheme.howToApply && (
-                <div>
-                  <SectionLabel color="bg-(--schemes-blue-400)">
-                    How to apply
-                  </SectionLabel>
-                  <MarkdownWrapper text={scheme.howToApply} />
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-1 flex-col gap-6">
-              {scheme.schemeType && scheme.schemeType.length > 0 && (
-                <div>
-                  <SectionLabel color="bg-(--schemes-blue-400)">
-                    Type
-                  </SectionLabel>
-                  <div className="flex flex-wrap gap-1.5">
-                    {scheme.schemeType.map((t) => (
-                      <Tag key={t} label={t} />
+                  <div className="flex flex-col gap-2">
+                    {scheme.targetAudience.map((t) => (
+                      <BulletItem key={t}>{t}</BulletItem>
                     ))}
                   </div>
                 </div>
               )}
+              {scheme.benefits && scheme.benefits.length > 0 && (
+                <div className="flex-1">
+                  <SectionLabel color="bg-(--schemes-category-financial-border)">
+                    What you receive
+                  </SectionLabel>
+                  <div className="flex flex-col gap-2">
+                    {scheme.benefits.map((b) => (
+                      <BulletItem key={b}>{b}</BulletItem>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
+            {scheme.eligibilityText && (
+              <div>
+                <SectionLabel color="bg-(--schemes-category-mental-border)">
+                  Eligibility details
+                </SectionLabel>
+                <MarkdownWrapper text={scheme.eligibilityText} />
+              </div>
+            )}
+
+            {scheme.howToApply && (
+              <div>
+                <SectionLabel color="bg-(--schemes-category-employment-border)">
+                  How to apply
+                </SectionLabel>
+                <MarkdownWrapper text={scheme.howToApply} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {(scheme.serviceArea ||
+          (scheme.contact && scheme.contact.length > 0)) && (
+          <div className={`${productCardPadded} mb-6`}>
+            <CardHeading>Agency details</CardHeading>
+            <div className="flex flex-col gap-6">
               {scheme.serviceArea && (
                 <div>
-                  <SectionLabel color="bg-(--schemes-muted-light)">
+                  <SectionLabel color="bg-(--schemes-category-housing-border)">
                     Service area
                   </SectionLabel>
                   <p className="text-sm text-(--schemes-muted)">
@@ -265,10 +264,10 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
 
               {scheme.contact && scheme.contact.length > 0 && (
                 <div>
-                  <SectionLabel color="bg-(--schemes-muted-light)">
-                    Branches
+                  <SectionLabel color="bg-(--schemes-category-eldercare-border)">
+                    Branches and contacts
                   </SectionLabel>
-                  <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                     {scheme.contact.map((c, i) => (
                       <div
                         key={i}
@@ -330,22 +329,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               )}
             </div>
           </div>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3 border-t border-(--schemes-border) pt-5 sm:justify-end">
-            <ShareButton scheme={scheme} />
-            {scheme.link && (
-              <Link
-                href={scheme.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${productButtonPrimary} ${productButtonLg}`}
-              >
-                <ArrowRight size={14} strokeWidth={2} />
-                Visit agency website
-              </Link>
-            )}
-          </div>
-        </div>
+        )}
 
         <section className="mb-8 rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4">
           <div className="flex items-start gap-3">
@@ -359,10 +343,8 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                 Important Information
               </h3>
               <p className="text-sm text-(--schemes-muted)">
-                We strive to provide accurate information about assistance
-                schemes in Singapore. Program details may change over time, so
-                please visit the official website for the most current
-                information.{" "}
+                Scheme details may change. Visit the official agency website for
+                the latest eligibility, benefits, and application information.{" "}
                 <Link
                   href="/feedback"
                   className="text-sm text-(--schemes-blue-600) hover:underline"

@@ -33,7 +33,7 @@ function ChatLandingInput({
     <div className="px-4 md:px-8 flex flex-col items-center justify-center text-center z-10">
       {/* Headline */}
       <motion.h1
-        className="font-serif text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]"
+        className="font-serif font-bold leading-[1.08] tracking-tight text-5xl lg:text-[4.5rem] xl:text-[5rem]"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.1 }}

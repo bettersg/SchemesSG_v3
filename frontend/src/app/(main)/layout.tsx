@@ -10,8 +10,10 @@ export default function MainLayout({
   return (
     <>
       <Navbar />
-      <div className="h-nav"></div>
-      <main className="h-[calc(100vh-var(--spacing-nav))]">{children}</main>
+      <div className="h-[var(--schemes-mobile-nav-offset)] transition-[height] duration-300 md:h-nav"></div>
+      <main className="h-[calc(100vh-var(--schemes-mobile-nav-offset))] transition-[height] duration-300 md:h-[calc(100vh-var(--spacing-nav))]">
+        {children}
+      </main>
     </>
   );
 }
