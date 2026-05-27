@@ -3,165 +3,184 @@
 import asyncio
 import json
 from typing import Any
+from datetime import datetime, timezone
 
 from langchain_core.tools import StructuredTool
 from langgraph.config import get_stream_writer
 from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
+from integrations import FirebaseManager, LLMManager
 
 
 logger = setup_logging()
 # To be used as a fallback message if LLM doesn't provide an action_message in the tool call input.
-DEFAULT_LLM_ACTION_MESSAGE = "Based on your current context and preferences."
-ACTION_MESSAGE_ON_START = "Filtering and re-ranking existing schemes.\n {action_message}"
+ACTION_MESSAGE_ON_START = "Filtering and re-ranking existing schemes.\n Instructions are: \n {directive}"
 ACTION_MESSAGE_ON_END = "Filtered and re-ranked schemes list to {num_items} items."
+MINIMAL_LLM_KEYS = {"scheme", "agency", "summary"}
 
-_CURRENT_RESULTS_JSON = ""
-
-
-def set_filter_rerank_context(results_json: str) -> None:
-    """Inject current schemes payload for rerank/filter calls in this process."""
-    global _CURRENT_RESULTS_JSON
-    _CURRENT_RESULTS_JSON = results_json if isinstance(results_json, str) else ""
+QUERY_COLLECTION_NAME = "llmQuery"
+MODEL_NAME = "gpt-5.4-mini"
+RERANKER_COLLECTION_NAME = "filterRerankResults"
 
 
-class FilterRerankByIndicesInput(BaseModel):
-    indices: list[int] = Field(
+class FilterRerankInput(BaseModel):
+    doc_id: str = Field(
         ...,
-        description=("Zero-based indices in preferred order. The tool returns only these indices, preserving order."),
+        description="ID of the document containing the schemes list to filter/rerank. This should be provided in the current context for the tool to access.",
     )
-    action_message: str = Field(
-        default="",
-        description="Optional note describing why these indices were chosen.",
+    directive: str = Field(
+        ...,
+        description="Instructions for how to filter/rerank the schemes list. Be specific about criteria and desired outcome.",
     )
 
 
-def _extract_results_list(results_json: str) -> tuple[dict | list | None, list[dict]]:
+RERANKER_TEMPLATE = """
+You are provided a list of schemes in JSON format.
+{schemes_json}
+Your task is to filter and rerank this list based on the following directive:
+{directive}
+Return a JSON array of zero-based indices representing the new order and selection of schemes that best fulfills the directive.
+Only include indices of schemes that meet the criteria, and order them according to the directive. Do not include any indices of schemes that should be excluded based on the directive.
+"""
+
+
+def _retrieve_search_results_by_doc_id(doc_id: str) -> str:
+    """Fetch the schemes list JSON string from the database using the provided document ID."""
     try:
-        parsed = json.loads(results_json)
-    except Exception:
-        return None, []
-
-    if isinstance(parsed, dict):
-        if isinstance(parsed.get("data"), list):
-            return parsed, parsed["data"]
-        if isinstance(parsed.get("results"), list):
-            return parsed, parsed["results"]
-        return parsed, []
-
-    if isinstance(parsed, list):
-        return parsed, parsed
-
-    return parsed, []
+        firebase_manager = FirebaseManager()
+        print(f"Retrieving schemes context for doc_id: {doc_id}")
+        doc_ref = firebase_manager.firestore_client.collection(QUERY_COLLECTION_NAME).document(doc_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            return doc.to_dict().get("schemes_response", [])
+        else:
+            logger.warning(f"No document found for doc_id: {doc_id}")
+            return ""
+    except Exception as e:
+        logger.error(f"Error retrieving schemes list for doc_id {doc_id}: {e}")
+        return ""
 
 
-def _filter_rerank_by_indices_sync(
-    indices: list[int],
-    action_message: str = "",
+def _filter_rerank(
+    schemes_dict: str,
+    directive: str,
+) -> dict[str, Any]:
+    llm_manager = LLMManager(MODEL_NAME)
+    llm_manager.modify_llm(
+        **{
+            "temperature": 0.0,
+            "max_tokens": 500,
+        }
+    )
+    llm = llm_manager.get_llm()
+    llm_response = llm.invoke(RERANKER_TEMPLATE.format(schemes_json=json.dumps(schemes_dict), directive=directive))
+    llm_text = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
+
+    try:
+        indices = json.loads(llm_text.strip())
+        if not isinstance(indices, list) or not all(isinstance(i, int) for i in indices):
+            raise ValueError("LLM response is not a list of integers.")
+    except Exception as e:
+        logger.error(f"Error parsing LLM response for filter_rerank: {e}")
+        return {"error": f"Failed to parse LLM response: {e}", "llm_response": llm_text}
+    return {"indices": indices, "llm_response": llm_text}
+
+
+def _sort_json_array_by_indices(schemes_dict: list, indices: list[int]) -> str:
+    try:
+        data = schemes_dict
+        if not isinstance(data, list):
+            raise ValueError("Input JSON is not an array.")
+        sorted_data = [data[i] for i in indices if 0 <= i < len(data)]
+        return sorted_data
+    except Exception as e:
+        logger.error(f"Error sorting JSON array by indices: {e}")
+        return []
+
+
+def _save_filtered_reranked_schemes(doc_id: str, schemes: list) -> None:
+    """Save the filtered and reranked schemes list back to the database under the same document ID."""
+    try:
+        firebase_manager = FirebaseManager()
+        _, doc_ref = firebase_manager.firestore_client.collection(RERANKER_COLLECTION_NAME).add(
+            {
+                "llmquery_doc_id": doc_id,
+                "schemes_response": schemes,
+                "filter_rerank_timestamp": datetime.now(tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
+            }
+        )
+        logger.info(
+            f"Successfully saved filtered/reranked schemes for doc_id {doc_id} to Firestore with new doc_id {doc_ref.id}"
+        )
+        return doc_ref.id
+    except Exception as e:
+        logger.error(f"Error saving filtered/reranked schemes for doc_id {doc_id} to Firestore: {e}")
+        return None
+
+
+def filter_rerank_by_directive(
+    doc_id: str,
+    directive: str,
 ) -> dict[str, Any]:
     try:
-        write = get_stream_writer()
-        write(
+        writer = get_stream_writer()
+        writer(
             {
                 "type": "action_message",
-                "message": ACTION_MESSAGE_ON_START.format(action_message=action_message or DEFAULT_LLM_ACTION_MESSAGE),
-            },
+                "data": {
+                    "message": ACTION_MESSAGE_ON_START.format(directive=directive),
+                },
+            }
         )
     except Exception as e:
-        logger.debug(f"Failed to emit filter_rerank_by_indices action message to stream: {e}")
+        logger.debug(f"Failed to emit filter/rerank start message to stream: {e}")
+    schemes_dict = _retrieve_search_results_by_doc_id(doc_id)
+    if not schemes_dict:
+        return {"error": "No schemes context found for the provided doc_id."}
 
-    results_json = _CURRENT_RESULTS_JSON
-    if not results_json:
-        return {
-            "error": "No current schemes context available for rerank/filter.",
-            "data": [],
-            "total_count": 0,
-            "selected_count": 0,
-            "used_indices": [],
-            "invalid_indices": indices,
-            "action_message": action_message,
-        }
-
-    parsed, source_list = _extract_results_list(results_json)
-    total_count = len(source_list)
-
-    if total_count == 0:
-        return {
-            "data": [],
-            "total_count": 0,
-            "selected_count": 0,
-            "used_indices": [],
-            "invalid_indices": indices,
-            "action_message": action_message,
-        }
-
-    used_indices: list[int] = []
-    invalid_indices: list[int] = []
-    seen: set[int] = set()
-
-    for idx in indices:
-        if not isinstance(idx, int):
-            continue
-        if idx < 0 or idx >= total_count:
-            invalid_indices.append(idx)
-            continue
-        if idx in seen:
-            continue
-        seen.add(idx)
-        used_indices.append(idx)
-
-    selected = [source_list[idx] for idx in used_indices]
-
-    if isinstance(parsed, dict) and isinstance(parsed.get("data"), list):
-        out_payload: dict[str, Any] = dict(parsed)
-        out_payload["data"] = selected
-    elif isinstance(parsed, dict) and isinstance(parsed.get("results"), list):
-        out_payload = dict(parsed)
-        out_payload["results"] = selected
-    else:
-        out_payload = {"data": selected}
-
-    out_payload["total_count"] = total_count
-    out_payload["selected_count"] = len(selected)
-    out_payload["used_indices"] = used_indices
-    out_payload["invalid_indices"] = invalid_indices
-    out_payload["action_message"] = action_message
-
+    result = _filter_rerank(schemes_dict, directive)
+    if result.get("error"):
+        return {"error": result["error"], "llm_response": result.get("llm_response", "")}
+    indices = result.get("indices", [])
+    sorted_schemes = _sort_json_array_by_indices(schemes_dict, indices)
     try:
-        write = get_stream_writer()
-        write(
+        writer = get_stream_writer()
+        writer(
             {
                 "type": "action_message",
-                "message": ACTION_MESSAGE_ON_END.format(num_items=len(selected)),
-            },
+                "data": {
+                    "message": ACTION_MESSAGE_ON_END.format(num_items=len(sorted_schemes)),
+                },
+            }
+        )
+        writer(
+            {
+                "type": "schemes_update",
+                "data": {
+                    "schemes": sorted_schemes,
+                },
+            }
         )
     except Exception as e:
-        logger.debug(f"Failed to emit filter_rerank_by_indices completion message to stream: {e}")
-    return out_payload
+        logger.debug(f"Failed to emit filter/rerank completion message to stream: {e}")
+    new_doc_id = _save_filtered_reranked_schemes(doc_id, sorted_schemes)
+    sorted_schemes_dicts = []
+    for scheme in sorted_schemes:
+        sorted_schemes_dicts.append({k: v for k, v in scheme.items() if k in MINIMAL_LLM_KEYS})
+    return {
+        "filtered_reranked_doc_id": new_doc_id,
+        "schemes": sorted_schemes_dicts,
+        "llm_response": result.get("llm_response", ""),
+    }
 
 
-async def _filter_rerank_by_indices_async(
-    indices: list[int],
-    action_message: str = "",
-) -> dict[str, Any]:
-    try:
-        return await asyncio.wait_for(
-            asyncio.to_thread(_filter_rerank_by_indices_sync, indices, action_message),
-            timeout=6.0,
-        )
-    except asyncio.TimeoutError:
-        return {"error": "filter_rerank_by_indices timed out after 6s"}
-    except Exception as exc:
-        return {"error": f"filter_rerank_by_indices failed: {exc}"}
-
-
-filter_rerank_by_indices_tool = StructuredTool.from_function(
-    func=_filter_rerank_by_indices_sync,
-    coroutine=_filter_rerank_by_indices_async,
-    name="filter_rerank_by_indices",
+filter_rerank_by_directive_tool = StructuredTool.from_function(
+    func=filter_rerank_by_directive,
+    name="filter_rerank_by_directive",
     description=(
-        "Filter and reorder an existing schemes list using zero-based indices. "
-        "Use after you already have current schemes and want reranking or filtering."
+        "Filter and reorder an existing schemes list based on a natural language directive. "
+        "The tool retrieves the current schemes list using the provided document ID, then uses the directive to determine how to filter and reorder the schemes. "
+        "The directive should clearly specify the criteria for filtering and the desired order of the schemes."
     ),
-    args_schema=FilterRerankByIndicesInput,
+    args_schema=FilterRerankInput,
 )

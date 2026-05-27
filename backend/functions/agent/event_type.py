@@ -11,13 +11,19 @@ class _StringEnum(str, Enum):
 
 class AgentStreamEventType(_StringEnum):
     STATUS = "status"
-    CHUNK = "chunk"
+    ACTION_MESSAGE = "action_message"
+    TEXT = "text"
     SCHEMES_UPDATE = "schemes_update"
     SCHEMES = "schemes"
-    ASSISTANT = "assistant"
-    STATE = "state"
     FOLLOWUPS = "followups"
     DONE = "done"
 
 
-__all__ = ["AgentStreamEventType"]
+class StatusPhase(_StringEnum):
+    MESSAGE_START = "message_start"
+    TOOL_COMPLETED = "tool_completed"
+    SESSION_STARTED = "session_started"
+    STARTED = "started"
+
+
+__all__ = ["AgentStreamEventType", "StatusPhase"]

@@ -10,7 +10,7 @@ from langgraph.cache.memory import InMemoryCache
 from langgraph.checkpoint.serde.base import SerializerProtocol
 from utils.logging_setup import setup_logging
 
-from .context_manager import MainAgentState
+from .context_manager import RouterAgentState
 
 
 logger = setup_logging()
@@ -69,11 +69,11 @@ class InMemoryCacheWithMaxsize(InMemoryCache):
                 self._cache[ns].popitem(last=False)
 
 
-def generate_cache_key(state: MainAgentState) -> str:
+def generate_cache_key(state: RouterAgentState) -> str:
     """Generate a cache key for the given agent state.
 
     Args:
-        state (MainAgentState): The agent state to generate a cache key for.
+        state (RouterAgentState): The agent state to generate a cache key for.
         Uses `messages`, `current_results_json`, and `search_history` for cache differentiation.
 
     Returns:

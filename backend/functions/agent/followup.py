@@ -7,7 +7,7 @@ from .prompts.followup import (
     FOLLOWUP_SYSTEM_TEMPLATE,
     FOLLOWUP_PROMPT_TEMPLATE,
 )
-from .context_manager import MainAgentState
+from .context_manager import RouterAgentState
 
 MAX_FOLLOWUP_KV = 3
 DEFAULT_FOLLOWUP_MAX_COMPLETION_TOKENS = 400
@@ -63,7 +63,7 @@ def parse_schemes_json(schemes_json: object) -> str:
 
 class FollowupSubgraph:
     def __init__(self):
-        self.subgraph_builder = StateGraph(MainAgentState)
+        self.subgraph_builder = StateGraph(RouterAgentState)
         llm_loader = LLMManager(MODEL_NAME)
         llm_loader.modify_llm(
             **{
@@ -77,13 +77,13 @@ class FollowupSubgraph:
         self.subgraph_builder.add_edge(START, "followup_bot")
         self.subgraph = self.subgraph_builder.compile()
 
-    def invoke(self, state: MainAgentState):
+    def invoke(self, state: RouterAgentState):
         return self.subgraph.invoke(state)
 
-    def followup_bot(self, state: MainAgentState):
+    def followup_bot(self, state: RouterAgentState):
         system_message = FOLLOWUP_SYSTEM_TEMPLATE.format(max_pairs=MAX_FOLLOWUP_KV)
         transcript = "\n".join(
-            [f"{msg.type}: {msg.content}" for msg in state["messages"] if msg.type in ["human", "ai"]]
+            [f"{msg.type}: {msg.content}" for msg in state["messages"] if msg.type in ["human", "ai", "tool"]]
         )
         parsed_schemes = parse_schemes_json(state.get("current_results_json", ""))
         prompt = FOLLOWUP_PROMPT_TEMPLATE.format(schemes_json=parsed_schemes, transcript=transcript)

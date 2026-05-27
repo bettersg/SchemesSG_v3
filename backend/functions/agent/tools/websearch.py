@@ -53,7 +53,9 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
         writer(
             {
                 "type": "action_message",
-                "message": ACTION_MESSAGE_ON_START.format(query=query),
+                "data": {
+                    "message": ACTION_MESSAGE_ON_START.format(query=query),
+                },
             },
         )
     except Exception as e:
@@ -85,7 +87,9 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
             writer(
                 {
                     "type": "action_message",
-                    "message": ACTION_MESSAGE_ON_END.format(result_count=len(results), query=query),
+                    "data": {
+                        "message": ACTION_MESSAGE_ON_END.format(result_count=len(results), query=query),
+                    }
                 }
             )
         except Exception as e:
