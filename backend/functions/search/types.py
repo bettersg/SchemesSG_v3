@@ -9,6 +9,7 @@ class PredictParams(BaseModel):
     top_k: Optional[int] = 20
     similarity_threshold: Optional[float] = None
     is_warmup: Optional[bool] = False  # Add flag for warmup requests
+    session_id: Optional[str] = None  # Add optional session_id for context association
 
 
 class PaginatedSearchParams(BaseModel):

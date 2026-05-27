@@ -12,6 +12,18 @@ from .retriever import SearchModel
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+# LLM_SEARCH_RESULT_KEYS = ["scheme_type", "scheme_id", "agency", "image", "scheme_name", "summary", "description"]
+
+
+# Convert any Timestamp objects in results_json to strings
+def convert_timestamps_to_strings(obj):
+    if isinstance(obj, dict):
+        return {k: convert_timestamps_to_strings(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_timestamps_to_strings(elem) for elem in obj]
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    return obj
 
 
 class QueryHandler:
@@ -35,6 +47,8 @@ class QueryHandler:
             return None
         elif pd.isna(data):
             return None
+        elif isinstance(data, datetime):
+            return int(data.timestamp())
         return data
 
     def save_user_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
@@ -55,6 +69,29 @@ class QueryHandler:
                 user_query
             )
             logger.info(f"Successfully saved session {session_id} to Firestore")
+        except Exception as e:
+            logger.exception(f"Failed to save session {session_id} to Firestore", e)
+            raise e
+
+    def save_llm_query(self, query: str, session_id: str, schemes_response: list[dict[str, str | int]]) -> None:
+        """Save user query to firestore"""
+
+        sanitized_response = self._sanitize_for_firestore(schemes_response)
+
+        user_query = {
+            "query_text": query,
+            "query_timestamp": datetime.now(tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
+            "schemes_response": sanitized_response,
+            "session_id": session_id,
+        }
+
+        try:
+            # Add to 'userQuery' collection in firestore with document name = session_id
+            update_time, doc_ref = self.__class__.firebase_manager.firestore_client.collection("llmQuery").add(
+                user_query
+            )
+            logger.info(f"Successfully saved session {session_id} to Firestore")
+            return doc_ref.id
         except Exception as e:
             logger.exception(f"Failed to save session {session_id} to Firestore", e)
             raise e
@@ -128,17 +165,26 @@ class QueryHandler:
             "has_more": has_more,
         }
 
-        # Convert any Timestamp objects in results_json to strings
-        def convert_timestamps_to_strings(obj):
-            if isinstance(obj, dict):
-                return {k: convert_timestamps_to_strings(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [convert_timestamps_to_strings(elem) for elem in obj]
-            elif isinstance(obj, datetime):
-                return obj.isoformat()
-            return obj
-
         results_json = convert_timestamps_to_strings(results_json)
+
+        return results_json
+
+    def predict_for_agent(self, params: PredictParams) -> dict[str, Any]:
+        """Method to be called by agent for search tool"""
+
+        final_results = self.search_model.aggregate_and_rank_results(
+            params.query, params.top_k, params.similarity_threshold
+        )
+
+        session_id = params.session_id if params.session_id else str(uuid1())
+        results_dict = final_results.to_dict(orient="records")
+
+        doc_id = self.save_llm_query(params.query, session_id, results_dict)
+
+        # only select the subset of fields that are relevant for the agent to consume
+        # results_dict = [{k: v for k, v in record.items() if k in LLM_SEARCH_RESULT_KEYS} for record in results_dict]
+
+        results_json = {"session_id": session_id, "docID": doc_id, "data": results_dict, "mh": 0.7}
 
         return results_json
 
