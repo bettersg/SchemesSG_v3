@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Marquee } from "./Marquee"
+import { Marquee } from "./marquee"
 
 interface ScrollingColumnProps {
   items: string[]

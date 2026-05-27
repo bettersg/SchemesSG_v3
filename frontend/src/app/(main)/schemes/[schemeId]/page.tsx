@@ -9,7 +9,7 @@ import {
   SITE_URL,
 } from "@/lib/seo";
 import SchemeSkeleton from "@/components/schemes/scheme-skeleton";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
 type SchemePageProps = {
   params: Promise<{ schemeId: string }>;

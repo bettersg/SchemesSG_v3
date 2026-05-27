@@ -3,6 +3,7 @@
 import { ArrowUpRight } from "lucide-react"
 import { Separator } from "@heroui/react"
 import { useLanguage } from "@/lib/landing-i18n"
+import Image from "next/image"
 
 function FooterLinkColumn({ heading, links }: { heading: string; links: { label: string; href: string; comingSoon?: boolean }[] }) {
   return (
@@ -45,7 +46,13 @@ export function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-2 font-serif text-xl tracking-tight">
-              <img src="/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
+              <Image
+                src="/logo.svg"
+                alt="Schemes.sg"
+                width={28}
+                height={28}
+                className="h-7 w-7"
+              />
               <span className="text-white font-bold">Schemes</span>
               <span className="text-neutral-500 -ml-1">.sg</span>
             </a>
@@ -69,7 +76,13 @@ export function Footer() {
             className="inline-flex items-center gap-3 rounded-full bg-neutral-900 border border-neutral-800 px-4 py-1.5 text-xs text-neutral-400 hover:border-neutral-700 hover:text-neutral-300 transition-colors duration-200 cursor-pointer"
           >
             <span className="leading-none">{t.hero.volunteerBanner}</span>
-            <img src="/landing/featured/bettersg-logo.svg" alt="better.sg" className="h-3.5 w-auto brightness-0 invert -mx-1.5 translate-y-[1px]" />
+            <Image
+              src="/landing/featured/bettersg-logo.svg"
+              alt="better.sg"
+              width={64}
+              height={14}
+              className="-mx-1.5 h-3.5 w-auto translate-y-[1px] brightness-0 invert"
+            />
             <span className="h-3 w-px bg-neutral-700 shrink-0" />
             <span className="font-medium text-neutral-300 leading-none flex items-center gap-1">
               {t.hero.getInvolved} <ArrowUpRight className="h-3 w-3" />

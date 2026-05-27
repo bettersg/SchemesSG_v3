@@ -1,11 +1,8 @@
 "use client";
 
 import { Skeleton } from "@heroui/react";
-import {
-  productCardPadded,
-  productPageContent,
-  productPageShell,
-} from "@/lib/design-system/product-styles";
+import PageShell from "@/components/layout/page-shell";
+import { productCardPadded } from "@/lib/design-system/product-styles";
 
 function SectionLabelSkeleton() {
   return (
@@ -19,7 +16,7 @@ function SectionLabelSkeleton() {
 function CheckItemSkeleton({ width = "w-40" }: { width?: string }) {
   return (
     <div className="flex items-start gap-2.5">
-      <Skeleton className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px]" />
+      <Skeleton className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full" />
       <Skeleton className={`h-4 ${width} rounded-full`} />
     </div>
   );
@@ -42,109 +39,133 @@ function MarkdownSkeleton({ lines = 3 }: { lines?: number }) {
 
 export default function SchemeSkeleton() {
   return (
-    <div className={productPageShell}>
-      <div className={productPageContent}>
-        <div className="mb-8 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
-          <Skeleton className="h-18 w-18 shrink-0 rounded-lg" />
-          <div className="flex w-full max-w-md flex-col items-center gap-2 sm:items-start">
-            <Skeleton className="h-8 w-48 rounded-full sm:h-9 sm:w-64" />
-            <Skeleton className="h-5 w-64 max-w-full rounded-full" />
-            <Skeleton className="h-5 w-32 rounded-full" />
-          </div>
-        </div>
-
-        <div className={`${productCardPadded} mb-6`}>
-          <SectionLabelSkeleton />
-          <MarkdownSkeleton lines={4} />
-        </div>
-
-        <div className={`${productCardPadded} mb-6`}>
-          <div className="mb-5 flex items-center gap-2">
-            <Skeleton className="h-7 w-24 rounded-full" />
-          </div>
-
-          <div className="flex flex-col gap-8 lg:flex-row">
-            <div className="flex flex-[2] flex-col gap-6">
-              <div className="flex flex-col gap-6 sm:flex-row">
-                <div className="flex-1">
-                  <SectionLabelSkeleton />
-                  <div className="flex flex-col gap-2">
-                    <CheckItemSkeleton width="w-44" />
-                    <CheckItemSkeleton width="w-52" />
-                    <CheckItemSkeleton width="w-36" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <SectionLabelSkeleton />
-                  <div className="flex flex-col gap-2">
-                    <CheckItemSkeleton width="w-48" />
-                    <CheckItemSkeleton width="w-40" />
-                    <CheckItemSkeleton width="w-56" />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <SectionLabelSkeleton />
-                <MarkdownSkeleton lines={3} />
-              </div>
-
-              <div>
-                <SectionLabelSkeleton />
-                <MarkdownSkeleton lines={4} />
+    <PageShell contentClassName="pb-24 md:pb-8">
+      <div className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) px-4 sm:px-6 md:mx-auto md:w-full md:max-w-3xl">
+        <div className="py-3">
+          <div className="flex items-center justify-between gap-4 text-left">
+            <div className="flex min-w-0 items-center gap-4 md:gap-5">
+              <Skeleton className="h-16 w-16 shrink-0 rounded-lg" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <Skeleton className="h-3 w-32 rounded-full" />
+                <Skeleton className="h-6 w-56 max-w-full rounded-full md:w-80" />
+                <Skeleton className="h-4 w-64 max-w-full rounded-full md:w-[28rem]" />
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col gap-6">
-              <div>
-                <SectionLabelSkeleton />
-                <div className="flex flex-wrap gap-1.5">
-                  <Skeleton className="h-5 w-24 rounded-full" />
-                  <Skeleton className="h-5 w-28 rounded-full" />
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </div>
-              </div>
-
-              <div>
-                <SectionLabelSkeleton />
-                <Skeleton className="h-4 w-40 rounded-full" />
-              </div>
-
-              <div>
-                <SectionLabelSkeleton />
-                <div className="flex flex-col gap-3">
-                  {Array.from({ length: 2 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col gap-1.5 rounded-xl border border-(--schemes-border) bg-(--schemes-bg) p-3.5"
-                    >
-                      <Skeleton className="h-3 w-28 rounded-full" />
-                      <Skeleton className="h-4 w-full rounded-full" />
-                      <Skeleton className="h-4 w-32 rounded-full" />
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="hidden w-full max-w-52 flex-col gap-2 md:flex">
+              <Skeleton className="h-11 w-full rounded-lg" />
+              <Skeleton className="h-11 w-full rounded-lg" />
             </div>
-          </div>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3 border-t border-(--schemes-border) pt-5 sm:justify-end">
-            <Skeleton className="h-12 w-36 rounded-lg" />
-            <Skeleton className="h-12 w-48 rounded-lg" />
           </div>
         </div>
 
-        <section className="mb-8 rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4">
-          <div className="flex items-start gap-3">
-            <Skeleton className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-full" />
+        <div className="border-t border-(--schemes-border-neutral) py-3">
+          <div className="no-scrollbar flex w-full gap-6 overflow-x-auto">
+            <Skeleton className="h-5 w-20 shrink-0 rounded-full" />
+            <Skeleton className="h-5 w-28 shrink-0 rounded-full" />
+            <Skeleton className="h-5 w-24 shrink-0 rounded-full" />
+            <Skeleton className="h-5 w-28 shrink-0 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      <section className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}>
+        <Skeleton className="mb-4 h-6 w-28 rounded-full" />
+        <div className="flex flex-col gap-6">
+          <div>
+            <SectionLabelSkeleton />
+            <MarkdownSkeleton lines={4} />
+          </div>
+          <div>
+            <SectionLabelSkeleton />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-28 rounded-full" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+              <Skeleton className="h-6 w-32 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}>
+        <Skeleton className="mb-4 h-6 w-36 rounded-full" />
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6 lg:flex-row">
             <div className="flex-1">
-              <Skeleton className="mb-2 h-4 w-40 rounded-full" />
+              <SectionLabelSkeleton />
+              <div className="flex flex-col gap-2">
+                <CheckItemSkeleton width="w-44" />
+                <CheckItemSkeleton width="w-52" />
+                <CheckItemSkeleton width="w-36" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <SectionLabelSkeleton />
+              <div className="flex flex-col gap-2">
+                <CheckItemSkeleton width="w-48" />
+                <CheckItemSkeleton width="w-40" />
+                <CheckItemSkeleton width="w-56" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <SectionLabelSkeleton />
+            <MarkdownSkeleton lines={3} />
+          </div>
+        </div>
+      </section>
+
+      <section className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}>
+        <Skeleton className="mb-4 h-6 w-32 rounded-full" />
+        <MarkdownSkeleton lines={4} />
+      </section>
+
+      <section className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}>
+        <Skeleton className="mb-4 h-6 w-36 rounded-full" />
+        <div className="flex flex-col gap-6">
+          <div>
+            <SectionLabelSkeleton />
+            <Skeleton className="h-4 w-48 rounded-full" />
+          </div>
+
+          <div>
+            <SectionLabelSkeleton />
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 rounded-xl border border-(--schemes-blue-100) bg-(--schemes-surface) p-4"
+                >
+                  <Skeleton className="h-3 w-28 rounded-full" />
+                  <Skeleton className="h-4 w-full rounded-full" />
+                  <Skeleton className="h-4 w-32 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto mb-8 max-w-3xl rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-6">
+        <div className="flex items-start gap-4">
+          <Skeleton className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-40 rounded-full" />
+            <div>
               <Skeleton className="h-4 w-full rounded-full" />
               <Skeleton className="mt-2 h-4 w-4/5 rounded-full" />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
+
+      <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-(--schemes-border-neutral) bg-(--schemes-surface) p-3 md:hidden">
+        <div className="mx-auto grid max-w-sm grid-cols-2 gap-3">
+          <Skeleton className="h-12 w-full rounded-lg" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

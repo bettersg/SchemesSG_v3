@@ -59,9 +59,11 @@ export default function ChatInputBar({
           onChange={(e) => onValueChange(e.target.value)}
           onKeyDown={handleKey}
           onInput={handleInput}
+          disabled={isGenerating}
+          aria-disabled={isGenerating}
           placeholder="Ask a follow-up question…"
           rows={1}
-          className="flex-1 resize-none bg-transparent focus-visible:outline-none text-sm text-(--schemes-ink) placeholder:text-(--schemes-muted) leading-relaxed min-h-[24px] max-h-[120px]"
+          className="flex-1 resize-none bg-transparent focus-visible:outline-none text-sm text-(--schemes-ink) placeholder:text-(--schemes-muted) leading-relaxed min-h-[24px] max-h-[120px] disabled:cursor-not-allowed disabled:opacity-60"
         />
         <StopGeneratingButton
           isGenerating={isGenerating}

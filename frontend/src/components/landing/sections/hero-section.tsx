@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ScrollingColumn } from "@/components/landing/shared/ScrollingColumn";
-import { ScrollingLogoColumn } from "@/components/landing/shared/ScrollingLogoColumn";
+import { ScrollingColumn } from "@/components/landing/shared/scrolling-column";
+import { ScrollingLogoColumn } from "@/components/landing/shared/scrolling-logo-column";
 import { useLanguage } from "@/lib/landing-i18n";
 import { agencies } from "@/data/landing-agencies";
 import ChatLandingInput from "@/components/chat/chat-landing-input";

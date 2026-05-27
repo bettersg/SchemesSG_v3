@@ -4,64 +4,47 @@ import styles from "./scheme-detail.module.css";
 import { Scheme } from "@/types/types";
 import { Link } from "@heroui/react";
 import Markdown from "react-markdown";
-import { ReactNode, useEffect, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 import SchemeLogo from "@/components/schemes/scheme-logo";
-import {
-  Check,
-  ExternalLink,
-  Info,
-  Mail,
-  MapPin,
-  Phone,
-  Share2,
-} from "lucide-react";
-import {
-  getSchemeCategoryChipClassName,
-  normalizeSchemeCategory,
-} from "@/lib/design-system/categories";
+import CategoryTag from "@/components/schemes/category-tag";
+import SectionLabel from "@/components/schemes/section-label";
+import BulletItem from "@/components/schemes/bullet-item";
+import AgencyContactCard from "@/components/schemes/agency-contact-card";
+import StatusBanner from "@/components/feedback/status-banner";
+import { AlertCircle, Check, ExternalLink, Share2 } from "lucide-react";
 import {
   productButtonLg,
   productButtonPrimaryBlue,
   productButtonSecondary,
   productCardPadded,
-  productHeading,
-  productPageContent,
-  productPageShell,
+  productCardHeadingLg,
 } from "@/lib/design-system/product-styles";
-import { capitalize } from "@/lib/utils";
-
-function Tag({ label }: { label: string }) {
-  return (
-    <span
-      className={getSchemeCategoryChipClassName(
-        label,
-        "px-2.5 py-0.5 text-[11px] font-semibold",
-      )}
-    >
-      {normalizeSchemeCategory(label)}
-    </span>
-  );
-}
-
-function BulletItem({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex items-start gap-2.5 text-sm text-(--schemes-ink-soft)">
-      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" />
-      <span className="leading-snug">{children}</span>
-    </div>
-  );
-}
+import PageShell from "@/components/layout/page-shell";
 
 function MarkdownWrapper({ text }: { text: string }) {
   return (
-    <div className={`${styles.showMarker} text-sm text-(--schemes-ink-soft)`}>
+    <div
+      className={`${styles.showMarker} max-w-[68ch] text-base leading-relaxed text-(--schemes-ink-soft)`}
+    >
       <Markdown>{text}</Markdown>
     </div>
   );
 }
 
-function ShareButton({ scheme }: { scheme: Scheme }) {
-  const [copied, setCopied] = useState(false);
+function ShareButton({
+  scheme,
+  className,
+}: {
+  scheme: Scheme;
+  className: string;
+}) {
+  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+
+  const flash = (next: "copied" | "failed") => {
+    setStatus(next);
+    setTimeout(() => setStatus("idle"), 2000);
+  };
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -92,24 +75,39 @@ function ShareButton({ scheme }: { scheme: Scheme }) {
     if (navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        flash("copied");
+        return;
       } catch (err) {
         console.error("Clipboard write failed:", err);
       }
     }
+
+    flash("failed");
   };
 
   return (
     <button
       type="button"
       onClick={handleShare}
-      className={`${productButtonSecondary} ${productButtonLg} w-full max-w-50`}
+      className={clsx(
+        productButtonSecondary,
+        productButtonLg,
+        "w-full",
+        status === "failed"
+          ? "border-(--schemes-status-alert-border)! text-(--schemes-status-alert-text)!"
+          : "",
+        className,
+      )}
     >
-      {copied ? (
+      {status === "copied" ? (
         <>
           <Check size={14} strokeWidth={2} />
           Link copied
+        </>
+      ) : status === "failed" ? (
+        <>
+          <AlertCircle size={14} strokeWidth={2} />
+          Copy failed, try again
         </>
       ) : (
         <>
@@ -121,90 +119,411 @@ function ShareButton({ scheme }: { scheme: Scheme }) {
   );
 }
 
-function SectionLabel({
-  color = "bg-(--schemes-blue-400)",
-  children,
+function VisitWebsiteButton({
+  href,
+  className,
 }: {
-  color?: string;
-  children: React.ReactNode;
+  href: string;
+  className?: string;
 }) {
   return (
-    <div className="mb-3 flex items-center gap-2">
-      <span className={`h-2 w-2 rounded-[3px] ${color}`} />
-      <h3 className="text-sm font-semibold text-(--schemes-blue-900)">
-        {children}
-      </h3>
-    </div>
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${productButtonPrimaryBlue} ${productButtonLg} w-full no-underline hover:no-underline ${className ?? ""}`}
+    >
+      <ExternalLink size={14} strokeWidth={2} />
+      Visit website
+    </Link>
   );
 }
 
-function CardHeading({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="mb-4 text-base font-semibold text-(--schemes-blue-900)">
-      {children}
-    </h2>
-  );
+type JumpAnchor = { id: string; label: string };
+
+function buildJumpAnchors(scheme: Scheme): JumpAnchor[] {
+  const anchors: JumpAnchor[] = [];
+  if (scheme.description) anchors.push({ id: "overview", label: "Overview" });
+  const hasQualifies =
+    (scheme.targetAudience && scheme.targetAudience.length > 0) ||
+    (scheme.benefits && scheme.benefits.length > 0) ||
+    scheme.eligibilityText;
+  if (hasQualifies) anchors.push({ id: "qualifies", label: "Who qualifies" });
+  if (scheme.howToApply)
+    anchors.push({ id: "how-to-apply", label: "How to apply" });
+  if (scheme.serviceArea || (scheme.contact && scheme.contact.length > 0)) {
+    anchors.push({ id: "agency", label: "Agency details" });
+  }
+  return anchors;
 }
 
 export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
+  const jumpAnchors = useMemo(() => buildJumpAnchors(scheme), [scheme]);
+  const [activeAnchor, setActiveAnchor] = useState(jumpAnchors[0]?.id ?? "");
+  const [stickyHeaderHidden, setStickyHeaderHidden] = useState(false);
+  const [stickyHeaderOffset, setStickyHeaderOffset] = useState(208);
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
+  const lastScrollYRef = useRef(0);
+  const lastUserScrollIntentAtRef = useRef(0);
+  const lastUserScrollDirectionRef = useRef<"down" | "up" | null>(null);
+  const lastTouchYRef = useRef<number | null>(null);
+  const suppressScrollToggleUntilRef = useRef(0);
+  const stickyHeaderHiddenRef = useRef(false);
+  const activeScrollTargetRef = useRef<EventTarget | null>(null);
+  const hasCoverage =
+    (scheme.targetAudience && scheme.targetAudience.length > 0) ||
+    (scheme.benefits && scheme.benefits.length > 0) ||
+    Boolean(scheme.eligibilityText) ||
+    Boolean(scheme.howToApply);
+  const hasDetail =
+    Boolean(scheme.description) ||
+    (scheme.targetAudience && scheme.targetAudience.length > 0) ||
+    (scheme.benefits && scheme.benefits.length > 0) ||
+    Boolean(scheme.eligibilityText) ||
+    Boolean(scheme.howToApply) ||
+    Boolean(scheme.serviceArea) ||
+    (scheme.contact && scheme.contact.length > 0);
+
+  useEffect(() => {
+    setActiveAnchor(jumpAnchors[0]?.id ?? "");
+  }, [jumpAnchors]);
+
+  useEffect(() => {
+    stickyHeaderHiddenRef.current = stickyHeaderHidden;
+  }, [stickyHeaderHidden]);
+
+  useEffect(() => {
+    const header = stickyHeaderRef.current;
+    if (!header) return;
+
+    const updateOffset = () => {
+      const height = Math.ceil(header.getBoundingClientRect().height);
+      const nextOffset = height + 16;
+      setStickyHeaderOffset(nextOffset);
+      document.documentElement.style.setProperty(
+        "--scheme-detail-sticky-offset",
+        `${nextOffset}px`,
+      );
+    };
+
+    updateOffset();
+
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(header);
+    window.addEventListener("resize", updateOffset);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateOffset);
+      document.documentElement.style.removeProperty(
+        "--scheme-detail-sticky-offset",
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    const markUserScrollIntent = (direction: "down" | "up") => {
+      lastUserScrollIntentAtRef.current = Date.now();
+      lastUserScrollDirectionRef.current = direction;
+    };
+
+    const markWheelScrollIntent = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 2) return;
+      markUserScrollIntent(event.deltaY > 0 ? "down" : "up");
+    };
+
+    const markTouchStart = (event: TouchEvent) => {
+      lastTouchYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const markTouchScrollIntent = (event: TouchEvent) => {
+      const nextY = event.touches[0]?.clientY;
+      const previousY = lastTouchYRef.current;
+      if (nextY == null || previousY == null) return;
+
+      const delta = previousY - nextY;
+      if (Math.abs(delta) >= 2) {
+        markUserScrollIntent(delta > 0 ? "down" : "up");
+      }
+      lastTouchYRef.current = nextY;
+    };
+
+    const markKeyboardScrollIntent = (event: KeyboardEvent) => {
+      if (["ArrowDown", "End", "PageDown", " "].includes(event.key)) {
+        markUserScrollIntent("down");
+      } else if (["ArrowUp", "Home", "PageUp"].includes(event.key)) {
+        markUserScrollIntent("up");
+      }
+    };
+
+    const setHeaderHidden = (nextHidden: boolean) => {
+      if (stickyHeaderHiddenRef.current === nextHidden) return;
+      stickyHeaderHiddenRef.current = nextHidden;
+      suppressScrollToggleUntilRef.current = Date.now() + 360;
+      setStickyHeaderHidden(nextHidden);
+    };
+
+    function getScrollMetrics(event: Event) {
+      const target = event.target;
+
+      if (
+        target === document ||
+        target === document.documentElement ||
+        target === document.body
+      ) {
+        const scrollHeight = document.documentElement.scrollHeight;
+        return {
+          maxScrollTop: Math.max(scrollHeight - window.innerHeight, 0),
+          scrollTop: window.scrollY,
+          target,
+        };
+      }
+
+      if (target instanceof Element) {
+        return {
+          maxScrollTop: Math.max(target.scrollHeight - target.clientHeight, 0),
+          scrollTop: target.scrollTop,
+          target,
+        };
+      }
+
+      return {
+        maxScrollTop: Math.max(
+          document.documentElement.scrollHeight - window.innerHeight,
+          0,
+        ),
+        scrollTop: window.scrollY,
+        target,
+      };
+    }
+
+    function onScroll(event: Event) {
+      const { maxScrollTop, scrollTop, target } = getScrollMetrics(event);
+      const scrollY = Math.max(scrollTop, 0);
+      const isScrollable = maxScrollTop > 0;
+      const now = Date.now();
+
+      if (!isScrollable) return;
+
+      if (activeScrollTargetRef.current !== target) {
+        activeScrollTargetRef.current = target;
+        lastScrollYRef.current = scrollY;
+        return;
+      }
+
+      const distanceFromBottom = maxScrollTop - scrollY;
+      const hasRecentUserScrollIntent =
+        now - lastUserScrollIntentAtRef.current < 900;
+      const intentDirection = lastUserScrollDirectionRef.current;
+
+      if (
+        window.innerWidth >= 768 ||
+        now < suppressScrollToggleUntilRef.current ||
+        !hasRecentUserScrollIntent ||
+        !intentDirection
+      ) {
+        lastScrollYRef.current = scrollY;
+        return;
+      }
+
+      if (scrollY <= 12) {
+        setHeaderHidden(false);
+      } else if (intentDirection === "down") {
+        setHeaderHidden(true);
+      } else if (intentDirection === "up" && distanceFromBottom > 24) {
+        setHeaderHidden(false);
+      }
+
+      lastScrollYRef.current = scrollY;
+    }
+
+    window.addEventListener("wheel", markWheelScrollIntent, { passive: true });
+    window.addEventListener("touchstart", markTouchStart, { passive: true });
+    window.addEventListener("touchmove", markTouchScrollIntent, {
+      passive: true,
+    });
+    window.addEventListener("keydown", markKeyboardScrollIntent);
+    document.addEventListener("scroll", onScroll, {
+      capture: true,
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("wheel", markWheelScrollIntent);
+      window.removeEventListener("touchstart", markTouchStart);
+      window.removeEventListener("touchmove", markTouchScrollIntent);
+      window.removeEventListener("keydown", markKeyboardScrollIntent);
+      document.removeEventListener("scroll", onScroll, { capture: true });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (jumpAnchors.length <= 1) return;
+
+    const sections = jumpAnchors
+      .map((anchor) => document.getElementById(anchor.id))
+      .filter((section): section is HTMLElement => Boolean(section));
+
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visible?.target.id) {
+          setActiveAnchor(visible.target.id);
+        }
+      },
+      {
+        root: null,
+        rootMargin: `-${stickyHeaderOffset}px 0px -60% 0px`,
+        threshold: [0.1, 0.4, 0.7],
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [jumpAnchors, stickyHeaderOffset]);
+
+  const sectionScrollMarginStyle = {
+    scrollMarginTop: "var(--scheme-detail-sticky-offset, 224px)",
+  } satisfies CSSProperties;
+
   return (
-    <div className={productPageShell}>
-      <div className={productPageContent}>
-        <div className="mb-10 flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
-            <SchemeLogo agency={scheme.agency} image={scheme.image} size="lg" />
-            <div className="flex flex-col items-center gap-4 sm:items-start">
+    <PageShell contentClassName="pb-24 md:pb-8">
+      <div
+        ref={stickyHeaderRef}
+        className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) px-4 sm:px-6 md:mx-auto md:w-full md:max-w-3xl"
+      >
+        <div
+          className={clsx(
+            "overflow-hidden py-3 transition-[max-height,opacity,transform,padding] duration-300 md:max-h-none md:translate-y-0 md:opacity-100",
+            stickyHeaderHidden
+              ? "max-md:max-h-0 max-md:-translate-y-full max-md:py-0 max-md:opacity-0"
+              : "max-md:max-h-48 max-md:translate-y-0 max-md:opacity-100",
+          )}
+        >
+          <div className="flex items-center justify-between gap-4 text-left">
+          <div className="flex min-w-0 items-center gap-4 md:gap-5">
+            <SchemeLogo
+              agency={scheme.agency}
+              image={scheme.image}
+              size="header"
+            />
+            <div className="flex min-w-0 flex-col gap-2">
               {scheme.agency && (
-                <p className="text-sm font-semibold text-(--schemes-muted)">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
                   {scheme.agency}
                 </p>
               )}
               {scheme.schemeName && (
-                <h1 className={productHeading}>{scheme.schemeName}</h1>
+                <h1 className="line-clamp-2 text-xl font-semibold leading-tight text-(--schemes-blue-900) md:line-clamp-1 md:text-2xl">
+                  {scheme.schemeName}
+                </h1>
               )}
-              {scheme.schemeType && scheme.schemeType.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
-                  {scheme.schemeType.map((t) => (
-                    <Tag key={t} label={t} />
-                  ))}
-                </div>
+              {scheme.summary && (
+                <p className="line-clamp-2 max-w-2xl text-xs leading-relaxed text-(--schemes-ink-soft) md:text-sm">
+                  {scheme.summary}
+                </p>
               )}
             </div>
           </div>
 
-          <div className="flex w-full flex-row flex-wrap justify-center gap-3 pt-1 sm:max-w-max sm:flex-col sm:pt-0">
-            {scheme.link && (
-              <Link
-                href={scheme.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${productButtonPrimaryBlue} ${productButtonLg} max-w-50 w-full no-underline hover:no-underline`}
-              >
-                <ExternalLink size={14} strokeWidth={2} />
-                Visit website
-              </Link>
-            )}
-            <ShareButton scheme={scheme} />
+          <div className="hidden w-full max-w-52 flex-col gap-2 md:flex">
+            {scheme.link && <VisitWebsiteButton href={scheme.link} />}
+            <ShareButton scheme={scheme} className="" />
+          </div>
           </div>
         </div>
 
-        {scheme.description && (
-          <div className={`${productCardPadded} mb-6`}>
-            <CardHeading>Overview</CardHeading>
-            <MarkdownWrapper text={scheme.description} />
-          </div>
+        {jumpAnchors.length > 1 && (
+          <nav
+            aria-label="On this page"
+            className="border-t border-(--schemes-border-neutral) pt-3"
+          >
+            <ul className="no-scrollbar flex w-full gap-6 overflow-x-auto">
+              {jumpAnchors.map((a) => (
+                <li key={a.id} className="shrink-0">
+                  <a
+                    href={`#${a.id}`}
+                    onClick={() => setActiveAnchor(a.id)}
+                    className={clsx(
+                      "block border-b-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors hover:text-(--schemes-blue-600)",
+                      activeAnchor === a.id
+                        ? "border-(--schemes-blue-600) text-(--schemes-blue-600)"
+                        : "border-transparent text-(--schemes-muted)",
+                    )}
+                  >
+                    {a.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         )}
+      </div>
 
-        <div className={`${productCardPadded} mb-6`}>
-          <CardHeading>What this scheme covers</CardHeading>
+      {!hasDetail && (
+        <section className="mb-10 rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-6">
+          <p className="mb-3 text-sm leading-relaxed text-(--schemes-status-info-text)">
+            We don&apos;t have detailed information for this scheme yet. The
+            agency website has the full picture, including eligibility and how
+            to apply.
+          </p>
+          {scheme.link && (
+            <Link
+              href={scheme.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-(--schemes-blue-600) hover:underline"
+            >
+              Visit the agency website →
+            </Link>
+          )}
+        </section>
+      )}
 
+      {scheme.description && (
+        <section
+          id="overview"
+          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          style={sectionScrollMarginStyle}
+        >
+          <h2 className={productCardHeadingLg}>Overview</h2>
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-6 sm:flex-row">
+            <div>
+              <SectionLabel>Scheme details</SectionLabel>
+              <MarkdownWrapper text={scheme.description} />
+            </div>
+            {scheme.schemeType && scheme.schemeType.length > 0 && (
+              <div>
+                <SectionLabel>Scheme type</SectionLabel>
+                <div className="flex flex-wrap gap-2">
+                  {scheme.schemeType.map((t) => (
+                    <CategoryTag key={t} label={t} size="md" />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {hasCoverage && (
+        <section
+          id="qualifies"
+          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          style={sectionScrollMarginStyle}
+        >
+          <h2 className={productCardHeadingLg}>Who qualifies</h2>
+
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-6 lg:flex-row">
               {scheme.targetAudience && scheme.targetAudience.length > 0 && (
                 <div className="flex-1">
-                    <SectionLabel color="bg-(--schemes-category-healthcare-border)">
-                      Who qualifies
-                    </SectionLabel>
+                  <SectionLabel>Eligibility groups</SectionLabel>
                   <div className="flex flex-col gap-2">
                     {scheme.targetAudience.map((t) => (
                       <BulletItem key={t}>{t}</BulletItem>
@@ -214,9 +533,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               )}
               {scheme.benefits && scheme.benefits.length > 0 && (
                 <div className="flex-1">
-                  <SectionLabel color="bg-(--schemes-category-financial-border)">
-                    What you receive
-                  </SectionLabel>
+                  <SectionLabel>What you receive</SectionLabel>
                   <div className="flex flex-col gap-2">
                     {scheme.benefits.map((b) => (
                       <BulletItem key={b}>{b}</BulletItem>
@@ -228,135 +545,89 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
 
             {scheme.eligibilityText && (
               <div>
-                <SectionLabel color="bg-(--schemes-category-mental-border)">
-                  Eligibility details
-                </SectionLabel>
+                <SectionLabel>Eligibility details</SectionLabel>
                 <MarkdownWrapper text={scheme.eligibilityText} />
               </div>
             )}
+          </div>
+        </section>
+      )}
 
-            {scheme.howToApply && (
+      {scheme.howToApply && (
+        <section
+          id="how-to-apply"
+          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          style={sectionScrollMarginStyle}
+        >
+          <h2 className={productCardHeadingLg}>How to apply</h2>
+          <MarkdownWrapper text={scheme.howToApply} />
+        </section>
+      )}
+
+      {(scheme.serviceArea ||
+        (scheme.contact && scheme.contact.length > 0)) && (
+        <section
+          id="agency"
+          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          style={sectionScrollMarginStyle}
+        >
+          <h2 className={productCardHeadingLg}>Agency details</h2>
+          <div className="flex flex-col gap-6">
+            {scheme.serviceArea && (
               <div>
-                <SectionLabel color="bg-(--schemes-category-employment-border)">
-                  How to apply
-                </SectionLabel>
-                <MarkdownWrapper text={scheme.howToApply} />
+                <SectionLabel>Service area</SectionLabel>
+                <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
+                  {scheme.serviceArea}
+                </p>
+              </div>
+            )}
+
+            {scheme.contact && scheme.contact.length > 0 && (
+              <div>
+                <SectionLabel>Branches and contacts</SectionLabel>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {scheme.contact.map((c, i) => (
+                    <AgencyContactCard
+                      key={i}
+                      contact={c}
+                      schemeName={scheme.schemeName}
+                      agency={scheme.agency}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
-        </div>
-
-        {(scheme.serviceArea ||
-          (scheme.contact && scheme.contact.length > 0)) && (
-          <div className={`${productCardPadded} mb-6`}>
-            <CardHeading>Agency details</CardHeading>
-            <div className="flex flex-col gap-6">
-              {scheme.serviceArea && (
-                <div>
-                  <SectionLabel color="bg-(--schemes-category-housing-border)">
-                    Service area
-                  </SectionLabel>
-                  <p className="text-sm text-(--schemes-muted)">
-                    {scheme.serviceArea}
-                  </p>
-                </div>
-              )}
-
-              {scheme.contact && scheme.contact.length > 0 && (
-                <div>
-                  <SectionLabel color="bg-(--schemes-category-eldercare-border)">
-                    Branches and contacts
-                  </SectionLabel>
-                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                    {scheme.contact.map((c, i) => (
-                      <div
-                        key={i}
-                        className="flex flex-col gap-1.5 rounded-xl border border-(--schemes-border) bg-(--schemes-bg) p-3.5 text-sm text-(--schemes-muted)"
-                      >
-                        {c.planningArea && (
-                          <p className="text-xs font-semibold tracking-wide text-(--schemes-blue-900) uppercase">
-                            {c.planningArea}
-                          </p>
-                        )}
-                        {c.address && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${scheme.schemeName} ${c.address}`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-(--schemes-muted) hover:text-(--schemes-blue-600)"
-                          >
-                            <MapPin
-                              size={16}
-                              strokeWidth={2}
-                              className="shrink-0"
-                            />{" "}
-                            {c.address ??
-                              `${capitalize(c.planningArea ? c.planningArea.toLowerCase() : scheme.agency)} branch`}
-                          </a>
-                        )}
-                        {c.phones?.map((p) => (
-                          <a
-                            key={p}
-                            href={`tel:${p}`}
-                            className="flex items-center gap-2 text-(--schemes-blue-600) hover:underline"
-                          >
-                            <Phone
-                              size={16}
-                              strokeWidth={2}
-                              className="shrink-0"
-                            />{" "}
-                            {p}
-                          </a>
-                        ))}
-                        {c.emails?.map((e) => (
-                          <a
-                            key={e}
-                            href={`mailto:${e}`}
-                            className="flex items-center gap-2 break-all text-(--schemes-blue-600) hover:underline"
-                          >
-                            <Mail
-                              size={16}
-                              strokeWidth={2}
-                              className="shrink-0"
-                            />{" "}
-                            {e}
-                          </a>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <section className="mb-8 rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4">
-          <div className="flex items-start gap-3">
-            <Info
-              size={18}
-              strokeWidth={2}
-              className="mt-0.5 shrink-0 text-(--schemes-status-info-text)"
-            />
-            <div>
-              <h3 className="mb-1 text-sm font-semibold text-(--schemes-status-info-text)">
-                Important Information
-              </h3>
-              <p className="text-sm text-(--schemes-muted)">
-                Scheme details may change. Visit the official agency website for
-                the latest eligibility, benefits, and application information.{" "}
-                <Link
-                  href="/feedback"
-                  className="text-sm text-(--schemes-blue-600) hover:underline"
-                >
-                  Help us improve with your feedback
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
         </section>
+      )}
+
+      <StatusBanner
+        title="Important Information"
+        className="mx-auto mb-8 max-w-3xl p-6"
+      >
+        <p>
+          Scheme details may change. Visit the official agency website for the
+          latest eligibility, benefits, and application information.{" "}
+          <Link
+            href="/feedback"
+            className="text-sm text-(--schemes-blue-600) hover:underline"
+          >
+            Help us improve with your feedback
+          </Link>
+          .
+        </p>
+      </StatusBanner>
+
+      <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-(--schemes-border-neutral) bg-(--schemes-surface) p-3 md:hidden">
+        <div className="mx-auto grid max-w-sm grid-cols-2 gap-3">
+          <ShareButton scheme={scheme} className="" />
+          {scheme.link ? (
+            <VisitWebsiteButton href={scheme.link} />
+          ) : (
+            <div aria-hidden="true" />
+          )}
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

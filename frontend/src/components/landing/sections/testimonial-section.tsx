@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { SectionWrapper } from "@/components/landing/shared/SectionWrapper";
+import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
 import { useLanguage } from "@/lib/landing-i18n";
+import Image from "next/image";
 
 export function TestimonialSection() {
   const { t } = useLanguage();
@@ -27,9 +28,11 @@ export function TestimonialSection() {
             {/* Author */}
             <div className="mt-6 flex items-center gap-3">
               {item.avatar ? (
-                <img
+                <Image
                   src={item.avatar}
                   alt={item.author}
+                  width={40}
+                  height={40}
                   className="h-10 w-10 shrink-0 object-contain"
                 />
               ) : (

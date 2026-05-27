@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { useLanguage } from "@/lib/landing-i18n"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 const featuredLogos = [
   { name: "Channel NewsAsia", src: "/landing/featured/cna-logo.svg" },
@@ -35,12 +36,13 @@ export function FeaturedSection() {
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-8 md:gap-x-8">
           {featuredLogos.map((logo) => (
-            <img
+            <Image
               key={logo.name}
               src={logo.src}
               alt={logo.name}
+              width={160}
+              height={64}
               className={cn("w-auto object-contain transition-opacity duration-200", logo.name === "Better.sg" ? "h-10 md:h-11" : "h-14 md:h-16")}
-              loading="lazy"
             />
           ))}
         </div>
@@ -51,12 +53,13 @@ export function FeaturedSection() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
             {partnerLogos.map((logo) => (
-              <img
+              <Image
                 key={logo.name}
                 src={logo.src}
                 alt={logo.name}
+                width={180}
+                height={64}
                 className="h-14 md:h-16 w-auto object-contain transition-opacity duration-200"
-                loading="lazy"
               />
             ))}
           </div>

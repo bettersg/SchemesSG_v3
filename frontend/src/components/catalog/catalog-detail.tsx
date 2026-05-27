@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
 import { Scheme } from "@/types/types";
 import { Spinner } from "@heroui/react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import SchemeCard from "@/components/schemes/scheme-card";
@@ -17,15 +16,23 @@ import {
   productButtonSm,
   productCard,
   productHeading,
-  productPageContent,
   productPageShell,
   productSubheading,
 } from "@/lib/design-system/product-styles";
+import PageShell from "@/components/layout/page-shell";
+import EmptyState from "@/components/feedback/empty-state";
 import { ArrowUpRight } from "lucide-react";
 
 type CatalogPageClientProps = {
   initialCategory?: CatalogCategory;
 };
+
+type CatalogLoadState =
+  | "idle"
+  | "loadingInitial"
+  | "ready"
+  | "loadingMore"
+  | "exhausted";
 
 const CATALOG_CATEGORY_ICON_SRC: Record<CatalogCategory, string> = {
   All: "/catalog/Schemes_Icons_All.svg",
@@ -41,19 +48,50 @@ const CATALOG_CATEGORY_ICON_SRC: Record<CatalogCategory, string> = {
   "Mental Health": "/catalog/Schemes_Icons_Mental Health.svg",
 };
 
+function CatalogGridSkeleton() {
+  return (
+    <div
+      aria-label="Loading schemes"
+      className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4"
+    >
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div
+          key={index}
+          className={`${productCard} flex min-h-[172px] animate-pulse flex-col gap-3 p-4`}
+        >
+          <div className="flex items-start gap-2.5">
+            <div className="h-10 w-10 shrink-0 rounded-lg " />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div className="h-3.5 w-4/5 rounded-full " />
+              <div className="h-3 w-1/2 rounded-full " />
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            <div className="h-5 w-20 rounded-full " />
+            <div className="h-5 w-24 rounded-full " />
+          </div>
+          <div className="mt-auto flex flex-col gap-2">
+            <div className="h-3 w-full rounded-full " />
+            <div className="h-3 w-5/6 rounded-full " />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CatalogPageClient({
   initialCategory,
 }: CatalogPageClientProps) {
-  const [schemes, setSchemes] = useState<Scheme[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [nextCursor, setNextCursor] = useState("");
   const [activeCategory, setActiveCategory] = useState(
     initialCategory ?? "All",
   );
   const [hasSelectedCategory, setHasSelectedCategory] = useState(
     Boolean(initialCategory),
+  );
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [loadState, setLoadState] = useState<CatalogLoadState>(
+    initialCategory ? "loadingInitial" : "idle",
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [inputValue, setInputValue] = useState("");
@@ -61,12 +99,43 @@ export default function CatalogPageClient({
   // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const hasScrolledRef = useRef(false);
-  const isLoadingMoreRef = useRef(false);
-  const lastRequestedCursorRef = useRef("");
-  const hasLoadedForIntersectionRef = useRef(false);
-  const [bottomInView, setBottomInView] = useState(false);
-  const [loadMoreSignal, setLoadMoreSignal] = useState(0);
+  const cursorRef = useRef("");
+  const requestIdRef = useRef(0);
+  const hasUserScrolledRef = useRef(false);
+  const isLoadingInitial = loadState === "loadingInitial";
+  const isLoadingMore = loadState === "loadingMore";
+
+  const loadMoreSchemes = useCallback(() => {
+    const cursor = cursorRef.current;
+    if (loadState !== "ready" || !cursor || !hasUserScrolledRef.current) {
+      return;
+    }
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    hasUserScrolledRef.current = false;
+    setLoadState("loadingMore");
+
+    const request = searchQuery
+      ? searchSchemes(searchQuery, cursor)
+      : getSchemesCategory(
+          activeCategory === "All" ? "" : activeCategory,
+          cursor,
+        );
+
+    request
+      .then((r) => {
+        if (requestIdRef.current !== requestId) return;
+        setSchemes((prev) => [...prev, ...r.schemes]);
+        cursorRef.current = r.nextCursor;
+        setLoadState(r.nextCursor ? "ready" : "exhausted");
+      })
+      .catch(() => {
+        if (requestIdRef.current === requestId) {
+          setLoadState(cursorRef.current ? "ready" : "exhausted");
+        }
+      });
+  }, [activeCategory, loadState, searchQuery]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -75,18 +144,8 @@ export default function CatalogPageClient({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const isIntersecting = entry.isIntersecting;
-
-        setBottomInView(isIntersecting);
-
-        if (!isIntersecting) {
-          hasLoadedForIntersectionRef.current = false;
-          return;
-        }
-
-        if (hasScrolledRef.current && !hasLoadedForIntersectionRef.current) {
-          hasLoadedForIntersectionRef.current = true;
-          setLoadMoreSignal((value) => value + 1);
+        if (entry.isIntersecting && hasUserScrolledRef.current) {
+          loadMoreSchemes();
         }
       },
       {
@@ -100,22 +159,18 @@ export default function CatalogPageClient({
     return () => {
       observer.disconnect();
     };
-  }, [hasSelectedCategory]);
+  }, [hasSelectedCategory, loadMoreSchemes]);
 
   useEffect(() => {
     const root = scrollRef.current;
     if (!hasSelectedCategory || !root) return;
 
     const handleScroll = () => {
-      if (isLoadingMoreRef.current) return;
-
       if (root.scrollTop > 0) {
-        hasScrolledRef.current = true;
-
-        if (bottomInView && !hasLoadedForIntersectionRef.current) {
-          hasLoadedForIntersectionRef.current = true;
-          setLoadMoreSignal((value) => value + 1);
-        }
+        hasUserScrolledRef.current = true;
+      }
+      if (root.scrollHeight - root.scrollTop - root.clientHeight < 320) {
+        loadMoreSchemes();
       }
     };
 
@@ -124,127 +179,80 @@ export default function CatalogPageClient({
     return () => {
       root.removeEventListener("scroll", handleScroll);
     };
-  }, [bottomInView, hasSelectedCategory]);
+  }, [hasSelectedCategory, loadMoreSchemes]);
 
   // Initial load
   useEffect(() => {
     if (!hasSelectedCategory) return;
-    hasScrolledRef.current = false;
-    isLoadingMoreRef.current = false;
-    lastRequestedCursorRef.current = "";
-    hasLoadedForIntersectionRef.current = false;
-    setBottomInView(false);
-    setLoadMoreSignal(0);
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    hasUserScrolledRef.current = false;
+    cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
-    setIsLoading(true);
-    // searchSchemes(activeCategory === "All" ? "" : activeCategory)
-    getSchemesCategory(
-      activeCategory === "All" ? "" : activeCategory,
-      nextCursor,
-    ).then((r) => {
-      console.log(r);
-      setSchemes(r.schemes);
-      setNextCursor(r.nextCursor);
-      // setTotal(r.total);
-      setIsLoading(false);
-    });
+    setLoadState("loadingInitial");
+    getSchemesCategory(activeCategory === "All" ? "" : activeCategory).then(
+      (r) => {
+        if (requestIdRef.current !== requestId) return;
+        setSchemes(r.schemes);
+        cursorRef.current = r.nextCursor;
+        setLoadState(r.nextCursor ? "ready" : "exhausted");
+      },
+    );
   }, [activeCategory, hasSelectedCategory]);
-
-  // Load more when bottom in view
-  const loadMoreSchemes = useCallback(() => {
-    if (
-      !hasScrolledRef.current ||
-      !nextCursor ||
-      isLoading ||
-      isLoadingMore ||
-      isLoadingMoreRef.current ||
-      lastRequestedCursorRef.current === nextCursor
-    ) {
-      return;
-    }
-
-    isLoadingMoreRef.current = true;
-    hasScrolledRef.current = false;
-    lastRequestedCursorRef.current = nextCursor;
-    setIsLoadingMore(true);
-
-    // searchSchemes(query, nextCursor)
-    getSchemesCategory(
-      activeCategory === "All" ? "" : activeCategory,
-      nextCursor,
-    )
-      .then((r) => {
-        setSchemes((prev) => [...prev, ...r.schemes]);
-        setNextCursor(r.nextCursor);
-      })
-      .finally(() => {
-        isLoadingMoreRef.current = false;
-        setIsLoadingMore(false);
-      });
-  }, [activeCategory, isLoading, isLoadingMore, nextCursor, searchQuery]);
-
-  useEffect(() => {
-    if (loadMoreSignal === 0) return;
-    loadMoreSchemes();
-  }, [loadMoreSchemes, loadMoreSignal]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    hasScrolledRef.current = false;
-    isLoadingMoreRef.current = false;
-    lastRequestedCursorRef.current = "";
-    hasLoadedForIntersectionRef.current = false;
-    setBottomInView(false);
-    setLoadMoreSignal(0);
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    hasUserScrolledRef.current = false;
+    cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
     setActiveCategory("All");
     setHasSelectedCategory(true);
-    setIsLoading(true);
+    setLoadState("loadingInitial");
     searchSchemes(inputValue).then((r) => {
+      if (requestIdRef.current !== requestId) return;
       setSchemes(r.schemes);
-      setNextCursor(r.nextCursor);
-      setTotal(r.total);
+      cursorRef.current = r.nextCursor;
       setSearchQuery(inputValue);
-      setIsLoading(false);
+      setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
   };
 
   if (!hasSelectedCategory) {
     return (
-      <div className={productPageShell}>
-        <div className={productPageContent}>
-          <p className="mb-2 text-[10px] font-semibold tracking-widest text-(--schemes-muted) uppercase">
-            Scheme Directory
-          </p>
-          <h1 className={`${productHeading} mb-2`}>Explore all schemes</h1>
-          <p className={`${productSubheading} mb-8`}>
-            Pick a category to browse social assistance schemes available in
-            Singapore.
-          </p>
+      <PageShell>
+        <p className="mb-2 text-[10px] font-semibold tracking-widest text-(--schemes-muted) uppercase">
+          Scheme Directory
+        </p>
+        <h1 className={`${productHeading} mb-2`}>Explore all schemes</h1>
+        <p className={`${productSubheading} mb-8`}>
+          Pick a category to browse social assistance schemes available in
+          Singapore.
+        </p>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {CATALOG_CATEGORY_OPTIONS.map((cat) => (
-              <Link
-                key={cat}
-                href={`/catalog/${CATALOG_CATEGORY_SLUGS[cat]}`}
-                className={`${productCard} group flex items-center gap-3 p-4 text-left transition-[border-color,box-shadow,transform,color,background-color] hover:-translate-y-0.5 hover:border-(--schemes-blue-100) hover:shadow-[0_4px_20px_rgba(24,95,165,0.08)] sm:p-5`}
-              >
-                <Image
-                  src={CATALOG_CATEGORY_ICON_SRC[cat]}
-                  alt=""
-                  width={40}
-                  height={40}
-                  aria-hidden="true"
-                  className="h-10 w-10 shrink-0"
-                />
-                <span className="text-sm font-semibold text-(--schemes-blue-900) group-hover:text-(--schemes-blue-600)">
-                  {cat === "All" ? "All Schemes" : cat}
-                </span>
-              </Link>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+          {CATALOG_CATEGORY_OPTIONS.map((cat) => (
+            <Link
+              key={cat}
+              href={`/catalog/${CATALOG_CATEGORY_SLUGS[cat]}`}
+              className={`${productCard} group flex items-center gap-3 p-4 text-left transition-[border-color,box-shadow,transform,color,background-color] hover:-translate-y-0.5 hover:border-(--schemes-blue-100) hover:shadow-[0_4px_20px_rgba(24,95,165,0.08)] sm:p-5`}
+            >
+              <Image
+                src={CATALOG_CATEGORY_ICON_SRC[cat]}
+                alt=""
+                width={40}
+                height={40}
+                aria-hidden="true"
+                className="h-10 w-10 shrink-0"
+              />
+              <span className="text-sm font-semibold text-(--schemes-blue-900) group-hover:text-(--schemes-blue-600)">
+                {cat === "All" ? "All Schemes" : cat}
+              </span>
+            </Link>
+          ))}
         </div>
-      </div>
+      </PageShell>
     );
   }
 
@@ -312,7 +320,7 @@ export default function CatalogPageClient({
               className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-[background-color,border-color,color] ${
                 activeCategory === cat
                   ? "border-(--schemes-blue-600) bg-(--schemes-blue-600) text-white"
-                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)"
+                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover: hover:text-(--schemes-blue-600)"
               }`}
             >
               {cat}
@@ -321,7 +329,7 @@ export default function CatalogPageClient({
         </div>
       </div>
 
-      <motion.div className="flex">
+      <div className="flex">
         {/* Results */}
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
           <div className="bg-(--schemes-bg) py-4 flex items-center justify-between sticky top-0 z-20">
@@ -331,7 +339,7 @@ export default function CatalogPageClient({
                 : activeCategory === "All"
                   ? "All schemes"
                   : activeCategory}
-              {!isLoading && (
+              {!isLoadingInitial && (
                 <span className="ml-2 text-(--schemes-blue-600)">
                   ({schemes.length} shown)
                 </span>
@@ -345,15 +353,13 @@ export default function CatalogPageClient({
               Find with AI
             </Link>
           </div>
-          {isLoading ? (
-            <div className="flex justify-center py-20">
-              <Spinner size="lg" />
-            </div>
+          {isLoadingInitial ? (
+            <CatalogGridSkeleton />
           ) : schemes.length === 0 ? (
-            <div className="py-20 text-center text-(--schemes-muted)">
-              <p className="mb-2 text-lg">No schemes found</p>
-              <p className="text-sm">Try a different search or category</p>
-            </div>
+            <EmptyState
+              title="No schemes found"
+              description="Try a different search or category"
+            />
           ) : (
             <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
               {schemes.map((s) => (
@@ -362,10 +368,10 @@ export default function CatalogPageClient({
             </div>
           )}
           <div ref={bottomRef} className="flex justify-center py-6">
-            {!isLoading && isLoadingMore && <Spinner />}
+            {isLoadingMore && <Spinner />}
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

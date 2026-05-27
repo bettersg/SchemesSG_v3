@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Accordion } from "@heroui/react"
 import { Button } from "@/components/landing/ui/button"
-import { SectionWrapper } from "@/components/landing/shared/SectionWrapper"
+import { SectionWrapper } from "@/components/landing/shared/section-wrapper"
 import { useLanguage } from "@/lib/landing-i18n"
 import { ChevronDown, MessageCircle } from "lucide-react"
 

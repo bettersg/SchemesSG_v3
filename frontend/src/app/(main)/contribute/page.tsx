@@ -9,15 +9,14 @@ import {
   productButtonPrimary,
   productCardPadded,
   productFormAlertMessage,
-  productFormContent,
   productFormInfoMessage,
   productFormLabel,
   productHeading,
   productInputSurface,
   productInputText,
-  productPageShell,
   productSubheading,
 } from "@/lib/design-system/product-styles";
+import PageShell from "@/components/layout/page-shell";
 
 export type SubmitSchemeParams = {
   typeOfRequest: "New";
@@ -105,8 +104,7 @@ export default function ContributePage() {
   };
 
   return (
-    <div className={productPageShell}>
-      <div className={productFormContent}>
+    <PageShell width="form">
         <div className="mb-6 flex flex-col gap-2 text-left">
           <h1 className={productHeading}>Suggest a new scheme</h1>
           <p className={productSubheading}>
@@ -186,7 +184,6 @@ export default function ContributePage() {
             </form>
           </Card.Content>
         </Card>
-      </div>
-    </div>
+    </PageShell>
   );
 }

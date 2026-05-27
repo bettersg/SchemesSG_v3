@@ -4,6 +4,7 @@ import { ArrowRight, Search } from "lucide-react";
 import { FormEvent, useRef } from "react";
 import { flushSync } from "react-dom";
 import { SCHEME_CATEGORIES } from "@/lib/design-system/categories";
+import { duration } from "@/lib/design-system/motion";
 
 const CATEGORY_CHIPS = SCHEME_CATEGORIES;
 
@@ -36,7 +37,7 @@ function ChatLandingInput({
         className="font-serif font-bold leading-[1.08] tracking-tight text-5xl lg:text-[4.5rem] xl:text-[5rem]"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.1 }}
+        transition={{ duration: duration.slow, delay: 0.1 }}
       >
         {t.hero.headline.split("\n").map((line, i, arr) => (
           <span key={i}>
@@ -51,7 +52,7 @@ function ChatLandingInput({
         className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-neutral-500"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
+        transition={{ duration: duration.entrance, delay: 0.3 }}
       >
         {t.hero.subtitle}
       </motion.p>
@@ -63,7 +64,7 @@ function ChatLandingInput({
         className="mt-8 w-full max-w-lg flex flex-col gap-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.45 }}
+        transition={{ duration: duration.entrance, delay: 0.45 }}
       >
         <div className="relative flex items-center rounded-full bg-white border border-neutral-300 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-amber-400/50 focus-within:border-amber-400">
           <Search className="absolute left-5 h-5 w-5 text-neutral-500 pointer-events-none" />

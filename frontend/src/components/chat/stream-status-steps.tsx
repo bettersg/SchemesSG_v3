@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
+import { duration, ease } from "@/lib/design-system/motion";
 
 export type StreamStatusStep = {
   id: string;
@@ -32,7 +33,7 @@ export function StreamStatusSteps({
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: isLatest ? 1 : 0.72, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
+              transition={{ duration: duration.state, ease: ease.out }}
               className="flex items-center gap-2 text-xs text-(--schemes-status-info-text)"
             >
               <span

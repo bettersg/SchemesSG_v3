@@ -9,9 +9,10 @@ import {
   MousePointer2,
   UserCheck,
 } from "lucide-react";
-import { SectionWrapper } from "@/components/landing/shared/SectionWrapper";
+import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
 import { useLanguage } from "@/lib/landing-i18n";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 /* ------------------------------------------------------------------ */
 /*  Decorative illustration components for each bento card             */
@@ -40,9 +41,11 @@ function SearchIllustration() {
       <div className="mt-3 space-y-2">
         <div className="rounded-lg bg-white border border-neutral-200 p-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src="/landing/logos/msf.jpg"
               alt=""
+              width={24}
+              height={24}
               className="h-6 w-6 rounded-full"
             />
             <div>
@@ -179,24 +182,32 @@ function FilterIllustration() {
       {/* Agency logo row + filter */}
       <div className="flex items-center gap-4">
         <div className="flex items-center">
-          <img
+          <Image
             src="/landing/logos/hdb.jpg"
             alt=""
+            width={32}
+            height={32}
             className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm"
           />
-          <img
+          <Image
             src="/landing/logos/MOH.jpg"
             alt=""
+            width={32}
+            height={32}
             className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
           />
-          <img
+          <Image
             src="/landing/logos/cpf.jpg"
             alt=""
+            width={32}
+            height={32}
             className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
           />
-          <img
+          <Image
             src="/landing/logos/msf.jpg"
             alt=""
+            width={32}
+            height={32}
             className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
           />
         </div>
@@ -215,9 +226,11 @@ function FilterIllustration() {
       {/* Category pills */}
       <div className="flex flex-wrap gap-2">
         <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-          <img
+          <Image
             src="/landing/logos/sgenable.jpg"
             alt=""
+            width={20}
+            height={20}
             className="h-5 w-5 rounded-full"
           />
           <span className="text-xs font-medium text-neutral-700">
@@ -225,9 +238,11 @@ function FilterIllustration() {
           </span>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-          <img
+          <Image
             src="/landing/logos/aic.jpg"
             alt=""
+            width={20}
+            height={20}
             className="h-5 w-5 rounded-full"
           />
           <span className="text-xs font-medium text-neutral-700">

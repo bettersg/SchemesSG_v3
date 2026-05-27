@@ -10,13 +10,22 @@ export const productFormContent = "mx-auto w-full max-w-2xl px-4 py-8 sm:px-8";
 export const productHeading =
   "text-2xl font-semibold text-(--schemes-blue-900) sm:text-3xl";
 
+export const productHeadingHero =
+  "font-(--font-head) text-3xl font-semibold leading-[1.1] tracking-tight text-(--schemes-blue-900) sm:text-4xl";
+
 export const productSubheading =
   "text-sm font-medium text-(--schemes-muted)";
 
 export const productCard =
-  "rounded-xl border border-(--schemes-border) bg-(--schemes-surface)";
+  "rounded-xl border border-(--schemes-blue-100) bg-(--schemes-surface)";
 
 export const productCardPadded = cn(productCard, "p-6");
+
+export const productCardHeading =
+  "mb-4 text-base font-semibold text-(--schemes-blue-900)";
+
+export const productCardHeadingLg =
+  "mb-4 text-lg font-semibold text-(--schemes-blue-900)";
 
 const productButtonBase =
   "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-[background-color,border-color,color,opacity] disabled:cursor-not-allowed disabled:opacity-45";

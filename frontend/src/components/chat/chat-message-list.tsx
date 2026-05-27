@@ -6,10 +6,7 @@ import Image from "next/image";
 import { ChatScrollAnchor } from "@/components/chat/chat-scroll-anchor";
 import { MessageEntrance } from "@/components/chat/message-entrance";
 import { StreamingAssistantMessage } from "@/components/chat/streaming-assistant-message";
-import {
-  StreamStatusStep,
-  StreamStatusSteps,
-} from "@/components/chat/stream-status-steps";
+import { StreamStatusStep } from "@/components/chat/stream-status-steps";
 import { SchemeUpdateNotice } from "@/components/chat/scheme-update-notice";
 import ChatSpinner from "@/components/chat/chat-spinner";
 import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
@@ -17,11 +14,11 @@ import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
 const SchemesSGAvatar = () => (
   <div className="flex h-7 w-7 items-center justify-center">
     <Image
-      src="logo.svg"
+      src="/logo.svg"
       alt="Schemes.sg logo"
       width={24}
       height={24}
-      className="h-full w-auto"
+      className="h-6 w-6"
     />
   </div>
 );
@@ -42,6 +39,7 @@ export default function ChatMessageList({
   hasQuickReplies = false,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isUserPinnedToBottomRef = useRef(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
 
   const isNearBottom = () => {
@@ -57,15 +55,18 @@ export default function ChatMessageList({
         behavior: behavior,
       });
     }
+    isUserPinnedToBottomRef.current = true;
     setShowJumpToLatest(false);
   };
 
   const handleScroll = () => {
-    setShowJumpToLatest(!isNearBottom());
+    const pinned = isNearBottom();
+    isUserPinnedToBottomRef.current = pinned;
+    setShowJumpToLatest(!pinned);
   };
 
   useEffect(() => {
-    if (!showJumpToLatest || isNearBottom()) {
+    if (isUserPinnedToBottomRef.current) {
       handleScrollToBottom("instant");
     }
   }, [messages, streamingBlocks, statusSteps]);

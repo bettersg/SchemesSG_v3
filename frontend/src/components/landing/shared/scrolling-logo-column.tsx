@@ -3,7 +3,8 @@
 import { MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Agency } from "@/data/landing-agencies"
-import { Marquee } from "./Marquee"
+import { Marquee } from "./marquee"
+import Image from "next/image"
 
 interface ScrollingLogoColumnProps {
   agencies: Agency[]
@@ -36,14 +37,15 @@ function AgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlighted: 
       >
         {agency.shortName}
       </span>
-      <img
+      <Image
         src={agency.logo}
         alt={agency.name}
+        width={36}
+        height={36}
         className={cn(
           "h-9 w-9 shrink-0 rounded-full object-cover bg-white transition-all duration-300",
           isHighlighted ? "shadow-md ring-2 ring-amber-300" : "shadow-sm"
         )}
-        loading="lazy"
       />
     </div>
   )
@@ -61,11 +63,12 @@ function StaticAgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlig
       <span className="text-sm text-muted-foreground font-medium">
         {agency.shortName}
       </span>
-      <img
+      <Image
         src={agency.logo}
         alt={agency.name}
+        width={36}
+        height={36}
         className="h-9 w-9 rounded-full object-cover bg-white shadow-sm"
-        loading="lazy"
       />
     </div>
   )

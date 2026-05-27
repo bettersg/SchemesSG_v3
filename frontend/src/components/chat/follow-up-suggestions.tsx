@@ -5,6 +5,7 @@ import {
   productButtonSecondary,
   productButtonSm,
 } from "@/lib/design-system/product-styles";
+import { duration, stagger } from "@/lib/design-system/motion";
 
 export type FollowUpSuggestion = {
   label: string;
@@ -30,7 +31,7 @@ export function FollowUpSuggestions({
           className="shrink-0"
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.045, duration: 0.16 }}
+          transition={{ delay: index * stagger, duration: duration.state }}
         >
           <button
             type="button"

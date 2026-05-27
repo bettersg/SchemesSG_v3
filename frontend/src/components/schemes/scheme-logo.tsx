@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function SchemeLogo({
@@ -8,17 +9,25 @@ export default function SchemeLogo({
 }: {
   agency: string;
   image?: string;
-  size?: "md" | "lg";
+  size?: "md" | "header" | "lg";
 }) {
   const [imageError, setImageError] = useState(
     image === undefined || image === "",
   );
-  if (!imageError) {
+  if (!imageError && image) {
     return (
-      <img
-        className={clsx(size == "md" && "h-8 w-8", size == "lg" && "h-18 w-18")}
+      <Image
+        className={clsx(
+          size == "md" && "h-10 w-10",
+          size == "header" && "h-16 w-16",
+          size == "lg" && "h-24 w-24",
+          "object-contain",
+        )}
         src={image}
         alt={`${agency} image`}
+        width={size === "lg" ? 96 : size === "header" ? 64 : 40}
+        height={size === "lg" ? 96 : size === "header" ? 64 : 40}
+        unoptimized
         onError={() => setImageError(true)}
       />
     );
@@ -32,8 +41,9 @@ export default function SchemeLogo({
   return (
     <div
       className={clsx(
-        size == "md" && "h-8 w-8",
-        size == "lg" && "h-18 w-18",
+        size == "md" && "h-10 w-10",
+        size == "header" && "h-16 w-16",
+        size == "lg" && "h-24 w-24",
         "flex shrink-0 items-center justify-center rounded-lg border border-(--schemes-blue-100) bg-(--schemes-blue-50) text-[10px] font-semibold text-(--schemes-blue-600)",
       )}
     >

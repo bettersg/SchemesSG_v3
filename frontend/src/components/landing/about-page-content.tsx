@@ -9,40 +9,40 @@ import {
   TestimonialSkeleton,
   FAQSkeleton,
   CTASkeleton,
-} from "@/components/landing/shared/SectionSkeleton";
+} from "@/components/landing/shared/section-skeleton";
 
 const HeroSection = lazy(() =>
-  import("@/components/landing/sections/HeroSection").then((m) => ({
+  import("@/components/landing/sections/hero-section").then((m) => ({
     default: m.HeroSection,
   })),
 );
 const FeaturedSection = lazy(() =>
-  import("@/components/landing/sections/FeaturedSection").then((m) => ({
+  import("@/components/landing/sections/featured-section").then((m) => ({
     default: m.FeaturedSection,
   })),
 );
 const FeaturesSection = lazy(() =>
-  import("@/components/landing/sections/FeaturesSection").then((m) => ({
+  import("@/components/landing/sections/features-section").then((m) => ({
     default: m.FeaturesSection,
   })),
 );
 const AgenciesSection = lazy(() =>
-  import("@/components/landing/sections/AgenciesSection").then((m) => ({
+  import("@/components/landing/sections/agencies-section").then((m) => ({
     default: m.AgenciesSection,
   })),
 );
 const TestimonialSection = lazy(() =>
-  import("@/components/landing/sections/TestimonialSection").then((m) => ({
+  import("@/components/landing/sections/testimonial-section").then((m) => ({
     default: m.TestimonialSection,
   })),
 );
 const FAQSection = lazy(() =>
-  import("@/components/landing/sections/FAQSection").then((m) => ({
+  import("@/components/landing/sections/faq-section").then((m) => ({
     default: m.FAQSection,
   })),
 );
 const CTASection = lazy(() =>
-  import("@/components/landing/sections/CTASection").then((m) => ({
+  import("@/components/landing/sections/cta-section").then((m) => ({
     default: m.CTASection,
   })),
 );

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { duration, ease } from "@/lib/design-system/motion";
 
 type MessageEntranceProps = {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ export function MessageEntrance({ children, className }: MessageEntranceProps) {
     <motion.div
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.16, ease: "easeOut" }}
+      transition={{ duration: duration.state, ease: ease.out }}
       className={cn(className)}
     >
       {children}

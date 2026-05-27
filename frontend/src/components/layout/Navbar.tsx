@@ -5,11 +5,12 @@ import { Menu, X, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
 import { useLanguage } from "@/lib/landing-i18n";
-import { LanguageToggle } from "@/components/landing/shared/LanguageToggle";
+import { LanguageToggle } from "@/components/landing/shared/language-toggle";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Tabs } from "@heroui/react";
+import Image from "next/image";
 
 type NavLink = {
   label: string;
@@ -24,6 +25,11 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileHidden, setMobileHidden] = useState(false);
   const lastScrollYRef = useRef(0);
+  const lastUserScrollIntentAtRef = useRef(0);
+  const lastUserScrollDirectionRef = useRef<"down" | "up" | null>(null);
+  const lastTouchYRef = useRef<number | null>(null);
+  const suppressScrollToggleUntilRef = useRef(0);
+  const mobileHiddenRef = useRef(false);
   const activeScrollTargetRef = useRef<EventTarget | null>(null);
 
   const navLinks: NavLink[] = [
@@ -49,6 +55,10 @@ export function Navbar() {
   }, [pathname]);
 
   useEffect(() => {
+    mobileHiddenRef.current = mobileHidden;
+  }, [mobileHidden]);
+
+  useEffect(() => {
     document.documentElement.dataset.mobileNavHidden =
       mobileHidden && !mobileOpen ? "true" : "false";
 
@@ -58,6 +68,47 @@ export function Navbar() {
   }, [mobileHidden, mobileOpen]);
 
   useEffect(() => {
+    const markUserScrollIntent = (direction: "down" | "up") => {
+      lastUserScrollIntentAtRef.current = Date.now();
+      lastUserScrollDirectionRef.current = direction;
+    };
+
+    const markWheelScrollIntent = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 2) return;
+      markUserScrollIntent(event.deltaY > 0 ? "down" : "up");
+    };
+
+    const markTouchStart = (event: TouchEvent) => {
+      lastTouchYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const markTouchScrollIntent = (event: TouchEvent) => {
+      const nextY = event.touches[0]?.clientY;
+      const previousY = lastTouchYRef.current;
+      if (nextY == null || previousY == null) return;
+
+      const delta = previousY - nextY;
+      if (Math.abs(delta) >= 2) {
+        markUserScrollIntent(delta > 0 ? "down" : "up");
+      }
+      lastTouchYRef.current = nextY;
+    };
+
+    const markKeyboardScrollIntent = (event: KeyboardEvent) => {
+      if (["ArrowDown", "End", "PageDown", " "].includes(event.key)) {
+        markUserScrollIntent("down");
+      } else if (["ArrowUp", "Home", "PageUp"].includes(event.key)) {
+        markUserScrollIntent("up");
+      }
+    };
+
+    const setMobileHeaderHidden = (nextHidden: boolean) => {
+      if (mobileHiddenRef.current === nextHidden) return;
+      mobileHiddenRef.current = nextHidden;
+      suppressScrollToggleUntilRef.current = Date.now() + 360;
+      setMobileHidden(nextHidden);
+    };
+
     function getScrollMetrics(event: Event) {
       const target = event.target;
 
@@ -96,6 +147,7 @@ export function Navbar() {
       const { maxScrollTop, scrollTop, target } = getScrollMetrics(event);
       const scrollY = Math.max(scrollTop, 0);
       const isScrollable = maxScrollTop > 0;
+      const now = Date.now();
 
       if (!isScrollable) return;
 
@@ -106,28 +158,50 @@ export function Navbar() {
         return;
       }
 
-      const delta = scrollY - lastScrollYRef.current;
       const distanceFromBottom = maxScrollTop - scrollY;
+      const hasRecentUserScrollIntent =
+        now - lastUserScrollIntentAtRef.current < 900;
+      const intentDirection = lastUserScrollDirectionRef.current;
 
       setScrolled(window.scrollY > 20 || scrollY > 20);
 
+      if (
+        window.innerWidth >= 768 ||
+        now < suppressScrollToggleUntilRef.current ||
+        !hasRecentUserScrollIntent ||
+        !intentDirection
+      ) {
+        lastScrollYRef.current = scrollY;
+        return;
+      }
+
       if (scrollY <= 12 || mobileOpen) {
-        setMobileHidden(false);
-      } else if (delta > 6) {
-        setMobileHidden(true);
-      } else if (delta < -6 && distanceFromBottom > 24) {
-        setMobileHidden(false);
+        setMobileHeaderHidden(false);
+      } else if (intentDirection === "down") {
+        setMobileHeaderHidden(true);
+      } else if (intentDirection === "up" && distanceFromBottom > 24) {
+        setMobileHeaderHidden(false);
       }
 
       lastScrollYRef.current = scrollY;
     }
 
+    window.addEventListener("wheel", markWheelScrollIntent, { passive: true });
+    window.addEventListener("touchstart", markTouchStart, { passive: true });
+    window.addEventListener("touchmove", markTouchScrollIntent, {
+      passive: true,
+    });
+    window.addEventListener("keydown", markKeyboardScrollIntent);
     document.addEventListener("scroll", onScroll, {
       capture: true,
       passive: true,
     });
 
     return () => {
+      window.removeEventListener("wheel", markWheelScrollIntent);
+      window.removeEventListener("touchstart", markTouchStart);
+      window.removeEventListener("touchmove", markTouchScrollIntent);
+      window.removeEventListener("keydown", markKeyboardScrollIntent);
       document.removeEventListener("scroll", onScroll, { capture: true });
     };
   }, [mobileOpen]);
@@ -150,7 +224,13 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
-          <img src="/logo.svg" alt="Schemes.sg" className="h-7 w-auto" />
+          <Image
+            src="/logo.svg"
+            alt="Schemes.sg"
+            width={28}
+            height={28}
+            className="h-7 w-7"
+          />
           <span className="text-neutral-900 font-bold">Schemes</span>
           <span className="text-neutral-400 -ml-1">.sg</span>
         </a>

@@ -8,6 +8,7 @@ import { useLanguage } from "@/lib/landing-i18n";
 import { ArrowRight } from "lucide-react";
 import { ScrollVelocityContainer, ScrollVelocityRow } from "@/components/animations/scroll-based-velocity";
 import Link from "next/link";
+import Image from "next/image";
 
 // Build 3 rows from the 24 agencies (8 per row), tripled for overflow
 const rowA = agencies.slice(0, 8);
@@ -17,11 +18,12 @@ const rowC = agencies.slice(16, 24);
 function AgencyPill({ agency }: { agency: (typeof agencies)[0] }) {
   return (
     <div className="flex shrink-0 items-center gap-2.5 rounded-full border border-[#e4edf7] bg-[#f7fafd] px-4 py-2.5 mx-2">
-      <img
+      <Image
         src={agency.logo}
         alt={agency.name}
+        width={32}
+        height={32}
         className="h-8 w-8 rounded-full object-cover border border-neutral-200/60 bg-neutral-50 flex-shrink-0"
-        loading="lazy"
       />
       <span className="text-[13px] font-medium text-neutral-700 whitespace-nowrap">
         {agency.shortName}

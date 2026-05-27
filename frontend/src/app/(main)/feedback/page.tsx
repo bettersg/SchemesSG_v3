@@ -9,15 +9,14 @@ import {
   productButtonPrimary,
   productCardPadded,
   productFormAlertMessage,
-  productFormContent,
   productFormInfoMessage,
   productFormLabel,
   productHeading,
   productInputSurface,
   productInputText,
-  productPageShell,
   productSubheading,
 } from "@/lib/design-system/product-styles";
+import PageShell from "@/components/layout/page-shell";
 
 export default function FeedbackPage() {
   const [feedbackText, setFeedbackText] = useState("");
@@ -86,9 +85,8 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className={productPageShell}>
-      <div className={productFormContent}>
-        <div className="mb-6 flex flex-col gap-2 text-left">
+    <PageShell width="form">
+      <div className="mb-6 flex flex-col gap-2 text-left">
           <h1 className={productHeading}>Share feedback</h1>
           <p className={productSubheading}>
             Help us improve Schemes.sg with your valuable input
@@ -154,7 +152,6 @@ export default function FeedbackPage() {
             </form>
           </Card.Content>
         </Card>
-      </div>
-    </div>
+    </PageShell>
   );
 }
