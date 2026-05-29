@@ -4,7 +4,10 @@ import clsx from "clsx";
 import SchemeLogo from "./scheme-logo";
 import CategoryTag from "./category-tag";
 import { productCard } from "@/lib/design-system/product-styles";
-import { SCHEME_CATEGORIES } from "@/lib/design-system/categories";
+import {
+  SCHEME_CATEGORIES,
+  SchemeCategory,
+} from "@/lib/design-system/categories";
 
 interface SchemeCardProps {
   scheme: Scheme;
@@ -16,15 +19,10 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
   // slice to the first 2 types
   const sortedTypes = [...scheme.schemeType].sort((a, b) => {
     return (
-      Number(
-        SCHEME_CATEGORIES.includes(b as (typeof SCHEME_CATEGORIES)[number]),
-      ) -
-      Number(
-        SCHEME_CATEGORIES.includes(a as (typeof SCHEME_CATEGORIES)[number]),
-      )
+      Number(SCHEME_CATEGORIES.includes(b as SchemeCategory)) -
+      Number(SCHEME_CATEGORIES.includes(a as SchemeCategory))
     );
   });
-  console.log(sortedTypes);
   const types = sortedTypes.slice(0, 2);
   return (
     <Link

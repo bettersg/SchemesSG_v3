@@ -119,6 +119,18 @@ export type ChatStreamEvent =
       };
     }
   | {
+      type: "text";
+      data: {
+        text?: string;
+      };
+    }
+  | {
+      type: "action_message";
+      data: {
+        message?: string;
+      };
+    }
+  | {
       type: "status";
       data: {
         label?: string;

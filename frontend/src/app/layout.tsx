@@ -6,12 +6,6 @@ import {
   Plus_Jakarta_Sans,
   DM_Serif_Display,
 } from "next/font/google";
-import {
-  Open_Sans,
-  Lexend,
-  Plus_Jakarta_Sans,
-  DM_Serif_Display,
-} from "next/font/google";
 import React from "react";
 import "@/globals.css";
 import { AppProviders } from "@/providers";
@@ -83,35 +77,6 @@ export const metadata: Metadata = {
     description: SEO_COPY.homeDescription,
     images: [SCHEMES_SG_LOGO_URL],
   },
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: SEO_COPY.homeTitle,
-    template: "%s",
-  },
-  description: SEO_COPY.homeDescription,
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: SEO_COPY.homeTitle,
-    description: SEO_COPY.homeDescription,
-    url: "/",
-    siteName: SEO_COPY.productName,
-    type: "website",
-    locale: "en_SG",
-    images: [
-      {
-        url: SCHEMES_SG_LOGO_URL,
-        alt: "Schemes.sg logo",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SEO_COPY.homeTitle,
-    description: SEO_COPY.homeDescription,
-    images: [SCHEMES_SG_LOGO_URL],
-  },
 };
 
 export default function RootLayout({
@@ -121,17 +86,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="!overflow-visible !p-0">
-    <html lang="en" className="!overflow-visible !p-0">
       <body
-        className={`${openSans.variable} ${lexend.variable} ${geistSans.variable} ${plusJakartaSans.variable} ${dmSerifDisplay.variable} font-landing-sans text-foreground antialiased`}
-        style={{
-          fontFamily:
-            "var(--font-body), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif",
-        }}
-      >
-        <AppProviders>
-          <div className="h-full min-h-screen">{children}</div>
-        </AppProviders>
         className={`${openSans.variable} ${lexend.variable} ${geistSans.variable} ${plusJakartaSans.variable} ${dmSerifDisplay.variable} font-landing-sans text-foreground antialiased`}
         style={{
           fontFamily:

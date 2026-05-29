@@ -147,25 +147,39 @@ export default function ChatPage() {
     if (activeRequestIdRef.current !== requestId) return;
 
     switch (event.type) {
-      case "chunk": {
+      case "text": {
         const data = (event.data ?? {}) as {
-          chunk?: string;
-          content?: string;
           text?: string;
-          blockIndex?: number;
-          block_index?: number;
-          messageIndex?: number;
-          message_index?: number;
         };
-        appendStreamingChunk(
-          data.chunk ?? data.content ?? data.text ?? "",
-          data.blockIndex ??
-            data.block_index ??
-            data.messageIndex ??
-            data.message_index,
-        );
+        appendStreamingTextBlock(data.text ?? "");
         break;
       }
+      case "action_message": {
+        const data = (event.data ?? {}) as {
+          message?: string;
+        };
+        appendStatusStep(data.message, "action_message", requestId);
+        break;
+      }
+      // case "chunk": {
+      //   const data = (event.data ?? {}) as {
+      //     chunk?: string;
+      //     content?: string;
+      //     text?: string;
+      //     blockIndex?: number;
+      //     block_index?: number;
+      //     messageIndex?: number;
+      //     message_index?: number;
+      //   };
+      //   appendStreamingChunk(
+      //     data.chunk ?? data.content ?? data.text ?? "",
+      //     data.blockIndex ??
+      //       data.block_index ??
+      //       data.messageIndex ??
+      //       data.message_index,
+      //   );
+      //   break;
+      // }
       case "status": {
         const data = (event.data ?? {}) as {
           label?: string;
@@ -176,22 +190,6 @@ export default function ChatPage() {
         if (data.phase === "session_started") {
           const nextSessionId = data.sessionID ?? data.sessionId;
           if (nextSessionId) setSessionId(nextSessionId);
-        }
-        if (data.label) {
-          const step: StreamStatusStep = {
-            id: `${requestId}-${Date.now()}-${data.phase ?? data.label}`,
-            label: data.label,
-            phase: data.phase,
-          };
-          setStatusSteps((prev) => {
-            if (prev.at(-1)?.label === step.label) {
-              statusStepsRef.current = prev;
-              return prev;
-            }
-            const next = [...prev, step];
-            statusStepsRef.current = next;
-            return next;
-          });
         }
         break;
       }
@@ -230,8 +228,44 @@ export default function ChatPage() {
     }
   };
 
+  const appendStatusStep = (
+    label: string | undefined,
+    phase: string | undefined,
+    requestId: number,
+  ) => {
+    if (!label) return;
+    if (streamingBlocksRef.current.some(Boolean)) return;
+
+    const step: StreamStatusStep = {
+      id: `${requestId}-${Date.now()}-${phase ?? label}`,
+      label,
+      phase,
+    };
+    setStatusSteps((prev) => {
+      if (prev.at(-1)?.label === step.label) {
+        statusStepsRef.current = prev;
+        return prev;
+      }
+      const next = [...prev, step];
+      statusStepsRef.current = next;
+      return next;
+    });
+  };
+
+  const appendStreamingTextBlock = (text: string) => {
+    if (!text) return;
+
+    setStatusSteps([]);
+
+    const blocks = [...streamingBlocksRef.current, text];
+    streamingBlocksRef.current = blocks;
+    setStreamingBlocks(blocks);
+  };
+
   const appendStreamingChunk = (chunk: string, blockIndex?: number) => {
     if (!chunk) return;
+
+    setStatusSteps([]);
 
     const blocks = [...streamingBlocksRef.current];
     const targetIndex =
