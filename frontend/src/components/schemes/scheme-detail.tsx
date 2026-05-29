@@ -406,35 +406,35 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           )}
         >
           <div className="flex items-center justify-between gap-4 text-left">
-          <div className="flex min-w-0 items-center gap-4 md:gap-5">
-            <SchemeLogo
-              agency={scheme.agency}
-              image={scheme.image}
-              size="header"
-            />
-            <div className="flex min-w-0 flex-col gap-2">
-              {scheme.agency && (
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
-                  {scheme.agency}
-                </p>
-              )}
-              {scheme.schemeName && (
-                <h1 className="line-clamp-2 text-xl font-semibold leading-tight text-(--schemes-blue-900) md:line-clamp-1 md:text-2xl">
-                  {scheme.schemeName}
-                </h1>
-              )}
-              {scheme.summary && (
-                <p className="line-clamp-2 max-w-2xl text-xs leading-relaxed text-(--schemes-ink-soft) md:text-sm">
-                  {scheme.summary}
-                </p>
-              )}
+            <div className="flex min-w-0 items-center gap-4 md:gap-5">
+              <SchemeLogo
+                agency={scheme.agency}
+                image={scheme.image}
+                size="header"
+              />
+              <div className="flex min-w-0 flex-col gap-2">
+                {scheme.agency && (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
+                    {scheme.agency}
+                  </p>
+                )}
+                {scheme.schemeName && (
+                  <h1 className="line-clamp-2 text-xl font-semibold leading-tight text-(--schemes-blue-900) md:line-clamp-1 md:text-2xl">
+                    {scheme.schemeName}
+                  </h1>
+                )}
+                {scheme.summary && (
+                  <p className="line-clamp-2 max-w-2xl text-xs leading-relaxed text-(--schemes-ink-soft) md:text-sm">
+                    {scheme.summary}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="hidden w-full max-w-52 flex-col gap-2 md:flex">
-            {scheme.link && <VisitWebsiteButton href={scheme.link} />}
-            <ShareButton scheme={scheme} className="" />
-          </div>
+            <div className="hidden w-full max-w-52 flex-col gap-2 md:flex">
+              {scheme.link && <VisitWebsiteButton href={scheme.link} />}
+              <ShareButton scheme={scheme} className="" />
+            </div>
           </div>
         </div>
 

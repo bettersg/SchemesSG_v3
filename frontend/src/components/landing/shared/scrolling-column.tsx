@@ -1,24 +1,30 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Marquee } from "./marquee"
+import { cn } from "@/lib/utils";
+import { Marquee } from "./marquee";
 
 interface ScrollingColumnProps {
-  items: string[]
-  direction?: "up" | "down"
-  highlightIndex?: number
-  speed?: number
-  className?: string
+  items: string[];
+  direction?: "up" | "down";
+  highlightIndex?: number;
+  speed?: number;
+  className?: string;
 }
 
-const ITEM_HEIGHT = 52
+const ITEM_HEIGHT = 52;
 
-function Item({ item, isHighlighted }: { item: string; isHighlighted: boolean }) {
+function Item({
+  item,
+  isHighlighted,
+}: {
+  item: string;
+  isHighlighted: boolean;
+}) {
   return (
     <div
       className={cn(
         "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap transition-opacity duration-300",
-        isHighlighted ? "opacity-100" : "opacity-40"
+        isHighlighted ? "opacity-100" : "opacity-40",
       )}
     >
       {isHighlighted && (
@@ -26,7 +32,7 @@ function Item({ item, isHighlighted }: { item: string; isHighlighted: boolean })
       )}
       {item}
     </div>
-  )
+  );
 }
 
 export function ScrollingColumn({
@@ -45,11 +51,15 @@ export function ScrollingColumn({
       speed={speed}
       className={className}
       renderItem={(item, index, isHighlighted) => (
-        <Item key={`${item}-${index}`} item={item} isHighlighted={isHighlighted} />
+        <Item
+          key={`${item}-${index}`}
+          item={item}
+          isHighlighted={isHighlighted}
+        />
       )}
       renderStaticItem={(item, _i, isHighlighted) => (
         <Item key={item} item={item} isHighlighted={isHighlighted} />
       )}
     />
-  )
+  );
 }

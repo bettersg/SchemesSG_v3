@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { ArrowUpRight } from "lucide-react"
-import { Separator } from "@heroui/react"
-import { useLanguage } from "@/lib/landing-i18n"
-import Image from "next/image"
+import { ArrowUpRight } from "lucide-react";
+import { Separator } from "@heroui/react";
+import { useLanguage } from "@/lib/landing-i18n";
+import Image from "next/image";
 
-function FooterLinkColumn({ heading, links }: { heading: string; links: { label: string; href: string; comingSoon?: boolean }[] }) {
+function FooterLinkColumn({
+  heading,
+  links,
+}: {
+  heading: string;
+  links: { label: string; href: string; comingSoon?: boolean }[];
+}) {
   return (
     <div>
       <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-4">
@@ -33,11 +39,11 @@ function FooterLinkColumn({ heading, links }: { heading: string; links: { label:
         ))}
       </ul>
     </div>
-  )
+  );
 }
 
 export function Footer() {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <footer className="bg-neutral-950 text-neutral-400 py-16 px-6">
@@ -45,7 +51,10 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <a href="/" className="flex items-center gap-2 font-serif text-xl tracking-tight">
+            <a
+              href="/"
+              className="flex items-center gap-2 font-serif text-xl tracking-tight"
+            >
               <Image
                 src="/logo.svg"
                 alt="Schemes.sg"
@@ -61,9 +70,18 @@ export function Footer() {
             </p>
           </div>
 
-          <FooterLinkColumn heading={t.footer.productHeading} links={t.footer.productLinks} />
-          <FooterLinkColumn heading={t.footer.resourcesHeading} links={t.footer.resourceLinks} />
-          <FooterLinkColumn heading={t.footer.legalHeading} links={t.footer.legalLinks} />
+          <FooterLinkColumn
+            heading={t.footer.productHeading}
+            links={t.footer.productLinks}
+          />
+          <FooterLinkColumn
+            heading={t.footer.resourcesHeading}
+            links={t.footer.resourceLinks}
+          />
+          <FooterLinkColumn
+            heading={t.footer.legalHeading}
+            links={t.footer.legalLinks}
+          />
         </div>
 
         <Separator className="my-10 bg-neutral-800" />
@@ -91,10 +109,15 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-neutral-600 sm:flex-row">
-          <p>{t.footer.copyright.replace("{year}", String(new Date().getFullYear()))}</p>
+          <p>
+            {t.footer.copyright.replace(
+              "{year}",
+              String(new Date().getFullYear()),
+            )}
+          </p>
           <p>{t.footer.madeIn}</p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

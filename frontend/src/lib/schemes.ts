@@ -13,7 +13,7 @@ export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
   image: rawData["image"] || rawData["Image"] || "",
   searchBooster:
     rawData["search_booster"] || rawData["search_booster(WL)"] || "",
-  schemeId: rawData["scheme_id"] || rawData["id"] || "",
+  schemeId: rawData["scheme_id"] || "",
   query: rawData["query"] || "",
   planningArea: rawData["planning_area"] || "",
   summary: rawData["summary"] || "",
@@ -267,33 +267,5 @@ export async function searchSchemes(
     };
   } catch {
     return { schemes: [], nextCursor: "", total: 0 };
-  }
-}
-
-export async function getSchemesCategory(
-  category: string,
-  cursor = "",
-  limit = 20,
-): Promise<{ schemes: Scheme[]; nextCursor: string }> {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog?category=${category}&limit=${limit}&cursor=${cursor}`;
-  try {
-    const res = await fetchWithAuth(url, {
-      method: "GET",
-    });
-    if (!res.ok) throw new Error("fetch failed");
-    const data = await res.json();
-    console.log(data);
-    const raw = data.data
-      ? Array.isArray(data.data)
-        ? data.data
-        : [data.data]
-      : [];
-    return {
-      schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
-      nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
-      // total: data.total_count || 0,
-    };
-  } catch {
-    return { schemes: [], nextCursor: "" };
   }
 }

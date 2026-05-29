@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { useLanguage } from "@/lib/landing-i18n"
-import { cn } from "@/lib/utils"
-import Image from "next/image"
+import { motion } from "framer-motion";
+import { useLanguage } from "@/lib/landing-i18n";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const featuredLogos = [
   { name: "Channel NewsAsia", src: "/landing/featured/cna-logo.svg" },
@@ -12,15 +12,18 @@ const featuredLogos = [
   { name: "Better.sg", src: "/landing/featured/bettersg-logo.svg" },
   { name: "Sengkang Town Council", src: "/landing/featured/sengkang-logo.svg" },
   { name: "Hatch", src: "/landing/featured/hatch-logo.png" },
-]
+];
 
 const partnerLogos = [
-  { name: "Singapore Association of Social Workers", src: "/landing/featured/sasw.png" },
+  {
+    name: "Singapore Association of Social Workers",
+    src: "/landing/featured/sasw.png",
+  },
   { name: "Care Corner Singapore", src: "/landing/featured/carecorner.png" },
-]
+];
 
 export function FeaturedSection() {
-  const { t } = useLanguage()
+  const { t } = useLanguage();
 
   return (
     <section className="border-t border-neutral-200/60 bg-neutral-50 py-14 px-6">
@@ -42,7 +45,10 @@ export function FeaturedSection() {
               alt={logo.name}
               width={160}
               height={64}
-              className={cn("w-auto object-contain transition-opacity duration-200", logo.name === "Better.sg" ? "h-10 md:h-11" : "h-14 md:h-16")}
+              className={cn(
+                "w-auto object-contain transition-opacity duration-200",
+                logo.name === "Better.sg" ? "h-10 md:h-11" : "h-14 md:h-16",
+              )}
             />
           ))}
         </div>
@@ -66,5 +72,5 @@ export function FeaturedSection() {
         </div>
       </motion.div>
     </section>
-  )
+  );
 }

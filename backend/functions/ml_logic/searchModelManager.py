@@ -7,7 +7,7 @@ import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from langchain_community.retrievers import BM25Retriever
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger

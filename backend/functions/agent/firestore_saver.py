@@ -6,12 +6,13 @@ Supports both sync and async LangGraph checkpoint APIs.
 
 import asyncio
 import base64
+import json
 import threading
 from datetime import datetime, timezone
 from typing import Any, List, Optional, Tuple
 
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import (
     BaseCheckpointSaver,
@@ -42,18 +43,60 @@ class FirestoreSerializer:
         return self.serde.loads_typed((type_name, serialized_obj))
 
     def dumps(self, obj):
-        data = self.serde.dumps(obj)
-        data_base64 = base64.b64encode(data).decode("utf-8")
-        return data_base64
+        """Serialize objects using typed serde payloads.
+
+        JsonPlusSerializer exposes dumps_typed/loads_typed (not dumps/loads).
+        Persist as JSON so Firestore stores a plain string.
+        """
+        type_name, data = self.serde.dumps_typed(obj)
+        payload = {
+            "__type__": type_name,
+            "__data__": base64.b64encode(data).decode("utf-8"),
+        }
+        return json.dumps(payload)
 
     def loads(self, serialized_obj):
-        # serialized_obj is {'step': 1, 'source': 'loop', 'parents': {}}
-        # Check if serialized_obj is already a dict (not base64 encoded)
+        """Deserialize typed payload strings with legacy fallbacks.
+
+        Supports:
+        - current typed JSON envelope
+        - already-materialized dict objects
+        - legacy base64 strings (best-effort)
+        """
         if isinstance(serialized_obj, dict):
+            type_name = serialized_obj.get("__type__")
+            data_b64 = serialized_obj.get("__data__")
+            if isinstance(type_name, str) and isinstance(data_b64, str):
+                data = base64.b64decode(data_b64.encode("utf-8"))
+                return self.serde.loads_typed((type_name, data))
             return serialized_obj
-        # If it's a string, decode it
-        serialized_obj = base64.b64decode(serialized_obj.encode("utf-8"))
-        return self.serde.loads(serialized_obj)
+
+        if not isinstance(serialized_obj, str):
+            return serialized_obj
+
+        try:
+            parsed = json.loads(serialized_obj)
+            if isinstance(parsed, dict):
+                type_name = parsed.get("__type__")
+                data_b64 = parsed.get("__data__")
+                if isinstance(type_name, str) and isinstance(data_b64, str):
+                    data = base64.b64decode(data_b64.encode("utf-8"))
+                    return self.serde.loads_typed((type_name, data))
+                return parsed
+        except Exception:
+            pass
+
+        # Legacy fallback: raw base64 payload.
+        try:
+            raw = base64.b64decode(serialized_obj.encode("utf-8"))
+            if hasattr(self.serde, "loads"):
+                return self.serde.loads(raw)
+            try:
+                return json.loads(raw.decode("utf-8"))
+            except Exception:
+                return raw.decode("utf-8", errors="ignore")
+        except Exception:
+            return serialized_obj
 
 
 class FirestoreChatSaver(BaseCheckpointSaver):
@@ -111,7 +154,21 @@ class FirestoreChatSaver(BaseCheckpointSaver):
                 if msg["role"] == "user":
                     messages.append(HumanMessage(content=msg["content"]))
                 elif msg["role"] == "assistant":
-                    messages.append(AIMessage(content=msg["content"]))
+                    tool_calls = msg.get("tool_calls") if isinstance(msg.get("tool_calls"), list) else None
+                    if tool_calls:
+                        messages.append(AIMessage(content=msg["content"], tool_calls=tool_calls))
+                    else:
+                        messages.append(AIMessage(content=msg["content"]))
+                elif msg["role"] == "tool":
+                    tool_call_id = msg.get("tool_call_id")
+                    tool_name = msg.get("name")
+                    messages.append(
+                        ToolMessage(
+                            content=msg["content"],
+                            tool_call_id=str(tool_call_id) if tool_call_id else "",
+                            name=str(tool_name) if tool_name else None,
+                        )
+                    )
             elif isinstance(msg, str):
                 messages.append(AIMessage(content=msg))
         return messages
@@ -142,18 +199,16 @@ class FirestoreChatSaver(BaseCheckpointSaver):
         metadata: CheckpointMetadata,
         new_versions: ChannelVersions,
     ) -> RunnableConfig:
-        """Save a checkpoint to Firestore."""
+        """Save a checkpoint to a subcollection to avoid hitting the 1MB document limit."""
         thread_id = config["configurable"]["thread_id"]
         checkpoint_ns = config["configurable"].get("checkpoint_ns", "chat")
         checkpoint_id = checkpoint["id"]
         parent_checkpoint_id = config["configurable"].get("checkpoint_id", "")
 
-        # Convert messages to Firestore-compatible format (legacy compatibility).
         channel_values = checkpoint.get("channel_values", {}) if isinstance(checkpoint, dict) else {}
         firestore_messages = []
         messages_source = None
 
-        # Check for messages in different possible locations
         if isinstance(checkpoint, dict):
             if "channel_values" in checkpoint and "messages" in checkpoint["channel_values"]:
                 messages_source = checkpoint["channel_values"]["messages"]
@@ -166,17 +221,28 @@ class FirestoreChatSaver(BaseCheckpointSaver):
                     if msg.type == "human":
                         firestore_messages.append({"role": "user", "content": msg.content})
                     elif msg.type == "ai":
-                        firestore_messages.append({"role": "assistant", "content": msg.content})
+                        payload = {"role": "assistant", "content": msg.content}
+                        tool_calls = getattr(msg, "tool_calls", None)
+                        if isinstance(tool_calls, list) and tool_calls:
+                            payload["tool_calls"] = tool_calls
+                        firestore_messages.append(payload)
+                    elif msg.type == "tool":
+                        firestore_messages.append(
+                            {
+                                "role": "tool",
+                                "content": msg.content,
+                                "name": getattr(msg, "name", None),
+                                "tool_call_id": getattr(msg, "tool_call_id", None),
+                            }
+                        )
                 else:
                     firestore_messages.append(str(msg))
 
-        # Prepare data for Firestore
+        # --- OPTIMIZATION: Extract mirrors, but keep payload lightweight if needed ---
         search_history = channel_values.get("search_history", []) if isinstance(channel_values, dict) else []
         tool_history = channel_values.get("tool_history", []) if isinstance(channel_values, dict) else []
         schemes_history = channel_values.get("schemes_history", []) if isinstance(channel_values, dict) else []
 
-        # Firestore does not allow nested arrays (list[list[...]]). Mirror schemes
-        # history as an array of objects to keep it readable and queryable.
         schemes_history_docs = []
         if isinstance(schemes_history, list):
             for turn in schemes_history:
@@ -186,11 +252,12 @@ class FirestoreChatSaver(BaseCheckpointSaver):
                     schemes_history_docs.append({"schemes": []})
 
         data = {
-            "v": checkpoint.get("v", 4),  # Include version field
+            "v": checkpoint.get("v", 4),
             "messages": firestore_messages,
-            # Persist full channel values so non-message agent state survives turn-to-turn.
+            # Serialized full state (This is the heavy hitter)
             "channel_values": self.serializer.dumps(channel_values),
-            # Readable mirrors for quick inspection in Firestore UI.
+            # If UI mirrors are making you exceed 1MB *per turn*, consider omitting them,
+            # or trust the new subcollection architecture to give them breathing room.
             "search_history": search_history if isinstance(search_history, list) else [],
             "tool_history": tool_history if isinstance(tool_history, list) else [],
             "schemes_history": schemes_history_docs,
@@ -202,37 +269,61 @@ class FirestoreChatSaver(BaseCheckpointSaver):
             "versions": self.serializer.dumps(new_versions),
         }
 
-        # Store additional checkpoint fields that might contain cache info
-        # This preserves fields like 'pending_sends', cache-related data, etc.
+        # Store additional checkpoint fields
         for key, value in checkpoint.items():
             if key not in ["id", "ts", "channel_values", "channel_versions", "versions_seen", "v"]:
                 try:
-                    # Try to serialize complex objects, store simple ones directly
                     if isinstance(value, (str, int, float, bool, type(None))):
                         data[f"checkpoint_{key}"] = value
                     else:
                         data[f"checkpoint_{key}"] = self.serializer.dumps(value)
                 except Exception as e:
                     logger.warning(f"Could not serialize checkpoint field {key}: {e}")
-                    # Store as string representation as fallback
                     data[f"checkpoint_{key}"] = str(value)
 
-        # Save to Firestore
-        ref = self.client.collection(self.checkpoints_collection).document(thread_id)
+        # --- OPTIMIZATION: Save as a unique document inside a subcollection ---
+        # Path: chatHistory/{thread_id}/checkpoints/{checkpoint_id}
+        ref = (
+            self.client.collection(self.checkpoints_collection)
+            .document(thread_id)
+            .collection("checkpoints")
+            .document(checkpoint_id)
+        )
         ref.set(data)
+
+        # Also update a lightweight pointer on the root document for "latest" status
+        root_ref = self.client.collection(self.checkpoints_collection).document(thread_id)
+        root_ref.set({"latest_checkpoint_id": checkpoint_id, "last_updated": data["last_updated"]}, merge=True)
 
         return {
             "configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns, "checkpoint_id": checkpoint_id}
         }
 
     def get_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
-        """Retrieve a checkpoint tuple from Firestore."""
+        """Retrieve a checkpoint tuple from the Firestore subcollection."""
         thread_id = config["configurable"]["thread_id"]
         checkpoint_ns = config["configurable"].get("checkpoint_ns", "chat")
+        checkpoint_id = config["configurable"].get("checkpoint_id")
 
         with self.__class__._lock:
             try:
-                ref = self.client.collection(self.checkpoints_collection).document(thread_id)
+                # 1. If checkpoint_id isn't provided, find the latest one from the root doc
+                if not checkpoint_id:
+                    root_ref = self.client.collection(self.checkpoints_collection).document(thread_id)
+                    root_doc = root_ref.get()
+                    if not root_doc.exists:
+                        return None
+                    checkpoint_id = root_doc.to_dict().get("latest_checkpoint_id")
+                    if not checkpoint_id:
+                        return None
+
+                # 2. Fetch the specific checkpoint document from the subcollection
+                ref = (
+                    self.client.collection(self.checkpoints_collection)
+                    .document(thread_id)
+                    .collection("checkpoints")
+                    .document(checkpoint_id)
+                )
                 doc = ref.get()
 
                 if not doc.exists:
@@ -242,12 +333,11 @@ class FirestoreChatSaver(BaseCheckpointSaver):
 
                 # Reconstruct channel_versions
                 versions_data = raw_data.get("versions", {})
-                if isinstance(versions_data, str):
-                    channel_versions = self.serializer.loads(versions_data)
-                else:
-                    channel_versions = versions_data
+                channel_versions = (
+                    self.serializer.loads(versions_data) if isinstance(versions_data, str) else versions_data
+                )
 
-                # Reconstruct checkpoint with proper version and structure
+                # Reconstruct checkpoint
                 channel_values_data = raw_data.get("channel_values")
                 mirror_schemes_history = raw_data.get("schemes_history", [])
                 mirror_search_history = raw_data.get("search_history", [])
@@ -288,26 +378,22 @@ class FirestoreChatSaver(BaseCheckpointSaver):
                     "versions_seen": {},
                 }
 
-                # Restore additional checkpoint fields that might contain cache info
+                # Restore additional fields
                 for key, value in raw_data.items():
                     if key.startswith("checkpoint_"):
                         original_key = key.replace("checkpoint_", "", 1)
                         try:
-                            # Try to deserialize if it's a string (serialized object)
                             if isinstance(value, str) and original_key not in ["id", "ts", "v"]:
                                 checkpoint[original_key] = self.serializer.loads(value)
                             else:
                                 checkpoint[original_key] = value
                         except Exception as e:
                             logger.warning(f"Could not deserialize checkpoint field {original_key}: {e}")
-                            checkpoint[original_key] = value  # Reconstruct metadata
-                metadata_data = raw_data.get("metadata", {})
-                if isinstance(metadata_data, str):
-                    metadata = self.serializer.loads(metadata_data)
-                else:
-                    metadata = metadata_data
+                            checkpoint[original_key] = value
 
-                # Reconstruct parent config
+                metadata_data = raw_data.get("metadata", {})
+                metadata = self.serializer.loads(metadata_data) if isinstance(metadata_data, str) else metadata_data
+
                 parent_checkpoint_id = raw_data.get("parent_checkpoint_id", "")
                 parent_config = None
                 if parent_checkpoint_id:

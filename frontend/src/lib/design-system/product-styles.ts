@@ -13,8 +13,7 @@ export const productHeading =
 export const productHeadingHero =
   "font-(--font-head) text-3xl font-semibold leading-[1.1] tracking-tight text-(--schemes-blue-900) sm:text-4xl";
 
-export const productSubheading =
-  "text-sm font-medium text-(--schemes-muted)";
+export const productSubheading = "text-sm font-medium text-(--schemes-muted)";
 
 export const productCard =
   "rounded-xl border border-(--schemes-blue-100) bg-(--schemes-surface)";

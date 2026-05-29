@@ -1,23 +1,23 @@
 beautifulsoup4==4.12.3
-crawl4ai>=0.7.8
+# crawl4ai>=0.7.8
 google-cloud-firestore==2.22.0  # Required for Vector search support
 firebase_functions~=0.5.0
 flask==3.0.3
 flask-cors==5.0.0
-langchain==0.3.27
-langchain-community==0.3.25
-langchain-core==0.3.72
-langchain-openai==0.2.5
-langgraph==0.6.6
+langchain>=1.3.1
+langchain-community>=0.4.2
+langchain-openai>=1.2.2
+langfuse>=4.6.1
+langgraph>=1.2.1
 litellm>=1.40.0
 loguru==0.7.2
 lxml==5.3.0
 numpy==1.26.2
 pandas==2.2.2
 pydantic>=2.10
-pydoll-python==2.15.0
+# pydoll-python==2.15.0
 pypdf==5.1.0
 python-dotenv==1.0.1
 rank_bm25==0.2.2
-requests==2.32.3
+requests>=2.32.5
 slack-sdk==3.33.1

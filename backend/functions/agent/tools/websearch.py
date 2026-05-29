@@ -6,12 +6,15 @@ import os
 from typing import Any
 
 from langchain_community.tools import DuckDuckGoSearchResults
+from langgraph.config import get_stream_writer
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
 
 
 logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
+ACTION_MESSAGE_ON_START = 'Searching the web for "{query}"'
+ACTION_MESSAGE_ON_END = 'Found {result_count} results for "{query}".'
 
 
 class DuckDuckGoWebSearchInput(BaseModel):
@@ -45,6 +48,18 @@ def _normalize_ddg_item(item: Any) -> dict[str, str] | None:
 def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, Any]:
     max_results = max(1, min(int(max_results), 10))
     logger.info(f"duckduckgo_web_search tool invoked | query={query}")
+    try:
+        writer = get_stream_writer()
+        writer(
+            {
+                "type": "action_message",
+                "data": {
+                    "message": ACTION_MESSAGE_ON_START.format(query=query),
+                },
+            },
+        )
+    except Exception as e:
+        logger.debug(f"Failed to emit web search input to stream: {e}")
 
     try:
         ddg_tool = DuckDuckGoSearchResults(max_results=max_results, output_format="list")
@@ -67,6 +82,18 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
             if len(results) >= max_results:
                 break
 
+        try:
+            writer = get_stream_writer()
+            writer(
+                {
+                    "type": "action_message",
+                    "data": {
+                        "message": ACTION_MESSAGE_ON_END.format(result_count=len(results), query=query),
+                    }
+                }
+            )
+        except Exception as e:
+            logger.debug(f"Failed to emit web search results to stream: {e}")
         return {
             "query": query,
             "source": "duckduckgo",
@@ -75,7 +102,11 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
         }
     except Exception as e:
         logger.exception("duckduckgo_web_search failed")
-        return {"query": query, "source": "duckduckgo", "error": f"duckduckgo_web_search failed: {e}"}
+        return {
+            "query": query,
+            "source": "duckduckgo",
+            "error": f"duckduckgo_web_search failed: {e}",
+        }
 
 
 async def _duckduckgo_web_search_async(query: str, max_results: int = 5) -> dict[str, Any]:

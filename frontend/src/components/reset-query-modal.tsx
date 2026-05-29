@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
 import { Button, Modal } from "@heroui/react";
 import {
-	productButtonMd,
-	productButtonPrimary,
-	productButtonTertiary,
+  productButtonMd,
+  productButtonPrimary,
+  productButtonTertiary,
 } from "@/lib/design-system/product-styles";
 
 type ResetQueryModalProps = {
@@ -13,7 +13,11 @@ type ResetQueryModalProps = {
   handleReset: () => void;
 };
 
-export default function ResetQueryModal({ isOpen, onOpenChange, handleReset }: ResetQueryModalProps) {
+export default function ResetQueryModal({
+  isOpen,
+  onOpenChange,
+  handleReset,
+}: ResetQueryModalProps) {
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Container>

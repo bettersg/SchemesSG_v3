@@ -1,144 +1,112 @@
-"""Tools defined for agent use."""
+"""Search tool defined for agent use."""
 
 import asyncio
-import json
 import os
-from typing import Any, Literal
+from typing import Any
 
-from fb_manager.firebaseManager import FirebaseManager
+# Import ToolRuntime from langgraph.prebuilt
+from langgraph.prebuilt import ToolRuntime
 from langchain_core.tools import StructuredTool
-from ml_logic.searchModelManager import PaginatedSearchParams, SearchModel
+from langgraph.config import get_stream_writer
+from search import PredictParams, QueryHandler
 from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
+from integrations import FirebaseManager
 
+logger = setup_logging()
 
-logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
-
-
-def _truncate_text(value: str, max_len: int = 500) -> str:
-    if len(value) <= max_len:
-        return value
-    return f"{value[:max_len]}...<truncated:{len(value) - max_len} chars>"
-
-
-def _debug_serialize(value: Any, *, max_items: int = 10, max_text_len: int = 500) -> Any:
-    if value is None or isinstance(value, (bool, int, float)):
-        return value
-
-    if isinstance(value, str):
-        return _truncate_text(value, max_len=max_text_len)
-
-    if isinstance(value, dict):
-        serialized: dict[str, Any] = {}
-        items = list(value.items())
-        for idx, (k, v) in enumerate(items):
-            if idx >= max_items:
-                serialized["__truncated_keys__"] = len(items) - max_items
-                break
-            serialized[str(k)] = _debug_serialize(v, max_items=max_items, max_text_len=max_text_len)
-        return serialized
-
-    if isinstance(value, list):
-        serialized = [_debug_serialize(v, max_items=max_items, max_text_len=max_text_len) for v in value[:max_items]]
-        if len(value) > max_items:
-            serialized.append({"__truncated_items__": len(value) - max_items})
-        return serialized
-
-    return _truncate_text(repr(value), max_len=max_text_len)
-
-
-def _log_debug(event: str, payload: Any) -> None:
-    try:
-        logger.info(f"{event} | {json.dumps(_debug_serialize(payload), ensure_ascii=True)}")
-    except Exception:
-        logger.info(f"{event} | <payload_serialization_failed>")
+ACTION_MESSAGE_ON_START = 'Finding the top {top_k} schemes that best match "{query}"'
+ACTION_MESSAGE_ON_END = 'Found {result_count} schemes matching "{query}".'
+MINIMAL_LLM_KEYS = {"scheme", "agency", "summary"}
 
 
 class SchemeSearchToolInput(BaseModel):
-    query: str = Field(..., description="Natural language query about scheme eligibility, benefits, or requirements")
+    query: str = Field(
+        ...,
+        description="Natural language query about scheme eligibility, benefits, or requirements",
+    )
     top_k: int = Field(
         default=30,
         ge=10,
         le=50,
         description="Number of search results to return (between 10 and 50)",
     )
+    # 1. REMOVED session_id from here so the LLM doesn't see or input it.
+
+    # 2. Add config to allow arbitrary types so Pydantic handles ToolRuntime smoothly
+    model_config = {"arbitrary_types_allowed": True}
 
 
 def _search_schemes_sync(
     query: str,
     top_k: int = 30,
+    runtime: ToolRuntime = None,  # 3. Added runtime parameter here
 ):
     logger.info("search_schemes tool invoked")
     top_k = max(10, min(int(top_k), 50))
 
-    _log_debug(
-        "tool.search_schemes.input",
-        {
-            "query": query,
-            "top_k": top_k,
-        },
-    )
+    # 4. Extract session_id directly from the graph state via runtime
+    session_id = None
 
-    model = SearchModel(FirebaseManager())
-    params = PaginatedSearchParams(
-        query=query,
-        # Return a full first page sized to requested top_k for tool usage.
-        limit=top_k,
-        top_k=top_k,
-        cursor=None,
-        similarity_threshold=None,
-        filters={},
-        is_warmup=False,
-    )
-    results = model.predict_paginated(params)
-    logger.info("search_schemes tool completed")
-    return results
+    # Fallback option if session_id is stored in graph config instead of state:
+    if runtime and runtime.config:
+        session_id = runtime.config.get("configurable", {}).get("thread_id")
 
-
-async def _search_schemes_async(
-    query: str,
-    top_k: int = 30,
-) -> dict[str, Any]:
-    logger.info("search_schemes async wrapper invoked")
-    _log_debug(
-        "tool.search_schemes.async_input",
-        {
-            "query": query,
-            "top_k": top_k,
-        },
-    )
     try:
-        result = await asyncio.wait_for(
-            asyncio.to_thread(_search_schemes_sync, query, top_k),
-            timeout=8.0,
+        write = get_stream_writer()
+        write(
+            {
+                "type": "action_message",
+                "data": {
+                    "message": ACTION_MESSAGE_ON_START.format(query=query, top_k=top_k),
+                },
+            },
         )
-        _log_debug("tool.search_schemes.async_output", {"query": query, "top_k": top_k, "result": result})
-        return result
-    except asyncio.TimeoutError:
-        logger.warning("search_schemes timed out after 8s")
-        _log_debug("tool.search_schemes.async_timeout", {"query": query, "top_k": top_k})
-        return {"error": "search_schemes timed out after 8s"}
     except Exception as e:
-        logger.exception("search_schemes failed")
-        _log_debug("tool.search_schemes.async_error", {"query": query, "top_k": top_k, "error": str(e)})
-        return {"error": f"search_schemes failed: {e}"}
+        logger.debug(f"Failed to emit search input to stream: {e}")
+
+    model = QueryHandler(FirebaseManager())
+    params = PredictParams(
+        query=query,
+        top_k=top_k,
+        is_warmup=False,
+        session_id=session_id,  # Passes the extracted session_id here
+    )
+    results = model.predict_for_agent(params)
+    try:
+        writer = get_stream_writer()
+        writer(
+            {
+                "type": "action_message",
+                "data": {
+                    "message": ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", [])), query=query),
+                },
+            }
+        )
+        writer(
+            {
+                "type": "schemes_update",
+                "data": {
+                    "schemes": results.get("data", []),
+                },
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Failed to emit search results to stream: {e}")
+
+    # Sanitize results to only include minimal keys before returning to LLM, to avoid token overload and focus on relevant info
+    schemes_response = results.get("data", [])
+    schemes_response_dicts = []
+    for scheme in schemes_response:
+        schemes_response_dicts.append({k: v for k, v in scheme.items() if k in MINIMAL_LLM_KEYS})
+    results["data"] = schemes_response_dicts
+
+    return results
 
 
 search_schemes_tool = StructuredTool.from_function(
     func=_search_schemes_sync,
-    coroutine=_search_schemes_async,
     name="search_schemes",
     description=("Search for schemes relevant to the user's query. "),
     args_schema=SchemeSearchToolInput,
 )
-
-# Example usage in an agent:
-if __name__ == "__main__":
-    from langgraph.prebuilt import ToolNode, tools_condition
-
-    # Test the tool with a sample query
-    test_query = "What schemes are available for small business owners affected by COVID-19?"
-    result = _search_schemes_sync(test_query, top_k=20)
-    print(result.keys())
-    print(len(result["data"]))
-    print(result["data"][0].keys())

@@ -7,7 +7,7 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/agent_chat_message
 from __future__ import annotations
 
 import json
-import re
+from typing import Any
 from uuid import uuid1
 
 from firebase_functions import https_fn, options
@@ -16,25 +16,16 @@ from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
 from utils.logging_setup import setup_logging
 
-from .event_type import AgentStreamEventType
-from .main import stream_chat_events_sync
+from .engine import stream_chat_events
+from .event_type import AgentStreamEventType, StatusPhase
 
 
 logger = setup_logging()
 
 
-def _split_stream_chunk(text: str) -> list[str]:
-    """Split chunk text into smaller token-like pieces for SSE UX.
-
-    This keeps leading spaces attached to tokens after the first piece, matching
-    common incremental rendering behavior in the frontend.
-    """
-
-    if not text:
-        return []
-
-    parts = re.findall(r"\s*[A-Za-z0-9]+|\s*[’'][A-Za-z0-9]+|\s*[^\w\s]", text)
-    return parts if parts else [text]
+def stream_chat_events_sync(input_text: str, session_id: str):
+    for event in stream_chat_events(input_text=input_text, session_id=session_id):
+        yield event
 
 
 @https_fn.on_request(
@@ -104,30 +95,20 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
         if stream:
 
             def generate():
-                emitted_chunk = False
-                yield f"data: {safe_json_dumps({'type': AgentStreamEventType.STATUS, 'data': {'phase': 'session_started', 'sessionID': session_id, 'label': 'Session started'}})}\n\n"
+                yield f"data: {safe_json_dumps({'type': AgentStreamEventType.STATUS, 'data': {'phase': StatusPhase.SESSION_STARTED, 'sessionID': session_id, 'label': 'Session started'}})}\n\n"
                 for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
                     event_type = event.get("type", "")
                     event_data = event.get("data", {})
                     if not isinstance(event_data, dict):
                         event_data = {}
 
-                    if event_type == AgentStreamEventType.CHUNK:
-                        chunk_value = str(event_data.get("chunk", "") or "")
-                        for piece in _split_stream_chunk(chunk_value):
-                            yield f"data: {safe_json_dumps({'type': AgentStreamEventType.CHUNK, 'data': {'chunk': piece}})}\n\n"
-                            emitted_chunk = True
+                    if event_type == AgentStreamEventType.TEXT:
+                        text_value = str(event_data.get("text", "") or "")
+                        if text_value:
+                            yield f"data: {safe_json_dumps({'type': AgentStreamEventType.TEXT, 'data': {'text': text_value}})}\n\n"
                         continue
 
-                    # Some runs may only surface final assistant text.
-                    if event_type == AgentStreamEventType.ASSISTANT:
-                        assistant_text = str(event_data.get("text", "") or "")
-                        if not emitted_chunk:
-                            for piece in _split_stream_chunk(assistant_text):
-                                yield f"data: {safe_json_dumps({'type': AgentStreamEventType.CHUNK, 'data': {'chunk': piece}})}\n\n"
-                        continue
-
-                    # Forward non-chunk events with explicit type/data for frontend handling.
+                    # Forward non-text events with explicit type/data for frontend handling.
                     yield f"data: {safe_json_dumps({'type': event_type, 'data': event_data})}\n\n"
 
             stream_headers = {
@@ -150,6 +131,8 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
         search_history = []
         tool_history = []
         followups = {}
+        status_history: list[dict] = []
+        action_messages: list[str] = []
         buffered_chunks: list[str] = []
 
         for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
@@ -157,12 +140,27 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             event_data = event.get("data", {})
             if not isinstance(event_data, dict):
                 event_data = {}
-            if event_type == AgentStreamEventType.CHUNK:
-                chunk = event_data.get("chunk", "")
-                if isinstance(chunk, str) and chunk:
-                    buffered_chunks.append(chunk)
-            elif event_type == AgentStreamEventType.ASSISTANT:
-                assistant_text = str(event_data.get("text", "") or "")
+            if event_type == AgentStreamEventType.TEXT:
+                text = event_data.get("text", "")
+                if isinstance(text, str) and text:
+                    buffered_chunks.append(text)
+            elif event_type == AgentStreamEventType.STATUS:
+                phase_raw = event_data.get("phase", "")
+                if hasattr(phase_raw, "value"):
+                    phase = str(getattr(phase_raw, "value", "") or "")
+                else:
+                    phase = str(phase_raw or "")
+
+                label_raw = event_data.get("label", "") or event_data.get("message", "")
+                label = str(label_raw or "")
+                status_history.append({"phase": phase, "label": label})
+                if (phase == "action_message" or "action_message" in event_data) and label:
+                    action_messages.append(label)
+            elif event_type == AgentStreamEventType.ACTION_MESSAGE:
+                message = str(event_data.get("message", "") or "")
+                if message:
+                    action_messages.append(message)
+                    status_history.append({"phase": "action_message", "label": message})
             elif event_type == AgentStreamEventType.SCHEMES_UPDATE:
                 schemes = event_data.get("schemes", [])
                 if isinstance(schemes, list):
@@ -188,12 +186,15 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             "response": True,
             "sessionID": session_id,
             "message": assistant_text,
+            "action_message": action_messages[-1] if action_messages else "",
             "schemes": final_schemes,
             "schemes_history": schemes_history,
             "total_count": len(final_schemes),
             "search_history": search_history,
             "tool_history": tool_history,
             "followups": followups,
+            "status_history": status_history,
+            "action_messages": action_messages,
         }
         return https_fn.Response(
             response=safe_json_dumps(response_payload),

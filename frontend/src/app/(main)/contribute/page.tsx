@@ -105,85 +105,84 @@ export default function ContributePage() {
 
   return (
     <PageShell width="form">
-        <div className="mb-6 flex flex-col gap-2 text-left">
-          <h1 className={productHeading}>Suggest a new scheme</h1>
-          <p className={productSubheading}>
-            Know a scheme that&apos;s missing from our database? Share it with
-            us!
-          </p>
-        </div>
+      <div className="mb-6 flex flex-col gap-2 text-left">
+        <h1 className={productHeading}>Suggest a new scheme</h1>
+        <p className={productSubheading}>
+          Know a scheme that&apos;s missing from our database? Share it with us!
+        </p>
+      </div>
 
-        <Card className={`${productCardPadded} shadow-none`}>
-          <Card.Content>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              <div className="rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4 text-sm">
-                <p className="mb-2 font-semibold text-(--schemes-status-info-text)">
-                  How it works:
-                </p>
-                <ol className="list-inside list-decimal space-y-1 text-(--schemes-muted)">
-                  <li>You provide the scheme name and link</li>
-                  <li>
-                    AI agents responsibly gather publicly available details from
-                    the webpage
-                  </li>
-                  <li>A volunteer reviews and approves the listing</li>
-                </ol>
-                <p className="mt-3 text-(--schemes-muted)">
-                  Expected turnaround: ~1 week
-                </p>
-              </div>
+      <Card className={`${productCardPadded} shadow-none`}>
+        <Card.Content>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4 text-sm">
+              <p className="mb-2 font-semibold text-(--schemes-status-info-text)">
+                How it works:
+              </p>
+              <ol className="list-inside list-decimal space-y-1 text-(--schemes-muted)">
+                <li>You provide the scheme name and link</li>
+                <li>
+                  AI agents responsibly gather publicly available details from
+                  the webpage
+                </li>
+                <li>A volunteer reviews and approves the listing</li>
+              </ol>
+              <p className="mt-3 text-(--schemes-muted)">
+                Expected turnaround: ~1 week
+              </p>
+            </div>
 
-              <TextField isRequired>
-                <Label className={productFormLabel}>Scheme name</Label>
-                <Input
-                  placeholder="e.g., ComCare Short-to-Medium Term Assistance"
-                  value={formData.Scheme || ""}
-                  onChange={(e) => handleInputChange("Scheme", e.target.value)}
-                  variant="primary"
-                  className={`${productInputSurface} ${productInputText}`}
-                />
-              </TextField>
-
-              <TextField isRequired>
-                <Label className={productFormLabel}>Scheme link</Label>
-                <Input
-                  placeholder="e.g., https://www.msf.gov.sg/comcare"
-                  type="url"
-                  value={formData.Link || ""}
-                  onChange={(e) => handleInputChange("Link", e.target.value)}
-                  variant="primary"
-                  className={`${productInputSurface} ${productInputText}`}
-                />
-                <p className="mt-1 text-xs text-(--schemes-muted)">
-                  The official webpage where details about this scheme can be
-                  found
-                </p>
-              </TextField>
-
-              {submitStatus && (
-                <div
-                  className={clsx(
-                    "leading-5",
-                    submitStatus.type === "success"
-                      ? productFormInfoMessage
-                      : productFormAlertMessage,
-                  )}
-                >
-                  {submitStatus.message}
-                </div>
-              )}
-
-              <Button
-                type="submit"
+            <TextField isRequired>
+              <Label className={productFormLabel}>Scheme name</Label>
+              <Input
+                placeholder="e.g., ComCare Short-to-Medium Term Assistance"
+                value={formData.Scheme || ""}
+                onChange={(e) => handleInputChange("Scheme", e.target.value)}
                 variant="primary"
-                isPending={isSubmitting}
-                className={`${productButtonPrimary} ${productButtonLg} w-full sm:w-fit sm:self-end`}
+                className={`${productInputSurface} ${productInputText}`}
+              />
+            </TextField>
+
+            <TextField isRequired>
+              <Label className={productFormLabel}>Scheme link</Label>
+              <Input
+                placeholder="e.g., https://www.msf.gov.sg/comcare"
+                type="url"
+                value={formData.Link || ""}
+                onChange={(e) => handleInputChange("Link", e.target.value)}
+                variant="primary"
+                className={`${productInputSurface} ${productInputText}`}
+              />
+              <p className="mt-1 text-xs text-(--schemes-muted)">
+                The official webpage where details about this scheme can be
+                found
+              </p>
+            </TextField>
+
+            {submitStatus && (
+              <div
+                className={clsx(
+                  "leading-5",
+                  submitStatus.type === "success"
+                    ? productFormInfoMessage
+                    : productFormAlertMessage,
+                )}
               >
-                {isSubmitting ? "Submitting..." : "Submit Scheme"}
-              </Button>
-            </form>
-          </Card.Content>
-        </Card>
+                {submitStatus.message}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              isPending={isSubmitting}
+              className={`${productButtonPrimary} ${productButtonLg} w-full sm:w-fit sm:self-end`}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Scheme"}
+            </Button>
+          </form>
+        </Card.Content>
+      </Card>
     </PageShell>
   );
 }

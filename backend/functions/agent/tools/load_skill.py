@@ -17,7 +17,7 @@ CLARIFICATION_QUESTIONS_PROMPT = (
 )
 
 SUMMARY_SUCCINCT_ANSWER_PROMPT = (
-    "Keep final user-facing answers under 200 words. Use concise, mobile-friendly phrasing, "
+    "Keep final user-facing answers under 50 words. Use concise, mobile-friendly phrasing, "
     "avoid repeating full scheme card details, and include only the most actionable next step(s)."
 )
 
