@@ -275,19 +275,7 @@ export async function getSchemesCategory(
   cursor = "",
   limit = 20,
 ): Promise<{ schemes: Scheme[]; nextCursor: string }> {
-  const CATEGORY_TO_SCHEME_TYPE: Record<string, string> = {
-    Housing: "Housing/Shelter",
-    Employment: "Employment Support",
-    Education: "Education Support",
-    Eldercare: "Elderly",
-    Disability: "Persons with Disabilities (PWD)",
-  };
-
-  const type =
-    category in CATEGORY_TO_SCHEME_TYPE
-      ? CATEGORY_TO_SCHEME_TYPE[category]
-      : category;
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog?scheme_type=${type}&limit=${limit}&cursor=${cursor}`;
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog?category=${category}&limit=${limit}&cursor=${cursor}`;
   try {
     const res = await fetchWithAuth(url, {
       method: "GET",

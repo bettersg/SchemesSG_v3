@@ -30,6 +30,9 @@ export const productCardHeadingLg =
 const productButtonBase =
   "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-[background-color,border-color,color,opacity] disabled:cursor-not-allowed disabled:opacity-45";
 
+export const productBlueOutlineTone =
+  "border-(--schemes-blue-100) bg-white text-(--schemes-blue-600)";
+
 export const productButtonPrimary = cn(
   productButtonBase,
   "bg-(--schemes-amber-400) text-(--schemes-ink) hover:bg-(--schemes-amber-100)",
@@ -42,7 +45,9 @@ export const productButtonPrimaryBlue = cn(
 
 export const productButtonSecondary = cn(
   productButtonBase,
-  "border border-(--schemes-blue-100) bg-white text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)",
+  "border",
+  productBlueOutlineTone,
+  "hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)",
 );
 
 export const productButtonTertiary = cn(

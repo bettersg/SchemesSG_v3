@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { productBlueOutlineTone } from "@/lib/design-system/product-styles";
 
 export const SCHEME_CATEGORIES = [
   "Financial Assistance",
@@ -90,7 +91,9 @@ const CATEGORY_CLASS_NAMES: Record<SchemeCategory, string> = {
     "border-(--schemes-category-disability-border) bg-(--schemes-category-disability-bg) text-(--schemes-category-disability-text)",
 };
 
-export function normalizeSchemeCategory(label: string): SchemeCategory | string {
+export function normalizeSchemeCategory(
+  label: string,
+): SchemeCategory | string {
   const normalized = label.trim().toLowerCase();
   return CATEGORY_ALIASES[normalized] ?? label.trim();
 }
@@ -100,11 +103,13 @@ export function getSchemeCategoryClassName(label: string) {
   if (SCHEME_CATEGORIES.includes(category as SchemeCategory)) {
     return CATEGORY_CLASS_NAMES[category as SchemeCategory];
   }
-
-  return "border-(--schemes-blue-100) bg-(--schemes-blue-50) text-(--schemes-blue-800)";
+  return productBlueOutlineTone;
 }
 
-export function getSchemeCategoryChipClassName(label: string, className?: string) {
+export function getSchemeCategoryChipClassName(
+  label: string,
+  className?: string,
+) {
   return cn(
     "inline-flex whitespace-nowrap rounded-full border font-semibold",
     getSchemeCategoryClassName(label),

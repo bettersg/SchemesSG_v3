@@ -93,8 +93,10 @@ export default function CatalogPageClient({
   const [loadState, setLoadState] = useState<CatalogLoadState>(
     initialCategory ? "loadingInitial" : "idle",
   );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [inputValue, setInputValue] = useState("");
+
+  // states for search feature (tbc)
+  // const [searchQuery, setSearchQuery] = useState("");
+  // const [inputValue, setInputValue] = useState("");
 
   // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -116,14 +118,11 @@ export default function CatalogPageClient({
     hasUserScrolledRef.current = false;
     setLoadState("loadingMore");
 
-    const request = searchQuery
-      ? searchSchemes(searchQuery, cursor)
-      : getSchemesCategory(
-          activeCategory === "All" ? "" : activeCategory,
-          cursor,
-        );
-
-    request
+    const category =
+      activeCategory === "All"
+        ? ""
+        : CATALOG_CATEGORY_SLUGS[activeCategory].replace("-", "+");
+    getSchemesCategory(category, cursor)
       .then((r) => {
         if (requestIdRef.current !== requestId) return;
         setSchemes((prev) => [...prev, ...r.schemes]);
@@ -135,7 +134,11 @@ export default function CatalogPageClient({
           setLoadState(cursorRef.current ? "ready" : "exhausted");
         }
       });
-  }, [activeCategory, loadState, searchQuery]);
+  }, [
+    activeCategory,
+    loadState,
+    // searchQuery
+  ]);
 
   useEffect(() => {
     const root = scrollRef.current;
@@ -200,24 +203,25 @@ export default function CatalogPageClient({
     );
   }, [activeCategory, hasSelectedCategory]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
-    hasUserScrolledRef.current = false;
-    cursorRef.current = "";
-    scrollRef.current?.scrollTo({ top: 0 });
-    setActiveCategory("All");
-    setHasSelectedCategory(true);
-    setLoadState("loadingInitial");
-    searchSchemes(inputValue).then((r) => {
-      if (requestIdRef.current !== requestId) return;
-      setSchemes(r.schemes);
-      cursorRef.current = r.nextCursor;
-      setSearchQuery(inputValue);
-      setLoadState(r.nextCursor ? "ready" : "exhausted");
-    });
-  };
+  // search feature (tbc)
+  // const handleSearch = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const requestId = requestIdRef.current + 1;
+  //   requestIdRef.current = requestId;
+  //   hasUserScrolledRef.current = false;
+  //   cursorRef.current = "";
+  //   scrollRef.current?.scrollTo({ top: 0 });
+  //   setActiveCategory("All");
+  //   setHasSelectedCategory(true);
+  //   setLoadState("loadingInitial");
+  //   searchSchemes(inputValue).then((r) => {
+  //     if (requestIdRef.current !== requestId) return;
+  //     setSchemes(r.schemes);
+  //     cursorRef.current = r.nextCursor;
+  //     setSearchQuery(inputValue);
+  //     setLoadState(r.nextCursor ? "ready" : "exhausted");
+  //   });
+  // };
 
   if (!hasSelectedCategory) {
     return (
@@ -261,7 +265,7 @@ export default function CatalogPageClient({
       ref={scrollRef}
       className={`${productPageShell} relative flex flex-col`}
     >
-      {/* Header */}
+      {/* Header with Search Bar */}
       {/* <div className="bg-gradient-to-br from-[#042C53] to-[#185FA5] px-4 sm:px-8 lg:px-16 pt-10 pb-8">
         <div className="max-w-[960px] mx-auto">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">
@@ -334,11 +338,12 @@ export default function CatalogPageClient({
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
           <div className="bg-(--schemes-bg) py-4 flex items-center justify-between sticky top-0 z-20">
             <p className="text-sm font-semibold text-(--schemes-ink-soft)">
-              {searchQuery
-                ? `Results for "${searchQuery}"`
-                : activeCategory === "All"
-                  ? "All schemes"
-                  : activeCategory}
+              {
+                // searchQuery
+                //   ? `Results for "${searchQuery}"`
+                //   :
+                activeCategory === "All" ? "All schemes" : activeCategory
+              }
               {!isLoadingInitial && (
                 <span className="ml-2 text-(--schemes-blue-600)">
                   ({schemes.length} shown)
@@ -361,7 +366,7 @@ export default function CatalogPageClient({
               description="Try a different search or category"
             />
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 pt-4">
               {schemes.map((s) => (
                 <SchemeCard key={s.schemeId} scheme={s} />
               ))}
