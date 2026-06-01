@@ -108,9 +108,10 @@ export function FollowUpSuggestions({
             }}
           >
             <Tooltip.Trigger>
-              <span
-                className="inline-flex shrink-0"
-                tabIndex={-1}
+              <button
+                type="button"
+                aria-label={`${suggestion.label}: ${suggestion.value}`}
+                onClick={(event) => handleSelect(event, suggestion)}
                 onFocus={(event) =>
                   showTooltip(suggestion, event.currentTarget)
                 }
@@ -147,16 +148,10 @@ export function FollowUpSuggestions({
                     event.preventDefault();
                   }
                 }}
+                className={`${productButtonSecondary} ${productButtonSm} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full`}
               >
-                <button
-                  type="button"
-                  aria-label={`${suggestion.label}: ${suggestion.value}`}
-                  onClick={(event) => handleSelect(event, suggestion)}
-                  className={`${productButtonSecondary} ${productButtonSm} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full`}
-                >
-                  {suggestion.label}
-                </button>
-              </span>
+                {suggestion.label}
+              </button>
             </Tooltip.Trigger>
             <Tooltip.Content
               offset={8}

@@ -7,29 +7,29 @@ import {
   productButtonTertiary,
 } from "@/lib/design-system/product-styles";
 
-type ResetQueryModalProps = {
+type NewChatModalProps = {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   handleReset: () => void;
 };
 
-export default function ResetQueryModal({
+export default function NewChatModal({
   isOpen,
   onOpenChange,
   handleReset,
-}: ResetQueryModalProps) {
+}: NewChatModalProps) {
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
       <Modal.Container>
         <Modal.Dialog className="bg-white text-(--schemes-ink)">
           <Modal.Header>
             <Modal.Heading className="text-lg font-semibold text-(--schemes-blue-900)">
-              Reset Search
+              New Chat
             </Modal.Heading>
           </Modal.Header>
           <Modal.Body>
             <p className="text-(--schemes-muted)">
-              Are you sure you want to reset your search? Your chat history and
+              Are you sure you want to start a new chat? Your chat history and
               search results will be reset.
             </p>
           </Modal.Body>

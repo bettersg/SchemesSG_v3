@@ -6,12 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import SchemesList from "@/components/chat/schemes-list";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
-import { Button, Tabs } from "@heroui/react";
-import ResetQueryModal from "@/components/reset-query-modal";
+import { Tabs } from "@heroui/react";
+import NewChatModal from "@/components/chat/new-chat-modal";
 import { ChatStreamEvent, mapToScheme, streamChat } from "@/lib/schemes";
 import {
-  productButtonSecondary,
-  productButtonSm,
   productSegmentedIndicator,
   productSegmentedList,
   productSegmentedTab,
@@ -528,7 +526,7 @@ export default function ChatPage() {
       </div>
 
       {/* Reset modal */}
-      <ResetQueryModal
+      <NewChatModal
         isOpen={resetModalIsOpen}
         onOpenChange={setResetModalIsOpen}
         handleReset={handleReset}
