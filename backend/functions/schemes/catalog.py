@@ -5,7 +5,7 @@ URL for local testing:
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?agency=<agency>
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?area=<area>
-http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?scheme_type=<scheme_type>
+http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?category=<category>
 """
 
 import json
@@ -16,7 +16,7 @@ from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
-from new_scheme.constants import SCHEME_TYPE
+from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from utils.auth import verify_auth_token
 from utils.catalog_pagination import PaginationResult, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
@@ -33,7 +33,7 @@ class CatalogFilterSpec:
 
     firestore_field: str
     operator: str
-    normalize: Callable[[str], str]
+    normalize: Callable[[str], str | list[str]]
 
 
 @dataclass(kw_only=True)
@@ -43,17 +43,43 @@ class CatalogRequestParams:
     limit: int = DEFAULT_LIMIT
     cursor: str | None = None
     filter_name: str | None = None
-    filter_value: str | None = None
+    filter_value: str | list[str] | None = None
 
 
-_SCHEME_TYPE_LOOKUP = {st.lower(): st for st in SCHEME_TYPE}
+_CATEGORY_LOOKUP = {cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()}
 
 
-def _normalize_scheme_type(value: str) -> str:
-    canonical = _SCHEME_TYPE_LOOKUP.get(value.lower())
-    if canonical is None:
-        raise ValueError(f"Unknown scheme_type: '{value}'")
-    return canonical
+def _expand_category(value: str) -> list[str]:
+    types = _CATEGORY_LOOKUP.get(value.lower())
+    if types is None:
+        raise ValueError(f"Unknown category: '{value}'")
+    return types
+
+
+def _filter_scheme_types_for_category(results: PaginationResult, category_scheme_types: list[str]) -> PaginationResult:
+    """Trim scheme_type values in category catalog responses to the matched category."""
+
+    category_scheme_type_set = set(category_scheme_types)
+    filtered_data = []
+
+    for item in results.data:
+        scheme_type = item.get("scheme_type")
+        if not isinstance(scheme_type, list):
+            filtered_data.append(item)
+            continue
+
+        filtered_data.append(
+            {
+                **item,
+                "scheme_type": [value for value in scheme_type if value in category_scheme_type_set],
+            }
+        )
+
+    return PaginationResult(
+        data=filtered_data,
+        next_cursor=results.next_cursor,
+        has_more=results.has_more,
+    )
 
 
 FILTER_SPECS = {
@@ -67,10 +93,10 @@ FILTER_SPECS = {
         operator="array_contains",
         normalize=lambda value: value.upper(),
     ),
-    "scheme_type": CatalogFilterSpec(
+    "category": CatalogFilterSpec(
         firestore_field="scheme_type",
-        operator="array_contains",
-        normalize=_normalize_scheme_type,
+        operator="array_contains_any",
+        normalize=_expand_category,
     ),
 }
 ALLOWED_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor", "is_warmup", "sort"}
@@ -188,7 +214,7 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
       - /catalog
       - /catalog?agency=<name>
       - /catalog?area=<name>
-      - /catalog?scheme_type=<name>
+      - /catalog?category=<name>
 
     Raises:
         ValueError: If unsupported query parameters are provided.
@@ -252,9 +278,14 @@ def _handle_catalog_request(
     spec = FILTER_SPECS[query_params.filter_name]
     query = col.where(filter=FieldFilter(spec.firestore_field, spec.operator, query_params.filter_value))
 
-    return get_paginated_results(
+    results = get_paginated_results(
         collection_ref=col,
         base_query=query,
         cursor=query_params.cursor,
         limit=query_params.limit,
     )
+
+    if query_params.filter_name == "category" and isinstance(query_params.filter_value, list):
+        return _filter_scheme_types_for_category(results, query_params.filter_value)
+
+    return results

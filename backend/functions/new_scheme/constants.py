@@ -121,6 +121,58 @@ SCHEME_TYPE = [
     "General Public Support",
 ]
 
+# TODO: Ideally, we should combine SCHEME_TYPE and SCHEME_CATEGORY_MAPPING into a single dictionary.
+# However, this would require some refactoring of the codebase.
+SCHEME_CATEGORY_MAPPING = {
+    "Financial Assistance": [
+        "Financial Assistance",
+        "Low Income",
+        "COVID-19 Support",
+    ],
+    "Family & Children": [
+        "Family",
+        "Children",
+        "Youth",
+        "Youth-at-Risk",
+        "Single Parents",
+        "Women",
+    ],
+    "Health & Wellbeing": [
+        "Healthcare",
+        "Mental Health",
+        "End-of-Life/Palliative Care",
+        "Counselling and Emotional Support",
+    ],
+    "Housing & Food": [
+        "Housing/Shelter",
+        "Food Support",
+    ],
+    "Education": [
+        "Education Support",
+    ],
+    "Employment & Training": [
+        "Employment Support",
+        "Vocational Training",
+        "Ex-offender Support",
+    ],
+    "Seniors & Caregiving": [
+        "Elderly",
+        "Caregiver Support",
+    ],
+    "Disability & Transport": [
+        "Persons with Disabilities (PWD)",
+        "Special Needs",
+        "Transport Support",
+    ],
+    "Legal & Safety": [
+        "Legal Aid",
+        "Abuse/Family Violence",
+    ],
+    "Community Support": [
+        "General Public Support",
+    ],
+}
+
 # =============================================================================
 # Logo Detection Patterns
 # =============================================================================
