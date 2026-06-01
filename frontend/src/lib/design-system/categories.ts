@@ -52,56 +52,98 @@ export function getCatalogCategoryFromSlug(slug: string) {
   return CATALOG_CATEGORIES_BY_SLUG[slug] ?? null;
 }
 
-const CATEGORY_ALIASES: Record<string, SchemeCategory> = {
-  "financial aid": "Financial Assistance",
+const SCHEME_TYPE_CATEGORY_MAP: Record<string, SchemeCategory> = {
   "financial assistance": "Financial Assistance",
+  "low income": "Financial Assistance",
+  "covid-19 support": "Financial Assistance",
 
-  "family & children": "Family & Children",
-  "family and children": "Family & Children",
-  "family support": "Family & Children",
   family: "Family & Children",
-  childcare: "Family & Children",
+  children: "Family & Children",
+  youth: "Family & Children",
+  "youth-at-risk": "Family & Children",
+  "single parents": "Family & Children",
+  women: "Family & Children",
 
-  "health & wellbeing": "Health & Wellbeing",
-  "health and wellbeing": "Health & Wellbeing",
   healthcare: "Health & Wellbeing",
+  "mental health": "Health & Wellbeing",
+  "end-of-life/palliative care": "Health & Wellbeing",
+  "counselling and emotional support": "Health & Wellbeing",
 
-  "housing & food": "Housing & Food",
-  "housing and food": "Housing & Food",
-  housing: "Housing & Food",
-  "food assistance": "Housing & Food",
-  "food support": "Housing & Food",
   "housing/shelter": "Housing & Food",
-  "housing shelter": "Housing & Food",
+  "food support": "Housing & Food",
 
-  education: "Education",
+  "education support": "Education",
 
-  "employment & training": "Employment & Training",
-  "employment and training": "Employment & Training",
-  employment: "Employment & Training",
+  "employment support": "Employment & Training",
+  "vocational training": "Employment & Training",
+  "ex-offender support": "Employment & Training",
 
-  "seniors & caregiving": "Seniors & Caregiving",
-  "seniors and caregiving": "Seniors & Caregiving",
-  seniors: "Seniors & Caregiving",
-  eldercare: "Seniors & Caregiving",
   elderly: "Seniors & Caregiving",
+  "caregiver support": "Seniors & Caregiving",
 
-  "disability & transport": "Disability & Transport",
-  "disability and transport": "Disability & Transport",
-  disability: "Disability & Transport",
   "persons with disabilities (pwd)": "Disability & Transport",
-  "persons with disabilities": "Disability & Transport",
-  pwd: "Disability & Transport",
+  "special needs": "Disability & Transport",
+  "transport support": "Disability & Transport",
 
-  "legal & safety": "Legal & Safety",
-  "legal and safety": "Legal & Safety",
   "legal aid": "Legal & Safety",
   "abuse/family violence": "Legal & Safety",
-  "abuse family violence": "Legal & Safety",
-  "family violence": "Legal & Safety",
 
-  "community support": "Community Support",
+  "general public support": "Community Support",
 };
+
+// const CATEGORY_ALIASES: Record<string, SchemeCategory> = {
+//   "financial aid": "Financial Assistance",
+//   "financial assistance": "Financial Assistance",
+
+//   "family & children": "Family & Children",
+//   "family and children": "Family & Children",
+//   "family support": "Family & Children",
+//   family: "Family & Children",
+//   childcare: "Family & Children",
+
+//   "health & wellbeing": "Health & Wellbeing",
+//   "health and wellbeing": "Health & Wellbeing",
+//   healthcare: "Health & Wellbeing",
+
+//   "housing & food": "Housing & Food",
+//   "housing and food": "Housing & Food",
+//   housing: "Housing & Food",
+//   "food assistance": "Housing & Food",
+//   "food support": "Housing & Food",
+//   "housing/shelter": "Housing & Food",
+//   "housing shelter": "Housing & Food",
+
+//   education: "Education",
+//   "education support": "Education",
+
+//   "employment & training": "Employment & Training",
+//   "employment and training": "Employment & Training",
+//   employment: "Employment & Training",
+//   "employment support": "Employment & Training",
+
+//   "seniors & caregiving": "Seniors & Caregiving",
+//   "seniors and caregiving": "Seniors & Caregiving",
+//   seniors: "Seniors & Caregiving",
+//   eldercare: "Seniors & Caregiving",
+//   elderly: "Seniors & Caregiving",
+
+//   "disability & transport": "Disability & Transport",
+//   "disability and transport": "Disability & Transport",
+//   disability: "Disability & Transport",
+//   "persons with disabilities (pwd)": "Disability & Transport",
+//   "persons with disabilities": "Disability & Transport",
+//   pwd: "Disability & Transport",
+
+//   "legal & safety": "Legal & Safety",
+//   "legal and safety": "Legal & Safety",
+//   "legal aid": "Legal & Safety",
+//   "abuse/family violence": "Legal & Safety",
+//   "abuse family violence": "Legal & Safety",
+//   "family violence": "Legal & Safety",
+
+//   "community support": "Community Support",
+//   "general public support": "Community Support",
+// };
 
 const CATEGORY_CLASS_NAMES: Record<SchemeCategory, string> = {
   "Financial Assistance":
@@ -126,17 +168,15 @@ const CATEGORY_CLASS_NAMES: Record<SchemeCategory, string> = {
     "border-(--schemes-category-food-border) bg-(--schemes-category-food-bg) text-(--schemes-category-food-text)",
 };
 
-export function normalizeSchemeCategory(
-  label: string,
-): SchemeCategory | string {
+export function getSchemeCategory(label: string): SchemeCategory | undefined {
   const normalized = label.trim().toLowerCase();
-  return CATEGORY_ALIASES[normalized] ?? label.trim();
+  return SCHEME_TYPE_CATEGORY_MAP[normalized];
 }
 
 export function getSchemeCategoryClassName(label: string) {
-  const category = normalizeSchemeCategory(label);
-  if (SCHEME_CATEGORIES.includes(category as SchemeCategory)) {
-    return CATEGORY_CLASS_NAMES[category as SchemeCategory];
+  const category = getSchemeCategory(label);
+  if (category) {
+    return CATEGORY_CLASS_NAMES[category];
   }
   return productBlueOutlineTone;
 }

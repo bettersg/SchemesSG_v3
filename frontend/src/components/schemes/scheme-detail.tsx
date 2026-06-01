@@ -22,6 +22,7 @@ import {
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
 import {
+  getSchemeCategory,
   SCHEME_CATEGORIES,
   SchemeCategory,
 } from "@/lib/design-system/categories";
@@ -162,11 +163,9 @@ function buildJumpAnchors(scheme: Scheme): JumpAnchor[] {
 }
 
 export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
+  const hasCategory = (type: string) => getSchemeCategory(type) !== undefined;
   const sortedTypes = [...scheme.schemeType].sort((a, b) => {
-    return (
-      Number(SCHEME_CATEGORIES.includes(b as SchemeCategory)) -
-      Number(SCHEME_CATEGORIES.includes(a as SchemeCategory))
-    );
+    return Number(hasCategory(b)) - Number(hasCategory(a));
   });
 
   const jumpAnchors = useMemo(() => buildJumpAnchors(scheme), [scheme]);

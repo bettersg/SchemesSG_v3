@@ -44,7 +44,7 @@ export default function SchemeLogo({
         size == "md" && "h-10 w-10",
         size == "header" && "h-16 w-16",
         size == "lg" && "h-24 w-24",
-        "flex shrink-0 items-center justify-center rounded-lg border border-(--schemes-blue-100) bg-(--schemes-blue-50) text-sm font-semibold text-(--schemes-blue-600)",
+        "flex shrink-0 items-center justify-center rounded-lg border border-(--schemes-blue-100) text-sm font-semibold text-(--schemes-blue-600)",
       )}
     >
       {initials}

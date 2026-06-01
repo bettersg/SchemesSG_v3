@@ -1,7 +1,4 @@
-import {
-  getSchemeCategoryChipClassName,
-  normalizeSchemeCategory,
-} from "@/lib/design-system/categories";
+import { getSchemeCategoryChipClassName } from "@/lib/design-system/categories";
 
 type Size = "sm" | "md";
 
@@ -22,8 +19,13 @@ export default function CategoryTag({
   className,
 }: CategoryTagProps) {
   return (
-    <span className={getSchemeCategoryChipClassName(label, `${SIZE_CLASSES[size]} ${className ?? ""}`)}>
-      {normalizeSchemeCategory(label)}
+    <span
+      className={getSchemeCategoryChipClassName(
+        label,
+        `${SIZE_CLASSES[size]} ${className ?? ""}`,
+      )}
+    >
+      {label}
     </span>
   );
 }
