@@ -21,6 +21,10 @@ import {
   productCardHeadingLg,
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
+import {
+  SCHEME_CATEGORIES,
+  SchemeCategory,
+} from "@/lib/design-system/categories";
 
 function MarkdownWrapper({ text }: { text: string }) {
   return (
@@ -158,6 +162,13 @@ function buildJumpAnchors(scheme: Scheme): JumpAnchor[] {
 }
 
 export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
+  const sortedTypes = [...scheme.schemeType].sort((a, b) => {
+    return (
+      Number(SCHEME_CATEGORIES.includes(b as SchemeCategory)) -
+      Number(SCHEME_CATEGORIES.includes(a as SchemeCategory))
+    );
+  });
+
   const jumpAnchors = useMemo(() => buildJumpAnchors(scheme), [scheme]);
   const [activeAnchor, setActiveAnchor] = useState(jumpAnchors[0]?.id ?? "");
   const [stickyHeaderHidden, setStickyHeaderHidden] = useState(false);
@@ -497,11 +508,11 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <SectionLabel>Scheme details</SectionLabel>
               <MarkdownWrapper text={scheme.description} />
             </div>
-            {scheme.schemeType && scheme.schemeType.length > 0 && (
+            {sortedTypes && sortedTypes.length > 0 && (
               <div>
                 <SectionLabel>Scheme type</SectionLabel>
                 <div className="flex flex-wrap gap-2">
-                  {scheme.schemeType.map((t) => (
+                  {sortedTypes.map((t) => (
                     <CategoryTag key={t} label={t} size="md" />
                   ))}
                 </div>

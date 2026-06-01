@@ -281,3 +281,46 @@ export async function searchSchemes(
     return { schemes: [], nextCursor: "", total: 0 };
   }
 }
+
+export async function getSchemesCategory(
+  category = "",
+  cursor = "",
+): Promise<{ schemes: Scheme[]; nextCursor: string }> {
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog`);
+  const normalizedCategory = category.replace(/\+/g, " ").trim();
+
+  url.searchParams.set("limit", "20");
+  if (normalizedCategory) {
+    url.searchParams.set("category", normalizedCategory);
+  }
+  if (cursor) {
+    url.searchParams.set("cursor", cursor);
+  }
+
+  try {
+    const res = await fetchWithAuth(url.toString(), {
+      method: "GET",
+    });
+
+    if (res.status === 404) {
+      return { schemes: [], nextCursor: "" };
+    }
+    if (!res.ok) {
+      throw new Error(`Catalog fetch failed: ${res.status}`);
+    }
+
+    const data = (await res.json()) as SearchResponse;
+    const raw = data.data
+      ? Array.isArray(data.data)
+        ? data.data
+        : [data.data]
+      : [];
+
+    return {
+      schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
+      nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
+    };
+  } catch {
+    return { schemes: [], nextCursor: "" };
+  }
+}

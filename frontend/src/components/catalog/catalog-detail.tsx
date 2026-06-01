@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
 import { Scheme } from "@/types/types";
-import { Spinner } from "@heroui/react";
+import { Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
 import SchemeCard from "@/components/schemes/scheme-card";
@@ -36,16 +36,16 @@ type CatalogLoadState =
 
 const CATALOG_CATEGORY_ICON_SRC: Record<CatalogCategory, string> = {
   All: "/catalog/Schemes_Icons_All.svg",
-  Disability: "/catalog/Schemes_Icons_Disability.svg",
+  "Disability & Transport": "/catalog/Schemes_Icons_Disability.svg",
   Education: "/catalog/Schemes_Icons_Education.svg",
-  Eldercare: "/catalog/Schemes_Icons_Eldercare.svg",
-  Employment: "/catalog/Schemes_Icons_Employment.svg",
-  Family: "/catalog/Schemes_Icons_Family.svg",
+  "Employment & Training": "/catalog/Schemes_Icons_Employment.svg",
+  "Family & Children": "/catalog/Schemes_Icons_Family.svg",
   "Financial Assistance": "/catalog/Schemes_Icons_Financial Assistance.svg",
-  "Food Support": "/catalog/Schemes_Icons_Food Support.svg",
-  Healthcare: "/catalog/Schemes_Icons_Healthcare.svg",
-  Housing: "/catalog/Schemes_Icons_Housing.svg",
-  "Mental Health": "/catalog/Schemes_Icons_Mental Health.svg",
+  "Health & Wellbeing": "/catalog/Schemes_Icons_Healthcare.svg",
+  "Housing & Food": "/catalog/Schemes_Icons_Housing.svg",
+  "Seniors & Caregiving": "/catalog/Schemes_Icons_Eldercare.svg",
+  "Legal & Safety": "/catalog/Schemes_Icons_All.svg",
+  "Community Support": "/catalog/Schemes_Icons_Food Support.svg",
 };
 
 function CatalogGridSkeleton() {
@@ -57,22 +57,22 @@ function CatalogGridSkeleton() {
       {Array.from({ length: 8 }).map((_, index) => (
         <div
           key={index}
-          className={`${productCard} flex min-h-[172px] animate-pulse flex-col gap-3 p-4`}
+          className={`${productCard} flex min-h-[172px] flex-col gap-3 p-4`}
         >
           <div className="flex items-start gap-2.5">
-            <div className="h-10 w-10 shrink-0 rounded-lg " />
+            <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="h-3.5 w-4/5 rounded-full " />
-              <div className="h-3 w-1/2 rounded-full " />
+              <Skeleton className="h-3.5 w-4/5 rounded-full" />
+              <Skeleton className="h-3 w-1/2 rounded-full" />
             </div>
           </div>
           <div className="flex gap-1.5">
-            <div className="h-5 w-20 rounded-full " />
-            <div className="h-5 w-24 rounded-full " />
+            <Skeleton className="h-5 w-20 rounded-full" />
+            <Skeleton className="h-5 w-24 rounded-full" />
           </div>
           <div className="mt-auto flex flex-col gap-2">
-            <div className="h-3 w-full rounded-full " />
-            <div className="h-3 w-5/6 rounded-full " />
+            <Skeleton className="h-3 w-full rounded-full" />
+            <Skeleton className="h-3 w-5/6 rounded-full" />
           </div>
         </div>
       ))}
@@ -121,7 +121,7 @@ export default function CatalogPageClient({
     const category =
       activeCategory === "All"
         ? ""
-        : CATALOG_CATEGORY_SLUGS[activeCategory].replace("-", "+");
+        : activeCategory.toLowerCase();
     getSchemesCategory(category, cursor)
       .then((r) => {
         if (requestIdRef.current !== requestId) return;
@@ -193,7 +193,9 @@ export default function CatalogPageClient({
     cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
     setLoadState("loadingInitial");
-    getSchemesCategory(activeCategory === "All" ? "" : activeCategory).then(
+    getSchemesCategory(
+      activeCategory === "All" ? "" : activeCategory.toLowerCase(),
+    ).then(
       (r) => {
         if (requestIdRef.current !== requestId) return;
         setSchemes(r.schemes);
