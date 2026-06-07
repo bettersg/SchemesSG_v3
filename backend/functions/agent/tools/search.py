@@ -60,8 +60,9 @@ def _search_schemes_sync(
             {
                 "type": "action_message",
                 "data": {
+                    "phase": "action_message",
+                    "label": SHORT_ACTION_MESSAGE_ON_START,
                     "message": ACTION_MESSAGE_ON_START.format(query=query, top_k=top_k),
-                    "short_message": SHORT_ACTION_MESSAGE_ON_START
                 },
             },
         )
@@ -82,8 +83,9 @@ def _search_schemes_sync(
             {
                 "type": "action_message",
                 "data": {
+                    "phase": "action_message",
+                    "label": SHORT_ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", []))),
                     "message": ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", [])), query=query),
-                    "short_message": SHORT_ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", []))),
                 },
             }
         )

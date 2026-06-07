@@ -130,8 +130,9 @@ def filter_rerank_by_directive(
             {
                 "type": "action_message",
                 "data": {
+                    "phase": "action_message",
+                    "label": SHORT_ACTION_MESSAGE_ON_START,
                     "message": ACTION_MESSAGE_ON_START.format(directive=directive),
-                    "short_message": SHORT_ACTION_MESSAGE_ON_START,
                 },
             }
         )
@@ -152,8 +153,9 @@ def filter_rerank_by_directive(
             {
                 "type": "action_message",
                 "data": {
+                    "phase": "action_message",
+                    "label": SHORT_ACTION_MESSAGE_ON_END,
                     "message": ACTION_MESSAGE_ON_END.format(num_items=len(sorted_schemes)),
-                    "short_message": SHORT_ACTION_MESSAGE_ON_END,
                 },
             }
         )

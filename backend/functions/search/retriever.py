@@ -18,6 +18,29 @@ EMBEDDINGS_COLLECTION = "schemes_embeddings"
 SCHEMES_COLLECTION = "schemes"
 
 
+def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str]) -> tuple[List[Dict], List[str]]:
+    """Fetch schemes by Firestore document ID, preserving request order."""
+
+    db = firebase_manager.firestore_client
+    unique_scheme_ids = list(dict.fromkeys([scheme_id.strip() for scheme_id in scheme_ids if scheme_id.strip()]))
+    scheme_details_by_id: dict[str, Dict] = {}
+
+    for scheme_id in unique_scheme_ids:
+        doc = db.collection(SCHEMES_COLLECTION).document(scheme_id).get()
+        if not doc.exists:
+            continue
+
+        scheme_data = doc.to_dict()
+        scheme_data["scheme_id"] = doc.id
+        scheme_data.pop("scraped_text", None)
+        scheme_details_by_id[scheme_id] = scheme_data
+
+    scheme_details = [scheme_details_by_id[scheme_id] for scheme_id in unique_scheme_ids if scheme_id in scheme_details_by_id]
+    missing_scheme_ids = [scheme_id for scheme_id in unique_scheme_ids if scheme_id not in scheme_details_by_id]
+
+    return scheme_details, missing_scheme_ids
+
+
 class SearchModel:
     """Singleton-patterned class for schemes search model"""
 
@@ -66,26 +89,7 @@ class SearchModel:
             logger.info("Returning cached scheme details.")
             return self.query_cache[scheme_cache_key]
 
-        # Helper to chunk scheme_ids into batches of 30
-        def chunk_list(lst, n):
-            for i in range(0, len(lst), n):
-                yield lst[i : i + n]
-
-        scheme_details = []
-        for batch in chunk_list(scheme_ids, 30):
-            # Build document references and fetch each document to avoid
-            # InvalidArgument issues with __name__ filters across client versions.
-            doc_refs = [self.__class__.db.collection(SCHEMES_COLLECTION).document(doc_id) for doc_id in batch]
-            docs = [ref.get() for ref in doc_refs]
-            for doc in docs:
-                if not doc.exists:
-                    continue
-                scheme_data = doc.to_dict()
-                scheme_data["scheme_id"] = doc.id
-                # Remove 'scraped_text' field if present
-                if "scraped_text" in scheme_data:
-                    del scheme_data["scraped_text"]
-                scheme_details.append(scheme_data)
+        scheme_details, _ = fetch_schemes_by_ids(self.__class__.firebase_manager, scheme_ids)
 
         # Store the results in the cache
         self.query_cache[scheme_cache_key] = scheme_details

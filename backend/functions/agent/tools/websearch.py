@@ -56,8 +56,9 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
             {
                 "type": "action_message",
                 "data": {
+                    "phase": "action_message",
+                    "label": SHORT_ACTION_MESSAGE_ON_START,
                     "message": ACTION_MESSAGE_ON_START.format(query=query),
-                    "short_message": SHORT_ACTION_MESSAGE_ON_START,
                 },
             },
         )
@@ -91,8 +92,9 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
                 {
                     "type": "action_message",
                     "data": {
+                        "phase": "action_message",
+                        "label": SHORT_ACTION_MESSAGE_ON_END,
                         "message": ACTION_MESSAGE_ON_END.format(result_count=len(results), query=query),
-                        "short_message": SHORT_ACTION_MESSAGE_ON_END,
                     }
                 }
             )
