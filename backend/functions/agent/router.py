@@ -15,6 +15,7 @@ from .firestore_saver import FirestoreChatSaver
 from .tools import (
     search_schemes_tool,
     filter_rerank_by_directive_tool,
+    retrieve_schemes_by_ids_tool,
     duckduckgo_web_search_tool,
     load_skills_tool,
 )
@@ -42,6 +43,7 @@ class RouterAgentGraph:
         self._tools = [
             search_schemes_tool,
             filter_rerank_by_directive_tool,
+            retrieve_schemes_by_ids_tool,
             duckduckgo_web_search_tool,
             load_skills_tool,
         ]
