@@ -62,7 +62,7 @@ export const productSegmentedList =
   "rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50) p-1";
 
 export const productSegmentedTab =
-  "relative z-10 min-h-11 rounded-lg px-4 py-2 text-sm font-semibold !text-(--schemes-blue-900)";
+  "relative z-10 rounded-lg text-sm font-semibold !text-(--schemes-blue-900)";
 
 export const productSegmentedIndicator = "rounded-lg bg-white shadow-sm";
 

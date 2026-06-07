@@ -1,5 +1,12 @@
 import { fetchWithAuth } from "@/lib/api";
-import { RawSchemeData, SearchResponse, Scheme } from "../types/types";
+import { cache } from "react";
+import {
+  BranchContact,
+  RawScheme,
+  RawSchemeData,
+  SearchResponse,
+  Scheme,
+} from "../types/types";
 
 export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
   schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || [],
@@ -34,6 +41,183 @@ export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
     (rawData as Record<string, string | undefined>)["service_area"] ||
     (rawData as Record<string, string | undefined>)["Service area"] ||
     "",
+});
+
+const splitCsv = (value?: string | null): string[] | undefined => {
+  if (!value) return undefined;
+  const parts = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return parts.length ? parts : undefined;
+};
+
+const buildContacts = (raw: RawScheme): BranchContact[] => {
+  const planningAreas = Array.isArray(raw.planning_area)
+    ? raw.planning_area
+    : raw.planning_area && raw.planning_area !== "No Location"
+      ? [raw.planning_area]
+      : undefined;
+
+  if (planningAreas) {
+    const maxContacts = Math.max(
+      Array.isArray(raw.phone) ? raw.phone.length : 0,
+      Array.isArray(raw.email) ? raw.email.length : 0,
+      Array.isArray(raw.address) ? raw.address.length : 0,
+    );
+
+    if (maxContacts === 0) {
+      return Array.from(new Set(planningAreas)).map((planningArea) => ({
+        planningArea,
+        phones: undefined,
+        emails: undefined,
+        address: undefined,
+      }));
+    }
+
+    if (planningAreas.length === 1) {
+      return [
+        {
+          planningArea: planningAreas[0],
+          phones: Array.isArray(raw.phone) ? raw.phone : splitCsv(raw.phone),
+          emails: Array.isArray(raw.email) ? raw.email : splitCsv(raw.email),
+          address: Array.isArray(raw.address)
+            ? raw.address[0]
+            : (raw.address ?? undefined),
+        },
+      ];
+    }
+
+    return planningAreas.map((planningArea, index) => {
+      const phone = Array.isArray(raw.phone) ? raw.phone[index] : raw.phone;
+      const email = Array.isArray(raw.email) ? raw.email[index] : raw.email;
+      const address = Array.isArray(raw.address)
+        ? raw.address[index]
+        : raw.address;
+
+      return {
+        planningArea,
+        phones: splitCsv(phone),
+        emails: splitCsv(email),
+        address: address || undefined,
+      };
+    });
+  }
+
+  const phones = splitCsv(
+    Array.isArray(raw.phone) ? raw.phone.join(",") : raw.phone,
+  );
+  const emails = splitCsv(
+    Array.isArray(raw.email) ? raw.email.join(",") : raw.email,
+  );
+  const address = Array.isArray(raw.address) ? raw.address[0] : raw.address;
+
+  return phones || emails || address
+    ? [{ phones, emails, address: address || undefined }]
+    : [];
+};
+
+export const mapToFullScheme = (raw: RawScheme): Scheme => ({
+  schemeId: raw.scheme_id || "",
+  schemeName: raw.scheme || "",
+  schemeType: raw.scheme_type || [],
+  targetAudience: raw.who_is_it_for || [],
+  agency: raw.agency || "",
+  description: raw.llm_description || raw.description || "",
+  scrapedText: raw.scraped_text || "",
+  benefits: raw.what_it_gives || [],
+  link: raw.link || "",
+  image: raw.image || "",
+  searchBooster: raw.search_booster || "",
+  query: "",
+  planningArea: raw.planning_area || "",
+  summary: raw.summary || "",
+  contact: buildContacts(raw),
+  howToApply: raw.how_to_apply || "",
+  eligibilityText: raw.eligibility || "",
+  serviceArea:
+    (raw.service_area !== "No Service Boundaries" && raw.service_area) || "",
+  lastUpdated: raw.last_scraped_update
+    ? new Date(raw.last_scraped_update._seconds * 1000).toLocaleString()
+    : "",
+});
+
+export const getSchemeById = cache(
+  async (schemeId: string): Promise<Scheme | null> => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!baseUrl) {
+      throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+    }
+
+    const response = await fetchWithAuth(`${baseUrl}/schemes/${schemeId}`, {
+      next: { revalidate: 86_400 },
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      const responseText = await response.text().catch(() => "");
+      throw new Error(
+        `Unable to fetch scheme ${schemeId} (${response.status})${
+          responseText ? `: ${responseText.slice(0, 200)}` : ""
+        }`,
+      );
+    }
+
+    const payload = (await response.json()) as { data?: RawScheme };
+    if (!payload.data) {
+      return null;
+    }
+
+    return {
+      ...mapToFullScheme(payload.data),
+      schemeId: payload.data.scheme_id || schemeId,
+    };
+  },
+);
+
+export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!baseUrl) {
+    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+  }
+
+  const response = await fetchWithAuth(`${baseUrl}/schemes_search`, {
+    method: "POST",
+    body: JSON.stringify({
+      query:
+        "financial assistance healthcare housing employment education family eldercare disability mental health food support social assistance",
+      limit: 1000,
+      top_k: 1000,
+      similarity_threshold: 0,
+      cursor: null,
+    }),
+    next: { revalidate: 86_400 },
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = (await response.json()) as SearchResponse;
+  const rawSchemes = payload.data
+    ? Array.isArray(payload.data)
+      ? payload.data
+      : [payload.data]
+    : [];
+
+  const seen = new Set<string>();
+  return rawSchemes
+    .map((raw) => mapToFullScheme(raw as RawScheme))
+    .filter((scheme) => {
+      if (!scheme.schemeId || seen.has(scheme.schemeId)) {
+        return false;
+      }
+      seen.add(scheme.schemeId);
+      return true;
+    });
 });
 
 export const getSchemes = async (

@@ -245,34 +245,40 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <ShareButton scheme={scheme} className="" />
             </div>
           </div>
-          {jumpAnchors.length > 1 && (
-            <nav aria-label="On this page">
-              <Tabs
-                selectedKey={activeAnchor}
-                onSelectionChange={(key) => selectAnchor(String(key))}
-                className="w-full"
-              >
-                <Tabs.ListContainer className="no-scrollbar w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible">
-                  <Tabs.List
-                    aria-label="On this page"
-                    className={`${productSegmentedList} w-max min-w-full sm:w-full`}
-                  >
-                    {jumpAnchors.map((anchor) => (
-                      <Tabs.Tab
-                        key={anchor.id}
-                        id={anchor.id}
-                        className={`${productSegmentedTab} whitespace-nowrap sm:flex-1`}
-                      >
-                        {anchor.label}
-                        <Tabs.Indicator className={productSegmentedIndicator} />
-                      </Tabs.Tab>
-                    ))}
-                  </Tabs.List>
-                </Tabs.ListContainer>
-              </Tabs>
-            </nav>
-          )}
         </div>
+        {jumpAnchors.length > 1 && (
+          <nav
+            aria-label="On this page"
+            className={clsx(
+              "border-t border-(--schemes-border-neutral) py-2 transition-[border-color] duration-300",
+              stickyHeaderHidden && "max-md:border-transparent",
+            )}
+          >
+            <Tabs
+              selectedKey={activeAnchor}
+              onSelectionChange={(key) => selectAnchor(String(key))}
+              className="w-full"
+            >
+              <Tabs.ListContainer className="no-scrollbar w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible">
+                <Tabs.List
+                  aria-label="On this page"
+                  className={`${productSegmentedList} w-max min-w-full sm:w-full`}
+                >
+                  {jumpAnchors.map((anchor) => (
+                    <Tabs.Tab
+                      key={anchor.id}
+                      id={anchor.id}
+                      className={`${productSegmentedTab} whitespace-nowrap sm:flex-1`}
+                    >
+                      {anchor.label}
+                      <Tabs.Indicator className={productSegmentedIndicator} />
+                    </Tabs.Tab>
+                  ))}
+                </Tabs.List>
+              </Tabs.ListContainer>
+            </Tabs>
+          </nav>
+        )}
       </div>
 
       {!hasDetail && (

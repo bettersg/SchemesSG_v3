@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SchemeDetail from "@/components/schemes/scheme-detail";
-import { getSchemeById } from "@/lib/scheme-detail";
+import { getSchemeById } from "@/lib/schemes";
 import {
   getSeoImages,
   SCHEMES_SG_LOGO_URL,

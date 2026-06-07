@@ -99,7 +99,7 @@ export function Navbar() {
                     id={link.href}
                     isDisabled={link.disabled}
                     className={cn(
-                      "min-h-11 w-fit px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer",
+                      "w-fit text-sm font-medium rounded-full transition-all duration-200 cursor-pointer",
                       "text-neutral-500",
                       "hover:text-neutral-900",
                       "aria-selected:font-semibold aria-selected:text-neutral-900",
