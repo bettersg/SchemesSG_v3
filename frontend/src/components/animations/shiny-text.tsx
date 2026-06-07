@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface ShinyTextProps {
@@ -20,6 +21,8 @@ export default function ShinyText({
   shineColor = "var(--schemes-blue-400)",
   children,
 }: ShinyTextProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const isStatic = disabled || shouldReduceMotion;
   const style = {
     "--shiny-text-base": color,
     "--shiny-text-shine": shineColor,
@@ -29,8 +32,9 @@ export default function ShinyText({
     backgroundSize: "200% 100%",
     WebkitBackgroundClip: "text",
     backgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    animation: disabled
+    WebkitTextFillColor: isStatic ? color : "transparent",
+    color,
+    animation: isStatic
       ? "none"
       : `schemes-shiny-text ${speed}s linear infinite`,
   } as CSSProperties;
@@ -38,7 +42,8 @@ export default function ShinyText({
   return (
     <span
       className={cn(
-        "inline-block bg-clip-text text-transparent",
+        "inline-block bg-clip-text",
+        !isStatic && "text-transparent",
         className,
       )}
       style={style}

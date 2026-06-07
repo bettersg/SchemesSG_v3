@@ -66,10 +66,10 @@ export default function SchemeSkeleton() {
           <div
             className={`${productSegmentedList} no-scrollbar flex w-max min-w-full gap-1 overflow-x-auto`}
           >
-            <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
-            <Skeleton className="h-9 w-32 shrink-0 rounded-lg" />
-            <Skeleton className="h-9 w-28 shrink-0 rounded-lg" />
-            <Skeleton className="h-9 w-32 shrink-0 rounded-lg" />
+            <Skeleton className="h-11 w-24 shrink-0 rounded-lg" />
+            <Skeleton className="h-11 w-32 shrink-0 rounded-lg" />
+            <Skeleton className="h-11 w-28 shrink-0 rounded-lg" />
+            <Skeleton className="h-11 w-32 shrink-0 rounded-lg" />
           </div>
         </div>
       </div>

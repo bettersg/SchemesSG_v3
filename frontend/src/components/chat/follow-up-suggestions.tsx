@@ -4,10 +4,12 @@ import { Button, Tooltip, type PressEvent } from "@heroui/react";
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import {
-  productButtonSecondary,
-  productButtonSm,
+  productButtonCompact,
+  productButtonOutlineBlue,
+  productCardHeading,
 } from "@/lib/design-system/product-styles";
 import { duration, stagger } from "@/lib/design-system/motion";
+import { capitalize, cn } from "@/lib/utils";
 
 export type FollowUpSuggestion = {
   label: string;
@@ -140,7 +142,7 @@ export function FollowUpSuggestions({
                     event.preventDefault();
                   }
                 }}
-                className={`${productButtonSecondary} ${productButtonSm} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full`}
+                className={`${productButtonOutlineBlue} ${productButtonCompact} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full`}
               >
                 {suggestion.label}
               </Button>
@@ -151,10 +153,12 @@ export function FollowUpSuggestions({
               className="max-w-[min(360px,calc(100vw-32px))] rounded-xl border border-(--schemes-blue-100) bg-white px-3 py-2 text-xs font-medium leading-relaxed text-(--schemes-blue-900) shadow-[0_8px_24px_rgba(24,95,165,0.14)]"
             >
               <Tooltip.Arrow className="fill-white text-(--schemes-blue-100)" />
-              <span className="mb-1 block text-[10px] font-semibold tracking-widest text-(--schemes-blue-600) uppercase">
+              <span className={cn(productCardHeading, "mb-1 block text-sm")}>
                 {suggestion.label}
               </span>
-              {suggestion.value}
+              <span className="block whitespace-normal break-normal">
+                {suggestion.value}
+              </span>
             </Tooltip.Content>
           </Tooltip>
         </motion.div>

@@ -2,9 +2,9 @@
 
 import { Button, Modal } from "@heroui/react";
 import {
-  productButtonMd,
-  productButtonPrimary,
-  productButtonTertiary,
+  productButtonDefault,
+  productButtonOutlineNeutral,
+  productButtonSolidAmber,
 } from "@/lib/design-system/product-styles";
 
 type NewChatModalProps = {
@@ -36,14 +36,14 @@ export default function NewChatModal({
           <Modal.Footer>
             <Button
               variant="outline"
-              className={`${productButtonTertiary} ${productButtonMd}`}
+              className={`${productButtonOutlineNeutral} ${productButtonDefault}`}
               onPress={() => onOpenChange(false)}
             >
               Cancel
             </Button>
             <Button
               variant="primary"
-              className={`${productButtonPrimary} ${productButtonMd}`}
+              className={`${productButtonSolidAmber} ${productButtonDefault}`}
               onPress={handleReset}
             >
               Confirm

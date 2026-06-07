@@ -69,19 +69,27 @@ spacing:
   xl: "2rem"
   nav: "70px"
 components:
-  button-primary:
+  button-solid-blue:
     backgroundColor: "{colors.schemes-blue-600}"
     textColor: "{colors.schemes-surface}"
     rounded: "{rounded.lg}"
-    padding: "0.5rem 1rem"
-  button-primary-hover:
+    minHeight: "2.75rem"
+    padding: "0.625rem 1rem"
+  button-solid-blue-hover:
     backgroundColor: "{colors.schemes-blue-800}"
     textColor: "{colors.schemes-surface}"
-  button-ghost:
-    backgroundColor: "{colors.schemes-surface}"
-    textColor: "{colors.schemes-blue-900}"
+  button-solid-amber:
+    backgroundColor: "{colors.schemes-amber-400}"
+    textColor: "{colors.schemes-ink}"
     rounded: "{rounded.lg}"
-    padding: "0.5rem 1rem"
+    minHeight: "2.75rem"
+    padding: "0.625rem 1rem"
+  button-outline-blue:
+    backgroundColor: "{colors.schemes-surface}"
+    textColor: "{colors.schemes-blue-600}"
+    rounded: "{rounded.lg}"
+    minHeight: "2.75rem"
+    padding: "0.625rem 1rem"
   card-scheme:
     backgroundColor: "{colors.schemes-surface}"
     textColor: "{colors.schemes-ink}"
@@ -119,7 +127,7 @@ SchemesSG is a civic wayfinding tool, and the visual system reflects that. A rea
 
 The system is content-led. UI chrome recedes so that scheme names, eligibility, and next steps carry every page. Color appears mostly through the category palette, which functions like archive tags or shelf labels: a Financial scheme and a Healthcare scheme are distinguishable at a glance, and that's the entire job color is doing in the catalog. Typography does the heavy lifting through scale and weight contrast, not decoration. Motion is gentle and brief: 0.4s fades, easeOut, no theatrics.
 
-This system explicitly rejects the gov.sg starchy template (navy-on-white officialese, dense policy paragraphs, mandatory-looking forms) and the charity sympathy aesthetic (stock-photo grief, donation-CTA framing, pity hierarchy). It also rejects the SaaS hype reflex (neon gradients, glassmorphism, hero-metric templates, "AI" shimmer). What's left is the room itself: warm off-white surfaces, confident headings, blue and amber used sparingly for wayfinding and emphasis, and content that earns the page.
+This system explicitly rejects the gov.sg starchy template (navy-on-white officialese, dense policy paragraphs, mandatory-looking forms) and the charity sympathy aesthetic (stock-photo grief, donation-CTA framing, pity hierarchy). It also rejects the SaaS hype reflex (neon gradients, glassmorphism, hero-metric templates, decorative "AI" shimmer). What's left is the room itself: warm off-white surfaces, confident headings, blue and amber used sparingly for wayfinding and emphasis, and content that earns the page.
 
 **Key Characteristics:**
 - Warm off-white background (`#fafafa`), pure white surfaces for cards and inputs
@@ -127,7 +135,7 @@ This system explicitly rejects the gov.sg starchy template (navy-on-white offici
 - Blue-600 as the single working accent; the category palette as wayfinding
 - Pill-rounded category chips, 10px radius cards, full borders over side stripes
 - Flat-by-default; shadows used sparingly and only on hover or focus
-- Motion: 0.4s, easeOut, decorative only, never required
+- Motion: 0.4s, easeOut, decorative only, never required; every persistent animation has a static reduced-motion equivalent
 
 ## 2. Colors
 
@@ -138,11 +146,11 @@ A warm-neutral catalog with one civic-blue accent and a 10-category wayfinding p
 - **Civic Blue Tint** (`#e6f1fb`, `--schemes-blue-50`): The card hover surface and the only large blue field in the catalog. Light enough to read black text on, distinct enough to register state change.
 
 ### Secondary
-- **Amber** (`#facc15`, `--schemes-amber-400`): Reserved for status (alerts, advisories) and rare emphasis. Never decorative. The lighter `--schemes-amber-100` (`#f1cf82`) carries alert borders.
+- **Amber** (`#facc15`, `--schemes-amber-400`): Reserved for alerts, advisories, and rare strong CTAs that need deliberate emphasis, such as submitting a form or starting a new flow. Never decorative. The lighter `--schemes-amber-100` (`#f1cf82`) carries alert borders and amber hover states.
 
 ### Tertiary: The Category Palette
 Ten semantic categories, each defined as a `bg / border / text` triplet:
-`financial`, `mental`, `family`, `healthcare`, `housing`, `employment`, `food`, `education`, `eldercare`, `disability`. Applied via the `getSchemeCategoryChipClassName()` utility on `<CategoryTag>` and `<Tag>`. These are wayfinding labels, not brand colors. They never appear as page backgrounds, gradients, or large fields.
+`Financial Assistance`, `Family & Children`, `Health & Wellbeing`, `Housing & Food`, `Education`, `Employment & Training`, `Seniors & Caregiving`, `Disability & Transport`, `Legal & Safety`, and `Community Support`. Applied via the `getSchemeCategoryChipClassName()` utility on `<CategoryTag>` and `<Tag>`. Specific backend scheme types retain their original labels while borrowing the mapped category color. These are wayfinding labels, not brand colors. They never appear as page backgrounds, gradients, or large fields.
 
 ### Neutral
 - **Page Background** (`#fafafa`, `--schemes-bg`): Warm off-white. The page itself.
@@ -156,9 +164,9 @@ Ten semantic categories, each defined as a `bg / border / text` triplet:
 
 ### Named Rules
 
-**The Wayfinding Rule.** Color carries meaning or it doesn't appear. Civic Blue means "primary action / link / focus." The category palette means "what kind of help this is." Amber means "pay attention to this status." Anything else is neutral. No decorative color, anywhere.
+**The Wayfinding Rule.** Color carries meaning or it doesn't appear. Civic Blue means "default primary action / link / focus." The category palette means "what kind of help this is." Amber means "pay attention" and is limited to alerts or rare strong CTAs. Anything else is neutral. No decorative color, anywhere.
 
-**The One Accent Rule.** Civic Blue (`--schemes-blue-600`) is the only working accent on any product surface. It carries primary buttons, link text, focus rings, and the `SchemeCard` hover marker. It should occupy ≤10% of any product screen at rest. Amber and category chips do not count toward that budget; they are wayfinding, not accent.
+**The One Accent Rule.** Civic Blue (`--schemes-blue-600`) is the default working accent on product surfaces. It carries primary buttons, link text, focus rings, and interactive markers. It should occupy ≤10% of any product screen at rest. Amber is an exception for alerts and rare strong CTAs; category chips remain wayfinding rather than general accent.
 
 **The Hex-Now, OKLCH-Later Rule.** The codebase currently keeps both `--schemes-*` hex tokens and a parallel OKLCH semantic layer (`--primary`, `--background`, etc.) for HeroUI v3 compatibility. The hex tokens are canonical for product surfaces today. Migration to OKLCH-only is a known in-flight effort, not a license to introduce hex/OKLCH duplicates in new code. New tokens land in OKLCH.
 
@@ -205,10 +213,20 @@ Shadows appear only as a response to state. The `SchemeCard` lifts on hover with
 
 ### Buttons
 - **Shape:** Rounded rectangle, 10px radius (`{rounded.lg}` = `0.625rem`).
-- **Primary:** `bg --schemes-blue-600`, `text white`, padding `0.5rem 1rem`. Hover: `bg --schemes-blue-800` with a 150ms transition. Used for the single primary action on a screen.
-- **Ghost / Tertiary:** Surface white, ink `--schemes-blue-900`, no border. Used for secondary actions in toolbars and the agent panel.
+- **Solid Blue:** `productButtonSolidBlue`. `bg --schemes-blue-600`, `text white`. Hover: `bg --schemes-blue-800`. The default primary action.
+- **Solid Amber:** `productButtonSolidAmber`. `bg --schemes-amber-400`, `text --schemes-ink`. Used only for alerts or rare strong CTAs, including form submission and deliberate flow entry.
+- **Outline Blue:** `productButtonOutlineBlue`. White surface, blue border and text. The standard secondary action.
+- **Outline Neutral:** `productButtonOutlineNeutral`. White surface, neutral border and ink. Used for cancel, clear, and low-emphasis utility actions.
 - **Focus:** Visible 2px ring in `--schemes-blue-400`, offset 2px. Always present, never `outline: none`.
-- **Sizes:** `xs` (h-7), `sm` (h-8), `default` (h-9), `lg` (h-10). Match to context; default is correct most of the time.
+- **Touch Target:** Every interactive button and icon control is at least 44px high and wide on mobile.
+- **Sizes:** `productButtonCompact` (44px), `productButtonDefault` (minimum 44px), and `productButtonProminent` (minimum 48px). Names describe hierarchy and use, not arbitrary small/medium/large tiers.
+- **Responsive Labels:** Dense toolbars may use an icon-only control on mobile and reveal its text label from `sm` upward. Icon-only controls require an accessible name.
+
+### Motion and Loading
+- **Default:** State transitions run for 150–200ms; entrances may run for about 400ms. Use easeOut and avoid spring, bounce, or elastic behavior on product surfaces.
+- **Loading Status:** A restrained moving highlight may be used only on short status text while work is active. It is functional feedback, not decorative headline treatment.
+- **Reduced Motion:** The Lottie chat spinner becomes the static SchemesSG logo; shiny status text becomes solid blue text; rotating status words render statically; the schemes-tab pulse becomes a fixed blue notification marker.
+- **State Independence:** Motion may attract attention but cannot be the sole carrier of loading, completion, or notification state.
 
 ### Chips: Category Tags
 - **Style:** Pill (`{rounded.full}`), tight padding (`0.125rem 0.5rem` for `CategoryTag`, `0.125rem 0.625rem` for the larger detail-page `Tag`).
@@ -255,12 +273,14 @@ A custom list item with a 6px dot in `--schemes-muted`, `gap-2.5` between dot an
 - **Do** use full 1px borders in `--schemes-border`. Same on all four sides.
 - **Do** use Lexend for headings and Open Sans for body. Don't reach for Lexend below 18px.
 - **Do** respect `prefers-reduced-motion`. Motion is always decorative, never required to convey state.
+- **Do** provide explicit static equivalents for persistent loading and notification animations.
+- **Do** maintain a minimum 44px mobile target for buttons, links styled as buttons, icon actions, tabs, and compact filters.
 - **Do** keep transitions at 150–200ms (state) and 400ms (entrance), easeOut.
 
 ### Don't:
 - **Don't** use the gov.sg starchy template. No navy-and-white officialese, no dense policy paragraphs, no mandatory-looking forms.
 - **Don't** use the charity sympathy aesthetic. No stock photos of grief, no donation-CTA framing, no pity hierarchy. We are a wayfinding tool, not a fundraiser.
-- **Don't** reach for SaaS hype: no neon gradients, no glassmorphism, no hero-metric templates, no "AI" shimmer.
+- **Don't** reach for SaaS hype: no neon gradients, glassmorphism, hero-metric templates, or decorative shimmer. A restrained status-text highlight is allowed only while communicating active work.
 - **Don't** ship identical icon-heading-text card grids. The library is not a SaaS pricing page.
 - **Don't** use `border-left` greater than 1px as a colored accent stripe on cards or callouts. Use a full border or a background tint instead.
 - **Don't** apply gradient text via `background-clip: text`. Solid color, weight contrast.

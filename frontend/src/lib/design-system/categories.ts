@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { productBlueOutlineTone } from "@/lib/design-system/product-styles";
+import { productBlueOutlineSurface } from "@/lib/design-system/product-styles";
 
 export const SCHEME_CATEGORIES = [
   "Financial Assistance",
@@ -178,7 +178,7 @@ export function getSchemeCategoryClassName(label: string) {
   if (category) {
     return CATEGORY_CLASS_NAMES[category];
   }
-  return productBlueOutlineTone;
+  return productBlueOutlineSurface;
 }
 
 export function getSchemeCategoryChipClassName(

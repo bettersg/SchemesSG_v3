@@ -30,7 +30,7 @@ export function LanguageToggle({ className }: { className?: string }) {
           aria-checked={locale === lang.code}
           onClick={() => setLocale(lang.code)}
           className={cn(
-            "relative px-3 py-1 text-sm font-medium rounded-full transition-colors duration-200 cursor-pointer",
+            "relative min-h-11 px-3 py-2 text-sm font-medium rounded-full transition-colors duration-200 cursor-pointer",
             locale === lang.code
               ? "text-neutral-900"
               : "text-neutral-400 hover:text-neutral-600"

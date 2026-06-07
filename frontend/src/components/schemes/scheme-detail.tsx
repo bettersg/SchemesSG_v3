@@ -14,9 +14,9 @@ import AgencyContactCard from "@/components/schemes/agency-contact-card";
 import StatusBanner from "@/components/feedback/status-banner";
 import { AlertCircle, Check, ExternalLink, Share2 } from "lucide-react";
 import {
-  productButtonLg,
-  productButtonPrimaryBlue,
-  productButtonSecondary,
+  productButtonOutlineBlue,
+  productButtonProminent,
+  productButtonSolidBlue,
   productCardPadded,
   productCardHeadingLg,
   productSegmentedIndicator,
@@ -31,6 +31,7 @@ import {
   useSchemeSectionNavigation,
 } from "@/hooks/use-scheme-detail-navigation";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import FeedbackPrompt from "@/components/feedback/feedback-prompt";
 
 function MarkdownWrapper({ text }: { text: string }) {
   return (
@@ -100,8 +101,8 @@ function ShareButton({
       type="button"
       onClick={handleShare}
       className={clsx(
-        productButtonSecondary,
-        productButtonLg,
+        productButtonOutlineBlue,
+        productButtonProminent,
         "w-full",
         status === "failed"
           ? "border-(--schemes-status-alert-border)! text-(--schemes-status-alert-text)!"
@@ -141,7 +142,7 @@ function VisitWebsiteButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${productButtonPrimaryBlue} ${productButtonLg} w-full no-underline hover:no-underline ${className ?? ""}`}
+      className={`${productButtonSolidBlue} ${productButtonProminent} w-full no-underline hover:no-underline ${className ?? ""}`}
     >
       <ExternalLink size={14} strokeWidth={2} />
       Visit website
@@ -414,17 +415,28 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
         title="Important Information"
         className="mx-auto mb-8 max-w-3xl p-6"
       >
-        <p>
-          Scheme details may change. Visit the official agency website for the
-          latest eligibility, benefits, and application information.{" "}
-          <Link
-            href="/feedback"
-            className="text-sm text-(--schemes-blue-600) hover:underline"
-          >
-            Help us improve with your feedback
-          </Link>
-          .
-        </p>
+        <div className="flex flex-col gap-4">
+          <p>
+            Scheme details may change. Check the official agency website for the
+            latest eligibility, benefits, and application information.
+          </p>
+          <div className="flex flex-col gap-3">
+            <p>
+              Help keep Schemes.sg accurate by correcting this listing or
+              contributing a new scheme.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <FeedbackPrompt
+                variant="correction"
+                schemeId={scheme.schemeId}
+                schemeName={scheme.schemeName}
+                section={activeAnchor}
+              />
+              <FeedbackPrompt variant="contribution" />
+              <FeedbackPrompt variant="general" />
+            </div>
+          </div>
+        </div>
       </StatusBanner>
 
       <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-(--schemes-border-neutral) bg-(--schemes-surface) p-3 md:hidden">

@@ -5,8 +5,8 @@ import { useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
 import {
-  productButtonLg,
-  productButtonPrimary,
+  productButtonProminent,
+  productButtonSolidAmber,
   productCardPadded,
   productFormAlertMessage,
   productFormInfoMessage,
@@ -176,7 +176,7 @@ export default function ContributePage() {
               type="submit"
               variant="primary"
               isPending={isSubmitting}
-              className={`${productButtonPrimary} ${productButtonLg} w-full sm:w-fit sm:self-end`}
+              className={`${productButtonSolidAmber} ${productButtonProminent} w-full sm:w-fit sm:self-end`}
             >
               {isSubmitting ? "Submitting..." : "Submit Scheme"}
             </Button>

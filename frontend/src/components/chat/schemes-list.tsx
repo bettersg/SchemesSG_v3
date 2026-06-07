@@ -8,10 +8,6 @@ import { SearchX } from "lucide-react";
 import { FilterObjType } from "@/types/types";
 import SchemesFilter from "../schemes/schemes-filter";
 import { parseArrayString } from "@/lib/utils";
-import {
-  productButtonSecondary,
-  productButtonSm,
-} from "@/lib/design-system/product-styles";
 import NewChatButton from "./new-chat-button";
 import { StatusTextShimmer } from "./status-text-shimmer";
 

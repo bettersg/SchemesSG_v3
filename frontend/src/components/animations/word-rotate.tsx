@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, type MotionProps } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  type MotionProps,
+  useReducedMotion,
+} from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -26,20 +31,31 @@ export function WordRotate({
   renderWord,
 }: WordRotateProps) {
   const [index, setIndex] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (words.length < 2) return;
+    if (shouldReduceMotion || words.length < 2) return;
 
     const interval = window.setInterval(() => {
       setIndex((previousIndex) => (previousIndex + 1) % words.length);
     }, duration);
 
     return () => window.clearInterval(interval);
-  }, [words, duration]);
+  }, [words, duration, shouldReduceMotion]);
 
-  const word = words[index];
+  const word = words[shouldReduceMotion ? 0 : index];
 
   if (!word) return null;
+
+  if (shouldReduceMotion) {
+    return (
+      <span className="block min-w-0 flex-1 overflow-hidden">
+        <span className={cn("block min-w-0", className)}>
+          {renderWord ? renderWord(word) : word}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span className="block min-w-0 flex-1 overflow-hidden">

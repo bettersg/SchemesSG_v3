@@ -18,6 +18,8 @@ The job to be done, in one line: *given my situation, tell me which schemes I li
 
 SchemesSG helps Singaporeans find government and community assistance schemes through search and an AI agent that interprets natural-language situations. Success is a user reaching a relevant, sourced scheme and knowing the next action within their first session. The site exists because the official scheme landscape is fragmented across agencies, sites, and PDFs, and most people in need don't have time or expertise to navigate it.
 
+The product also depends on community correction. Users can quietly rate the latest chat response, suggest a correction from a specific scheme section, contribute a missing scheme, or submit general product feedback. Context such as scheme ID and section is carried into the existing feedback text without exposing chat content or session identifiers.
+
 ## Brand Personality
 
 **Warm, hopeful, plainspoken.**
@@ -30,7 +32,7 @@ Emotional goal: a user closes the tab feeling clearer and less alone, not lectur
 
 - **Generic gov.sg / Whole-of-Government starchy formal.** No navy + white + Helvetica template, no stiff officialese, no dense paragraphs of policy language, no mandatory-looking interfaces.
 - **Charity / NGO sympathy aesthetic.** No stock photos of sad people, no donation-CTA framing, no "those in need" language, no pity-driven hierarchy. We are a wayfinding tool, not a fundraiser.
-- **Crypto / SaaS hype aesthetic.** No neon gradients, glassmorphism, hero-metric templates, or "AI" shimmer. The agent is a feature, not the headline.
+- **Crypto / SaaS hype aesthetic.** No neon gradients, glassmorphism, hero-metric templates, or decorative "AI" shimmer. A restrained loading highlight may communicate active work, but the agent is a feature, not the headline.
 - **Generic Tailwind/HeroUI demo look.** No identical icon-heading-text card grids, no out-of-the-box component soup with zero opinion.
 
 Reference lanes we're drawing from: **Linear / Notion / Stripe docs** for product clarity (confident type, generous spacing, restrained color, content-led hierarchy) and **Headspace / Calm** for warmth in tone and pacing — but only in voice and rhythm, not in visual chrome. Visual chrome stays product-restrained; warmth lives in copy and typography.
@@ -41,9 +43,10 @@ Reference lanes we're drawing from: **Linear / Notion / Stripe docs** for produc
 2. **Dignity by default.** Never frame users as needy, beneficiaries, or recipients. Searching for help is a normal, competent act. Tone, illustration, and microcopy all reflect this.
 3. **Answer first, browse second.** The agent and search are the front door. Catalog browsing is a secondary affordance, not the default. A user with a real situation should reach a relevant scheme in one or two interactions.
 4. **Trust through citation, quiet chrome.** Every claim about a scheme links to its source agency. The AI never freelances. Visually, UI chrome recedes so content (scheme names, eligibility, next steps) carries the page.
+5. **Invite correction at the point of evidence.** Feedback prompts appear only after users have enough context to judge the information. Chat rating stays subtle; scheme corrections are visible but remain secondary to visiting the official source.
 
 ## Accessibility & Inclusion
 
-WCAG 2.1 AA baseline. Target contrast: 4.5:1 for body, 3:1 for large text and non-text indicators. Full keyboard reachability for search, agent, results, and detail flows. Respect `prefers-reduced-motion`: motion is decorative, never required to convey state. No information conveyed by color alone. Tap targets ≥ 44px on mobile. Forms and agent inputs labeled, with errors announced to assistive tech.
+WCAG 2.1 AA baseline. Target contrast: 4.5:1 for body, 3:1 for large text and non-text indicators. Full keyboard reachability for search, agent, results, and detail flows. Respect `prefers-reduced-motion`: persistent animation becomes an explicit static equivalent, and motion is never required to convey state. No information conveyed by color alone. Tap targets ≥ 44px on mobile, including compact filters, tabs, icon controls, and contextual feedback actions. Forms and agent inputs are labeled, with errors announced to assistive tech.
 
 Beyond WCAG: copy is readable at roughly a Primary 6 / lower-secondary level wherever possible, given the citizen audience. Avoid jargon and acronyms without expansion on first use.

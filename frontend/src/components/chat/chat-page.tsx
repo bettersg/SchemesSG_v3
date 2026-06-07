@@ -1,6 +1,6 @@
 "use client";
 import { useChat } from "@/providers";
-import type { BotMessage, QuickReplySuggestion } from "@/providers";
+import type { BotMessage, QuickReplySuggestion, StatusStep } from "@/providers";
 import { RawSchemeData, Scheme } from "@/types/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import SchemesList from "@/components/chat/schemes-list";
@@ -16,7 +16,6 @@ import {
 } from "@/lib/design-system/product-styles";
 import { FollowUpSuggestions } from "@/components/chat/follow-up-suggestions";
 import { SchemesPanelPulse } from "@/components/chat/schemes-panel-pulse";
-import { StatusStep } from "@/components/chat/stream-status-steps";
 import { StreamingErrorCard } from "@/components/chat/streaming-error-card";
 import NewChatButton from "./new-chat-button";
 
@@ -111,7 +110,8 @@ export default function ChatPage() {
       {
         onStart: handleStreamStart,
         onEvent: (event) => handleStreamEvent(event, requestId),
-        onError: () => {
+        onError: (err) => {
+          console.error(err);
           if (activeRequestIdRef.current === requestId) {
             handleStreamError();
           }
@@ -145,39 +145,42 @@ export default function ChatPage() {
     if (activeRequestIdRef.current !== requestId) return;
 
     switch (event.type) {
-      case "text": {
-        const data = (event.data ?? {}) as {
-          text?: string;
-        };
-        appendStreamingTextBlock(data.text ?? "");
-        break;
-      }
-      case "action_message": {
-        const data = (event.data ?? {}) as {
-          message?: string;
-        };
-        appendStatusStep(data.message, "action_message", requestId);
-        break;
-      }
-      // case "chunk": {
+      // case "text": {
       //   const data = (event.data ?? {}) as {
-      //     chunk?: string;
-      //     content?: string;
       //     text?: string;
-      //     blockIndex?: number;
-      //     block_index?: number;
-      //     messageIndex?: number;
-      //     message_index?: number;
       //   };
-      //   appendStreamingChunk(
-      //     data.chunk ?? data.content ?? data.text ?? "",
-      //     data.blockIndex ??
-      //       data.block_index ??
-      //       data.messageIndex ??
-      //       data.message_index,
-      //   );
+      //   appendStreamingTextBlock(data.text ?? "");
       //   break;
       // }
+      case "action_message": {
+        console.log(event.data);
+        const data = (event.data ?? {}) as {
+          phase?: string;
+          label?: string;
+          message?: string;
+        };
+        appendStatusStep("action_message", data.label, data.message, requestId);
+        break;
+      }
+      case "text": {
+        const data = (event.data ?? {}) as {
+          chunk?: string;
+          content?: string;
+          text?: string;
+          blockIndex?: number;
+          block_index?: number;
+          messageIndex?: number;
+          message_index?: number;
+        };
+        appendStreamingChunk(
+          data.chunk ?? data.content ?? data.text ?? "",
+          data.blockIndex ??
+            data.block_index ??
+            data.messageIndex ??
+            data.message_index,
+        );
+        break;
+      }
       case "status": {
         const data = (event.data ?? {}) as {
           label?: string;
@@ -227,16 +230,18 @@ export default function ChatPage() {
   };
 
   const appendStatusStep = (
-    label: string | undefined,
     phase: string | undefined,
+    label: string | undefined,
+    message: string | undefined,
     requestId: number,
   ) => {
-    if (!label) return;
+    if (!label || !message) return;
     if (streamingBlocksRef.current.some(Boolean)) return;
 
     const step: StatusStep = {
       id: `${requestId}-${Date.now()}-${phase ?? label}`,
       label,
+      message,
       phase,
     };
     setStatusSteps((prev) => {

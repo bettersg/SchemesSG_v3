@@ -176,7 +176,10 @@ export const getSchemeById = cache(
       return null;
     }
 
-    return mapToFullScheme(payload.data);
+    return {
+      ...mapToFullScheme(payload.data),
+      schemeId: payload.data.scheme_id || schemeId,
+    };
   },
 );
 

@@ -1,4 +1,8 @@
+"use client";
+
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import Image from "next/image";
+import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 type ChatSpinnerProps = {
@@ -6,6 +10,21 @@ type ChatSpinnerProps = {
 };
 
 export default function ChatSpinner({ className }: ChatSpinnerProps) {
+  const shouldReduceMotion = useReducedMotion();
+
+  if (shouldReduceMotion) {
+    return (
+      <Image
+        src="/logo.svg"
+        alt=""
+        width={32}
+        height={32}
+        aria-hidden="true"
+        className={cn("size-8 object-contain", className)}
+      />
+    );
+  }
+
   return (
     <DotLottieReact
       className={cn("size-8", className)}

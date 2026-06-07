@@ -29,40 +29,40 @@ export const productCardHeadingLg =
 const productButtonBase =
   "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-[background-color,border-color,color,opacity] disabled:cursor-not-allowed disabled:opacity-45";
 
-export const productBlueOutlineTone =
+export const productBlueOutlineSurface =
   "border-(--schemes-blue-100) bg-white text-(--schemes-blue-600)";
 
-export const productButtonPrimary = cn(
+export const productButtonSolidAmber = cn(
   productButtonBase,
   "bg-(--schemes-amber-400) text-(--schemes-ink) hover:bg-(--schemes-amber-100)",
 );
 
-export const productButtonPrimaryBlue = cn(
+export const productButtonSolidBlue = cn(
   productButtonBase,
   "bg-(--schemes-blue-600) text-white hover:bg-(--schemes-blue-800)",
 );
 
-export const productButtonSecondary = cn(
+export const productButtonOutlineBlue = cn(
   productButtonBase,
   "border",
-  productBlueOutlineTone,
+  productBlueOutlineSurface,
   "hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)",
 );
 
-export const productButtonTertiary = cn(
+export const productButtonOutlineNeutral = cn(
   productButtonBase,
   "border border-(--schemes-border-neutral) bg-white text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)",
 );
 
-export const productButtonSm = "h-9 px-3 py-1.5 text-xs";
-export const productButtonMd = "px-4 py-2";
-export const productButtonLg = "px-6 py-3";
+export const productButtonCompact = "h-11 min-h-11 px-3 py-2 text-xs";
+export const productButtonDefault = "min-h-11 px-4 py-2.5";
+export const productButtonProminent = "min-h-12 px-6 py-3";
 
 export const productSegmentedList =
   "rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50) p-1";
 
 export const productSegmentedTab =
-  "relative z-10 rounded-lg px-4 py-2 text-sm font-semibold !text-(--schemes-blue-900)";
+  "relative z-10 min-h-11 rounded-lg px-4 py-2 text-sm font-semibold !text-(--schemes-blue-900)";
 
 export const productSegmentedIndicator = "rounded-lg bg-white shadow-sm";
 

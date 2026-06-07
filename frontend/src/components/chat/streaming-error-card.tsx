@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  productButtonSm,
-  productButtonTertiary,
+  productButtonCompact,
+  productButtonOutlineNeutral,
 } from "@/lib/design-system/product-styles";
 
 type StreamingErrorCardProps = {
@@ -22,7 +22,7 @@ export function StreamingErrorCard({
         <button
           type="button"
           onClick={onNewChat}
-          className={`${productButtonTertiary} ${productButtonSm}`}
+          className={`${productButtonOutlineNeutral} ${productButtonCompact}`}
         >
           Start new chat
         </button>

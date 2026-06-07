@@ -76,7 +76,7 @@ function ChatLandingInput({
           />
           <button
             type="submit"
-            className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
+            className="absolute right-2 flex size-11 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
             aria-label={t.a11y.search}
           >
             <ArrowRight className="h-4 w-4" />

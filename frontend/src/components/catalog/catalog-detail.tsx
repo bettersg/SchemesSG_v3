@@ -12,8 +12,8 @@ import {
   type CatalogCategory,
 } from "@/lib/design-system/categories";
 import {
-  productButtonPrimary,
-  productButtonSm,
+  productButtonCompact,
+  productButtonSolidAmber,
   productCard,
   productHeading,
   productPageShell,
@@ -21,7 +21,8 @@ import {
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
 import EmptyState from "@/components/feedback/empty-state";
-import { ArrowUpRight } from "lucide-react";
+import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
+import { MessageSquare } from "lucide-react";
 
 type CatalogPageClientProps = {
   initialCategory?: CatalogCategory;
@@ -35,17 +36,17 @@ type CatalogLoadState =
   | "exhausted";
 
 const CATALOG_CATEGORY_ICON_SRC: Record<CatalogCategory, string> = {
-  All: "/catalog/Schemes_Icons_All.svg",
-  "Disability & Transport": "/catalog/Schemes_Icons_Disability.svg",
-  Education: "/catalog/Schemes_Icons_Education.svg",
-  "Employment & Training": "/catalog/Schemes_Icons_Employment.svg",
-  "Family & Children": "/catalog/Schemes_Icons_Family.svg",
-  "Financial Assistance": "/catalog/Schemes_Icons_Financial Assistance.svg",
-  "Health & Wellbeing": "/catalog/Schemes_Icons_Healthcare.svg",
-  "Housing & Food": "/catalog/Schemes_Icons_Housing.svg",
-  "Seniors & Caregiving": "/catalog/Schemes_Icons_Eldercare.svg",
-  "Legal & Safety": "/catalog/Schemes_Icons_All.svg",
-  "Community Support": "/catalog/Schemes_Icons_Food Support.svg",
+  All: "/catalog/all.svg",
+  "Disability & Transport": "/catalog/disability-transport.svg",
+  Education: "/catalog/education.svg",
+  "Employment & Training": "/catalog/employment-training.svg",
+  "Family & Children": "/catalog/family-children.svg",
+  "Financial Assistance": "/catalog/financial-assistance.svg",
+  "Health & Wellbeing": "/catalog/health-wellbeing.svg",
+  "Housing & Food": "/catalog/housing-food.svg",
+  "Seniors & Caregiving": "/catalog/seniors-caregiving.svg",
+  "Legal & Safety": "/catalog/legal-safety.svg",
+  "Community Support": "/catalog/community-support.svg",
 };
 
 function CatalogGridSkeleton() {
@@ -119,9 +120,7 @@ export default function CatalogPageClient({
     setLoadState("loadingMore");
 
     const category =
-      activeCategory === "All"
-        ? ""
-        : activeCategory.toLowerCase();
+      activeCategory === "All" ? "" : activeCategory.toLowerCase();
     getSchemesCategory(category, cursor)
       .then((r) => {
         if (requestIdRef.current !== requestId) return;
@@ -195,14 +194,12 @@ export default function CatalogPageClient({
     setLoadState("loadingInitial");
     getSchemesCategory(
       activeCategory === "All" ? "" : activeCategory.toLowerCase(),
-    ).then(
-      (r) => {
-        if (requestIdRef.current !== requestId) return;
-        setSchemes(r.schemes);
-        cursorRef.current = r.nextCursor;
-        setLoadState(r.nextCursor ? "ready" : "exhausted");
-      },
-    );
+    ).then((r) => {
+      if (requestIdRef.current !== requestId) return;
+      setSchemes(r.schemes);
+      cursorRef.current = r.nextCursor;
+      setLoadState(r.nextCursor ? "ready" : "exhausted");
+    });
   }, [activeCategory, hasSelectedCategory]);
 
   // search feature (tbc)
@@ -228,10 +225,9 @@ export default function CatalogPageClient({
   if (!hasSelectedCategory) {
     return (
       <PageShell>
-        <p className="mb-2 text-[10px] font-semibold tracking-widest text-(--schemes-muted) uppercase">
-          Scheme Directory
-        </p>
-        <h1 className={`${productHeading} mb-2`}>Explore all schemes</h1>
+        <h1 className={`${productHeading} mb-2`}>
+          Explore our schemes collection
+        </h1>
         <p className={`${productSubheading} mb-8`}>
           Pick a category to browse social assistance schemes available in
           Singapore.
@@ -271,7 +267,7 @@ export default function CatalogPageClient({
       {/* <div className="bg-gradient-to-br from-[#042C53] to-[#185FA5] px-4 sm:px-8 lg:px-16 pt-10 pb-8">
         <div className="max-w-[960px] mx-auto">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">
-            Scheme Directory
+            Scheme Catalog
           </p>
           <h1 className="mb-2 font-(--font-head) text-2xl font-bold text-white sm:text-3xl">
             Explore all schemes
@@ -323,10 +319,10 @@ export default function CatalogPageClient({
             <Link
               key={cat}
               href={`/catalog/${CATALOG_CATEGORY_SLUGS[cat]}`}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-[background-color,border-color,color] ${
+              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-[background-color,border-color,color] ${
                 activeCategory === cat
                   ? "border-(--schemes-blue-600) bg-(--schemes-blue-600) text-white"
-                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover: hover:text-(--schemes-blue-600)"
+                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600)"
               }`}
             >
               {cat}
@@ -340,24 +336,33 @@ export default function CatalogPageClient({
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
           <div className="bg-(--schemes-bg) py-4 flex items-center justify-between sticky top-0 z-20">
             <p className="text-sm font-semibold text-(--schemes-ink-soft)">
-              {
-                // searchQuery
-                //   ? `Results for "${searchQuery}"`
-                //   :
-                activeCategory === "All" ? "All schemes" : activeCategory
-              }
-              {!isLoadingInitial && (
-                <span className="ml-2 text-(--schemes-blue-600)">
-                  ({schemes.length} shown)
-                </span>
+              {isLoadingInitial ? (
+                <StatusTextShimmer>
+                  {activeCategory === "All"
+                    ? "Finding schemes across all categories..."
+                    : `Finding ${activeCategory} schemes...`}
+                </StatusTextShimmer>
+              ) : (
+                <>
+                  {
+                    // searchQuery
+                    //   ? `Results for "${searchQuery}"`
+                    //   :
+                    activeCategory === "All" ? "All schemes" : activeCategory
+                  }
+                  <span className="ml-2 text-(--schemes-blue-600)">
+                    ({schemes.length} shown)
+                  </span>
+                </>
               )}
             </p>
             <Link
               href="/"
-              className={`${productButtonPrimary} ${productButtonSm}`}
+              aria-label="Find schemes with AI"
+              className={`${productButtonSolidAmber} ${productButtonCompact} aspect-square shrink-0 px-0 sm:aspect-auto sm:w-auto sm:px-3`}
             >
-              <ArrowUpRight size={14} strokeWidth={2} />
-              Find with AI
+              <MessageSquare size={20} strokeWidth={2} />
+              <span className="hidden sm:inline">Find with AI</span>
             </Link>
           </div>
           {isLoadingInitial ? (

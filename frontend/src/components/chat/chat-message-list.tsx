@@ -6,12 +6,11 @@ import Image from "next/image";
 import { ChatScrollAnchor } from "@/components/chat/chat-scroll-anchor";
 import { MessageEntrance } from "@/components/chat/message-entrance";
 import { StreamingAssistantMessage } from "@/components/chat/streaming-assistant-message";
-import {
-  StatusStep,
-  StreamStatusSteps,
-} from "@/components/chat/stream-status-steps";
+import { StreamStatusSteps } from "@/components/chat/stream-status-steps";
 import { SchemeUpdateNotice } from "@/components/chat/scheme-update-notice";
 import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
+import { StatusStep } from "@/providers/chat-provider";
+import FeedbackPrompt from "@/components/feedback/feedback-prompt";
 
 const SchemesSGAvatar = () => (
   <div className="flex h-7 w-7 items-center justify-center">
@@ -103,7 +102,7 @@ export default function ChatMessageList({
             </div>
           )} */}
           {msg.type === "bot" ? (
-            <div className="flex max-w-[min(90%,450px)] flex-col items-start gap-2">
+            <div className="group/message flex max-w-[min(90%,450px)] flex-col items-start gap-2">
               {i === latestBotMessageIndex && msg.statusSteps?.length ? (
                 <StatusStepsAccordion steps={msg.statusSteps} />
               ) : null}
@@ -114,6 +113,9 @@ export default function ChatMessageList({
               </div>
               {i === latestBotMessageIndex && msg.schemeUpdateCount ? (
                 <SchemeUpdateNotice count={msg.schemeUpdateCount} />
+              ) : null}
+              {i === latestBotMessageIndex && !isGenerating ? (
+                <FeedbackPrompt variant="rating" />
               ) : null}
             </div>
           ) : (

@@ -8,12 +8,7 @@ import {
   statusStepIndicatorClass,
   statusStepSummaryClass,
 } from "@/components/chat/status-step-styles";
-
-export type StatusStep = {
-  id: string;
-  label: string;
-  phase?: string;
-};
+import { StatusStep } from "@/providers/chat-provider";
 
 type StreamStatusStepsProps = {
   steps: StatusStep[];

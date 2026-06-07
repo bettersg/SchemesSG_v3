@@ -5,8 +5,8 @@ import { useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
 import {
-  productButtonLg,
-  productButtonPrimary,
+  productButtonProminent,
+  productButtonSolidAmber,
   productCardPadded,
   productFormAlertMessage,
   productFormInfoMessage,
@@ -17,9 +17,46 @@ import {
   productSubheading,
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
+import { useSearchParams } from "next/navigation";
+
+function getFeedbackContext(searchParams: URLSearchParams) {
+  const source = searchParams.get("source");
+
+  if (source === "chat") {
+    const wasHelpful = searchParams.get("sentiment") === "positive";
+    return {
+      label: "Feedback about a chat response",
+      draft: `Chat response feedback (${wasHelpful ? "helpful" : "not helpful"}):\n\n`,
+    };
+  }
+
+  if (source === "scheme") {
+    const schemeId = searchParams.get("schemeId")?.trim();
+    const schemeName = searchParams.get("scheme")?.trim();
+    const section = searchParams.get("section")?.trim();
+    const details = [
+      schemeId ? `Scheme ID: ${schemeId}` : null,
+      schemeName ? `Scheme: ${schemeName}` : null,
+      section ? `Section: ${section}` : null,
+    ].filter(Boolean);
+
+    return {
+      label: schemeName
+        ? `Suggest a correction for ${schemeName}`
+        : "Suggest a scheme correction",
+      draft: `Scheme correction${details.length ? `\n${details.join("\n")}` : ""}:\n\n`,
+    };
+  }
+
+  return null;
+}
 
 export default function FeedbackPage() {
-  const [feedbackText, setFeedbackText] = useState("");
+  const searchParams = useSearchParams();
+  const feedbackContext = getFeedbackContext(searchParams);
+  const [feedbackText, setFeedbackText] = useState(
+    () => feedbackContext?.draft ?? "",
+  );
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,6 +128,11 @@ export default function FeedbackPage() {
         <p className={productSubheading}>
           Help us improve Schemes.sg with your valuable input
         </p>
+        {feedbackContext && (
+          <p className="mt-1 text-sm font-semibold text-(--schemes-blue-600)">
+            {feedbackContext.label}
+          </p>
+        )}
       </div>
       <Card className={`${productCardPadded} shadow-none`}>
         <Card.Content>
@@ -145,7 +187,7 @@ export default function FeedbackPage() {
               type="submit"
               variant="primary"
               isPending={isSubmitting}
-              className={`${productButtonPrimary} ${productButtonLg} w-full sm:w-fit sm:self-end`}
+              className={`${productButtonSolidAmber} ${productButtonProminent} w-full sm:w-fit sm:self-end`}
             >
               {isSubmitting ? "Submitting..." : "Submit Feedback"}
             </Button>

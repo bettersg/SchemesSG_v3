@@ -68,7 +68,7 @@ export function Navbar() {
           : "bg-transparent",
       )}
     >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <nav className="mx-auto h-full flex max-w-7xl items-center justify-between px-6">
         {/* Logo */}
         <a
           href="/"
@@ -99,7 +99,7 @@ export function Navbar() {
                     id={link.href}
                     isDisabled={link.disabled}
                     className={cn(
-                      "w-fit px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer",
+                      "min-h-11 w-fit px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 cursor-pointer",
                       "text-neutral-500",
                       "hover:text-neutral-900",
                       "aria-selected:font-semibold aria-selected:text-neutral-900",
@@ -127,7 +127,7 @@ export function Navbar() {
 
         {/* Mobile menu toggle */}
         <button
-          className="md:hidden p-2 cursor-pointer"
+          className="inline-flex size-11 items-center justify-center rounded-lg md:hidden cursor-pointer"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? t.a11y.closeMenu : t.a11y.openMenu}
         >
@@ -162,7 +162,7 @@ export function Navbar() {
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                        "inline-flex min-h-11 items-center cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-(--schemes-amber-400) font-semibold text-neutral-900 hover:bg-(--schemes-amber-100)"
                           : "text-neutral-900 hover:bg-neutral-100",
@@ -181,7 +181,7 @@ export function Navbar() {
                 <Button
                   size="sm"
                   className={cn(
-                    "w-full cursor-pointer gap-1.5 rounded-full font-semibold",
+                    "min-h-11 w-full cursor-pointer gap-1.5 rounded-full font-semibold",
                     selectedKey === "/"
                       ? "bg-(--schemes-amber-400) text-neutral-900 hover:bg-(--schemes-amber-100)"
                       : "bg-transparent text-neutral-900 shadow-none hover:bg-neutral-100",

@@ -13,11 +13,9 @@ import { Funnel } from "lucide-react";
 import clsx from "clsx";
 import { capitalize, parseArrayString } from "@/lib/utils";
 import {
-  productButtonPrimary,
-  productButtonPrimaryBlue,
-  productButtonSecondary,
-  productButtonSm,
-  productButtonTertiary,
+  productButtonCompact,
+  productButtonOutlineNeutral,
+  productButtonSolidBlue,
 } from "@/lib/design-system/product-styles";
 
 interface SchemesFilterProps {
@@ -36,7 +34,7 @@ const filterLabelClass =
   "text-[11px] font-semibold leading-none text-(--schemes-muted)";
 
 const filterSelectTrigger =
-  "h-9 rounded-lg border border-(--schemes-blue-100) bg-white px-3 text-xs font-semibold text-(--schemes-blue-600) shadow-none transition-[background-color,border-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) focus-visible:border-(--schemes-blue-400) focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
+  "h-11 min-h-11 rounded-lg border border-(--schemes-blue-100) bg-white px-3 text-xs font-semibold text-(--schemes-blue-600) shadow-none transition-[background-color,border-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) focus-visible:border-(--schemes-blue-400) focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
 
 const filterSelectValueClass =
   "text-xs font-semibold text-(--schemes-blue-600)";
@@ -236,7 +234,7 @@ function SchemesFilter({
       <div className="flex gap-2 items-end">
         <Button
           variant="primary"
-          className={`${productButtonPrimaryBlue} ${productButtonSm}`}
+          className={`${productButtonSolidBlue} ${productButtonCompact}`}
           onPress={handleFilter}
         >
           Filter
@@ -246,7 +244,7 @@ function SchemesFilter({
             selectedLocations.size === 0 && selectedAgencies.size === 0
           }
           variant="outline"
-          className={`${productButtonTertiary} ${productButtonSm}`}
+          className={`${productButtonOutlineNeutral} ${productButtonCompact}`}
           onPress={handleClear}
         >
           Clear
@@ -263,9 +261,9 @@ function SchemesFilter({
             size="sm"
             variant="outline"
             aria-label="Filter schemes"
-            className={`${productButtonPrimaryBlue} ${productButtonSm} h-9 min-h-0 shrink-0`}
+            className={`${productButtonSolidBlue} ${productButtonCompact} aspect-square shrink-0 px-0 sm:aspect-auto sm:w-auto sm:px-3`}
           >
-            <Funnel className="!h-4 !w-4 shrink-0" strokeWidth={2} />
+            <Funnel className="h-4! w-4! shrink-0" strokeWidth={2} />
             <span className="hidden sm:block">Filter</span>
           </Button>
           <Popover.Content

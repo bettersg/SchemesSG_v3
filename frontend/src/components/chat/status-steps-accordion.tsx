@@ -1,16 +1,16 @@
 "use client";
 
 import { Accordion } from "@heroui/react";
-import type { BotStatusStep } from "@/providers";
 import { ChevronDown } from "lucide-react";
 import {
   statusStepContainerClass,
   statusStepIndicatorClass,
   statusStepSummaryClass,
 } from "@/components/chat/status-step-styles";
+import { StatusStep } from "@/providers/chat-provider";
 
 type StatusStepsAccordionProps = {
-  steps: BotStatusStep[];
+  steps: StatusStep[];
 };
 
 export function StatusStepsAccordion({ steps }: StatusStepsAccordionProps) {
@@ -42,7 +42,7 @@ export function StatusStepsAccordion({ steps }: StatusStepsAccordionProps) {
             <ol className="py-1.5 space-y-2 text-xs font-medium text-(--schemes-ink-soft)">
               {steps.map((step) => (
                 <li key={step.id} className="flex items-center gap-2">
-                  {step.label}
+                  {step.message}
                 </li>
               ))}
             </ol>
