@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from langgraph.graph.state import StateGraph, START
 from integrations.llm_manager import LLMManager
@@ -13,6 +14,7 @@ MAX_FOLLOWUP_KV = 3
 DEFAULT_FOLLOWUP_MAX_COMPLETION_TOKENS = 400
 MODEL_TEMPERATURE = 0.7
 MODEL_NAME = "gpt-5.4-mini"
+BRACKETED_PLACEHOLDER_PATTERN = re.compile(r"\[([^\[\]]+)\]")
 
 
 def parse_schemes_json(schemes_json: object) -> str:
@@ -61,6 +63,35 @@ def parse_schemes_json(schemes_json: object) -> str:
         return str(parsed)
 
 
+def remove_square_bracket_placeholders(text: str) -> str:
+    return BRACKETED_PLACEHOLDER_PATTERN.sub(r"\1", text)
+
+
+def sanitize_followup_content(content: object) -> object:
+    try:
+        followups = json.loads(content) if isinstance(content, str) else content
+    except Exception:
+        return remove_square_bracket_placeholders(str(content))
+
+    if not isinstance(followups, dict):
+        return content
+
+    sanitized = {
+        remove_square_bracket_placeholders(str(key)): remove_square_bracket_placeholders(str(value))
+        for key, value in followups.items()
+    }
+    return json.dumps(sanitized)
+
+
+def replace_message_content(message, content: object):
+    if hasattr(message, "model_copy"):
+        return message.model_copy(update={"content": content})
+    if hasattr(message, "copy"):
+        return message.copy(update={"content": content})
+    message.content = content
+    return message
+
+
 class FollowupSubgraph:
     def __init__(self):
         self.subgraph_builder = StateGraph(RouterAgentState)
@@ -87,15 +118,15 @@ class FollowupSubgraph:
         )
         parsed_schemes = parse_schemes_json(state.get("current_results_json", ""))
         prompt = FOLLOWUP_PROMPT_TEMPLATE.format(schemes_json=parsed_schemes, transcript=transcript)
-        return {
-            "messages": [
-                self.llm.invoke(
-                    [
-                        {"role": "system", "content": system_message},
-                        {"role": "user", "content": prompt},
-                    ]
-                )
+        response = self.llm.invoke(
+            [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
             ]
+        )
+        response = replace_message_content(response, sanitize_followup_content(response.content))
+        return {
+            "messages": [response]
         }
 
     def get_subgraph(self):

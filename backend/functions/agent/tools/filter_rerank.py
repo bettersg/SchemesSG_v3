@@ -16,6 +16,8 @@ logger = setup_logging()
 # To be used as a fallback message if LLM doesn't provide an action_message in the tool call input.
 ACTION_MESSAGE_ON_START = "Filtering and re-ranking existing schemes.\n Instructions are: \n {directive}"
 ACTION_MESSAGE_ON_END = "Filtered and re-ranked schemes list to {num_items} items."
+SHORT_ACTION_MESSAGE_ON_START = "Filtering schemes"
+SHORT_ACTION_MESSAGE_ON_END = "Schemes filtered"
 MINIMAL_LLM_KEYS = {"scheme", "agency", "summary"}
 
 QUERY_COLLECTION_NAME = "llmQuery"
@@ -129,6 +131,7 @@ def filter_rerank_by_directive(
                 "type": "action_message",
                 "data": {
                     "message": ACTION_MESSAGE_ON_START.format(directive=directive),
+                    "short_message": SHORT_ACTION_MESSAGE_ON_START,
                 },
             }
         )
@@ -150,6 +153,7 @@ def filter_rerank_by_directive(
                 "type": "action_message",
                 "data": {
                     "message": ACTION_MESSAGE_ON_END.format(num_items=len(sorted_schemes)),
+                    "short_message": SHORT_ACTION_MESSAGE_ON_END,
                 },
             }
         )

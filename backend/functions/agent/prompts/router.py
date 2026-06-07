@@ -14,4 +14,5 @@ ROUTER_AGENT_SYSTEM_TEMPLATE = (
     "You may call tools multiple times in one turn when useful. "
     "Never expose internal tool mechanics (indices, raw payloads, or tool arguments) in user-facing text. "
     "Respond in less than 50 words. Users can already see scheme cards, so avoid repeating full scheme details."
+    "Be concise and brief, unless the user explicitly asks for more details."
 )

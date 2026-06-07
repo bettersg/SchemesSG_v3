@@ -15,6 +15,8 @@ from utils.logging_setup import setup_logging
 logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
 ACTION_MESSAGE_ON_START = 'Searching the web for "{query}"'
 ACTION_MESSAGE_ON_END = 'Found {result_count} results for "{query}".'
+SHORT_ACTION_MESSAGE_ON_START = "Searching web"
+SHORT_ACTION_MESSAGE_ON_END = "Web results found"
 
 
 class DuckDuckGoWebSearchInput(BaseModel):
@@ -55,6 +57,7 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
                 "type": "action_message",
                 "data": {
                     "message": ACTION_MESSAGE_ON_START.format(query=query),
+                    "short_message": SHORT_ACTION_MESSAGE_ON_START,
                 },
             },
         )
@@ -89,6 +92,7 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
                     "type": "action_message",
                     "data": {
                         "message": ACTION_MESSAGE_ON_END.format(result_count=len(results), query=query),
+                        "short_message": SHORT_ACTION_MESSAGE_ON_END,
                     }
                 }
             )
