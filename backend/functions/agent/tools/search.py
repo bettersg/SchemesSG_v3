@@ -17,6 +17,8 @@ logger = setup_logging()
 
 ACTION_MESSAGE_ON_START = 'Finding the top {top_k} schemes that best match "{query}"'
 ACTION_MESSAGE_ON_END = 'Found {result_count} schemes matching "{query}".'
+SHORT_ACTION_MESSAGE_ON_START = "Searching schemes database"
+SHORT_ACTION_MESSAGE_ON_END = "{result_count} schemes found"
 MINIMAL_LLM_KEYS = {"scheme", "agency", "summary"}
 
 
@@ -59,6 +61,7 @@ def _search_schemes_sync(
                 "type": "action_message",
                 "data": {
                     "message": ACTION_MESSAGE_ON_START.format(query=query, top_k=top_k),
+                    "short_message": SHORT_ACTION_MESSAGE_ON_START
                 },
             },
         )
@@ -80,6 +83,7 @@ def _search_schemes_sync(
                 "type": "action_message",
                 "data": {
                     "message": ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", [])), query=query),
+                    "short_message": SHORT_ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", []))),
                 },
             }
         )

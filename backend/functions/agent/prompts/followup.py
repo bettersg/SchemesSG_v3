@@ -7,12 +7,12 @@ FOLLOWUP_SYSTEM_TEMPLATE = (
     "Each value must be a single concise action request written from the user's perspective, starting with a verb such as 'Find', 'Compare', 'Filter', 'Check', or 'Explore'. "
     "Do not ask the user to provide information directly using phrases like 'Provide', 'Share', 'Enter', or 'Indicate'. "
     "Instead, rewrite the request as a user goal that depends on required information. "
-    "When user input is required, include placeholders in square brackets within the action phrase. "
-    "Placeholders must describe the needed information from the user's perspective, such as '[my country]', '[my education level]', '[my income]', or '[my interests]'. "
+    "When user input is required, describe the needed information plainly within the action phrase. "
+    "Placeholders must describe the needed information from the user's perspective, such as 'my country', 'my education level', 'my income', or 'my interests'. "
     "Bad example: 'Provide my country, education level, and field of interest'. "
-    "Good example: 'Find scholarships based on [my country], [my education level], and [my field of interest]'. "
+    "Good example: 'Find scholarships based on my country, my education level, and my field of interest'. "
     "Bad example: 'Indicate my education level to find relevant scholarships'. "
-    "Good example: 'Find relevant scholarships based on [my education level]'. "
+    "Good example: 'Find relevant scholarships based on my education level'. "
     "Every value must represent a final user intent or outcome, not a data collection step."
 )
 

@@ -133,6 +133,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
         followups = {}
         status_history: list[dict] = []
         action_messages: list[str] = []
+        action_messages_short: list[str] = []
         buffered_chunks: list[str] = []
 
         for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
@@ -158,9 +159,18 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
                     action_messages.append(label)
             elif event_type == AgentStreamEventType.ACTION_MESSAGE:
                 message = str(event_data.get("message", "") or "")
+                short_message = str(event_data.get("short_message", "") or "")
                 if message:
                     action_messages.append(message)
-                    status_history.append({"phase": "action_message", "label": message})
+                    if short_message:
+                        action_messages_short.append(short_message)
+                    status_history.append(
+                        {
+                            "phase": "action_message",
+                            "label": message,
+                            "short_message": short_message,
+                        }
+                    )
             elif event_type == AgentStreamEventType.SCHEMES_UPDATE:
                 schemes = event_data.get("schemes", [])
                 if isinstance(schemes, list):
@@ -187,6 +197,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             "sessionID": session_id,
             "message": assistant_text,
             "action_message": action_messages[-1] if action_messages else "",
+            "action_message_short": action_messages_short[-1] if action_messages_short else "",
             "schemes": final_schemes,
             "schemes_history": schemes_history,
             "total_count": len(final_schemes),
@@ -195,6 +206,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             "followups": followups,
             "status_history": status_history,
             "action_messages": action_messages,
+            "action_messages_short": action_messages_short,
         }
         return https_fn.Response(
             response=safe_json_dumps(response_payload),
