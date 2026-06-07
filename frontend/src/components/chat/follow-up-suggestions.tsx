@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Tooltip, type PressEvent } from "@heroui/react";
+import { Button, ScrollShadow, Tooltip, type PressEvent } from "@heroui/react";
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import {
@@ -84,8 +84,11 @@ export function FollowUpSuggestions({
   };
 
   return (
-    <div className="no-scrollbar flex shrink-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-4 py-2 sm:flex-wrap sm:overflow-visible">
-      {suggestions.slice(0, 3).map((suggestion, index) => (
+    <ScrollShadow
+      orientation="horizontal"
+      className="no-scrollbar flex shrink-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-4 py-2 sm:flex-wrap sm:overflow-visible"
+    >
+      {suggestions.map((suggestion, index) => (
         <motion.div
           key={suggestion.label}
           className="shrink-0"
@@ -163,6 +166,6 @@ export function FollowUpSuggestions({
           </Tooltip>
         </motion.div>
       ))}
-    </div>
+    </ScrollShadow>
   );
 }

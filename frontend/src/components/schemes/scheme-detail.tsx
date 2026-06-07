@@ -2,7 +2,7 @@
 
 import styles from "./scheme-detail.module.css";
 import { Scheme } from "@/types/types";
-import { Link, Tabs } from "@heroui/react";
+import { Link, ScrollShadow, Tabs } from "@heroui/react";
 import Markdown from "react-markdown";
 import { CSSProperties, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
@@ -259,22 +259,27 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               onSelectionChange={(key) => selectAnchor(String(key))}
               className="w-full"
             >
-              <Tabs.ListContainer className="no-scrollbar w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible">
-                <Tabs.List
-                  aria-label="On this page"
-                  className={`${productSegmentedList} w-max min-w-full sm:w-full`}
+              <Tabs.ListContainer>
+                <ScrollShadow
+                  orientation="horizontal"
+                  className="no-scrollbar w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible"
                 >
-                  {jumpAnchors.map((anchor) => (
-                    <Tabs.Tab
-                      key={anchor.id}
-                      id={anchor.id}
-                      className={`${productSegmentedTab} whitespace-nowrap sm:flex-1`}
-                    >
-                      {anchor.label}
-                      <Tabs.Indicator className={productSegmentedIndicator} />
-                    </Tabs.Tab>
-                  ))}
-                </Tabs.List>
+                  <Tabs.List
+                    aria-label="On this page"
+                    className={`${productSegmentedList} w-max min-w-full sm:w-full`}
+                  >
+                    {jumpAnchors.map((anchor) => (
+                      <Tabs.Tab
+                        key={anchor.id}
+                        id={anchor.id}
+                        className={`${productSegmentedTab} whitespace-nowrap sm:flex-1`}
+                      >
+                        {anchor.label}
+                        <Tabs.Indicator className={productSegmentedIndicator} />
+                      </Tabs.Tab>
+                    ))}
+                  </Tabs.List>
+                </ScrollShadow>
               </Tabs.ListContainer>
             </Tabs>
           </nav>

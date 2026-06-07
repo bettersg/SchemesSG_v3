@@ -26,7 +26,7 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       rel="noopener noreferrer"
       className={clsx(
         productCard,
-        "shrink-0 text-left p-4 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:-translate-y-0.5 transition-[box-shadow,transform] group relative overflow-hidden",
+        "group relative block w-full shrink-0 overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
         className,
       )}
     >

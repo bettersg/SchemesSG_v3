@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton } from "@heroui/react";
+import { ScrollShadow, Skeleton } from "@heroui/react";
 import PageShell from "@/components/layout/page-shell";
 import {
   productCardPadded,
@@ -63,14 +63,15 @@ export default function SchemeSkeleton() {
         </div>
 
         <div className="border-t border-(--schemes-border-neutral) py-3">
-          <div
+          <ScrollShadow
+            orientation="horizontal"
             className={`${productSegmentedList} no-scrollbar flex w-max min-w-full gap-1 overflow-x-auto`}
           >
             <Skeleton className="h-11 w-24 shrink-0 rounded-lg" />
             <Skeleton className="h-11 w-32 shrink-0 rounded-lg" />
             <Skeleton className="h-11 w-28 shrink-0 rounded-lg" />
             <Skeleton className="h-11 w-32 shrink-0 rounded-lg" />
-          </div>
+          </ScrollShadow>
         </div>
       </div>
 

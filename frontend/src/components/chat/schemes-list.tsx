@@ -2,14 +2,16 @@
 import { useChat } from "@/providers";
 import clsx from "clsx";
 import SchemeCard from "../schemes/scheme-card";
-import { useMemo, useState } from "react";
-import { Button, ScrollShadow, Spinner } from "@heroui/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ScrollShadow, Spinner } from "@heroui/react";
 import { SearchX } from "lucide-react";
 import { FilterObjType } from "@/types/types";
 import SchemesFilter from "../schemes/schemes-filter";
 import { parseArrayString } from "@/lib/utils";
 import NewChatButton from "./new-chat-button";
 import { StatusTextShimmer } from "./status-text-shimmer";
+import { motion, useReducedMotion } from "framer-motion";
+import { duration, ease, stagger } from "@/lib/design-system/motion";
 
 function EmptySchemesState({
   title,
@@ -51,6 +53,9 @@ export default function SchemesList({
   onSelectScheme,
 }: SchemesListProps) {
   const { schemes } = useChat();
+  const reduceMotion = useReducedMotion();
+  const previousSchemeSignatureRef = useRef("");
+  const [cardAnimationVersion, setCardAnimationVersion] = useState(0);
   const [filterObj, setFilterObj] = useState<FilterObjType>({});
   const [selectedLocations, setSelectedLocations] = useState<Set<string>>(
     new Set(),
@@ -85,8 +90,25 @@ export default function SchemesList({
       }),
     [schemes, filterObj],
   );
+  const schemeSignature = useMemo(
+    () => schemes.map((scheme) => scheme.schemeId).join("|"),
+    [schemes],
+  );
   const hasActiveFilters =
     selectedLocations.size > 0 || selectedAgencies.size > 0;
+
+  useEffect(() => {
+    if (
+      !schemeSignature ||
+      previousSchemeSignatureRef.current === schemeSignature
+    ) {
+      previousSchemeSignatureRef.current = schemeSignature;
+      return;
+    }
+
+    previousSchemeSignatureRef.current = schemeSignature;
+    setCardAnimationVersion((version) => version + 1);
+  }, [schemeSignature]);
 
   return (
     <div
@@ -173,13 +195,25 @@ export default function SchemesList({
       ) : (
         <ScrollShadow className="thin-scrollbar flex-1 overflow-y-scroll p-2">
           <div className="grid grid-cols-1 gap-1 lg:grid-cols-2">
-            {filteredSchemes.map((scheme) => {
+            {filteredSchemes.map((scheme, index) => {
               return (
-                <SchemeCard
-                  key={scheme.schemeId}
-                  scheme={scheme}
+                <motion.div
+                  key={`${scheme.schemeId}-${cardAnimationVersion}`}
+                  initial={
+                    reduceMotion ? false : { opacity: 0, y: 6, scale: 0.985 }
+                  }
+                  animate={
+                    reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }
+                  }
+                  transition={{
+                    duration: duration.entrance,
+                    ease: ease.outQuart,
+                    delay: reduceMotion ? 0 : Math.min(index, 8) * stagger,
+                  }}
                   className="col-span-1"
-                />
+                >
+                  <SchemeCard scheme={scheme} />
+                </motion.div>
                 // <button
                 //   key={scheme.schemeId}
                 //   onClick={() => onSelectScheme(scheme.schemeId)}

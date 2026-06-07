@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
 import { Scheme } from "@/types/types";
-import { Skeleton, Spinner } from "@heroui/react";
+import { ScrollShadow, Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
 import SchemeCard from "@/components/schemes/scheme-card";
@@ -314,7 +314,10 @@ export default function CatalogPageClient({
 
       {/* Filter bar */}
       <div className="z-10">
-        <div className="no-scrollbar mx-auto flex max-w-5xl flex-wrap gap-2 overflow-x-auto px-4 py-2.5 sm:px-8">
+        <ScrollShadow
+          orientation="horizontal"
+          className="no-scrollbar mx-auto flex max-w-5xl flex-wrap gap-2 overflow-x-auto px-4 py-2.5 sm:px-8"
+        >
           {CATALOG_CATEGORY_OPTIONS.map((cat) => (
             <Link
               key={cat}
@@ -328,7 +331,7 @@ export default function CatalogPageClient({
               {cat}
             </Link>
           ))}
-        </div>
+        </ScrollShadow>
       </div>
 
       <div className="flex">

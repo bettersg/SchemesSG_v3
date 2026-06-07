@@ -62,7 +62,7 @@ export default function ChatPage() {
   const lastUserMessageRef = useRef("");
   const hasVisibleQuickReplies =
     showQuickReplies && !isGenerating && quickReplies.length > 0;
-  const schemesListIsLoading = isGenerating || schemes.length === 0;
+  const schemesListIsLoading = isGenerating && schemes.length === 0;
 
   // Initial user message fetches response on component mount
   useEffect(() => {
@@ -461,7 +461,7 @@ export default function ChatPage() {
         {/* Right scheme list — desktop only */}
         <SchemesList
           handleNewChat={() => setResetModalIsOpen(true)}
-          isGenerating={isGenerating}
+          isGenerating={schemesListIsLoading}
         />
       </div>
       {/* Mobile:  Tabs layout */}
@@ -524,7 +524,7 @@ export default function ChatPage() {
           <Tabs.Panel className="flex-1 min-h-0 !p-0" id="schemes">
             <SchemesList
               handleNewChat={() => setResetModalIsOpen(true)}
-              isGenerating={isGenerating}
+              isGenerating={schemesListIsLoading}
             />
           </Tabs.Panel>
         </Tabs>

@@ -11,6 +11,7 @@ import { SchemeUpdateNotice } from "@/components/chat/scheme-update-notice";
 import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
 import { StatusStep } from "@/providers/chat-provider";
 import FeedbackPrompt from "@/components/feedback/feedback-prompt";
+import { ScrollShadow } from "@heroui/react";
 
 const SchemesSGAvatar = () => (
   <div className="flex h-7 w-7 items-center justify-center">
@@ -85,7 +86,7 @@ export default function ChatMessageList({
   );
 
   return (
-    <div
+    <ScrollShadow
       ref={scrollRef}
       onScroll={handleScroll}
       className="thin-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
@@ -142,6 +143,6 @@ export default function ChatMessageList({
         onClick={() => handleScrollToBottom()}
         hasQuickReplies={hasQuickReplies}
       />
-    </div>
+    </ScrollShadow>
   );
 }
