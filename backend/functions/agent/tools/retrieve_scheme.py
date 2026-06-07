@@ -75,7 +75,8 @@ retrieve_schemes_by_ids_tool = StructuredTool.from_function(
     name="retrieve_schemes_by_ids",
     description=(
         "Retrieve detailed information for one or more known schemes by scheme_id. "
-        "Use this when the user asks for more details about specific schemes already found in the database."
+        "Use this when the user asks for more details, eligibility, application steps, contact information, "
+        "deadlines, benefits, requirements, or any specific question about schemes already found in the database."
     ),
     args_schema=RetrieveSchemesByIdsInput,
 )
