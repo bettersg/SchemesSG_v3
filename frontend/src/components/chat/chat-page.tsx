@@ -16,7 +16,7 @@ import {
 } from "@/lib/design-system/product-styles";
 import { FollowUpSuggestions } from "@/components/chat/follow-up-suggestions";
 import { SchemesPanelPulse } from "@/components/chat/schemes-panel-pulse";
-import { StreamStatusStep } from "@/components/chat/stream-status-steps";
+import { StatusStep } from "@/components/chat/stream-status-steps";
 import { StreamingErrorCard } from "@/components/chat/streaming-error-card";
 import NewChatButton from "./new-chat-button";
 
@@ -41,8 +41,8 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(
     messages[messages.length - 1].type == "user",
   );
-  const [statusSteps, setStatusSteps] = useState<StreamStatusStep[]>([]);
-  const statusStepsRef = useRef<StreamStatusStep[]>([]);
+  const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
+  const statusStepsRef = useRef<StatusStep[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
   const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
@@ -234,7 +234,7 @@ export default function ChatPage() {
     if (!label) return;
     if (streamingBlocksRef.current.some(Boolean)) return;
 
-    const step: StreamStatusStep = {
+    const step: StatusStep = {
       id: `${requestId}-${Date.now()}-${phase ?? label}`,
       label,
       phase,

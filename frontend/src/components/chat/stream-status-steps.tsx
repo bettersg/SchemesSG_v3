@@ -1,17 +1,22 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { WordRotate } from "@/components/animations/word-rotate";
+import ChatSpinner from "@/components/chat/chat-spinner";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
-import { duration, ease } from "@/lib/design-system/motion";
+import {
+  statusStepContainerClass,
+  statusStepIndicatorClass,
+  statusStepSummaryClass,
+} from "@/components/chat/status-step-styles";
 
-export type StreamStatusStep = {
+export type StatusStep = {
   id: string;
   label: string;
   phase?: string;
 };
 
 type StreamStatusStepsProps = {
-  steps: StreamStatusStep[];
+  steps: StatusStep[];
   isActive?: boolean;
 };
 
@@ -19,41 +24,26 @@ export function StreamStatusSteps({
   steps,
   isActive = false,
 }: StreamStatusStepsProps) {
-  if (!steps.length) return null;
-  // const visibleSteps = steps.slice(-3);
+  const latestStep = steps.at(-1);
+
+  if (!isActive || !latestStep) return null;
 
   return (
-    <div className="mt-2 flex flex-col gap-1.5">
-      <AnimatePresence initial={false}>
-        {steps.map((step, index) => {
-          const isLatest = index === steps.length - 1;
-          return (
-            <motion.div
-              key={step.id}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: isLatest ? 1 : 0.72, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: duration.state, ease: ease.out }}
-              className="flex items-center gap-2 text-xs text-(--schemes-status-info-text)"
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isActive && isLatest
-                    ? "animate-pulse bg-(--schemes-blue-400)"
-                    : "bg-(--schemes-status-info-border)"
-                }`}
-              />
-              {isActive && isLatest ? (
-                <StatusTextShimmer className="font-semibold">
-                  {step.label}
-                </StatusTextShimmer>
-              ) : (
-                <span>{step.label}</span>
-              )}
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+    <div className={statusStepContainerClass}>
+      <div className={statusStepSummaryClass}>
+        <span className={`${statusStepIndicatorClass} relative`}>
+          <ChatSpinner className="absolute left-1/2 top-1/2 size-8 max-w-none -translate-x-1/2 -translate-y-1/2" />
+        </span>
+        <WordRotate
+          words={[latestStep.label]}
+          className="min-w-0"
+          renderWord={(label) => (
+            <StatusTextShimmer className="block max-w-full truncate font-semibold">
+              {label}
+            </StatusTextShimmer>
+          )}
+        />
+      </div>
     </div>
   );
 }

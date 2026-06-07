@@ -2,7 +2,10 @@
 
 import { Skeleton } from "@heroui/react";
 import PageShell from "@/components/layout/page-shell";
-import { productCardPadded } from "@/lib/design-system/product-styles";
+import {
+  productCardPadded,
+  productSegmentedList,
+} from "@/lib/design-system/product-styles";
 
 function SectionLabelSkeleton() {
   return (
@@ -60,11 +63,13 @@ export default function SchemeSkeleton() {
         </div>
 
         <div className="border-t border-(--schemes-border-neutral) py-3">
-          <div className="no-scrollbar flex w-full gap-6 overflow-x-auto">
-            <Skeleton className="h-5 w-20 shrink-0 rounded-full" />
-            <Skeleton className="h-5 w-28 shrink-0 rounded-full" />
-            <Skeleton className="h-5 w-24 shrink-0 rounded-full" />
-            <Skeleton className="h-5 w-28 shrink-0 rounded-full" />
+          <div
+            className={`${productSegmentedList} no-scrollbar flex w-max min-w-full gap-1 overflow-x-auto`}
+          >
+            <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
+            <Skeleton className="h-9 w-32 shrink-0 rounded-lg" />
+            <Skeleton className="h-9 w-28 shrink-0 rounded-lg" />
+            <Skeleton className="h-9 w-32 shrink-0 rounded-lg" />
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { Tooltip } from "@heroui/react";
+import { Button, Tooltip, type PressEvent } from "@heroui/react";
 import { motion } from "framer-motion";
-import { useRef, useState, type MouseEvent } from "react";
+import { useRef, useState } from "react";
 import {
   productButtonSecondary,
   productButtonSm,
@@ -47,7 +47,7 @@ export function FollowUpSuggestions({
     }
   };
 
-  const getTooltipPlacement = (target: HTMLElement): TooltipPlacement => {
+  const getTooltipPlacement = (target: Element): TooltipPlacement => {
     const rect = target.getBoundingClientRect();
     const vertical = rect.top < 150 ? "bottom" : "top";
 
@@ -60,10 +60,7 @@ export function FollowUpSuggestions({
     return vertical;
   };
 
-  const showTooltip = (
-    suggestion: FollowUpSuggestion,
-    target: HTMLElement,
-  ) => {
+  const showTooltip = (suggestion: FollowUpSuggestion, target: Element) => {
     setPlacements((prev) => ({
       ...prev,
       [suggestion.label]: getTooltipPlacement(target),
@@ -76,14 +73,9 @@ export function FollowUpSuggestions({
     setOpenTooltip((current) => (current === label ? null : current));
   };
 
-  const handleSelect = (
-    event: MouseEvent<HTMLButtonElement>,
-    suggestion: FollowUpSuggestion,
-  ) => {
+  const handleSelect = (event: PressEvent, suggestion: FollowUpSuggestion) => {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
-      event.preventDefault();
-      event.stopPropagation();
       return;
     }
     onSelect(suggestion.value);
@@ -108,10 +100,10 @@ export function FollowUpSuggestions({
             }}
           >
             <Tooltip.Trigger>
-              <button
-                type="button"
+              <Button
+                variant="outline"
                 aria-label={`${suggestion.label}: ${suggestion.value}`}
-                onClick={(event) => handleSelect(event, suggestion)}
+                onPress={(event) => handleSelect(event, suggestion)}
                 onFocus={(event) =>
                   showTooltip(suggestion, event.currentTarget)
                 }
@@ -151,7 +143,7 @@ export function FollowUpSuggestions({
                 className={`${productButtonSecondary} ${productButtonSm} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full`}
               >
                 {suggestion.label}
-              </button>
+              </Button>
             </Tooltip.Trigger>
             <Tooltip.Content
               offset={8}

@@ -2,9 +2,9 @@
 
 import styles from "./scheme-detail.module.css";
 import { Scheme } from "@/types/types";
-import { Link } from "@heroui/react";
+import { Link, Tabs } from "@heroui/react";
 import Markdown from "react-markdown";
-import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import SchemeLogo from "@/components/schemes/scheme-logo";
 import CategoryTag from "@/components/schemes/category-tag";
@@ -19,13 +19,18 @@ import {
   productButtonSecondary,
   productCardPadded,
   productCardHeadingLg,
+  productSegmentedIndicator,
+  productSegmentedList,
+  productSegmentedTab,
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
+import { getSchemeCategory } from "@/lib/design-system/categories";
 import {
-  getSchemeCategory,
-  SCHEME_CATEGORIES,
-  SchemeCategory,
-} from "@/lib/design-system/categories";
+  type SchemeDetailAnchor,
+  useSchemeDetailStickyOffset,
+  useSchemeSectionNavigation,
+} from "@/hooks/use-scheme-detail-navigation";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 function MarkdownWrapper({ text }: { text: string }) {
   return (
@@ -144,10 +149,8 @@ function VisitWebsiteButton({
   );
 }
 
-type JumpAnchor = { id: string; label: string };
-
-function buildJumpAnchors(scheme: Scheme): JumpAnchor[] {
-  const anchors: JumpAnchor[] = [];
+function buildJumpAnchors(scheme: Scheme): SchemeDetailAnchor[] {
+  const anchors: SchemeDetailAnchor[] = [];
   if (scheme.description) anchors.push({ id: "overview", label: "Overview" });
   const hasQualifies =
     (scheme.targetAudience && scheme.targetAudience.length > 0) ||
@@ -169,17 +172,14 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
   });
 
   const jumpAnchors = useMemo(() => buildJumpAnchors(scheme), [scheme]);
-  const [activeAnchor, setActiveAnchor] = useState(jumpAnchors[0]?.id ?? "");
-  const [stickyHeaderHidden, setStickyHeaderHidden] = useState(false);
-  const [stickyHeaderOffset, setStickyHeaderOffset] = useState(208);
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
-  const lastScrollYRef = useRef(0);
-  const lastUserScrollIntentAtRef = useRef(0);
-  const lastUserScrollDirectionRef = useRef<"down" | "up" | null>(null);
-  const lastTouchYRef = useRef<number | null>(null);
-  const suppressScrollToggleUntilRef = useRef(0);
-  const stickyHeaderHiddenRef = useRef(false);
-  const activeScrollTargetRef = useRef<EventTarget | null>(null);
+  const { isHidden: stickyHeaderHidden } = useHideOnScroll();
+  const stickyHeaderOffset = useSchemeDetailStickyOffset(stickyHeaderRef);
+  const { activeAnchor, selectAnchor } = useSchemeSectionNavigation({
+    anchors: jumpAnchors,
+    stickyOffset: stickyHeaderOffset,
+    headerRef: stickyHeaderRef,
+  });
   const hasCoverage =
     (scheme.targetAudience && scheme.targetAudience.length > 0) ||
     (scheme.benefits && scheme.benefits.length > 0) ||
@@ -194,209 +194,6 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
     Boolean(scheme.serviceArea) ||
     (scheme.contact && scheme.contact.length > 0);
 
-  useEffect(() => {
-    setActiveAnchor(jumpAnchors[0]?.id ?? "");
-  }, [jumpAnchors]);
-
-  useEffect(() => {
-    stickyHeaderHiddenRef.current = stickyHeaderHidden;
-  }, [stickyHeaderHidden]);
-
-  useEffect(() => {
-    const header = stickyHeaderRef.current;
-    if (!header) return;
-
-    const updateOffset = () => {
-      const height = Math.ceil(header.getBoundingClientRect().height);
-      const nextOffset = height + 16;
-      setStickyHeaderOffset(nextOffset);
-      document.documentElement.style.setProperty(
-        "--scheme-detail-sticky-offset",
-        `${nextOffset}px`,
-      );
-    };
-
-    updateOffset();
-
-    const observer = new ResizeObserver(updateOffset);
-    observer.observe(header);
-    window.addEventListener("resize", updateOffset);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateOffset);
-      document.documentElement.style.removeProperty(
-        "--scheme-detail-sticky-offset",
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    const markUserScrollIntent = (direction: "down" | "up") => {
-      lastUserScrollIntentAtRef.current = Date.now();
-      lastUserScrollDirectionRef.current = direction;
-    };
-
-    const markWheelScrollIntent = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) < 2) return;
-      markUserScrollIntent(event.deltaY > 0 ? "down" : "up");
-    };
-
-    const markTouchStart = (event: TouchEvent) => {
-      lastTouchYRef.current = event.touches[0]?.clientY ?? null;
-    };
-
-    const markTouchScrollIntent = (event: TouchEvent) => {
-      const nextY = event.touches[0]?.clientY;
-      const previousY = lastTouchYRef.current;
-      if (nextY == null || previousY == null) return;
-
-      const delta = previousY - nextY;
-      if (Math.abs(delta) >= 2) {
-        markUserScrollIntent(delta > 0 ? "down" : "up");
-      }
-      lastTouchYRef.current = nextY;
-    };
-
-    const markKeyboardScrollIntent = (event: KeyboardEvent) => {
-      if (["ArrowDown", "End", "PageDown", " "].includes(event.key)) {
-        markUserScrollIntent("down");
-      } else if (["ArrowUp", "Home", "PageUp"].includes(event.key)) {
-        markUserScrollIntent("up");
-      }
-    };
-
-    const setHeaderHidden = (nextHidden: boolean) => {
-      if (stickyHeaderHiddenRef.current === nextHidden) return;
-      stickyHeaderHiddenRef.current = nextHidden;
-      suppressScrollToggleUntilRef.current = Date.now() + 360;
-      setStickyHeaderHidden(nextHidden);
-    };
-
-    function getScrollMetrics(event: Event) {
-      const target = event.target;
-
-      if (
-        target === document ||
-        target === document.documentElement ||
-        target === document.body
-      ) {
-        const scrollHeight = document.documentElement.scrollHeight;
-        return {
-          maxScrollTop: Math.max(scrollHeight - window.innerHeight, 0),
-          scrollTop: window.scrollY,
-          target,
-        };
-      }
-
-      if (target instanceof Element) {
-        return {
-          maxScrollTop: Math.max(target.scrollHeight - target.clientHeight, 0),
-          scrollTop: target.scrollTop,
-          target,
-        };
-      }
-
-      return {
-        maxScrollTop: Math.max(
-          document.documentElement.scrollHeight - window.innerHeight,
-          0,
-        ),
-        scrollTop: window.scrollY,
-        target,
-      };
-    }
-
-    function onScroll(event: Event) {
-      const { maxScrollTop, scrollTop, target } = getScrollMetrics(event);
-      const scrollY = Math.max(scrollTop, 0);
-      const isScrollable = maxScrollTop > 0;
-      const now = Date.now();
-
-      if (!isScrollable) return;
-
-      if (activeScrollTargetRef.current !== target) {
-        activeScrollTargetRef.current = target;
-        lastScrollYRef.current = scrollY;
-        return;
-      }
-
-      const distanceFromBottom = maxScrollTop - scrollY;
-      const hasRecentUserScrollIntent =
-        now - lastUserScrollIntentAtRef.current < 900;
-      const intentDirection = lastUserScrollDirectionRef.current;
-
-      if (
-        window.innerWidth >= 768 ||
-        now < suppressScrollToggleUntilRef.current ||
-        !hasRecentUserScrollIntent ||
-        !intentDirection
-      ) {
-        lastScrollYRef.current = scrollY;
-        return;
-      }
-
-      if (scrollY <= 12) {
-        setHeaderHidden(false);
-      } else if (intentDirection === "down") {
-        setHeaderHidden(true);
-      } else if (intentDirection === "up" && distanceFromBottom > 24) {
-        setHeaderHidden(false);
-      }
-
-      lastScrollYRef.current = scrollY;
-    }
-
-    window.addEventListener("wheel", markWheelScrollIntent, { passive: true });
-    window.addEventListener("touchstart", markTouchStart, { passive: true });
-    window.addEventListener("touchmove", markTouchScrollIntent, {
-      passive: true,
-    });
-    window.addEventListener("keydown", markKeyboardScrollIntent);
-    document.addEventListener("scroll", onScroll, {
-      capture: true,
-      passive: true,
-    });
-
-    return () => {
-      window.removeEventListener("wheel", markWheelScrollIntent);
-      window.removeEventListener("touchstart", markTouchStart);
-      window.removeEventListener("touchmove", markTouchScrollIntent);
-      window.removeEventListener("keydown", markKeyboardScrollIntent);
-      document.removeEventListener("scroll", onScroll, { capture: true });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (jumpAnchors.length <= 1) return;
-
-    const sections = jumpAnchors
-      .map((anchor) => document.getElementById(anchor.id))
-      .filter((section): section is HTMLElement => Boolean(section));
-
-    if (!sections.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-        if (visible?.target.id) {
-          setActiveAnchor(visible.target.id);
-        }
-      },
-      {
-        root: null,
-        rootMargin: `-${stickyHeaderOffset}px 0px -60% 0px`,
-        threshold: [0.1, 0.4, 0.7],
-      },
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, [jumpAnchors, stickyHeaderOffset]);
-
   const sectionScrollMarginStyle = {
     scrollMarginTop: "var(--scheme-detail-sticky-offset, 224px)",
   } satisfies CSSProperties;
@@ -410,9 +207,10 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
         <div
           className={clsx(
             "overflow-hidden py-3 transition-[max-height,opacity,transform,padding] duration-300 md:max-h-none md:translate-y-0 md:opacity-100",
+            "flex flex-col gap-3",
             stickyHeaderHidden
               ? "max-md:max-h-0 max-md:-translate-y-full max-md:py-0 max-md:opacity-0"
-              : "max-md:max-h-48 max-md:translate-y-0 max-md:opacity-100",
+              : "max-md:translate-y-0 max-md:opacity-100",
           )}
         >
           <div className="flex items-center justify-between gap-4 text-left">
@@ -446,33 +244,34 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <ShareButton scheme={scheme} className="" />
             </div>
           </div>
-        </div>
-
-        {jumpAnchors.length > 1 && (
-          <nav
-            aria-label="On this page"
-            className="border-t border-(--schemes-border-neutral) pt-3"
-          >
-            <ul className="no-scrollbar flex w-full gap-6 overflow-x-auto">
-              {jumpAnchors.map((a) => (
-                <li key={a.id} className="shrink-0">
-                  <a
-                    href={`#${a.id}`}
-                    onClick={() => setActiveAnchor(a.id)}
-                    className={clsx(
-                      "block border-b-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors hover:text-(--schemes-blue-600)",
-                      activeAnchor === a.id
-                        ? "border-(--schemes-blue-600) text-(--schemes-blue-600)"
-                        : "border-transparent text-(--schemes-muted)",
-                    )}
+          {jumpAnchors.length > 1 && (
+            <nav aria-label="On this page">
+              <Tabs
+                selectedKey={activeAnchor}
+                onSelectionChange={(key) => selectAnchor(String(key))}
+                className="w-full"
+              >
+                <Tabs.ListContainer className="no-scrollbar w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible">
+                  <Tabs.List
+                    aria-label="On this page"
+                    className={`${productSegmentedList} w-max min-w-full sm:w-full`}
                   >
-                    {a.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
+                    {jumpAnchors.map((anchor) => (
+                      <Tabs.Tab
+                        key={anchor.id}
+                        id={anchor.id}
+                        className={`${productSegmentedTab} whitespace-nowrap sm:flex-1`}
+                      >
+                        {anchor.label}
+                        <Tabs.Indicator className={productSegmentedIndicator} />
+                      </Tabs.Tab>
+                    ))}
+                  </Tabs.List>
+                </Tabs.ListContainer>
+              </Tabs>
+            </nav>
+          )}
+        </div>
       </div>
 
       {!hasDetail && (

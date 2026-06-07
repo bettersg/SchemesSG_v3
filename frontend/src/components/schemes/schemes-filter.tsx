@@ -1,5 +1,11 @@
-import { Button, Label, ListBox, Popover, Select } from "@heroui/react";
-import type { Key } from "react";
+import {
+  Button,
+  Label,
+  ListBox,
+  Popover,
+  Select,
+  type Key,
+} from "@heroui/react";
 import { Scheme } from "@/types/types";
 import { Dispatch, SetStateAction, useMemo } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
@@ -41,7 +47,7 @@ const filterSelectPopover =
 const filterListBoxClass = "text-xs text-(--schemes-ink-soft)";
 
 const filterListBoxItemClass =
-  "rounded-md px-2 py-1.5 text-xs text-(--schemes-ink-soft) data-[focused]:bg-(--schemes-blue-50) data-[selected]:font-semibold data-[selected]:text-(--schemes-blue-900)";
+  "rounded-md px-2 py-1.5 text-xs text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50) data-[focus-visible]:bg-(--schemes-blue-50) data-[selected]:font-semibold data-[selected]:text-(--schemes-blue-900)";
 
 type SelectChangeValue = Key | Iterable<Key> | null | undefined;
 

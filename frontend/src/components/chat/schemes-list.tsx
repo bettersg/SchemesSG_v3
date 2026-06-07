@@ -13,6 +13,7 @@ import {
   productButtonSm,
 } from "@/lib/design-system/product-styles";
 import NewChatButton from "./new-chat-button";
+import { StatusTextShimmer } from "./status-text-shimmer";
 
 function EmptySchemesState({
   title,
@@ -103,18 +104,22 @@ export default function SchemesList({
       <div className="flex shrink-0 items-center justify-between border-b border-(--schemes-border) px-4 py-2">
         <div className="min-w-0">
           <div className="mb-0.5 text-sm font-semibold text-(--schemes-blue-600)">
-            {schemes.length} schemes found
+            {isGenerating ? (
+              <StatusTextShimmer>Finding the best schemes...</StatusTextShimmer>
+            ) : (
+              `${schemes.length} ${schemes.length === 1 ? "scheme" : "schemes"} found`
+            )}
           </div>
           <p className="text-xs text-(--schemes-muted)">
             {isGenerating
-              ? "Searching for relevant schemes"
+              ? ""
               : schemes.length > 0
                 ? "Click any scheme to view details"
                 : "No matching schemes returned for this chat"}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {schemes.length > 0 && (
+          {!isGenerating && schemes.length > 0 && (
             <SchemesFilter
               mode="compact"
               className="lg:hidden"

@@ -6,9 +6,11 @@ import Image from "next/image";
 import { ChatScrollAnchor } from "@/components/chat/chat-scroll-anchor";
 import { MessageEntrance } from "@/components/chat/message-entrance";
 import { StreamingAssistantMessage } from "@/components/chat/streaming-assistant-message";
-import { StreamStatusStep } from "@/components/chat/stream-status-steps";
+import {
+  StatusStep,
+  StreamStatusSteps,
+} from "@/components/chat/stream-status-steps";
 import { SchemeUpdateNotice } from "@/components/chat/scheme-update-notice";
-import ChatSpinner from "@/components/chat/chat-spinner";
 import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
 
 const SchemesSGAvatar = () => (
@@ -26,7 +28,7 @@ const SchemesSGAvatar = () => (
 interface ChatMessageListProps {
   messages: Message[];
   streamingBlocks: string[];
-  statusSteps?: StreamStatusStep[];
+  statusSteps?: StatusStep[];
   isGenerating?: boolean;
   hasQuickReplies?: boolean;
 }
@@ -94,14 +96,14 @@ export default function ChatMessageList({
           key={i}
           className={`flex items-end gap-2.5 ${msg.type === "user" ? "flex-row-reverse" : "flex-row"}`}
         >
-          {msg.type === "bot" && <SchemesSGAvatar />}
+          {/* {msg.type === "bot" && <SchemesSGAvatar />} */}
           {/* {msg.type === "user" && (
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--schemes-blue-600) text-[10px] font-semibold text-white">
               U
             </div>
           )} */}
           {msg.type === "bot" ? (
-            <div className="flex max-w-[76%] flex-col items-start gap-2">
+            <div className="flex max-w-[min(90%,450px)] flex-col items-start gap-2">
               {i === latestBotMessageIndex && msg.statusSteps?.length ? (
                 <StatusStepsAccordion steps={msg.statusSteps} />
               ) : null}
@@ -115,7 +117,7 @@ export default function ChatMessageList({
               ) : null}
             </div>
           ) : (
-            <div className="max-w-[76%] wrap-break-words rounded-2xl rounded-br-md bg-(--schemes-blue-600) px-3.5 py-2.5 text-sm leading-relaxed text-white">
+            <div className="max-w-[min(90%,450px)] wrap-break-words rounded-2xl rounded-br-md bg-(--schemes-blue-600) px-3.5 py-2.5 text-sm leading-relaxed text-white">
               {msg.text}
             </div>
           )}
@@ -123,21 +125,16 @@ export default function ChatMessageList({
       ))}
 
       {/* Status steps, then streaming message */}
-      {hasStreamActivity &&
-        displayedStreamingBlocks.map((block, index) => (
-          <div key={index} className="flex items-end gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center">
-              <ChatSpinner />
-            </div>
-            <StreamingAssistantMessage
-              text={block}
-              statusSteps={
-                index === displayedStreamingBlocks.length - 1 ? statusSteps : []
-              }
-              isStreaming={isGenerating}
-            />
+      {hasStreamActivity && (
+        <div className="flex items-end gap-2.5">
+          <div className="flex max-w-[min(90%,450px)] flex-col items-start gap-2">
+            <StreamStatusSteps steps={statusSteps} isActive={isGenerating} />
+            {displayedStreamingBlocks.map((block, index) => (
+              <StreamingAssistantMessage key={index} text={block} />
+            ))}
           </div>
-        ))}
+        </div>
+      )}
       <ChatScrollAnchor
         show={showJumpToLatest}
         onClick={() => handleScrollToBottom()}

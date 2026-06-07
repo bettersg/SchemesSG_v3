@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
@@ -11,6 +11,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Tabs } from "@heroui/react";
 import Image from "next/image";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 type NavLink = {
   label: string;
@@ -21,16 +22,11 @@ type NavLink = {
 export function Navbar() {
   const { t } = useLanguage();
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileHidden, setMobileHidden] = useState(false);
-  const lastScrollYRef = useRef(0);
-  const lastUserScrollIntentAtRef = useRef(0);
-  const lastUserScrollDirectionRef = useRef<"down" | "up" | null>(null);
-  const lastTouchYRef = useRef<number | null>(null);
-  const suppressScrollToggleUntilRef = useRef(0);
-  const mobileHiddenRef = useRef(false);
-  const activeScrollTargetRef = useRef<EventTarget | null>(null);
+  const { isHidden: mobileHidden, isScrolled: scrolled } = useHideOnScroll({
+    disabled: mobileOpen,
+    resetKey: pathname,
+  });
 
   const navLinks: NavLink[] = [
     { label: t.nav.catalog, href: "/catalog" },
@@ -48,15 +44,8 @@ export function Navbar() {
     )?.href ?? "/";
 
   useEffect(() => {
-    setMobileHidden(false);
     setMobileOpen(false);
-    lastScrollYRef.current = 0;
-    activeScrollTargetRef.current = null;
   }, [pathname]);
-
-  useEffect(() => {
-    mobileHiddenRef.current = mobileHidden;
-  }, [mobileHidden]);
 
   useEffect(() => {
     document.documentElement.dataset.mobileNavHidden =
@@ -66,145 +55,6 @@ export function Navbar() {
       delete document.documentElement.dataset.mobileNavHidden;
     };
   }, [mobileHidden, mobileOpen]);
-
-  useEffect(() => {
-    const markUserScrollIntent = (direction: "down" | "up") => {
-      lastUserScrollIntentAtRef.current = Date.now();
-      lastUserScrollDirectionRef.current = direction;
-    };
-
-    const markWheelScrollIntent = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) < 2) return;
-      markUserScrollIntent(event.deltaY > 0 ? "down" : "up");
-    };
-
-    const markTouchStart = (event: TouchEvent) => {
-      lastTouchYRef.current = event.touches[0]?.clientY ?? null;
-    };
-
-    const markTouchScrollIntent = (event: TouchEvent) => {
-      const nextY = event.touches[0]?.clientY;
-      const previousY = lastTouchYRef.current;
-      if (nextY == null || previousY == null) return;
-
-      const delta = previousY - nextY;
-      if (Math.abs(delta) >= 2) {
-        markUserScrollIntent(delta > 0 ? "down" : "up");
-      }
-      lastTouchYRef.current = nextY;
-    };
-
-    const markKeyboardScrollIntent = (event: KeyboardEvent) => {
-      if (["ArrowDown", "End", "PageDown", " "].includes(event.key)) {
-        markUserScrollIntent("down");
-      } else if (["ArrowUp", "Home", "PageUp"].includes(event.key)) {
-        markUserScrollIntent("up");
-      }
-    };
-
-    const setMobileHeaderHidden = (nextHidden: boolean) => {
-      if (mobileHiddenRef.current === nextHidden) return;
-      mobileHiddenRef.current = nextHidden;
-      suppressScrollToggleUntilRef.current = Date.now() + 360;
-      setMobileHidden(nextHidden);
-    };
-
-    function getScrollMetrics(event: Event) {
-      const target = event.target;
-
-      if (
-        target === document ||
-        target === document.documentElement ||
-        target === document.body
-      ) {
-        const scrollHeight = document.documentElement.scrollHeight;
-        return {
-          maxScrollTop: Math.max(scrollHeight - window.innerHeight, 0),
-          scrollTop: window.scrollY,
-          target,
-        };
-      }
-
-      if (target instanceof Element) {
-        return {
-          maxScrollTop: Math.max(target.scrollHeight - target.clientHeight, 0),
-          scrollTop: target.scrollTop,
-          target,
-        };
-      }
-
-      return {
-        maxScrollTop: Math.max(
-          document.documentElement.scrollHeight - window.innerHeight,
-          0,
-        ),
-        scrollTop: window.scrollY,
-        target,
-      };
-    }
-
-    function onScroll(event: Event) {
-      const { maxScrollTop, scrollTop, target } = getScrollMetrics(event);
-      const scrollY = Math.max(scrollTop, 0);
-      const isScrollable = maxScrollTop > 0;
-      const now = Date.now();
-
-      if (!isScrollable) return;
-
-      if (activeScrollTargetRef.current !== target) {
-        activeScrollTargetRef.current = target;
-        lastScrollYRef.current = scrollY;
-        setScrolled(window.scrollY > 20 || scrollY > 20);
-        return;
-      }
-
-      const distanceFromBottom = maxScrollTop - scrollY;
-      const hasRecentUserScrollIntent =
-        now - lastUserScrollIntentAtRef.current < 900;
-      const intentDirection = lastUserScrollDirectionRef.current;
-
-      setScrolled(window.scrollY > 20 || scrollY > 20);
-
-      if (
-        window.innerWidth >= 768 ||
-        now < suppressScrollToggleUntilRef.current ||
-        !hasRecentUserScrollIntent ||
-        !intentDirection
-      ) {
-        lastScrollYRef.current = scrollY;
-        return;
-      }
-
-      if (scrollY <= 12 || mobileOpen) {
-        setMobileHeaderHidden(false);
-      } else if (intentDirection === "down") {
-        setMobileHeaderHidden(true);
-      } else if (intentDirection === "up" && distanceFromBottom > 24) {
-        setMobileHeaderHidden(false);
-      }
-
-      lastScrollYRef.current = scrollY;
-    }
-
-    window.addEventListener("wheel", markWheelScrollIntent, { passive: true });
-    window.addEventListener("touchstart", markTouchStart, { passive: true });
-    window.addEventListener("touchmove", markTouchScrollIntent, {
-      passive: true,
-    });
-    window.addEventListener("keydown", markKeyboardScrollIntent);
-    document.addEventListener("scroll", onScroll, {
-      capture: true,
-      passive: true,
-    });
-
-    return () => {
-      window.removeEventListener("wheel", markWheelScrollIntent);
-      window.removeEventListener("touchstart", markTouchStart);
-      window.removeEventListener("touchmove", markTouchScrollIntent);
-      window.removeEventListener("keydown", markKeyboardScrollIntent);
-      document.removeEventListener("scroll", onScroll, { capture: true });
-    };
-  }, [mobileOpen]);
 
   return (
     <header
