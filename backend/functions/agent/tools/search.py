@@ -19,7 +19,7 @@ ACTION_MESSAGE_ON_START = 'Finding the top {top_k} schemes that best match "{que
 ACTION_MESSAGE_ON_END = 'Found {result_count} schemes matching "{query}".'
 SHORT_ACTION_MESSAGE_ON_START = "Searching schemes database"
 SHORT_ACTION_MESSAGE_ON_END = "{result_count} schemes found"
-MINIMAL_LLM_KEYS = {"scheme", "agency", "summary"}
+MINIMAL_LLM_KEYS = {"scheme_id", "scheme", "agency", "summary"}
 
 
 class SchemeSearchToolInput(BaseModel):
