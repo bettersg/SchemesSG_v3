@@ -1,0 +1,16 @@
+{
+  "name": "schemessg-helper-scripts",
+  "version": "1.0.0",
+  "description": "One-off admin scripts for SchemesSG Firestore maintenance",
+  "private": true,
+  "scripts": {
+    "migrate:csv-to-array:dry": "node convert_csv_fields_to_arrays.js",
+    "migrate:csv-to-array:dev": "node convert_csv_fields_to_arrays.js --dev",
+    "migrate:csv-to-array:prod": "node convert_csv_fields_to_arrays.js --prod"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "firebase-admin": "^13.0.0"
+  }
+}

@@ -267,6 +267,8 @@ landing/screenshot-*.png
 !landing/pnpm-lock.yaml
 !landing/src/lib/
 !frontend/src/lib/
+frontend/env.staging
+frontend/env.development
 
 # AI Agents
 # configurations

@@ -57,6 +57,8 @@ async def process(request: ProcessRequest):
             scheme_name=request.scheme_name,
             scheme_url=request.scheme_url,
             original_data=request.original_data,
+            type_of_request=request.type_of_request,
+            target_scheme_id=request.target_scheme_id,
         )
         return ProcessResponse(**result)
 

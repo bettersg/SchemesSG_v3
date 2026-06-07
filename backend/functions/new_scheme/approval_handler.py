@@ -21,6 +21,8 @@ from slack_sdk.web import WebClient
 from new_scheme.new_scheme_blocks import (
     build_new_scheme_approved_message,
     build_new_scheme_rejected_message,
+    build_scheme_update_approved_message,
+    build_scheme_update_rejected_message,
 )
 
 
@@ -81,34 +83,98 @@ def handle_new_scheme_approval(
         except Exception as e:
             logger.warning(f"Could not get reviewer email from Slack: {e}")
 
-        # Create new document in schemes collection
-        schemes_ref = db.collection("schemes").document()
-        scheme_data = {
-            **approved_data,
-            "approved_by": reviewer_email or reviewer_id,
-            "approved_at": SERVER_TIMESTAMP,
-            "source_entry_id": entry_doc_id,
-            "created_at": SERVER_TIMESTAMP,
-            "status": "active",
-            "scraped_text": original_data.get("scraped_text", ""),
-            "last_llm_processed_update": SERVER_TIMESTAMP,
-            "last_scraped_update": SERVER_TIMESTAMP,
-        }
+        # Read entry to decide new-vs-update branch
+        entry_snap = db.collection("schemeEntries").document(entry_doc_id).get()
+        entry_data = entry_snap.to_dict() if entry_snap.exists else {}
+        type_of_request = (entry_data.get("typeOfRequest") or "").lower()
+        target_scheme_id = entry_data.get("targetSchemeId")
 
-        # Rename some fields to match schemes collection schema
-        if "scheme_name" in scheme_data:
-            scheme_data["scheme"] = scheme_data.pop("scheme_name")
-        if "scheme_url" in scheme_data:
-            scheme_data["link"] = scheme_data.pop("scheme_url")
-        if "llm_description" in scheme_data:
-            scheme_data["description"] = scheme_data.get("llm_description", "")
-        if "image_url" in scheme_data:
-            scheme_data["image"] = scheme_data.pop("image_url")
+        is_update = type_of_request == "update" and bool(target_scheme_id)
 
-        schemes_ref.set(scheme_data)
-        new_scheme_id = schemes_ref.id
+        if is_update:
+            # UPDATE-in-place: PATCH the existing schemes/<target_scheme_id>
+            target_ref = db.collection("schemes").document(target_scheme_id)
 
-        logger.info(f"Created new scheme document: {new_scheme_id}")
+            # Warn if target is not currently inactive — update-in-place is
+            # expected to run against dead-link schemes (status=inactive).
+            try:
+                target_snap = target_ref.get()
+                current_status = (
+                    (target_snap.to_dict() or {}).get("status")
+                    if target_snap.exists
+                    else None
+                )
+                if current_status and current_status != "inactive":
+                    logger.warning(
+                        f"Approving update for scheme {target_scheme_id} "
+                        f"whose current status is {current_status!r} "
+                        f"(expected 'inactive'); entry={entry_doc_id}"
+                    )
+            except Exception as status_err:
+                logger.warning(
+                    f"Could not read target status for {target_scheme_id}: {status_err}"
+                )
+
+            patch = {
+                "link": approved_data.get("scheme_url"),
+                "scheme": approved_data.get("scheme_name"),
+                "description": approved_data.get("llm_description", ""),
+                "scraped_text": original_data.get("scraped_text", ""),
+                "who_is_it_for": approved_data.get("who_is_it_for", []),
+                "what_it_gives": approved_data.get("what_it_gives", []),
+                "scheme_type": approved_data.get("scheme_type", []),
+                "summary": approved_data.get("summary"),
+                "eligibility": approved_data.get("eligibility"),
+                "how_to_apply": approved_data.get("how_to_apply"),
+                "agency": approved_data.get("agency"),
+                "address": approved_data.get("address"),
+                "phone": approved_data.get("phone"),
+                "email": approved_data.get("email"),
+                "service_area": approved_data.get("service_area"),
+                "search_booster": approved_data.get("search_booster"),
+                "planning_area": approved_data.get("planning_area"),
+                "image": approved_data.get("image_url"),
+                "status": "active",
+                "link_check_status_code": 200,
+                "last_link_check": SERVER_TIMESTAMP,
+                "last_scraped_update": SERVER_TIMESTAMP,
+                "last_llm_processed_update": SERVER_TIMESTAMP,
+                "approved_by": reviewer_email or reviewer_id,
+                "approved_at": SERVER_TIMESTAMP,
+                "source_entry_id": entry_doc_id,
+            }
+            target_ref.update(patch)
+            resulting_scheme_id = target_scheme_id
+            logger.info(f"Patched existing scheme {resulting_scheme_id} via entry {entry_doc_id}")
+        else:
+            # NEW: create new document in schemes collection
+            schemes_ref = db.collection("schemes").document()
+            scheme_data = {
+                **approved_data,
+                "approved_by": reviewer_email or reviewer_id,
+                "approved_at": SERVER_TIMESTAMP,
+                "source_entry_id": entry_doc_id,
+                "created_at": SERVER_TIMESTAMP,
+                "status": "active",
+                "scraped_text": original_data.get("scraped_text", ""),
+                "last_llm_processed_update": SERVER_TIMESTAMP,
+                "last_scraped_update": SERVER_TIMESTAMP,
+            }
+
+            # Rename some fields to match schemes collection schema
+            if "scheme_name" in scheme_data:
+                scheme_data["scheme"] = scheme_data.pop("scheme_name")
+            if "scheme_url" in scheme_data:
+                scheme_data["link"] = scheme_data.pop("scheme_url")
+            if "llm_description" in scheme_data:
+                scheme_data["description"] = scheme_data.get("llm_description", "")
+            if "image_url" in scheme_data:
+                scheme_data["image"] = scheme_data.pop("image_url")
+
+            schemes_ref.set(scheme_data)
+            resulting_scheme_id = schemes_ref.id
+
+            logger.info(f"Created new scheme document: {resulting_scheme_id}")
 
         # Update schemeEntries document with approved data
         entries_ref = db.collection("schemeEntries").document(entry_doc_id)
@@ -117,7 +183,7 @@ def handle_new_scheme_approval(
                 "Status": "approved",
                 "approved_by": reviewer_email or reviewer_id,
                 "approved_at": SERVER_TIMESTAMP,
-                "approved_scheme_id": new_scheme_id,
+                "approved_scheme_id": resulting_scheme_id,
                 # Store the reviewed/edited data
                 "reviewed_data": approved_data,
                 "Scheme": approved_data.get("scheme_name"),
@@ -147,14 +213,24 @@ def handle_new_scheme_approval(
         # Update original Slack message
         if channel_id and message_ts:
             try:
-                approved_message = build_new_scheme_approved_message(
-                    doc_id=entry_doc_id,
-                    scheme_name=approved_data.get("scheme_name", "Unknown"),
-                    scheme_url=approved_data.get("scheme_url", ""),
-                    reviewer_id=reviewer_id,
-                    reviewed_at=reviewed_at,
-                    new_scheme_id=new_scheme_id,
-                )
+                if is_update:
+                    approved_message = build_scheme_update_approved_message(
+                        doc_id=entry_doc_id,
+                        scheme_name=approved_data.get("scheme_name", "Unknown"),
+                        target_scheme_id=resulting_scheme_id,
+                        new_url=approved_data.get("scheme_url", ""),
+                        reviewer_id=reviewer_id,
+                        reviewed_at=reviewed_at,
+                    )
+                else:
+                    approved_message = build_new_scheme_approved_message(
+                        doc_id=entry_doc_id,
+                        scheme_name=approved_data.get("scheme_name", "Unknown"),
+                        scheme_url=approved_data.get("scheme_url", ""),
+                        reviewer_id=reviewer_id,
+                        reviewed_at=reviewed_at,
+                        new_scheme_id=resulting_scheme_id,
+                    )
                 slack_client.chat_update(channel=channel_id, ts=message_ts, **approved_message)
             except SlackApiError as e:
                 logger.error(f"Failed to update Slack message: {e}")
@@ -162,10 +238,16 @@ def handle_new_scheme_approval(
         # Post thank you message
         if channel_id:
             try:
-                thank_text = (
-                    f"Thank you <@{reviewer_id}>! New scheme *{approved_data.get('scheme_name', 'Unknown')}* "
-                    f"has been added to the database (ID: `{new_scheme_id}`)."
-                )
+                if is_update:
+                    thank_text = (
+                        f"Thank you <@{reviewer_id}>! Scheme *{approved_data.get('scheme_name', 'Unknown')}* "
+                        f"(ID: `{resulting_scheme_id}`) updated in place."
+                    )
+                else:
+                    thank_text = (
+                        f"Thank you <@{reviewer_id}>! New scheme *{approved_data.get('scheme_name', 'Unknown')}* "
+                        f"has been added to the database (ID: `{resulting_scheme_id}`)."
+                    )
                 slack_client.chat_postMessage(channel=channel_id, text=thank_text)
             except SlackApiError:
                 pass
@@ -208,8 +290,9 @@ def handle_new_scheme_rejection(
         entry_doc = entry_ref.get()
 
         scheme_name = "Unknown"
+        entry_data: Dict[str, Any] = {}
         if entry_doc.exists:
-            entry_data = entry_doc.to_dict()
+            entry_data = entry_doc.to_dict() or {}
             scheme_name = entry_data.get("Scheme", entry_data.get("scheme_name", "Unknown"))
 
             # Update schemeEntries document
@@ -222,12 +305,28 @@ def handle_new_scheme_rejection(
                 }
             )
 
+        type_of_request = (entry_data.get("typeOfRequest") or "").lower()
+        target_scheme_id = entry_data.get("targetSchemeId")
+        is_update = type_of_request == "update" and bool(target_scheme_id)
+
         # Update original Slack message
         if channel_id and message_ts:
             try:
-                rejected_message = build_new_scheme_rejected_message(
-                    doc_id=entry_doc_id, scheme_name=scheme_name, reviewer_id=reviewer_id, reason=reason
-                )
+                if is_update:
+                    rejected_message = build_scheme_update_rejected_message(
+                        doc_id=entry_doc_id,
+                        scheme_name=scheme_name,
+                        target_scheme_id=target_scheme_id,
+                        reviewer_id=reviewer_id,
+                        reason=reason,
+                    )
+                else:
+                    rejected_message = build_new_scheme_rejected_message(
+                        doc_id=entry_doc_id,
+                        scheme_name=scheme_name,
+                        reviewer_id=reviewer_id,
+                        reason=reason,
+                    )
                 slack_client.chat_update(channel=channel_id, ts=message_ts, **rejected_message)
             except SlackApiError as e:
                 logger.error(f"Failed to update Slack message: {e}")
@@ -253,13 +352,12 @@ def extract_form_data(state: dict) -> Dict[str, Any]:
         action = block.get(action_id, {})
         return action.get("value", "")
 
-    def get_multi_select_as_string(block_id: str, action_id: str) -> str:
-        """Get multi-select values as comma-separated string."""
+    def get_multi_select_as_list(block_id: str, action_id: str) -> list:
+        """Get multi-select values as a list of strings."""
         block = state.get(block_id, {})
         action = block.get(action_id, {})
         selected = action.get("selected_options", [])
-        values = [opt.get("value", "") for opt in selected if opt.get("value")]
-        return ", ".join(values) if values else ""
+        return [opt.get("value", "") for opt in selected if opt.get("value")]
 
     return {
         "scheme_name": get_value("scheme_name_block", "scheme_name"),
@@ -270,9 +368,9 @@ def extract_form_data(state: dict) -> Dict[str, Any]:
         "phone": get_value("phone_block", "phone"),
         "email": get_value("email_block", "email"),
         "planning_area": get_value("planning_area_block", "planning_area"),
-        "who_is_it_for": get_multi_select_as_string("who_is_it_for_block", "who_is_it_for"),
-        "what_it_gives": get_multi_select_as_string("what_it_gives_block", "what_it_gives"),
-        "scheme_type": get_multi_select_as_string("scheme_type_block", "scheme_type"),
+        "who_is_it_for": get_multi_select_as_list("who_is_it_for_block", "who_is_it_for"),
+        "what_it_gives": get_multi_select_as_list("what_it_gives_block", "what_it_gives"),
+        "scheme_type": get_multi_select_as_list("scheme_type_block", "scheme_type"),
         "llm_description": get_value("llm_description_block", "llm_description"),
         "eligibility": get_value("eligibility_block", "eligibility"),
         "how_to_apply": get_value("how_to_apply_block", "how_to_apply"),

@@ -1,7 +1,7 @@
 """
 Link Check and Embeddings Reindex Batch Job.
 
-Scheduled function (runs monthly) that:
+Scheduled function (runs weekly) that:
 1. Checks all scheme links for dead links
 2. Marks dead links as status='inactive' in Firestore
 3. Posts summary to Slack
@@ -274,7 +274,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
 
 
 @scheduler_fn.on_schedule(
-    schedule="0 9 1 * *",  # Run at 9am on the 1st of every month
+    schedule="0 9 * * 1",  # Run at 9am every Monday
     region="asia-southeast1",
     memory=options.MemoryOption.GB_2,
     timeout_sec=540,  # 9 minutes max
@@ -282,9 +282,9 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
 )
 def scheduled_link_check_and_reindex(event: scheduler_fn.ScheduledEvent) -> None:
     """
-    Monthly scheduled function for link checking and embeddings reindex.
+    Weekly scheduled function for link checking and embeddings reindex.
 
-    Runs on the 1st of every month at 9am SGT.
+    Runs every Monday at 9am SGT.
     Checks all scheme links, marks dead ones as inactive, and reindexes embeddings.
 
     Args:
