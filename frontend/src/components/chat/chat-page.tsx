@@ -64,13 +64,17 @@ export default function ChatPage() {
     showQuickReplies && !isGenerating && quickReplies.length > 0;
   const schemesListIsLoading = isGenerating && schemes.length === 0;
 
-  // Initial user message fetches response on component mount
+  // Resume the last turn on mount when it has no answer yet. Covers both the
+  // initial query from the hero and a refresh/interruption mid-stream: the user
+  // message is persisted but the bot reply only commits on stream end, so a
+  // reload would otherwise strand the user with a question and no response.
   useEffect(() => {
-    if (messages.length === 1 && messages[0].type === "user") {
-      const requestKey = `${sessionId || "new"}:${messages[0].text}`;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.type === "user") {
+      const requestKey = `${sessionId || "new"}:${messages.length}:${lastMessage.text}`;
       if (initialChatRequestKeys.has(requestKey)) return;
       initialChatRequestKeys.add(requestKey);
-      fetchResponse(messages[0].text).finally(() => {
+      fetchResponse(lastMessage.text, sessionId || undefined).finally(() => {
         initialChatRequestKeys.delete(requestKey);
       });
     }
