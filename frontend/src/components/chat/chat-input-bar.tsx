@@ -47,7 +47,7 @@ export default function ChatInputBar({
 
   return (
     <div className="bg-white border-t border-(--schemes-border) px-3 py-2.5 shrink-0">
-      <div className="flex gap-2.5 items-end bg-(--schemes-bg) border border-(--schemes-border) rounded-xl px-3.5 py-2 focus-within:border-(--schemes-blue-400) focus-within:ring-2 focus-within:ring-(--schemes-blue-100) focus-within:bg-white transition-[border-color,box-shadow,background-color]">
+      <div className="flex gap-2.5 items-end bg-(--schemes-bg) border border-(--schemes-border) rounded-xl px-3.5 py-2 focus-within:border-(--schemes-blue-600) focus-within:ring-2 focus-within:ring-(--schemes-blue-400) focus-within:bg-white transition-[border-color,box-shadow,background-color]">
         <textarea
           ref={ref}
           value={value}

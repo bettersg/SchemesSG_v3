@@ -121,7 +121,11 @@ export default function SchemesList({
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-(--schemes-border) px-4 py-2">
         <div className="min-w-0">
-          <div className="mb-0.5 text-sm font-semibold text-(--schemes-blue-600)">
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-0.5 text-sm font-semibold text-(--schemes-blue-600)"
+          >
             {isGenerating ? (
               <StatusTextShimmer>Finding the best schemes...</StatusTextShimmer>
             ) : (

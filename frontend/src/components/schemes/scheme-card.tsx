@@ -24,9 +24,10 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       href={`/schemes/${scheme.schemeId}`}
       target="_blank"
       rel="noopener noreferrer"
+      aria-label={`${scheme.schemeName}, ${scheme.agency} (opens in new tab)`}
       className={clsx(
         productCard,
-        "group relative flex h-full min-h-[148px] w-full flex-col overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
+        "group relative flex h-full min-h-[148px] w-full flex-col overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-400)",
         className,
       )}
     >
