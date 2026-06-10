@@ -26,7 +26,7 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       rel="noopener noreferrer"
       className={clsx(
         productCard,
-        "group relative block w-full shrink-0 overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
+        "group relative flex h-full min-h-[148px] w-full flex-col overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
         className,
       )}
     >
@@ -36,7 +36,7 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
           <p className="text-[12.5px] font-semibold text-(--schemes-blue-900) leading-snug line-clamp-2">
             {scheme.schemeName}
           </p>
-          <p className="text-xs text-(--schemes-muted) mt-0.5">
+          <p className="text-xs text-(--schemes-muted) mt-0.5 line-clamp-2">
             {scheme.agency}
           </p>
         </div>
