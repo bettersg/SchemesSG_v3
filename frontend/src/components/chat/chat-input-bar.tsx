@@ -19,11 +19,13 @@ export default function ChatInputBar({
   onValueChange,
 }: ChatInputBarProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const MAX_HEIGHT = 72;
 
   useEffect(() => {
     if (!ref.current) return;
     ref.current.style.height = "auto";
-    ref.current.style.height = Math.min(ref.current.scrollHeight, 120) + "px";
+    ref.current.style.height =
+      Math.min(ref.current.scrollHeight, MAX_HEIGHT) + "px";
   }, [value]);
 
   const handleSend = () => {
@@ -43,13 +45,6 @@ export default function ChatInputBar({
     }
   };
 
-  const handleInput = () => {
-    if (ref.current) {
-      ref.current.style.height = "auto";
-      ref.current.style.height = Math.min(ref.current.scrollHeight, 120) + "px";
-    }
-  };
-
   return (
     <div className="bg-white border-t border-(--schemes-border) px-3 py-2.5 shrink-0">
       <div className="flex gap-2.5 items-end bg-(--schemes-bg) border border-(--schemes-border) rounded-xl px-3.5 py-2 focus-within:border-(--schemes-blue-400) focus-within:ring-2 focus-within:ring-(--schemes-blue-100) focus-within:bg-white transition-[border-color,box-shadow,background-color]">
@@ -58,12 +53,11 @@ export default function ChatInputBar({
           value={value}
           onChange={(e) => onValueChange(e.target.value)}
           onKeyDown={handleKey}
-          onInput={handleInput}
           disabled={isGenerating}
           aria-disabled={isGenerating}
           placeholder="Ask a follow-up question…"
           rows={1}
-          className="flex-1 resize-none bg-transparent focus-visible:outline-none text-sm text-(--schemes-ink) placeholder:text-(--schemes-muted) leading-relaxed min-h-[24px] max-h-[120px] disabled:cursor-not-allowed disabled:opacity-60"
+          className="thin-scrollbar flex-1 resize-none overscroll-contain bg-transparent focus-visible:outline-none text-sm text-(--schemes-ink) placeholder:text-(--schemes-muted) leading-relaxed min-h-[24px] max-h-[72px] disabled:cursor-not-allowed disabled:opacity-60"
         />
         <StopGeneratingButton
           isGenerating={isGenerating}

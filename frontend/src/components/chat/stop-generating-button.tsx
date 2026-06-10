@@ -24,7 +24,7 @@ export function StopGeneratingButton({
         type="button"
         onClick={onStop}
         aria-label="Stop generating"
-        className={`${productButtonSolidBlue} mb-0.5 size-11 shrink-0 p-0`}
+        className={`${productButtonSolidBlue} size-9 shrink-0 p-0`}
       >
         <span className="h-3 w-3 rounded-[3px] bg-white" />
       </button>
@@ -37,7 +37,7 @@ export function StopGeneratingButton({
       onClick={onSend}
       disabled={!canSend}
       aria-label="Send message"
-      className={`${productButtonSolidBlue} mb-0.5 size-11 shrink-0 p-0`}
+      className={`${productButtonSolidBlue} size-9 shrink-0 p-0`}
     >
       <SendHorizontal size={17} strokeWidth={1.9} />
     </button>

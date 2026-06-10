@@ -193,8 +193,16 @@
   scrollbar-width: none;
 }
 
+/* Firefox (and modern standard): thin bar, soft slate thumb, no track */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+/* WebKit (Chrome/Safari): thin floating thumb with margin, no track */
 .thin-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
+  height: 8px;
 }
 
 .thin-scrollbar::-webkit-scrollbar-track {
@@ -202,8 +210,15 @@
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #d3d1c7;
-  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.65);
+  background-clip: padding-box;
 }
 
 .markdown-content ul {
