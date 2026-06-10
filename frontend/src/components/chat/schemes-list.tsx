@@ -115,7 +115,7 @@ export default function SchemesList({
       )}
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-(--schemes-border) px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-(--schemes-border) px-4 py-2">
         <div className="min-w-0">
           <div
             role="status"
@@ -140,7 +140,6 @@ export default function SchemesList({
           {!isGenerating && schemes.length > 0 && (
             <SchemesFilter
               mode="compact"
-              className="lg:hidden"
               schemes={schemes}
               setFilterObj={setFilterObj}
               selectedLocations={selectedLocations}
@@ -157,21 +156,6 @@ export default function SchemesList({
           )}
         </div>
       </div>
-
-      {/* Filter */}
-      {schemes.length > 0 && (
-        <SchemesFilter
-          mode="toolbar"
-          className="hidden lg:flex"
-          schemes={schemes}
-          setFilterObj={setFilterObj}
-          selectedLocations={selectedLocations}
-          setSelectedLocations={setSelectedLocations}
-          selectedAgencies={selectedAgencies}
-          setSelectedAgencies={setSelectedAgencies}
-          resetFilters={resetFilters}
-        />
-      )}
 
       {/* Scrollable list */}
       {isGenerating ? (
