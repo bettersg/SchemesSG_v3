@@ -40,7 +40,7 @@ export default function FeedbackPrompt(props: FeedbackPromptProps) {
       <div
         aria-label="Rate this response"
         className={cn(
-          "flex w-fit items-center gap-0.5 text-xs text-(--schemes-muted) transition-opacity md:opacity-0 md:group-focus-within/message:opacity-100 md:group-hover/message:opacity-100",
+          "flex w-fit items-center gap-0.5 text-xs text-(--schemes-muted)",
           props.className,
         )}
       >

@@ -33,7 +33,8 @@ export function StatusStepsAccordion({ steps }: StatusStepsAccordionProps) {
               />
             </Accordion.Indicator>
             <span className="w-max shrink-0">
-              Processed {steps.length} {steps.length === 1 ? "step" : "steps"}
+              How I found these ({steps.length}{" "}
+              {steps.length === 1 ? "step" : "steps"})
             </span>
           </Accordion.Trigger>
         </Accordion.Heading>

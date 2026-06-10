@@ -34,10 +34,16 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       <div className="flex gap-2.5 items-start mb-2.5">
         <SchemeLogo agency={scheme.agency} image={scheme.image} />
         <div className="flex-1 min-w-0">
-          <p className="text-[12.5px] font-semibold text-(--schemes-blue-900) leading-snug line-clamp-2">
+          <p
+            title={scheme.schemeName}
+            className="text-[12.5px] font-semibold text-(--schemes-blue-900) leading-snug line-clamp-2"
+          >
             {scheme.schemeName}
           </p>
-          <p className="text-xs text-(--schemes-muted) mt-0.5 line-clamp-2">
+          <p
+            title={scheme.agency}
+            className="text-xs text-(--schemes-muted) mt-0.5 line-clamp-2"
+          >
             {scheme.agency}
           </p>
         </div>
