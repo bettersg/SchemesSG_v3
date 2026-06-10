@@ -24,6 +24,8 @@
 
   --spacing-nav: 70px;
 
+  --color-schemes-blue-500: var(--schemes-blue-500);
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -64,6 +66,7 @@
   --schemes-blue-50: #e6f1fb;
   --schemes-blue-100: #b5d4f4;
   --schemes-blue-400: #378add;
+  --schemes-blue-500: #2176c2;
   --schemes-blue-600: #175ea6;
   --schemes-blue-800: #0c447c;
   --schemes-blue-900: #042c53;

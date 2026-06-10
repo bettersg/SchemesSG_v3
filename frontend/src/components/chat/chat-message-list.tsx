@@ -120,7 +120,7 @@ export default function ChatMessageList({
               ) : null}
             </div>
           ) : (
-            <div className="max-w-[min(90%,450px)] wrap-break-words rounded-2xl rounded-br-md border border-(--schemes-border-neutral) bg-(--muted) px-3.5 py-2.5 text-sm leading-relaxed text-(--schemes-ink)">
+            <div className="max-w-[min(90%,450px)] wrap-break-words rounded-2xl rounded-br-md bg-schemes-blue-500 px-3.5 py-2.5 text-sm leading-relaxed text-white">
               {msg.text}
             </div>
           )}
