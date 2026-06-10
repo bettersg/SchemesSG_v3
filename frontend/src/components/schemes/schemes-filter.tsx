@@ -62,7 +62,6 @@ function SchemesFilter({
 }: SchemesFilterProps) {
   const allLocations: string[] = useMemo(() => {
     const locationSet = new Set<string>();
-    console.log(schemes);
     schemes.forEach((scheme) => {
       if (scheme.planningArea) {
         const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
@@ -127,7 +126,6 @@ function SchemesFilter({
   }, [selectedAgencies, allLocations, schemes]);
 
   const handleFilter = () => {
-    console.log(selectedLocations, selectedAgencies);
     setFilterObj({
       planningArea: selectedLocations,
       agency: selectedAgencies,
