@@ -149,15 +149,7 @@ export default function ChatPage() {
     if (activeRequestIdRef.current !== requestId) return;
 
     switch (event.type) {
-      // case "text": {
-      //   const data = (event.data ?? {}) as {
-      //     text?: string;
-      //   };
-      //   appendStreamingTextBlock(data.text ?? "");
-      //   break;
-      // }
       case "action_message": {
-        console.log(event.data);
         const data = (event.data ?? {}) as {
           phase?: string;
           label?: string;
@@ -257,16 +249,6 @@ export default function ChatPage() {
       statusStepsRef.current = next;
       return next;
     });
-  };
-
-  const appendStreamingTextBlock = (text: string) => {
-    if (!text) return;
-
-    setStatusSteps([]);
-
-    const blocks = [...streamingBlocksRef.current, text];
-    streamingBlocksRef.current = blocks;
-    setStreamingBlocks(blocks);
   };
 
   const appendStreamingChunk = (chunk: string, blockIndex?: number) => {
