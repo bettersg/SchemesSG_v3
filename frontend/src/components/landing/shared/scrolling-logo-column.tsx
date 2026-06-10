@@ -4,7 +4,7 @@
 import { MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Agency } from "@/data/landing-agencies"
-import { Marquee } from "./marquee"
+import { Marquee } from "./Marquee"
 import Image from "next/image"
 
 interface ScrollingLogoColumnProps {
