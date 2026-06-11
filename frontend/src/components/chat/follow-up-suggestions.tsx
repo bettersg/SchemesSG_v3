@@ -43,7 +43,7 @@ export function FollowUpSuggestions({
   return (
     <ScrollShadow
       orientation="horizontal"
-      className="no-scrollbar flex shrink-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-4 py-2 sm:flex-wrap sm:overflow-visible"
+      className="no-scrollbar flex shrink-0 flex-row flex-nowrap gap-2 overflow-x-auto overflow-y-hidden px-4 py-2 sm:flex-wrap sm:overflow-visible sm:px-5"
     >
       {suggestions.map((suggestion, index) => {
         const chip = (

@@ -89,7 +89,7 @@ export default function ChatMessageList({
     <ScrollShadow
       ref={scrollRef}
       onScroll={handleScroll}
-      className="thin-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
+      className="thin-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 sm:px-5"
     >
       {messages.map((msg, i) => (
         <MessageEntrance
@@ -103,11 +103,11 @@ export default function ChatMessageList({
             </div>
           )} */}
           {msg.type === "bot" ? (
-            <div className="group/message flex max-w-[min(90%,450px)] flex-col items-start gap-2">
+            <div className="group/message flex w-full max-w-full flex-col items-start gap-2">
               {i === latestBotMessageIndex && msg.statusSteps?.length ? (
                 <StatusStepsAccordion steps={msg.statusSteps} />
               ) : null}
-              <div className="w-full break-words rounded-2xl rounded-bl-md border border-(--schemes-border) bg-white px-3.5 py-2.5 text-sm leading-relaxed text-(--schemes-ink-soft)">
+              <div className="w-full break-words text-sm leading-relaxed text-(--schemes-ink-soft)">
                 <div className="markdown-content prose prose-sm max-w-none text-(--schemes-ink-soft)">
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
@@ -120,7 +120,7 @@ export default function ChatMessageList({
               ) : null}
             </div>
           ) : (
-            <div className="max-w-[min(90%,450px)] wrap-break-words rounded-2xl rounded-br-md bg-schemes-blue-500 px-3.5 py-2.5 text-sm leading-relaxed text-white">
+            <div className="max-w-[min(90%,450px)] wrap-break-words rounded-2xl rounded-br-md bg-(--schemes-blue-50) px-3.5 py-2.5 text-sm leading-relaxed text-(--schemes-ink)">
               {msg.text}
             </div>
           )}

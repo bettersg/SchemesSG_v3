@@ -46,8 +46,8 @@ export default function ChatInputBar({
   };
 
   return (
-    <div className="bg-white border-t border-(--schemes-border) px-3 py-2.5 shrink-0">
-      <div className="flex gap-2.5 items-end bg-(--schemes-bg) border border-(--schemes-border) rounded-xl px-3.5 py-2 focus-within:border-(--schemes-blue-600) focus-within:ring-2 focus-within:ring-(--schemes-blue-400) focus-within:bg-white transition-[border-color,box-shadow,background-color]">
+    <div className="px-4 pb-3 pt-1 shrink-0 sm:px-5">
+      <div className="flex items-end gap-2 rounded-3xl border border-(--schemes-border) bg-white px-2 py-2 pl-4 shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition-[border-color,box-shadow] focus-within:border-(--schemes-blue-100) focus-within:shadow-[0_4px_18px_rgba(15,23,42,0.10)]">
         <textarea
           ref={ref}
           value={value}
@@ -57,7 +57,7 @@ export default function ChatInputBar({
           aria-disabled={isGenerating}
           placeholder="Ask a follow-up question…"
           rows={1}
-          className="thin-scrollbar flex-1 resize-none overscroll-contain bg-transparent focus-visible:outline-none text-sm text-(--schemes-ink) placeholder:text-(--schemes-muted) leading-relaxed min-h-[24px] max-h-[72px] disabled:cursor-not-allowed disabled:opacity-60"
+          className="thin-scrollbar flex-1 resize-none self-center overscroll-contain bg-transparent focus-visible:outline-none text-sm text-(--schemes-ink) placeholder:text-(--schemes-muted) leading-relaxed min-h-[24px] max-h-[72px] disabled:cursor-not-allowed disabled:opacity-60"
         />
         <StopGeneratingButton
           isGenerating={isGenerating}
@@ -66,7 +66,7 @@ export default function ChatInputBar({
           onStop={onStop}
         />
       </div>
-      <p className="text-center text-[10px] text-(--schemes-muted) mt-1.5 flex items-center justify-center gap-1">
+      <p className="mt-2 flex items-center justify-center gap-1 text-center text-[10px] text-(--schemes-muted-light)">
         <ShieldCheck size={9} strokeWidth={2} />
         Anonymous · No personal data stored
       </p>
