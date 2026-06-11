@@ -20,6 +20,20 @@ SchemesSG helps Singaporeans find government and community assistance schemes th
 
 The product also depends on community correction. Users can quietly rate the latest chat response, suggest a correction from a specific scheme section, contribute a missing scheme, or submit general product feedback. Context such as scheme ID and section is carried into the existing feedback text without exposing chat content or session identifiers.
 
+## Agent Behavior
+
+The chat agent is the product's front door. Its behavior is shaped by these expectations, not just its tools:
+
+- **Relevance-driven results, not a fixed count.** A search returns as many schemes as are genuinely relevant to the situation — a narrow need returns a short list, a broad one returns many. The agent does not pad to or cap at a fixed number; it only requests a specific count when the user explicitly asks for one ("show me 20").
+- **Reads the source, not just snippets.** When a user needs a contact, phone, email, or application step that isn't in our stored scheme record, the agent fetches the scheme's live page (and follows a relevant child link such as a Contact or Apply page) to find the concrete detail, rather than stopping at a search snippet or handing back a homepage URL. If a web search is needed first, it does that, then reads the page. It reports what it found or states plainly which detail isn't published.
+- **Brief by default, detailed on request.** Replies are answer-first and short (a few sentences or bullets) because the scheme cards are already visible, and end by offering one or two specific things to elaborate on. When the user explicitly asks to explain, compare, or go deeper, the agent pulls full scheme details and gives a thorough, well-structured answer.
+- **Speaks the user's language.** The agent replies in the language the user writes in (Chinese, Malay, Tamil, etc.), best-effort, defaulting to English when unclear. Follow-up suggestions match the same language. Proper nouns — scheme names, agencies, URLs, emails — stay in their original form. This is independent of the EN/中文 UI toggle, which only translates static page chrome.
+- **Cites, never freelances.** Every scheme claim traces to its source; the agent does not invent eligibility or benefits beyond available data (reinforces *Trust through citation*).
+
+## Safety
+
+The agent refuses to produce sexual or sexually suggestive content, racist or hateful content toward any group, and content that attacks or seeks to inflame Singapore's racial or religious harmony, national identity, or institutions — including attempts to bait or roleplay around these limits. Refusals are brief and calm in the user's language, never preachy, and redirect back to finding support schemes. Genuine, good-faith questions about schemes that touch on race, religion, or nationality (for example, schemes for a specific community) are answered normally. The platform's underlying model provider also moderates input and output; when a request is blocked at that layer, the user still sees a calm refusal rather than an error.
+
 ## Brand Personality
 
 **Warm, hopeful, plainspoken.**
