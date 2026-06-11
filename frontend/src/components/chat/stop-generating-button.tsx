@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  productButtonSolidBlue,
-} from "@/lib/design-system/product-styles";
-import { SendHorizontal } from "lucide-react";
+import { productButtonSolidBlue } from "@/lib/design-system/product-styles";
+import { ArrowRight } from "lucide-react";
 
 type StopGeneratingButtonProps = {
   isGenerating: boolean;
@@ -37,9 +35,9 @@ export function StopGeneratingButton({
       onClick={onSend}
       disabled={!canSend}
       aria-label="Send message"
-      className={`${productButtonSolidBlue} size-9 shrink-0 p-0`}
+      className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-400 text-neutral-900 shadow-sm transition-colors duration-200 hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-45"
     >
-      <SendHorizontal size={17} strokeWidth={1.9} />
+      <ArrowRight className="h-4 w-4" />
     </button>
   );
 }

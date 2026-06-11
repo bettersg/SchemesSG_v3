@@ -15,6 +15,7 @@ import { capitalize, parseArrayString } from "@/lib/utils";
 import {
   productButtonCompact,
   productButtonOutlineNeutral,
+  productButtonSolidAmber,
   productButtonSolidBlue,
 } from "@/lib/design-system/product-styles";
 
@@ -231,7 +232,7 @@ function SchemesFilter({
       <div className="flex gap-2 items-end">
         <Button
           variant="primary"
-          className={`${productButtonSolidBlue} ${productButtonCompact}`}
+          className={`${productButtonSolidAmber} ${productButtonCompact}`}
           onPress={handleFilter}
         >
           Filter

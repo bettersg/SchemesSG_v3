@@ -32,9 +32,11 @@ const productButtonBase =
 export const productBlueOutlineSurface =
   "border-(--schemes-blue-100) bg-white text-(--schemes-blue-600)";
 
+// Primary action. Matches the /about landing CTA (amber fill, dark ink,
+// darken-on-hover). Blue is reserved for structural/secondary use.
 export const productButtonSolidAmber = cn(
   productButtonBase,
-  "bg-(--schemes-amber-400) text-(--schemes-ink) hover:bg-(--schemes-amber-100)",
+  "bg-(--schemes-amber-400) text-(--schemes-ink) hover:bg-(--schemes-amber-500)",
 );
 
 export const productButtonSolidBlue = cn(
