@@ -179,7 +179,7 @@ export default function SchemesList({
             {isGenerating ? (
               <StatusTextShimmer>Finding the best schemes...</StatusTextShimmer>
             ) : (
-              `${schemes.length} ${schemes.length === 1 ? "scheme" : "schemes"} found`
+              `${filteredSchemes.length} ${filteredSchemes.length === 1 ? "scheme" : "schemes"} found`
             )}
           </div>
           <p className="text-xs text-(--schemes-muted)">
