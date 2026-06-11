@@ -33,20 +33,26 @@ def rank_results(query_text: str, results: pd.DataFrame) -> pd.DataFrame:
     return results.sort_values("combined_scores", ascending=False)
 
 
-def compute_vec_scores(ids: list[str], top_k: int) -> pd.DataFrame:
-    """Compute normalized vector similarity scores for a list of ids.
+def compute_vec_scores(ids: list[str], distances: list[float]) -> pd.DataFrame:
+    """Convert real cosine distances into a normalized 0-1 relevance score.
 
-    The scoring uses a linear decay based on position in the results returned
-    by the vector search (assumed sorted by similarity). Returns a DataFrame
-    with columns `scheme_id` and `vec_similarity_score`.
+    Firestore returns a cosine distance per match where 0 means identical and
+    larger means less similar. We turn that into a relevance score where a
+    closer match scores higher, so a relevance threshold can be applied
+    downstream. Returns a DataFrame with columns `scheme_id` and
+    `vec_similarity_score`.
     """
     if not ids:
         return pd.DataFrame(columns=["scheme_id", "vec_similarity_score"])
 
-    vec_scores = [(top_k - i) / top_k for i in range(len(ids))]
+    # Smaller distance = better match = higher relevance.
+    relevance = [-d for d in distances]
 
-    # Normalize scores to 0-1 range
-    if len(vec_scores) > 1 and max(vec_scores) > min(vec_scores):
-        vec_scores = [(s - min(vec_scores)) / (max(vec_scores) - min(vec_scores)) for s in vec_scores]
+    # Normalize to 0-1 across this result set (best match -> 1).
+    if len(relevance) > 1 and max(relevance) > min(relevance):
+        lo, hi = min(relevance), max(relevance)
+        relevance = [(r - lo) / (hi - lo) for r in relevance]
+    else:
+        relevance = [1.0 for _ in relevance]
 
-    return pd.DataFrame(zip(ids, vec_scores), columns=["scheme_id", "vec_similarity_score"])
+    return pd.DataFrame(zip(ids, relevance), columns=["scheme_id", "vec_similarity_score"])

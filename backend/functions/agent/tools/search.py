@@ -8,18 +8,17 @@ from typing import Any
 from langgraph.prebuilt import ToolRuntime
 from langchain_core.tools import StructuredTool
 from langgraph.config import get_stream_writer
-from search import PredictParams, QueryHandler
+from search import PredictParams, QueryHandler, LLM_RESULT_LIMIT, slim_for_llm
 from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
 from integrations import FirebaseManager
 
 logger = setup_logging()
 
-ACTION_MESSAGE_ON_START = 'Finding the top {top_k} schemes that best match "{query}"'
+ACTION_MESSAGE_ON_START = 'Finding the schemes that best match "{query}"'
 ACTION_MESSAGE_ON_END = 'Found {result_count} schemes matching "{query}".'
 SHORT_ACTION_MESSAGE_ON_START = "Searching schemes database"
 SHORT_ACTION_MESSAGE_ON_END = "{result_count} schemes found"
-MINIMAL_LLM_KEYS = {"scheme_id", "scheme", "agency", "summary"}
 
 
 class SchemeSearchToolInput(BaseModel):
@@ -27,11 +26,18 @@ class SchemeSearchToolInput(BaseModel):
         ...,
         description="Natural language query about scheme eligibility, benefits, or requirements",
     )
-    top_k: int = Field(
-        default=30,
-        ge=10,
-        le=50,
-        description="Number of search results to return (between 10 and 50)",
+    requested_count: int | None = Field(
+        default=None,
+        ge=1,
+        description=(
+            "Leave this UNSET for almost every query. The search already returns all "
+            "sufficiently relevant schemes, ranked best-first, on its own. ONLY set a "
+            "number when the user themselves states an explicit quantity in their "
+            "message, e.g. 'show me 20 healthcare schemes' -> 20, 'give me 5 options' "
+            "-> 5. Do NOT set it for an ordinary request like 'I need health support' "
+            "or to pick a 'reasonable' count yourself. It never pads with irrelevant "
+            "results to reach the number."
+        ),
     )
     # 1. REMOVED session_id from here so the LLM doesn't see or input it.
 
@@ -41,11 +47,11 @@ class SchemeSearchToolInput(BaseModel):
 
 def _search_schemes_sync(
     query: str,
-    top_k: int = 30,
+    requested_count: int | None = None,
     runtime: ToolRuntime = None,  # 3. Added runtime parameter here
 ):
     logger.info("search_schemes tool invoked")
-    top_k = max(10, min(int(top_k), 50))
+    requested_target = int(requested_count) if requested_count else None
 
     # 4. Extract session_id directly from the graph state via runtime
     session_id = None
@@ -62,7 +68,7 @@ def _search_schemes_sync(
                 "data": {
                     "phase": "action_message",
                     "label": SHORT_ACTION_MESSAGE_ON_START,
-                    "message": ACTION_MESSAGE_ON_START.format(query=query, top_k=top_k),
+                    "message": ACTION_MESSAGE_ON_START.format(query=query),
                 },
             },
         )
@@ -72,7 +78,7 @@ def _search_schemes_sync(
     model = QueryHandler(FirebaseManager())
     params = PredictParams(
         query=query,
-        top_k=top_k,
+        requested_target=requested_target,
         is_warmup=False,
         session_id=session_id,  # Passes the extracted session_id here
     )
@@ -100,12 +106,10 @@ def _search_schemes_sync(
     except Exception as e:
         logger.debug(f"Failed to emit search results to stream: {e}")
 
-    # Sanitize results to only include minimal keys before returning to LLM, to avoid token overload and focus on relevant info
-    schemes_response = results.get("data", [])
-    schemes_response_dicts = []
-    for scheme in schemes_response:
-        schemes_response_dicts.append({k: v for k, v in scheme.items() if k in MINIMAL_LLM_KEYS})
-    results["data"] = schemes_response_dicts
+    # The UI already received every relevant scheme via the schemes_update
+    # stream above. The LLM only reads the top slice with minimal keys, to keep
+    # the answer focused and bound per-turn token cost.
+    results["data"] = slim_for_llm(results.get("data", []), LLM_RESULT_LIMIT)
 
     return results
 

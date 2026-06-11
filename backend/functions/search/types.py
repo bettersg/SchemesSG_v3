@@ -10,6 +10,7 @@ class PredictParams(BaseModel):
     similarity_threshold: Optional[float] = None
     is_warmup: Optional[bool] = False  # Add flag for warmup requests
     session_id: Optional[str] = None  # Add optional session_id for context association
+    requested_target: Optional[int] = None  # count the user asked for, e.g. "20 healthcare schemes"
 
 
 class PaginatedSearchParams(BaseModel):

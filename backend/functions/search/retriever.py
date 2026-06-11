@@ -17,6 +17,29 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 EMBEDDINGS_COLLECTION = "schemes_embeddings"
 SCHEMES_COLLECTION = "schemes"
 
+# Search funnel tuning. We score essentially the whole candidate pool, then
+# keep everything that clears the relevance bar. The result count is driven by
+# relevance (and an optional user-requested target), not a fixed top-N. Values
+# are starting points to be tuned against real queries.
+#
+# RETRIEVAL_LIMIT is a sentinel, not a result count: find_nearest returns at
+# most the whole collection, so a value at/above the corpus size means
+# "retrieve everything". 1000 is Firestore's hard maximum for find_nearest.limit
+# and comfortably exceeds the current corpus, so it stands in for "all
+# candidates". The relevance threshold (not this number) decides what's returned.
+RETRIEVAL_LIMIT = 1000  # Firestore's max find_nearest limit; effectively "all candidates"
+# Permissive relevance floor on the normalized combined score (0-1). It is not a
+# precise relevance gate (embedding distances are too compressed for that without
+# a reranker); empirically it keeps hundreds of results for a broad query and a
+# focused handful for a specific one, while dropping the clearly-irrelevant tail.
+# Ranking carries relevance; this only trims the tail. Tune against real queries.
+RELEVANCE_THRESHOLD = 0.6
+SAFETY_CEILING = 300  # hard upper bound on results returned, regardless of request
+# How many top-ranked schemes the LLM reads to write its answer. The UI shows all
+# relevant results (the user scrolls); the LLM only needs the top slice, which
+# bounds per-turn token cost as the corpus grows.
+LLM_RESULT_LIMIT = 50
+
 
 def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str]) -> tuple[List[Dict], List[str]]:
     """Fetch schemes by Firestore document ID, preserving request order."""
@@ -111,33 +134,42 @@ class SearchModel:
             self.__class__.firebase_manager = firebase_manager
             self.__class__.initialise()
 
-    def search(self, query_text: str, top_k: int) -> pd.DataFrame:
+    def search(self, query_text: str, pool_size: Optional[int] = None) -> pd.DataFrame:
         """
-        Embed the input query, search Firestore vector index for the most similar schemes,
-        and return a merged DataFrame containing scheme metadata and similarity scores.
+        Embed the input query, search the Firestore vector index across the whole
+        candidate pool, and return a merged DataFrame containing scheme metadata
+        and the real cosine distance for each match.
         """
+        if pool_size is None:
+            pool_size = RETRIEVAL_LIMIT
+
         # Step 1: Generate query embedding
         vec = self.__class__.embeddings.embed_query(query_text)
 
-        # Step 2: Query embeddings collection using Firestore vector search
+        # Step 2: Query embeddings collection using Firestore vector search,
+        # asking Firestore to return the actual cosine distance per match.
+        # find_nearest returns at most the whole collection, so a sentinel limit
+        # above the corpus size means "retrieve everything".
         embeddings_collection = self.__class__.db.collection(EMBEDDINGS_COLLECTION)
         vector_query = embeddings_collection.find_nearest(
             vector_field="embedding",
             query_vector=Vector(vec),
             distance_measure=DistanceMeasure.COSINE,
-            limit=top_k,
+            limit=pool_size,
+            distance_result_field="vector_distance",
         )
 
-        # Get matching doc_ids from vector search results
+        # Get matching doc_ids and their real cosine distances from the results
         embedding_results = vector_query.get()
         ids = [doc.id for doc in embedding_results]
+        distances = [doc.to_dict().get("vector_distance") for doc in embedding_results]
 
         if not ids:
             logger.warning(f"No vector search results for query: {query_text}")
             return pd.DataFrame(columns=["scheme_id", "vec_similarity_score", "query"])
 
-        # Compute normalized vector similarity scores using shared scorer helper
-        score_df = compute_vec_scores(ids, top_k)
+        # Convert the real cosine distances into normalized relevance scores
+        score_df = compute_vec_scores(ids, distances)
 
         # Step 3: Fetch full scheme data from schemes collection
         try:
@@ -162,25 +194,43 @@ class SearchModel:
         return rank_results(query_text, results)
 
     def aggregate_and_rank_results(
-        self, query_text: str, top_k: int, similarity_threshold: Optional[int]
+        self,
+        query_text: str,
+        threshold: Optional[float] = None,
+        requested_target: Optional[int] = None,
     ) -> pd.DataFrame:
         """
-        Perform hybrid vector + BM25 retrieval with caching.
+        Perform hybrid vector + BM25 retrieval, then return a relevance-driven
+        result set: every candidate whose combined score clears `threshold`,
+        ordered best-first.
+
+        `requested_target` is the count the user asked for (e.g. "20 healthcare
+        schemes"). It caps the results, but the relevance floor always wins: we
+        never pad below `threshold` to hit the number. When no target is given,
+        all above-threshold results are returned. A hard `SAFETY_CEILING` always
+        applies. The result count therefore varies with the query.
         """
-        cache_key = (query_text, top_k)
+        if threshold is None:
+            threshold = RELEVANCE_THRESHOLD
+
+        cap = SAFETY_CEILING if requested_target is None else min(requested_target, SAFETY_CEILING)
+
+        cache_key = (query_text, threshold)
         if cache_key in self.query_cache:
             logger.debug("Cache hit for query '%s'", query_text)
-            return self.query_cache[cache_key]
+            ranked = self.query_cache[cache_key]
+        else:
+            # Retrieve the full candidate pool, independent of how many we return.
+            results = self.search(query_text)
 
-        results = self.search(query_text, top_k)
+            # Handle empty results - skip ranking if no vector results
+            if results.empty:
+                logger.warning(f"No search results to rank for query: {query_text}")
+                self.query_cache[cache_key] = results
+                return results
 
-        # Handle empty results - skip ranking if no vector results
-        if results.empty:
-            logger.warning(f"No search results to rank for query: {query_text}")
-            self.query_cache[cache_key] = results
-            return results
+            ranked = self.rank(query_text, results).drop_duplicates("scheme_id")
+            self.query_cache[cache_key] = ranked
 
-        results = self.rank(query_text, results).drop_duplicates("scheme_id")
-
-        self.query_cache[cache_key] = results
-        return results.head(top_k)
+        relevant = ranked[ranked["combined_scores"] >= threshold]
+        return relevant.head(cap)

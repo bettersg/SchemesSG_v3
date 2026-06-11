@@ -170,10 +170,18 @@ class QueryHandler:
         return results_json
 
     def predict_for_agent(self, params: PredictParams) -> dict[str, Any]:
-        """Method to be called by agent for search tool"""
+        """Method to be called by agent for search tool.
+
+        Returns up to the user's requested count of relevant schemes (the
+        relevance floor always wins, so we never pad below it), and flags a
+        shortfall when fewer relevant schemes exist than the user asked for so
+        the agent can explain the gap.
+        """
 
         final_results = self.search_model.aggregate_and_rank_results(
-            params.query, params.top_k, params.similarity_threshold
+            params.query,
+            params.similarity_threshold,
+            params.requested_target,
         )
 
         session_id = params.session_id if params.session_id else str(uuid1())
@@ -181,10 +189,16 @@ class QueryHandler:
 
         doc_id = self.save_llm_query(params.query, session_id, results_dict)
 
-        # only select the subset of fields that are relevant for the agent to consume
-        # results_dict = [{k: v for k, v in record.items() if k in LLM_SEARCH_RESULT_KEYS} for record in results_dict]
+        shortfall = params.requested_target is not None and len(results_dict) < params.requested_target
 
-        results_json = {"session_id": session_id, "docID": doc_id, "data": results_dict, "mh": 0.7}
+        results_json = {
+            "session_id": session_id,
+            "docID": doc_id,
+            "data": results_dict,
+            "requested_target": params.requested_target,
+            "shortfall": shortfall,
+            "mh": 0.7,
+        }
 
         return results_json
 
