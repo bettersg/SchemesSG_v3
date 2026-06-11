@@ -469,7 +469,7 @@ export async function searchSchemes(
 export async function getSchemesCategory(
   category = "",
   cursor = "",
-): Promise<{ schemes: Scheme[]; nextCursor: string }> {
+): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
   const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog`);
   const normalizedCategory = category.replace(/\+/g, " ").trim();
 
@@ -487,7 +487,7 @@ export async function getSchemesCategory(
     });
 
     if (res.status === 404) {
-      return { schemes: [], nextCursor: "" };
+      return { schemes: [], nextCursor: "", total: 0 };
     }
     if (!res.ok) {
       throw new Error(`Catalog fetch failed: ${res.status}`);
@@ -503,8 +503,9 @@ export async function getSchemesCategory(
     return {
       schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
       nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
+      total: data.total_count ?? 0,
     };
   } catch {
-    return { schemes: [], nextCursor: "" };
+    return { schemes: [], nextCursor: "", total: 0 };
   }
 }

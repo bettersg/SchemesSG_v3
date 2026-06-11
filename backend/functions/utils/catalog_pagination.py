@@ -23,6 +23,7 @@ class PaginationResult:
     data: list[dict[str, Any]]
     next_cursor: Optional[str] = None
     has_more: bool = False
+    total_count: Optional[int] = None
 
 
 def _encode_cursor(doc_id: str) -> str:
@@ -151,6 +152,28 @@ def _get_paginated_query(
         return q
 
 
+def _count_total(
+    collection_ref: CollectionReference,
+    base_query: Optional[Query] = None,
+) -> Optional[int]:
+    """Return the total number of documents matching the (unpaginated) query.
+
+    Uses a Firestore count() aggregation, which is billed cheaply (roughly one
+    read per 1000 matched documents) rather than reading every document. Counts
+    the filtered base_query when present, else the whole collection. Returns
+    None on failure so the caller can degrade gracefully.
+    """
+    try:
+        source = base_query if base_query is not None else collection_ref
+        aggregate = source.count()
+        result = aggregate.get()
+        # google-cloud-firestore returns a list of aggregation-result rows.
+        return int(result[0][0].value)
+    except Exception as e:
+        logger.warning(f"Failed to count catalog total: {e}")
+        return None
+
+
 def get_paginated_results(
     collection_ref: CollectionReference,
     base_query: Optional[Query] = None,
@@ -190,4 +213,5 @@ def get_paginated_results(
         data=[{"scheme_id": doc.id, **doc.to_dict()} for doc in docs],
         next_cursor=next_cursor,
         has_more=has_more,
+        total_count=_count_total(collection_ref, base_query),
     )

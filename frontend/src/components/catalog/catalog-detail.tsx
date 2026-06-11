@@ -12,8 +12,6 @@ import {
   type CatalogCategory,
 } from "@/lib/design-system/categories";
 import {
-  productButtonCompact,
-  productButtonSolidAmber,
   productCard,
   productHeading,
   productPageShell,
@@ -22,7 +20,7 @@ import {
 import PageShell from "@/components/layout/page-shell";
 import EmptyState from "@/components/feedback/empty-state";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
-import { MessageSquare } from "lucide-react";
+import { Search } from "lucide-react";
 
 type CatalogPageClientProps = {
   initialCategory?: CatalogCategory;
@@ -91,6 +89,7 @@ export default function CatalogPageClient({
     Boolean(initialCategory),
   );
   const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [loadState, setLoadState] = useState<CatalogLoadState>(
     initialCategory ? "loadingInitial" : "idle",
   );
@@ -192,11 +191,13 @@ export default function CatalogPageClient({
     cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
     setLoadState("loadingInitial");
+    setTotalCount(null);
     getSchemesCategory(
       activeCategory === "All" ? "" : activeCategory.toLowerCase(),
     ).then((r) => {
       if (requestIdRef.current !== requestId) return;
       setSchemes(r.schemes);
+      setTotalCount(r.total);
       cursorRef.current = r.nextCursor;
       setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
@@ -331,13 +332,24 @@ export default function CatalogPageClient({
               {cat}
             </Link>
           ))}
+          {/* Mode switch: browse categories here, or search conversationally.
+              Same chip shape as the categories so it flows in the row; tinted
+              blue with a search icon so it reads as a control, not a category. */}
+          <Link
+            href="/"
+            aria-label="Search schemes"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-3.5 py-2 text-xs font-semibold text-(--schemes-blue-600) transition-[background-color,border-color,color] hover:border-(--schemes-blue-600) hover:bg-(--schemes-blue-600) hover:text-white"
+          >
+            <Search size={15} strokeWidth={2} />
+            Search
+          </Link>
         </ScrollShadow>
       </div>
 
       <div className="flex">
         {/* Results */}
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
-          <div className="bg-(--schemes-bg) py-4 flex items-center justify-between sticky top-0 z-20">
+          <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-3 pt-2">
             <p className="text-sm font-semibold text-(--schemes-ink-soft)">
               {isLoadingInitial ? (
                 <StatusTextShimmer>
@@ -347,26 +359,15 @@ export default function CatalogPageClient({
                 </StatusTextShimmer>
               ) : (
                 <>
-                  {
-                    // searchQuery
-                    //   ? `Results for "${searchQuery}"`
-                    //   :
-                    activeCategory === "All" ? "All schemes" : activeCategory
-                  }
+                  {activeCategory === "All" ? "All schemes" : activeCategory}
                   <span className="ml-2 text-(--schemes-blue-600)">
-                    ({schemes.length} shown)
+                    {totalCount !== null && schemes.length < totalCount
+                      ? `(${schemes.length} of ${totalCount})`
+                      : `(${totalCount ?? schemes.length})`}
                   </span>
                 </>
               )}
             </p>
-            <Link
-              href="/"
-              aria-label="Find schemes with AI"
-              className={`${productButtonSolidAmber} ${productButtonCompact} aspect-square shrink-0 px-0 sm:aspect-auto sm:w-auto sm:px-3`}
-            >
-              <MessageSquare size={20} strokeWidth={2} />
-              <span className="hidden sm:inline">Find with AI</span>
-            </Link>
           </div>
           {isLoadingInitial ? (
             <CatalogGridSkeleton />
@@ -376,7 +377,7 @@ export default function CatalogPageClient({
               description="Try a different search or category"
             />
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 pt-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
               {schemes.map((s) => (
                 <SchemeCard key={s.schemeId} scheme={s} />
               ))}

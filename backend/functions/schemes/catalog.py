@@ -84,6 +84,7 @@ def _filter_scheme_types_for_category(
         data=filtered_data,
         next_cursor=results.next_cursor,
         has_more=results.has_more,
+        total_count=results.total_count,
     )
 
 
