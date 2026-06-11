@@ -443,7 +443,6 @@ export default function ChatPage() {
             streamingBlocks={streamingBlocks}
             statusSteps={statusSteps}
             isGenerating={isGenerating}
-            hasQuickReplies={hasVisibleQuickReplies}
             onRate={handleRate}
           />
 
@@ -507,7 +506,6 @@ export default function ChatPage() {
                 streamingBlocks={streamingBlocks}
                 statusSteps={statusSteps}
                 isGenerating={isGenerating}
-                hasQuickReplies={hasVisibleQuickReplies}
                 onRate={handleRate}
               />
 

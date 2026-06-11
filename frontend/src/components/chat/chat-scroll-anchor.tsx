@@ -5,26 +5,22 @@ import { ArrowDown } from "lucide-react";
 type ChatScrollAnchorProps = {
   show: boolean;
   onClick: () => void;
-  hasQuickReplies?: boolean;
 };
 
-export function ChatScrollAnchor({
-  show,
-  onClick,
-  hasQuickReplies = false,
-}: ChatScrollAnchorProps) {
+export function ChatScrollAnchor({ show, onClick }: ChatScrollAnchorProps) {
   if (!show) return null;
 
+  // Sticky to the bottom of the scroll viewport (not the scrolled content), so
+  // it always hovers a fixed gap above the composer regardless of message
+  // length or quick-reply height — and centered, the convention for a
+  // jump-to-latest control (Gemini, ChatGPT, Slack).
   return (
-    <div
-      className={`pointer-events-none absolute right-0 left-0 z-10 flex justify-end px-4 ${
-        hasQuickReplies ? "bottom-[9rem]" : "bottom-[6rem]"
-      }`}
-    >
+    <div className="pointer-events-none sticky bottom-2 z-10 -mt-9 flex justify-center">
       <button
         type="button"
         onClick={onClick}
-        className="pointer-events-auto inline-flex size-11 items-center justify-center gap-1.5 rounded-full bg-white/70 p-2 text-xs font-semibold text-(--schemes-blue-600) shadow-[0_4px_14px_rgba(24,95,165,0.08)] backdrop-blur-md transition-[background-color,border-color,color,box-shadow,transform] hover:bg-(--schemes-blue-50)/85 hover:text-(--schemes-blue-900) hover:shadow-[0_6px_18px_rgba(24,95,165,0.12)]"
+        aria-label="Scroll to latest"
+        className="pointer-events-auto inline-flex size-9 items-center justify-center rounded-full border border-(--schemes-border) bg-white/85 text-(--schemes-blue-600) shadow-[0_4px_14px_rgba(24,95,165,0.10)] backdrop-blur-md transition-[background-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)"
       >
         <ArrowDown size={16} strokeWidth={2} />
       </button>

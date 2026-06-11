@@ -30,7 +30,6 @@ interface ChatMessageListProps {
   streamingBlocks: string[];
   statusSteps?: StatusStep[];
   isGenerating?: boolean;
-  hasQuickReplies?: boolean;
   onRate?: (index: number, rating: "up" | "down") => void;
 }
 
@@ -39,7 +38,6 @@ export default function ChatMessageList({
   streamingBlocks,
   statusSteps = [],
   isGenerating,
-  hasQuickReplies = false,
   onRate,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -148,7 +146,6 @@ export default function ChatMessageList({
       <ChatScrollAnchor
         show={showJumpToLatest}
         onClick={() => handleScrollToBottom()}
-        hasQuickReplies={hasQuickReplies}
       />
     </ScrollShadow>
   );
