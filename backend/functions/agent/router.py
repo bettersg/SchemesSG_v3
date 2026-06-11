@@ -17,6 +17,7 @@ from .tools import (
     filter_rerank_by_directive_tool,
     retrieve_schemes_by_ids_tool,
     duckduckgo_web_search_tool,
+    fetch_webpage_tool,
     load_skills_tool,
 )
 from .followup import FollowupSubgraph
@@ -29,7 +30,7 @@ from .prompts.router import ROUTER_AGENT_SYSTEM_TEMPLATE
 logger = setup_logging()
 MODEL_NAME = "gpt-5.4-mini"
 DEFAULT_TEMPERATURE = 0.7
-DEFAULT_MAX_COMPLETION_TOKENS = 400
+DEFAULT_MAX_COMPLETION_TOKENS = 1500
 
 
 class RouterAgentState(TypedDict):
@@ -45,6 +46,7 @@ class RouterAgentGraph:
             filter_rerank_by_directive_tool,
             retrieve_schemes_by_ids_tool,
             duckduckgo_web_search_tool,
+            fetch_webpage_tool,
             load_skills_tool,
         ]
         self._checkpointer = FirestoreChatSaver(client=firestore_client) if firestore_client is not None else None

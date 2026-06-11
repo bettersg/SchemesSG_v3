@@ -74,9 +74,12 @@ retrieve_schemes_by_ids_tool = StructuredTool.from_function(
     func=retrieve_schemes_by_ids,
     name="retrieve_schemes_by_ids",
     description=(
-        "Retrieve detailed information for one or more known schemes by scheme_id. "
-        "Use this when the user asks for more details, eligibility, application steps, contact information, "
-        "deadlines, benefits, requirements, or any specific question about schemes already found in the database."
+        "Retrieve the stored database record for one or more known schemes by scheme_id "
+        "(summary, agency, eligibility, support type, and the scheme's official URL). "
+        "Use this to surface what our database already holds about a scheme. "
+        "It only returns our stored fields; it does NOT read the scheme's live website. If the user needs a "
+        "phone number, email, or step-by-step application process and it is not in the returned record, do not "
+        "stop here — use fetch_webpage on the scheme's URL to read the actual page."
     ),
     args_schema=RetrieveSchemesByIdsInput,
 )
