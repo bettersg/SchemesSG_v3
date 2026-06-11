@@ -18,7 +18,7 @@ The job to be done, in one line: *given my situation, tell me which schemes I li
 
 SchemesSG helps Singaporeans find government and community assistance schemes through search and an AI agent that interprets natural-language situations. Success is a user reaching a relevant, sourced scheme and knowing the next action within their first session. The site exists because the official scheme landscape is fragmented across agencies, sites, and PDFs, and most people in need don't have time or expertise to navigate it.
 
-The product also depends on community correction. Users can quietly rate the latest chat response, suggest a correction from a specific scheme section, contribute a missing scheme, or submit general product feedback. Context such as scheme ID and section is carried into the existing feedback text without exposing chat content or session identifiers.
+The product also depends on community correction. Each chat response carries a quiet action row where users can give a thumbs up or down (toggleable, and recorded server-side against the session), copy the answer, or open detailed feedback. They can also suggest a correction from a specific scheme section, contribute a missing scheme, or submit general product feedback. Context such as scheme ID and section is carried into the existing feedback text without exposing chat content or session identifiers.
 
 ## Agent Behavior
 
