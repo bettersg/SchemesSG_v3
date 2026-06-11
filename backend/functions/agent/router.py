@@ -32,6 +32,26 @@ MODEL_NAME = "gpt-5.4-mini"
 DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_COMPLETION_TOKENS = 1500
 
+# Shown when Azure OpenAI's content filter blocks the prompt or the response
+# (hate, sexual, violence, self-harm). Kept calm and redirecting, not preachy.
+CONTENT_FILTER_REFUSAL = (
+    "I can't help with that, but I'm here to help you find support schemes. "
+    "What kind of assistance are you looking for?"
+)
+
+
+def _is_content_filter_error(err: Exception) -> bool:
+    """True when an LLM error is an Azure OpenAI content-policy block.
+
+    We match on the error's structure/text rather than importing the openai
+    exception class, since the error reaches us wrapped by LangChain and the
+    concrete type can vary across versions.
+    """
+    code = getattr(err, "code", None)
+    if code == "content_filter":
+        return True
+    return "content_filter" in str(err) or "ResponsibleAIPolicyViolation" in str(err)
+
 
 class RouterAgentState(TypedDict):
     messages: Annotated[list[AIMessage | HumanMessage | SystemMessage], add_messages]
@@ -76,6 +96,12 @@ class RouterAgentGraph:
         try:
             response = llm_with_tools.invoke([SystemMessage(ROUTER_AGENT_SYSTEM_TEMPLATE)] + all_messages)
         except Exception as err:
+            # Azure OpenAI blocks disallowed prompts/responses (hate, sexual,
+            # etc.) with a content_filter error. Turn that into a calm refusal
+            # so the stream ends cleanly instead of hanging on an exception.
+            if _is_content_filter_error(err):
+                logger.info("Content filter triggered; returning safe refusal")
+                return {"messages": [AIMessage(content=CONTENT_FILTER_REFUSAL)]}
             raise RuntimeError(f"LLM invocation failed: {err}") from err
 
         return {"messages": [response]}
