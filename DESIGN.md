@@ -1,6 +1,6 @@
 ---
 name: SchemesSG
-description: Civic wayfinding for Singapore's assistance schemes. The Public Library Reading Room.
+description: Civic wayfinding for Singapore's assistance schemes. Product = the Public Library Reading Room; landing = the warm confident lobby (see section 6, Brand register).
 colors:
   schemes-bg: "#fafafa"
   schemes-surface: "#ffffff"
@@ -262,7 +262,91 @@ Shadows appear only as a response to state. The `SchemeCard` lifts on hover with
 ### Signature Component: BulletItem
 A custom list item with a 6px dot in `--schemes-muted`, `gap-2.5` between dot and text, body-size copy. Used in scheme detail pages for eligibility lists, supporting documents, next-step lists. It replaces native `<ul>` markers because the library-tag aesthetic prefers a single calm dot to a bullet glyph that varies across browsers and fonts.
 
-## 6. Do's and Don'ts
+## 6. Brand / Landing Register
+
+Everything above (sections 1–5) documents the **product** register: the app shell,
+catalog, chat, results, and scheme detail — the reading room. The marketing front
+door (`/about`, and the `/` hero before a search) is a **separate brand register**
+with its own visual language. It shares the color tokens and the EN/中文 nav, but
+diverges deliberately on type, texture, and motion. When working a landing surface,
+use this section; everywhere else, use sections 1–5.
+
+**Creative stance:** the product is a calm reading room; the front door is the
+*warm, confident lobby* that invites you in. Bigger type, soft atmospheric light,
+gentle movement — still restrained, never SaaS-hype, but allowed to have presence.
+
+### Typography (brand)
+
+- **Brand Display:** **DM Serif Display** (`--font-serif`), `font-bold`, `tracking-tight`.
+  This is the one place a serif appears in the whole system. The hero headline
+  ("Find the Right Schemes, All in One Place") and every landing section `<h2>` use it.
+  - Hero: large, multi-line, `text-5xl lg:text-[4.5rem] xl:text-[5rem]`, `leading-[1.08]`.
+  - Section `<h2>`: `text-3xl md:text-4xl lg:text-[2.75rem]`.
+  - Hero ceiling is ~5rem (80px) — under the 6rem display ceiling. Do not exceed.
+- **Subheads / feature titles:** sans (`font-head`/Lexend or default sans), `font-bold`,
+  `text-lg`. The serif is for the big statement; the working subheads stay sans.
+- **Body:** Open Sans / `--font-landing-sans`, same as product, muted-neutral on light.
+
+**The Serif-Is-Brand-Only Rule.** DM Serif Display lives exclusively on landing
+display headings. It never appears in the product app shell, the catalog, or the
+chat. If you see a serif inside the reading room, it's a leak — remove it.
+
+### Texture & Atmosphere (brand only)
+
+These are explicitly *forbidden in the product register* (see the No-Glass and
+Wayfinding rules) but are the signature of the landing register:
+
+- **Glow orbs:** large, very soft, low-opacity radial fields — `bg-amber-300/10`
+  and `bg-blue-300/20`, `~600px`, `blur-[120px]`, `pointer-events-none`, absolutely
+  positioned behind content. They tint the off-white with the brand's own blue and
+  amber rather than adding new hues. Used in hero, features, and CTA sections.
+- **Grain overlay:** the `.grain-overlay` utility (3% fractal-noise SVG mask) over
+  the hero. Adds paper tooth so the large flat off-white doesn't read as sterile.
+- **Dark CTA fold:** the closing CTA section inverts to a dark surface with white
+  serif heading and an amber-tinted orb — the one dark moment in the system.
+
+**The Atmosphere-Stays-Behind Rule.** Orbs and grain are always behind content,
+always `pointer-events-none`, always low-opacity tints of the existing palette.
+They set mood; they never compete with text or carry meaning. Body contrast is
+measured against the *resolved* near-white, not the orb.
+
+### Motion (brand)
+
+The landing register earns more motion than the product:
+
+- **Hero entrance:** staggered fade-up on headline → subtitle → search → chips
+  (`opacity/​y`, `duration.slow`/`entrance`, easeOut, delays 0.1–0.45s).
+- **Scrolling marquee columns:** two infinite vertical marquees flank the hero —
+  scheme categories (left, scrolling up) and agency logos (right). Continuous,
+  slow (`speed` 28–32), decorative wayfinding texture, not interactive.
+- **Reduced motion:** marquees stop, entrance fades become instant. The hero is
+  fully legible and complete with zero motion — the reveal enhances an already-
+  visible default, it never gates content.
+
+### Layout & Sections (brand)
+
+- **Hero:** three-column grid on `lg` (`200px 1fr 200px`) — marquee, centered
+  content, marquee. Single centered column on mobile. `min-h-[100svh]`.
+- **Section rhythm:** centered, generous vertical padding, max-width ~`max-w-7xl`.
+- **Features:** a bento-style 2-column grid of feature cards, each pairing a short
+  sans `<h3>` + muted body with an inline mock-UI illustration. This is the one
+  place "cards" are the right affordance, because each card *shows* a feature.
+
+### Brand register tells to avoid
+
+The landing page currently leans on two patterns flagged as AI-grammar; treat them
+as debt, not precedent, when extending the brand surface:
+
+- **Per-section uppercase tracked eyebrows** (`uppercase tracking-widest
+  text-neutral-400` — "FEATURED ON", "OUR PARTNERS"). One named kicker can be
+  brand voice; repeating a tracked eyebrow above every section is the saturated AI
+  scaffold. New sections should find a different cadence (the serif `<h2>` alone is
+  usually enough).
+- **The `text-neutral-400` eyebrow contrast.** At `#9ca3af`-ish on the off-white it
+  is below 4.5:1 — readable as a faint label only because it's large/secondary, but
+  do not use that neutral for anything a user must read.
+
+## 7. Do's and Don'ts
 
 ### Do:
 - **Do** lead with content. Scheme names, eligibility, and next steps carry the page; UI chrome recedes.
