@@ -9,6 +9,7 @@ import ChatInputBar from "@/components/chat/chat-input-bar";
 import { Tabs } from "@heroui/react";
 import NewChatModal from "@/components/chat/new-chat-modal";
 import { ChatStreamEvent, mapToScheme, streamChat } from "@/lib/schemes";
+import { fetchWithAuth } from "@/lib/api";
 import {
   productSegmentedIndicator,
   productSegmentedList,
@@ -91,6 +92,35 @@ export default function ChatPage() {
   const handleStopGenerating = () => {
     abortControllerRef.current?.abort();
     rollbackActiveRequest();
+  };
+
+  // Toggle a thumbs rating on a bot message. Clicking the active rating clears
+  // it (undo). State persists in sessionStorage for instant UI; we also POST
+  // the rating to the backend (best-effort) so it's recorded server-side.
+  const handleRate = (index: number, rating: "up" | "down") => {
+    const current = messages[index];
+    const nextRating =
+      current?.type === "bot" && current.rating === rating ? null : rating;
+
+    setMessages((prev) =>
+      prev.map((message, i) => {
+        if (i !== index || message.type !== "bot") return message;
+        return { ...message, rating: nextRating ?? undefined };
+      }),
+    );
+
+    if (!sessionId) return;
+    void fetchWithAuth(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback`, {
+      method: "POST",
+      body: JSON.stringify({
+        source: "chat",
+        sessionId,
+        messageIndex: index,
+        rating: nextRating, // null = undo
+      }),
+    }).catch(() => {
+      // Best-effort: the rating already shows locally; ignore network failures.
+    });
   };
 
   const fetchResponse = async (userMessage: string, sessionId?: string) => {
@@ -414,6 +444,7 @@ export default function ChatPage() {
             statusSteps={statusSteps}
             isGenerating={isGenerating}
             hasQuickReplies={hasVisibleQuickReplies}
+            onRate={handleRate}
           />
 
           {/* Quick replies */}
@@ -477,6 +508,7 @@ export default function ChatPage() {
                 statusSteps={statusSteps}
                 isGenerating={isGenerating}
                 hasQuickReplies={hasVisibleQuickReplies}
+                onRate={handleRate}
               />
 
               {/* Quick replies */}

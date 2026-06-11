@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { Button, Popover } from "@heroui/react";
 import {
+  Check,
+  Copy,
   MessageSquareText,
+  MoreHorizontal,
   Pencil,
   PlusCircle,
   ThumbsDown,
@@ -13,6 +18,9 @@ import { cn } from "@/lib/utils";
 type FeedbackPromptProps =
   | {
       variant: "rating";
+      text: string;
+      rating?: "up" | "down";
+      onRate: (rating: "up" | "down") => void;
       className?: string;
     }
   | {
@@ -31,47 +39,137 @@ type FeedbackPromptProps =
       className?: string;
     };
 
-const iconLinkClass =
-  "inline-flex size-11 items-center justify-center rounded-lg text-(--schemes-muted) transition-[background-color,color,opacity] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600) focus-visible:bg-(--schemes-blue-50) focus-visible:text-(--schemes-blue-600) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
+// Compact ghost icon button for the per-response action row (thumbs/copy/more).
+const actionButtonBase =
+  "inline-flex size-8 items-center justify-center rounded-lg text-(--schemes-muted) transition-[background-color,color] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
+
+function RatingActions({
+  text,
+  rating,
+  onRate,
+  className,
+}: {
+  text: string;
+  rating?: "up" | "down";
+  onRate: (rating: "up" | "down") => void;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard can be unavailable (insecure context / permissions); fail quietly.
+    }
+  };
+
+  return (
+    <div
+      aria-label="Response actions"
+      className={cn("flex w-fit items-center gap-0.5", className)}
+    >
+      <button
+        type="button"
+        onClick={() => onRate("up")}
+        aria-label="Good response"
+        aria-pressed={rating === "up"}
+        title="Good response"
+        className={cn(
+          actionButtonBase,
+          rating === "up" &&
+            "bg-(--schemes-blue-50) text-(--schemes-blue-600) hover:bg-(--schemes-blue-50)",
+        )}
+      >
+        <ThumbsUp
+          size={15}
+          strokeWidth={2}
+          className="shrink-0"
+          fill={rating === "up" ? "currentColor" : "none"}
+        />
+      </button>
+      <button
+        type="button"
+        onClick={() => onRate("down")}
+        aria-label="Bad response"
+        aria-pressed={rating === "down"}
+        title="Bad response"
+        className={cn(
+          actionButtonBase,
+          rating === "down" &&
+            "bg-(--schemes-blue-50) text-(--schemes-blue-600) hover:bg-(--schemes-blue-50)",
+        )}
+      >
+        <ThumbsDown
+          size={15}
+          strokeWidth={2}
+          className="shrink-0"
+          fill={rating === "down" ? "currentColor" : "none"}
+        />
+      </button>
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label={copied ? "Copied" : "Copy response"}
+        title={copied ? "Copied" : "Copy"}
+        className={actionButtonBase}
+      >
+        {copied ? (
+          <Check size={15} strokeWidth={2} className="shrink-0 text-(--schemes-blue-600)" />
+        ) : (
+          <Copy size={15} strokeWidth={2} className="shrink-0" />
+        )}
+      </button>
+      <Popover>
+        <Button
+          variant="ghost"
+          aria-label="More actions"
+          className={cn(actionButtonBase, "min-h-0 min-w-0 border-0 bg-transparent p-0")}
+        >
+          <MoreHorizontal size={15} strokeWidth={2} className="shrink-0" />
+        </Button>
+        <Popover.Content
+          placement="bottom start"
+          className="z-50 w-44 rounded-xl border border-(--schemes-border) bg-(--schemes-surface) p-1 shadow-sm"
+        >
+          <Popover.Dialog className="m-0 flex flex-col p-0 outline-none">
+            <Link
+              href={{
+                pathname: "/feedback",
+                query: {
+                  source: "chat",
+                  ...(rating
+                    ? {
+                        sentiment: rating === "up" ? "positive" : "negative",
+                      }
+                    : {}),
+                },
+              }}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-(--schemes-ink-soft) no-underline transition-colors hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)"
+            >
+              <MessageSquareText size={15} strokeWidth={2} className="shrink-0" />
+              Give feedback
+            </Link>
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+    </div>
+  );
+}
 
 export default function FeedbackPrompt(props: FeedbackPromptProps) {
   if (props.variant === "rating") {
     return (
-      <div
-        aria-label="Rate this response"
-        className={cn(
-          "flex w-fit items-center gap-0.5 text-xs text-(--schemes-muted)",
-          props.className,
-        )}
-      >
-        <span className="mr-1">Was this helpful?</span>
-        <Link
-          href={{
-            pathname: "/feedback",
-            query: { source: "chat", sentiment: "positive" },
-          }}
-          aria-label="This response was helpful"
-          title="This response was helpful"
-          className={iconLinkClass}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <ThumbsUp size={16} strokeWidth={2} className="shrink-0" />
-        </Link>
-        <Link
-          href={{
-            pathname: "/feedback",
-            query: { source: "chat", sentiment: "negative" },
-          }}
-          aria-label="This response was not helpful"
-          title="This response was not helpful"
-          className={iconLinkClass}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <ThumbsDown size={16} strokeWidth={2} className="shrink-0" />
-        </Link>
-      </div>
+      <RatingActions
+        text={props.text}
+        rating={props.rating}
+        onRate={props.onRate}
+        className={props.className}
+      />
     );
   }
 

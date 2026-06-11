@@ -26,6 +26,7 @@ export type BotMessage = {
   text: string;
   schemeUpdateCount?: number;
   statusSteps?: StatusStep[];
+  rating?: "up" | "down";
 };
 
 export type Message = UserMessage | BotMessage;

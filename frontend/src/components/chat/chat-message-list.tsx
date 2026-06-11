@@ -31,6 +31,7 @@ interface ChatMessageListProps {
   statusSteps?: StatusStep[];
   isGenerating?: boolean;
   hasQuickReplies?: boolean;
+  onRate?: (index: number, rating: "up" | "down") => void;
 }
 
 export default function ChatMessageList({
@@ -39,6 +40,7 @@ export default function ChatMessageList({
   statusSteps = [],
   isGenerating,
   hasQuickReplies = false,
+  onRate,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserPinnedToBottomRef = useRef(true);
@@ -115,8 +117,13 @@ export default function ChatMessageList({
               {i === latestBotMessageIndex && msg.schemeUpdateCount ? (
                 <SchemeUpdateNotice count={msg.schemeUpdateCount} />
               ) : null}
-              {i === latestBotMessageIndex && !isGenerating ? (
-                <FeedbackPrompt variant="rating" />
+              {i !== latestBotMessageIndex || !isGenerating ? (
+                <FeedbackPrompt
+                  variant="rating"
+                  text={msg.text}
+                  rating={msg.rating}
+                  onRate={(rating) => onRate?.(i, rating)}
+                />
               ) : null}
             </div>
           ) : (
