@@ -14,10 +14,9 @@ import AgencyContactCard from "@/components/schemes/agency-contact-card";
 import StatusBanner from "@/components/feedback/status-banner";
 import { AlertCircle, Check, ExternalLink, Share2 } from "lucide-react";
 import {
-  productButtonOutlineBlue,
+  productButtonOutlineNeutral,
   productButtonProminent,
-  productButtonSolidBlue,
-  productCardPadded,
+  productButtonSolidAmber,
   productCardHeadingLg,
   productSegmentedIndicator,
   productSegmentedList,
@@ -33,12 +32,47 @@ import {
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import FeedbackPrompt from "@/components/feedback/feedback-prompt";
 
+// Scheme descriptions sometimes use literal bullet glyphs (• ● ‣ ·) on their
+// own lines instead of Markdown list syntax, and separate them with blank
+// lines. react-markdown then renders each as a standalone <p>, so they get the
+// same spacing as paragraphs and don't read as a grouped list. Normalize those
+// lines into real Markdown list items (and drop the blank lines between them)
+// so they render as a tight <ul> with proper markers and indentation.
+function normalizeBulletMarkdown(text: string): string {
+  const isBullet = (line: string) => /^\s*[•●‣·]\s+/.test(line);
+  const toItem = (line: string) => line.replace(/^\s*[•●‣·]\s+/, "- ");
+  const out: string[] = [];
+  let prevWasBullet = false;
+
+  for (const line of text.split("\n")) {
+    if (isBullet(line)) {
+      // Open the list with one blank line after a preceding paragraph; keep
+      // consecutive bullets adjacent (no blank line) so the list stays tight.
+      const prev = out[out.length - 1];
+      if (!prevWasBullet && prev !== undefined && prev.trim() !== "") {
+        out.push("");
+      }
+      out.push(toItem(line));
+      prevWasBullet = true;
+    } else if (line.trim() === "" && prevWasBullet) {
+      // Swallow blank lines that merely separated bullets; keeps the list tight.
+      continue;
+    } else {
+      // Close the list with a blank line before the following paragraph.
+      if (prevWasBullet && line.trim() !== "") out.push("");
+      out.push(line);
+      prevWasBullet = false;
+    }
+  }
+  return out.join("\n");
+}
+
 function MarkdownWrapper({ text }: { text: string }) {
   return (
     <div
       className={`${styles.showMarker} max-w-[68ch] text-base leading-relaxed text-(--schemes-ink-soft)`}
     >
-      <Markdown>{text}</Markdown>
+      <Markdown>{normalizeBulletMarkdown(text)}</Markdown>
     </div>
   );
 }
@@ -101,7 +135,7 @@ function ShareButton({
       type="button"
       onClick={handleShare}
       className={clsx(
-        productButtonOutlineBlue,
+        productButtonOutlineNeutral,
         productButtonProminent,
         "w-full",
         status === "failed"
@@ -142,7 +176,7 @@ function VisitWebsiteButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${productButtonSolidBlue} ${productButtonProminent} w-full no-underline hover:no-underline ${className ?? ""}`}
+      className={`${productButtonSolidAmber} ${productButtonProminent} w-full no-underline hover:no-underline ${className ?? ""}`}
     >
       <ExternalLink size={14} strokeWidth={2} />
       Visit website
@@ -228,7 +262,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                   </p>
                 )}
                 {scheme.schemeName && (
-                  <h1 className="line-clamp-2 text-xl font-semibold leading-tight text-(--schemes-blue-900) md:line-clamp-1 md:text-2xl">
+                  <h1 className="text-balance text-xl font-semibold leading-snug text-(--schemes-blue-900) md:text-2xl">
                     {scheme.schemeName}
                   </h1>
                 )}
@@ -309,15 +343,12 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       {scheme.description && (
         <section
           id="overview"
-          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
           <h2 className={productCardHeadingLg}>Overview</h2>
           <div className="flex flex-col gap-6">
-            <div>
-              <SectionLabel>Scheme details</SectionLabel>
-              <MarkdownWrapper text={scheme.description} />
-            </div>
+            <MarkdownWrapper text={scheme.description} />
             {sortedTypes && sortedTypes.length > 0 && (
               <div>
                 <SectionLabel>Scheme type</SectionLabel>
@@ -335,7 +366,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       {hasCoverage && (
         <section
           id="qualifies"
-          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
           <h2 className={productCardHeadingLg}>Who qualifies</h2>
@@ -377,7 +408,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       {scheme.howToApply && (
         <section
           id="how-to-apply"
-          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
           <h2 className={productCardHeadingLg}>How to apply</h2>
@@ -389,7 +420,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
         (scheme.contact && scheme.contact.length > 0)) && (
         <section
           id="agency"
-          className={`${productCardPadded} mx-auto mb-8 max-w-3xl`}
+          className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
           <h2 className={productCardHeadingLg}>Agency details</h2>
@@ -404,18 +435,15 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
             )}
 
             {scheme.contact && scheme.contact.length > 0 && (
-              <div>
-                <SectionLabel>Branches and contacts</SectionLabel>
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {scheme.contact.map((c, i) => (
-                    <AgencyContactCard
-                      key={i}
-                      contact={c}
-                      schemeName={scheme.schemeName}
-                      agency={scheme.agency}
-                    />
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {scheme.contact.map((c, i) => (
+                  <AgencyContactCard
+                    key={i}
+                    contact={c}
+                    schemeName={scheme.schemeName}
+                    agency={scheme.agency}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -436,14 +464,13 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               Help keep Schemes.sg accurate by correcting this listing or
               contributing a new scheme.
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <FeedbackPrompt
                 variant="correction"
                 schemeId={scheme.schemeId}
                 schemeName={scheme.schemeName}
                 section={activeAnchor}
               />
-              <FeedbackPrompt variant="contribution" />
               <FeedbackPrompt variant="general" />
             </div>
           </div>
