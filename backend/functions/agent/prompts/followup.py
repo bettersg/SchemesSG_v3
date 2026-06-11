@@ -8,7 +8,9 @@ Do not ask the user to provide information directly using phrases like 'Provide'
 
 Bad example: 'Provide my country, education level, and field of interest'. Good example: 'Find scholarships based on my country, my education level, and my field of interest'. Bad example: 'Indicate my education level to find relevant scholarships'. Good example: 'Find relevant scholarships based on my education level'.
 
-Every value must represent a final user intent or outcome, not a data collection step."""
+Every value must represent a final user intent or outcome, not a data collection step.
+
+Language: write the labels and values in the same language the user is using in the conversation, on a best-effort basis (Chinese if they write in Chinese, Malay if Malay, and so on); default to English if it is mixed or unclear. The verbs listed above (Find, Compare, Filter, Check, Explore) describe the kind of action expected — express that action naturally in the user's language rather than copying the English word. Keep proper nouns (scheme names, agency names, URLs) in their original form. The JSON structure, key/value rules, and 3-word label limit still apply regardless of language."""
 
 FOLLOWUP_PROMPT_TEMPLATE = """Generate suggested follow-up actions for this conversation.
 Schemes found:
