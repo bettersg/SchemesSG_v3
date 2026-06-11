@@ -34,7 +34,7 @@ const filterLabelClass =
   "text-[11px] font-semibold leading-none text-(--schemes-muted)";
 
 const filterSelectTrigger =
-  "h-11 min-h-11 rounded-lg border border-(--schemes-blue-100) bg-white px-3 text-xs font-semibold text-(--schemes-ink) shadow-none transition-[background-color,border-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) focus-visible:border-(--schemes-blue-400) focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
+  "flex h-11 min-h-11 items-center justify-between gap-2 rounded-lg border border-(--schemes-blue-100) bg-white px-3 text-xs font-semibold text-(--schemes-ink) shadow-none transition-[background-color,border-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) focus-visible:border-(--schemes-blue-400) focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
 
 const filterSelectValueClass = "text-xs font-semibold text-(--schemes-ink)";
 
