@@ -6,6 +6,8 @@ the agent can follow a child page. Text extraction is delegated to Trafilatura
 (its own benchmarks cover that); network I/O is not tested here.
 """
 
+from urllib.parse import urlparse
+
 from agent.tools.fetch_webpage import extract_links
 
 
@@ -41,8 +43,10 @@ def test_drops_anchor_mailto_tel_and_dedupes():
 
 def test_same_domain_links_come_first():
     links = extract_links(HTML, BASE)
-    other = next(i for i, l in enumerate(links) if l["url"].startswith("https://other.org"))
-    same = [i for i, l in enumerate(links) if l["url"].startswith("https://example.org")]
+    # Compare exact hosts (not URL string prefixes) so the ordering check can't
+    # be fooled by a host like "example.org.evil.com".
+    other = next(i for i, l in enumerate(links) if urlparse(l["url"]).netloc == "other.org")
+    same = [i for i, l in enumerate(links) if urlparse(l["url"]).netloc == "example.org"]
     assert all(i < other for i in same)
 
 
