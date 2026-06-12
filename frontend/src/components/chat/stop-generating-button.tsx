@@ -1,6 +1,5 @@
 "use client";
 
-import { productButtonSolidBlue } from "@/lib/design-system/product-styles";
 import { ArrowRight } from "lucide-react";
 
 type StopGeneratingButtonProps = {
@@ -22,9 +21,9 @@ export function StopGeneratingButton({
         type="button"
         onClick={onStop}
         aria-label="Stop generating"
-        className={`${productButtonSolidBlue} size-9 shrink-0 p-0`}
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-400 shadow-sm transition-colors duration-200 hover:bg-amber-500"
       >
-        <span className="h-3 w-3 rounded-[3px] bg-white" />
+        <span className="h-3 w-3 rounded-[3px] bg-neutral-800" />
       </button>
     );
   }

@@ -1,10 +1,11 @@
 import { useLanguage } from "@/lib/landing-i18n";
 import { motion } from "framer-motion";
-import { ArrowRight, Search } from "lucide-react";
-import { FormEvent, useRef } from "react";
+import { ArrowRight, Maximize2, Minimize2, Search } from "lucide-react";
+import { FormEvent, KeyboardEvent, useRef } from "react";
 import { flushSync } from "react-dom";
 import { SCHEME_CATEGORIES } from "@/lib/design-system/categories";
 import { duration } from "@/lib/design-system/motion";
+import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
 
 const CATEGORY_CHIPS = SCHEME_CATEGORIES;
 
@@ -21,6 +22,15 @@ function ChatLandingInput({
 }: ChatLandingInputProps) {
   const { t } = useLanguage();
   const formRef = useRef<HTMLFormElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Caps are multiples of the 28px line-height so a clamped textarea never cuts
+  // a line in half. Collapsed shows ~6 lines, expanded ~16.
+  const { expanded, setExpanded, canExpand, multiline, reset } =
+    useAutoGrowTextarea(textareaRef, query, {
+      lineHeight: 28,
+      collapsedMaxHeight: 168,
+      expandedMaxHeight: 448,
+    });
 
   const handleChipClick = (label: string) => {
     const q = `I need ${label.toLowerCase()} support`;
@@ -28,6 +38,17 @@ function ChatLandingInput({
       setQuery(q);
     });
     formRef.current?.requestSubmit();
+  };
+
+  // Enter submits; Shift+Enter inserts a newline (standard composer behaviour).
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (query.trim()) {
+        reset();
+        formRef.current?.requestSubmit();
+      }
+    }
   };
 
   return (
@@ -66,21 +87,73 @@ function ChatLandingInput({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: duration.entrance, delay: 0.45 }}
       >
-        <div className="relative flex items-center rounded-full bg-white border border-neutral-300 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-amber-400/50 focus-within:border-amber-400">
-          <Search className="absolute left-5 h-5 w-5 text-neutral-500 pointer-events-none" />
-          <input
-            type="text"
+        {/* Gemini-style composer. Single line: a pill with the icon, text and
+            submit on one centered row. Multi-line: a rounded rectangle where the
+            text fills the top and the icon drops to the bottom row beside the
+            controls; an expand/collapse toggle is pinned top-right. */}
+        <div
+          className={`relative bg-white border border-neutral-300 px-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-amber-400/50 focus-within:border-amber-400 ${
+            multiline
+              ? "flex flex-col rounded-3xl py-3"
+              : "flex items-center gap-2.5 rounded-full py-2"
+          }`}
+        >
+          {/* Leading search icon — inline (left) on a single line. */}
+          {!multiline && (
+            <Search className="h-5 w-5 shrink-0 text-neutral-500 pointer-events-none" />
+          )}
+
+          {(canExpand || expanded) && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-label={expanded ? "Collapse input" : "Expand input"}
+              className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+            >
+              {expanded ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </button>
+          )}
+
+          <textarea
+            ref={textareaRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-transparent py-4 pl-14 pr-14 text-[15px] text-(--schemes-ink) placeholder:text-(--schemes-muted) focus:outline-none rounded-full"
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder={t.chat.searchPlaceholder}
+            className={`thin-scrollbar min-h-7 resize-none overscroll-contain bg-transparent text-[15px] leading-7 text-(--schemes-ink) placeholder:text-(--schemes-muted) focus:outline-none ${
+              multiline ? "w-full shrink-0 pr-8" : "flex-1"
+            }`}
           />
-          <button
-            type="submit"
-            className="absolute right-2 flex size-11 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
-            aria-label={t.a11y.search}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </button>
+
+          {/* Single line: submit sits inline at the right of the pill. */}
+          {!multiline && (
+            <button
+              type="submit"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
+              aria-label={t.a11y.search}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Multi-line: bottom controls row — icon left, submit right. */}
+          {multiline && (
+            <div className="mt-2 flex items-center justify-between">
+              <Search className="h-5 w-5 shrink-0 text-neutral-500 pointer-events-none" />
+              <button
+                type="submit"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
+                aria-label={t.a11y.search}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
         {/* <p className="mt-3 text-xs text-neutral-400">
               {t.hero.searchHint}
