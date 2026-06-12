@@ -113,8 +113,11 @@ class FollowupSubgraph:
 
     def followup_bot(self, state: RouterAgentState):
         system_message = FOLLOWUP_SYSTEM_TEMPLATE.format(max_pairs=MAX_FOLLOWUP_KV)
+        # Exclude tool messages: scheme data often contains Chinese/Malay names
+        # and descriptions, which would otherwise skew the suggestion language
+        # away from the language the user is actually writing in.
         transcript = "\n".join(
-            [f"{msg.type}: {msg.content}" for msg in state["messages"] if msg.type in ["human", "ai", "tool"]]
+            [f"{msg.type}: {msg.content}" for msg in state["messages"] if msg.type in ["human", "ai"]]
         )
         parsed_schemes = parse_schemes_json(state.get("current_results_json", ""))
         prompt = FOLLOWUP_PROMPT_TEMPLATE.format(schemes_json=parsed_schemes, transcript=transcript)

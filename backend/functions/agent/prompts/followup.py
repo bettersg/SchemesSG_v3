@@ -10,7 +10,7 @@ Bad example: 'Provide my country, education level, and field of interest'. Good 
 
 Every value must represent a final user intent or outcome, not a data collection step.
 
-Language: write the labels and values in the same language the user is using in the conversation, on a best-effort basis (Chinese if they write in Chinese, Malay if Malay, and so on); default to English if it is mixed or unclear. The verbs listed above (Find, Compare, Filter, Check, Explore) describe the kind of action expected — express that action naturally in the user's language rather than copying the English word. Keep proper nouns (scheme names, agency names, URLs) in their original form. The JSON structure, key/value rules, and 3-word label limit still apply regardless of language."""
+Language: determine the language from the user's own messages (the 'human' turns) only — ignore the language of scheme names, agency names, and other data, which may appear in Chinese, Malay, or Tamil regardless of how the user writes. Write the labels and values in that language on a best-effort basis (Chinese only if the user writes in Chinese, Malay if Malay, and so on). Default to English whenever the user's language is mixed, unclear, or English. The verbs listed above (Find, Compare, Filter, Check, Explore) describe the kind of action expected — express that action naturally in the user's language rather than copying the English word. Keep proper nouns (scheme names, agency names, URLs) in their original form. The JSON structure, key/value rules, and 3-word label limit still apply regardless of language."""
 
 FOLLOWUP_PROMPT_TEMPLATE = """Generate suggested follow-up actions for this conversation.
 Schemes found:
