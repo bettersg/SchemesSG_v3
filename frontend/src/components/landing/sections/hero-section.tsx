@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { ScrollingColumn } from "@/components/landing/shared/scrolling-column";
 import { ScrollingLogoColumn } from "@/components/landing/shared/scrolling-logo-column";
 import { useLanguage } from "@/lib/landing-i18n";
@@ -17,7 +17,7 @@ export function HeroSection() {
   const { setMessages } = useChat();
   const router = useRouter();
 
-  function handleSubmit(e: React.SubmitEvent) {
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!query.trim()) return;
     setMessages([{ type: "user", text: query }]);

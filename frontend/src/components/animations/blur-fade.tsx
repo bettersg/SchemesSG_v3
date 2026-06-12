@@ -27,7 +27,13 @@ export function BlurFade({
   blur = "6px",
 }: BlurFadeProps) {
   const ref = useRef(null)
-  const inViewResult = useInView(ref, { once: true, margin: inViewMargin })
+  // framer-motion's published `margin` type rejects negative values, but a
+  // negative root margin (triggering before the element fully enters) is the
+  // intended behaviour here. Cast to the options type derived from useInView.
+  const inViewResult = useInView(ref, {
+    once: true,
+    margin: inViewMargin,
+  } as Parameters<typeof useInView>[1])
   const isVisible = !inView || inViewResult
 
   const defaultVariants: Variants = {
