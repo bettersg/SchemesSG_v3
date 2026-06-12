@@ -168,29 +168,20 @@ export default function SchemesList({
         className,
       )}
     >
-      {/* Header */}
+      {/* Header — a single row: the count sits beside the filter chips. */}
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-(--schemes-border) px-4 py-2">
-        <div className="min-w-0">
-          <div
-            role="status"
-            aria-live="polite"
-            className="mb-0.5 text-sm font-semibold text-(--schemes-blue-600)"
-          >
-            {isGenerating ? (
-              <StatusTextShimmer>Finding the best schemes...</StatusTextShimmer>
-            ) : (
-              `${filteredSchemes.length} ${filteredSchemes.length === 1 ? "scheme" : "schemes"} found`
-            )}
-          </div>
-          <p className="text-xs text-(--schemes-muted)">
-            {isGenerating
-              ? ""
-              : schemes.length > 0
-                ? "Click any scheme to view details"
-                : "No matching schemes returned for this chat"}
-          </p>
+        <div
+          role="status"
+          aria-live="polite"
+          className="shrink-0 whitespace-nowrap text-sm font-semibold text-(--schemes-blue-600)"
+        >
+          {isGenerating ? (
+            <StatusTextShimmer>Finding the best schemes...</StatusTextShimmer>
+          ) : (
+            `${filteredSchemes.length} ${filteredSchemes.length === 1 ? "scheme" : "schemes"} found`
+          )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="no-scrollbar flex min-w-0 shrink items-center gap-2 overflow-x-auto">
           {!isGenerating && schemes.length > 0 && (
             <SchemesFilter
               schemes={schemes}
