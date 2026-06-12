@@ -1,23 +1,39 @@
-import {
-  Button,
-  Label,
-  ListBox,
-  Popover,
-  Select,
-  type Key,
-} from "@heroui/react";
+import { Button, Drawer, Popover, useOverlayState } from "@heroui/react";
 import { Scheme } from "@/types/types";
-import { Dispatch, SetStateAction, useMemo } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
-import { Funnel } from "lucide-react";
+import {
+  Building2,
+  Check,
+  ChevronDown,
+  type LucideIcon,
+  MapPin,
+  Search,
+  X,
+} from "lucide-react";
 import clsx from "clsx";
 import { capitalize, parseArrayString } from "@/lib/utils";
-import {
-  productButtonCompact,
-  productButtonOutlineNeutral,
-  productButtonSolidAmber,
-  productButtonSolidBlue,
-} from "@/lib/design-system/product-styles";
+
+// True on tablet/desktop (>=768px), matching the app's `md` breakpoint. Drives
+// the filter affordance: a popover on desktop, a bottom-sheet drawer on mobile
+// where popover rows are too small to tap reliably.
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isDesktop;
+}
 
 interface SchemesFilterProps {
   schemes: Scheme[];
@@ -27,27 +43,253 @@ interface SchemesFilterProps {
   selectedAgencies: Set<string>;
   setSelectedAgencies: Dispatch<SetStateAction<Set<string>>>;
   resetFilters: () => void;
-  mode?: "toolbar" | "compact";
   className?: string;
 }
 
-const filterLabelClass =
-  "text-[11px] font-semibold leading-none text-(--schemes-muted)";
+type FilterChipProps = {
+  icon: LucideIcon;
+  label: string;
+  unit: string; // plural noun for the active count, e.g. "areas", "agencies"
+  options: string[];
+  selected: Set<string>;
+  onChange: (next: Set<string>) => void;
+  formatOption?: (value: string) => string;
+};
 
-const filterSelectTrigger =
-  "flex h-11 min-h-11 items-center justify-between gap-2 rounded-lg border border-(--schemes-blue-100) bg-white px-3 text-xs font-semibold text-(--schemes-ink) shadow-none transition-[background-color,border-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) focus-visible:border-(--schemes-blue-400) focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
+// Shared multi-select body: a search row over a scrollable checkbox list.
+// `size` scales the rows — "sm" for the desktop popover, "lg" for the mobile
+// drawer where each row must clear the 44–48px touch-target minimum.
+function FilterPanel({
+  label,
+  options,
+  selected,
+  onChange,
+  formatOption,
+  size,
+}: {
+  label: string;
+  options: string[];
+  selected: Set<string>;
+  onChange: (next: Set<string>) => void;
+  formatOption: (value: string) => string;
+  size: "sm" | "lg";
+}) {
+  const [query, setQuery] = useState("");
+  const active = selected.size > 0;
+  const lg = size === "lg";
 
-const filterSelectValueClass = "text-xs font-semibold text-(--schemes-ink)";
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.toLowerCase().includes(q));
+  }, [options, query]);
 
-const filterSelectPopover =
-  "rounded-lg border border-(--schemes-border) bg-white p-1 text-(--schemes-ink) shadow-sm";
+  const toggle = (value: string) => {
+    const next = new Set(selected);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    onChange(next);
+  };
 
-const filterListBoxClass = "text-xs text-(--schemes-ink-soft)";
+  return (
+    <>
+      <div
+        className={clsx(
+          "flex shrink-0 items-center gap-2 border-b border-(--schemes-border-neutral)",
+          lg ? "px-4 py-3" : "px-3 py-2",
+        )}
+      >
+        <Search
+          size={lg ? 18 : 14}
+          strokeWidth={2}
+          className="shrink-0 text-(--schemes-muted)"
+        />
+        <input
+          autoFocus={!lg}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={`Search ${label.toLowerCase()}…`}
+          className={clsx(
+            "w-full bg-transparent text-(--schemes-ink) placeholder:text-(--schemes-muted) focus:outline-none",
+            lg ? "text-base" : "text-xs",
+          )}
+        />
+        {active && (
+          <button
+            type="button"
+            onClick={() => onChange(new Set())}
+            className={clsx(
+              "shrink-0 font-semibold text-(--schemes-blue-600) hover:text-(--schemes-blue-900)",
+              lg ? "text-sm" : "text-[11px]",
+            )}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className={clsx("thin-scrollbar min-h-0 flex-1 overflow-y-auto", lg ? "p-2" : "p-1")}>
+        {visible.length === 0 ? (
+          <p
+            className={clsx(
+              "text-center text-(--schemes-muted)",
+              lg ? "px-2 py-6 text-sm" : "px-2 py-3 text-xs",
+            )}
+          >
+            No matches
+          </p>
+        ) : (
+          visible.map((option) => {
+            const isOn = selected.has(option);
+            return (
+              <button
+                type="button"
+                key={option}
+                onClick={() => toggle(option)}
+                className={clsx(
+                  "flex w-full items-center rounded-md text-left text-(--schemes-ink-soft) transition-colors hover:bg-(--schemes-blue-50)",
+                  lg
+                    ? "min-h-12 gap-3 px-3 text-base"
+                    : "gap-2.5 px-2 py-1.5 text-xs",
+                )}
+              >
+                <span
+                  className={clsx(
+                    "flex shrink-0 items-center justify-center rounded border transition-colors",
+                    lg ? "size-5" : "size-4",
+                    isOn
+                      ? "border-(--schemes-blue-600) bg-(--schemes-blue-600) text-white"
+                      : "border-(--schemes-border-neutral) bg-white",
+                  )}
+                >
+                  {isOn && <Check size={lg ? 13 : 11} strokeWidth={3} />}
+                </span>
+                <span className="min-w-0 flex-1 truncate">
+                  {formatOption(option)}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </>
+  );
+}
 
-const filterListBoxItemClass =
-  "rounded-md px-2 py-1.5 text-xs text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50) data-[focus-visible]:bg-(--schemes-blue-50) data-[selected]:font-semibold data-[selected]:text-(--schemes-blue-900)";
+// A single removable filter dimension. Quiet ghost chip when empty; tinted with
+// a count + clear (✕) when active. Opens a searchable, live multi-select panel:
+// a popover on desktop, a bottom-sheet drawer on mobile (bigger tap targets).
+function FilterChip({
+  icon: Icon,
+  label,
+  unit,
+  options,
+  selected,
+  onChange,
+  formatOption = (v) => v,
+}: FilterChipProps) {
+  const isDesktop = useIsDesktop();
+  const drawerState = useOverlayState();
+  const active = selected.size > 0;
 
-type SelectChangeValue = Key | Iterable<Key> | null | undefined;
+  const trigger = (
+    <Button
+      aria-label={`Filter by ${label}`}
+      className={clsx(
+        "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-[background-color,border-color,color]",
+        active
+          ? "border-(--schemes-blue-100) bg-(--schemes-blue-50) text-(--schemes-blue-600) pr-7"
+          : "border-(--schemes-border-neutral) bg-transparent text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)",
+      )}
+    >
+      <Icon size={14} strokeWidth={2} className="shrink-0" />
+      <span>{active ? `${selected.size} ${unit}` : label}</span>
+      {!active && (
+        <ChevronDown size={13} strokeWidth={2} className="shrink-0 opacity-70" />
+      )}
+    </Button>
+  );
+
+  // The clear (✕) sits beside the trigger as a separate control so it isn't
+  // nested inside an interactive trigger.
+  const clearButton = active && (
+    <button
+      type="button"
+      aria-label={`Clear ${label} filter`}
+      onClick={() => onChange(new Set())}
+      className="absolute right-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-full text-(--schemes-blue-600) transition-colors hover:bg-(--schemes-blue-100)"
+    >
+      <X size={12} strokeWidth={2.5} />
+    </button>
+  );
+
+  return (
+    <div className="relative flex shrink-0 items-center">
+      {isDesktop ? (
+        <Popover>
+          {trigger}
+          <Popover.Content
+            placement="bottom start"
+            className="z-50 w-[min(80vw,280px)] rounded-xl border border-(--schemes-border) bg-(--schemes-surface) p-0 shadow-sm"
+          >
+            <Popover.Dialog className="m-0 flex max-h-[60vh] flex-col p-0 outline-none">
+              <FilterPanel
+                label={label}
+                options={options}
+                selected={selected}
+                onChange={onChange}
+                formatOption={formatOption}
+                size="sm"
+              />
+            </Popover.Dialog>
+          </Popover.Content>
+        </Popover>
+      ) : (
+        <Drawer state={drawerState}>
+          {trigger}
+          {/* Backdrop is the dark scrim AND the overlay that hosts the sheet —
+              Content must nest inside it. The dim signals the page is still
+              there (tap to dismiss), not a new screen. */}
+          <Drawer.Backdrop className="bg-black/50">
+            {/* Content is the full-screen overlay (its theme aligns children to
+                the bottom). It must stay transparent — a background here would
+                paint over the whole screen and hide the scrim. The surface +
+                rounding live on the Dialog, which is the actual 80%-tall sheet:
+                a plain flex column we control end-to-end (handle + heading,
+                scrollable list, pinned Done). We avoid Drawer.Footer/Heading/
+                CloseTrigger slots because their theme absolutely-positions them
+                to the top of the sheet. */}
+            <Drawer.Content placement="bottom" className="bg-transparent">
+            <Drawer.Dialog className="flex h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) p-0 outline-none">
+              <Drawer.Handle />
+              <h2 className="shrink-0 px-4 pb-2 pt-1 text-base font-semibold text-(--schemes-blue-900)">
+                {label}
+              </h2>
+              <FilterPanel
+                label={label}
+                options={options}
+                selected={selected}
+                onChange={onChange}
+                formatOption={formatOption}
+                size="lg"
+              />
+              <div className="shrink-0 border-t border-(--schemes-border-neutral) p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                <button
+                  type="button"
+                  onClick={() => drawerState.close()}
+                  className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-(--schemes-blue-600) text-sm font-semibold text-white transition-colors hover:bg-(--schemes-blue-800)"
+                >
+                  Done
+                </button>
+              </div>
+            </Drawer.Dialog>
+            </Drawer.Content>
+          </Drawer.Backdrop>
+        </Drawer>
+      )}
+      {clearButton}
+    </div>
+  );
+}
 
 function SchemesFilter({
   schemes,
@@ -57,20 +299,18 @@ function SchemesFilter({
   selectedAgencies,
   setSelectedAgencies,
   resetFilters,
-  mode = "toolbar",
   className,
 }: SchemesFilterProps) {
   const allLocations: string[] = useMemo(() => {
     const locationSet = new Set<string>();
     schemes.forEach((scheme) => {
       if (scheme.planningArea) {
-        const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
-        planningAreaSet.forEach((planningArea) => {
-          locationSet.add(planningArea);
-        });
+        (parseArrayString(scheme.planningArea) ?? []).forEach((a) =>
+          locationSet.add(a),
+        );
       }
     });
-    // Position 'No Location' as the first option in location dropdown
+    // Position 'No Location' first in the location list.
     if (locationSet.has("No Location")) {
       locationSet.delete("No Location");
       return ["No Location", ...Array.from(locationSet).sort()];
@@ -79,212 +319,74 @@ function SchemesFilter({
   }, [schemes]);
 
   const allAgencies = useMemo(
-    () => Array.from(new Set(schemes.map((scheme) => scheme.agency))).sort(),
+    () => Array.from(new Set(schemes.map((s) => s.agency).filter(Boolean))).sort(),
     [schemes],
   );
 
-  // Filter agencies based on selected locations
-  const filteredAgencies = useMemo(() => {
-    if (selectedLocations.size === 0) {
-      return allAgencies;
-    }
-    const agenciesSet = new Set<string>();
-    schemes.forEach((scheme) => {
-      // Skip agencies that have no planningArea
-      if (!scheme.planningArea) {
-        return;
-      }
-      // Keep agencies whose schemes have a planningArea in selectedLocations
-      else if (
-        selectedLocations.intersection(
-          new Set(parseArrayString(scheme.planningArea)),
-        ).size > 0 &&
-        scheme.agency
-      ) {
-        agenciesSet.add(scheme.agency);
-      }
-    });
-    return Array.from(agenciesSet).sort();
-  }, [selectedLocations, allAgencies, schemes]);
-
-  // Filter locations based on selected agencies
-  const filteredLocations: string[] = useMemo(() => {
-    if (selectedAgencies.size === 0) {
-      return allLocations;
-    }
-    // Keep locations whose schemes have an agency in selectedAgencies
-    const locationsSet = new Set<string>();
+  // Each dimension's option list narrows by the other dimension's selection so
+  // the choices stay relevant (a location only lists agencies present there).
+  const locationOptions = useMemo(() => {
+    if (selectedAgencies.size === 0) return allLocations;
+    const set = new Set<string>();
     schemes.forEach((scheme) => {
       if (selectedAgencies.has(scheme.agency) && scheme.planningArea) {
-        const planningAreaSet = new Set(parseArrayString(scheme.planningArea));
-        planningAreaSet.forEach((planningArea) => {
-          locationsSet.add(planningArea);
-        });
+        (parseArrayString(scheme.planningArea) ?? []).forEach((a) =>
+          set.add(a),
+        );
       }
     });
-    return Array.from(locationsSet).sort();
+    return Array.from(set).sort();
   }, [selectedAgencies, allLocations, schemes]);
 
-  const handleFilter = () => {
-    setFilterObj({
-      planningArea: selectedLocations,
-      agency: selectedAgencies,
+  const agencyOptions = useMemo(() => {
+    if (selectedLocations.size === 0) return allAgencies;
+    const set = new Set<string>();
+    schemes.forEach((scheme) => {
+      if (
+        scheme.agency &&
+        scheme.planningArea &&
+        selectedLocations.intersection(
+          new Set(parseArrayString(scheme.planningArea)),
+        ).size > 0
+      ) {
+        set.add(scheme.agency);
+      }
     });
+    return Array.from(set).sort();
+  }, [selectedLocations, allAgencies, schemes]);
+
+  // Apply live: selecting in a chip immediately updates the results, so chips
+  // and the list always reflect the same state (no separate Apply button).
+  const applyLocations = (next: Set<string>) => {
+    setSelectedLocations(next);
+    if (next.size === 0 && selectedAgencies.size === 0) resetFilters();
+    else setFilterObj({ planningArea: next, agency: selectedAgencies });
   };
-  const handleClear = () => {
-    setSelectedLocations(new Set());
-    setSelectedAgencies(new Set());
-    resetFilters();
+  const applyAgencies = (next: Set<string>) => {
+    setSelectedAgencies(next);
+    if (next.size === 0 && selectedLocations.size === 0) resetFilters();
+    else setFilterObj({ planningArea: selectedLocations, agency: next });
   };
-
-  const locationValue = Array.from(selectedLocations) as Key[];
-  const agencyValue = Array.from(selectedAgencies) as Key[];
-
-  const getSelectedCountLabel = (count: number) =>
-    count === 0 ? "All" : `${count} selected`;
-  const isCompact = mode === "compact";
-  const selectValueToStringSet = (value: SelectChangeValue) => {
-    if (value == null) {
-      return new Set<string>();
-    }
-    if (
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "bigint"
-    ) {
-      return new Set([String(value)]);
-    }
-    return new Set(Array.from(value).map(String));
-  };
-
-  const filterControls = (
-    <>
-      <Select
-        variant="secondary"
-        selectionMode="multiple"
-        placeholder="All"
-        value={locationValue}
-        onChange={(value: SelectChangeValue) =>
-          setSelectedLocations(selectValueToStringSet(value))
-        }
-        className="w-full min-w-[150px]"
-      >
-        <Label className={filterLabelClass}>Locations</Label>
-        <Select.Trigger className={filterSelectTrigger}>
-          <Select.Value className={filterSelectValueClass}>
-            {getSelectedCountLabel(selectedLocations.size)}
-          </Select.Value>
-          <Select.Indicator className="text-(--schemes-blue-600)" />
-        </Select.Trigger>
-        <Select.Popover className={`w-max ${filterSelectPopover}`}>
-          <ListBox selectionMode="multiple" className={filterListBoxClass}>
-            {filteredLocations.map((location) => (
-              <ListBox.Item
-                key={location}
-                id={location}
-                textValue={location}
-                className={filterListBoxItemClass}
-              >
-                {capitalize(location)}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </ListBox>
-        </Select.Popover>
-      </Select>
-
-      <Select
-        variant="secondary"
-        selectionMode="multiple"
-        placeholder="All"
-        value={agencyValue}
-        onChange={(value: SelectChangeValue) =>
-          setSelectedAgencies(selectValueToStringSet(value))
-        }
-        className="w-full min-w-[150px]"
-      >
-        <Label className={filterLabelClass}>Agencies</Label>
-        <Select.Trigger className={filterSelectTrigger}>
-          <Select.Value className={filterSelectValueClass}>
-            {getSelectedCountLabel(selectedAgencies.size)}
-          </Select.Value>
-          <Select.Indicator className="text-(--schemes-blue-600)" />
-        </Select.Trigger>
-        <Select.Popover
-          className={`w-max max-w-[300px] ${filterSelectPopover}`}
-        >
-          <ListBox selectionMode="multiple" className={filterListBoxClass}>
-            {filteredAgencies.map((agency) => (
-              <ListBox.Item
-                key={agency}
-                id={agency}
-                textValue={agency}
-                className={filterListBoxItemClass}
-              >
-                {agency}
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            ))}
-          </ListBox>
-        </Select.Popover>
-      </Select>
-
-      <div className="flex gap-2 items-end">
-        <Button
-          variant="primary"
-          className={`${productButtonSolidAmber} ${productButtonCompact}`}
-          onPress={handleFilter}
-        >
-          Filter
-        </Button>
-        <Button
-          isDisabled={
-            selectedLocations.size === 0 && selectedAgencies.size === 0
-          }
-          variant="outline"
-          className={`${productButtonOutlineNeutral} ${productButtonCompact} disabled:opacity-100 disabled:border-(--schemes-border-neutral) disabled:bg-white disabled:text-(--schemes-muted-light)`}
-          onPress={handleClear}
-        >
-          Clear
-        </Button>
-      </div>
-    </>
-  );
-
-  if (isCompact) {
-    return (
-      <div className={clsx("shrink-0", className)}>
-        <Popover>
-          <Button
-            size="sm"
-            variant="outline"
-            aria-label="Filter schemes"
-            className={`${productButtonSolidBlue} ${productButtonCompact} aspect-square shrink-0 px-0 sm:aspect-auto sm:w-auto sm:px-3`}
-          >
-            <Funnel className="h-4! w-4! shrink-0" strokeWidth={2} />
-            <span className="hidden sm:block">Filter</span>
-          </Button>
-          <Popover.Content
-            placement="bottom end"
-            className="z-50 w-[min(78vw,320px)] rounded-xl border border-(--schemes-border) bg-(--schemes-surface) p-0 shadow-sm"
-          >
-            <Popover.Dialog className="m-0 flex flex-col gap-2 p-3 outline-none">
-              {filterControls}
-            </Popover.Dialog>
-          </Popover.Content>
-        </Popover>
-      </div>
-    );
-  }
 
   return (
-    <div
-      className={clsx(
-        "w-full flex gap-2 flex-wrap relative items-center justify-end border-b px-4 py-2",
-        className,
-      )}
-    >
-      <div className="flex flex-row items-end gap-2">{filterControls}</div>
+    <div className={clsx("flex shrink-0 items-center gap-2", className)}>
+      <FilterChip
+        icon={MapPin}
+        label="Location"
+        unit="areas"
+        options={locationOptions}
+        selected={selectedLocations}
+        onChange={applyLocations}
+        formatOption={capitalize}
+      />
+      <FilterChip
+        icon={Building2}
+        label="Agency"
+        unit="agencies"
+        options={agencyOptions}
+        selected={selectedAgencies}
+        onChange={applyAgencies}
+      />
     </div>
   );
 }

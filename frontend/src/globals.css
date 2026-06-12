@@ -197,9 +197,16 @@
   scrollbar-width: none;
 }
 
-/* Firefox (and modern standard): thin bar, soft slate thumb, no track */
+/* Firefox (and modern standard): thin bar, no track. Thumb stays transparent
+   at rest and only tints in while the region is hovered, so an idle panel shows
+   no scrollbar (macOS / Gemini / Linear overlay style). */
 .thin-scrollbar {
   scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
+}
+
+.thin-scrollbar:hover {
   scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
 }
 
@@ -214,9 +221,15 @@
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.55);
+  background: transparent;
   border-radius: 9999px;
   border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+.thin-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
   background-clip: padding-box;
 }
 

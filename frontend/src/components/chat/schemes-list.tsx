@@ -193,7 +193,6 @@ export default function SchemesList({
         <div className="flex shrink-0 items-center gap-2">
           {!isGenerating && schemes.length > 0 && (
             <SchemesFilter
-              mode="compact"
               schemes={schemes}
               setFilterObj={setFilterObj}
               selectedLocations={selectedLocations}
@@ -204,7 +203,15 @@ export default function SchemesList({
             />
           )}
           {handleNewChat && (
-            <div className="hidden md:block">
+            <div className="hidden items-center gap-2 md:flex">
+              {/* Divider separates the session reset from the filter pills so
+                  "New chat" doesn't read as a third filter. */}
+              {!isGenerating && schemes.length > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-px bg-(--schemes-border-neutral)"
+                />
+              )}
               <NewChatButton onPress={handleNewChat} />
             </div>
           )}
@@ -233,9 +240,9 @@ export default function SchemesList({
       ) : (
         <ScrollShadow
           ref={scrollRef}
-          className="thin-scrollbar flex-1 overflow-y-scroll p-2"
+          className="thin-scrollbar flex-1 overflow-y-scroll p-3"
         >
-          <div className="grid grid-cols-1 gap-1 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {visibleSchemes.map((scheme, index) => {
               return (
                 <motion.div

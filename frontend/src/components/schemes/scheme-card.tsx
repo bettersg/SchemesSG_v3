@@ -18,7 +18,9 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
   const sortedTypes = [...scheme.schemeType].sort((a, b) => {
     return Number(hasCategory(b)) - Number(hasCategory(a));
   });
-  const types = sortedTypes.slice(0, 2);
+  // One wayfinding chip: the top category carries "what kind of help this is"
+  // without turning a dense grid into a field of coloured pills.
+  const topType = sortedTypes[0];
   return (
     <Link
       href={`/schemes/${scheme.schemeId}`}
@@ -27,35 +29,35 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       aria-label={`${scheme.schemeName}, ${scheme.agency} (opens in new tab)`}
       className={clsx(
         productCard,
-        "group relative flex h-full min-h-[148px] w-full flex-col overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(24,95,165,0.08)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-400)",
+        "group relative flex h-full min-h-[148px] w-full flex-col overflow-hidden p-4 text-left no-underline transition-[box-shadow,transform] hover:-translate-y-0.5 hover:bg-(--schemes-blue-50) hover:shadow-[0_2px_12px_rgba(24,95,165,0.1)] hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-400)",
         className,
       )}
     >
-      <div className="flex gap-2.5 items-start mb-2.5">
+      <div className="mb-3 flex items-start gap-3">
         <SchemeLogo agency={scheme.agency} image={scheme.image} />
-        <div className="flex-1 min-w-0">
-          <p
+        <div className="min-w-0 flex-1">
+          <h3
             title={scheme.schemeName}
-            className="text-[12.5px] font-semibold text-(--schemes-blue-900) leading-snug line-clamp-2"
+            className="font-(--font-head) text-[0.95rem] font-semibold leading-snug text-(--schemes-blue-900) line-clamp-2"
           >
             {scheme.schemeName}
-          </p>
+          </h3>
           <p
             title={scheme.agency}
-            className="text-xs text-(--schemes-muted) mt-0.5 line-clamp-2"
+            className="mt-1 truncate text-xs text-(--schemes-muted)"
           >
             {scheme.agency}
           </p>
         </div>
       </div>
-      <div className="flex gap-1 flex-wrap mb-2">
-        {types.map((t) => (
-          <CategoryTag key={t} label={t} />
-        ))}
-      </div>
-      <p className="text-xs text-(--schemes-muted) leading-relaxed line-clamp-2">
+      <p className="line-clamp-2 text-xs leading-relaxed text-(--schemes-ink-soft)">
         {scheme.summary || scheme.description}
       </p>
+      {topType && (
+        <div className="mt-auto flex flex-wrap gap-1 pt-3">
+          <CategoryTag label={topType} />
+        </div>
+      )}
     </Link>
   );
 }

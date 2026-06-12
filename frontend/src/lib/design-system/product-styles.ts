@@ -16,7 +16,7 @@ export const productHeadingHero =
 export const productSubheading = "text-sm font-medium text-(--schemes-muted)";
 
 export const productCard =
-  "rounded-xl border border-(--schemes-blue-100) bg-(--schemes-surface)";
+  "rounded-lg border border-(--schemes-border) bg-(--schemes-surface)";
 
 export const productCardPadded = cn(productCard, "p-6");
 
@@ -54,6 +54,14 @@ export const productButtonOutlineBlue = cn(
 export const productButtonOutlineNeutral = cn(
   productButtonBase,
   "border border-(--schemes-border-neutral) bg-white text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)",
+);
+
+// Quiet toolbar control: thin neutral border, transparent fill, muted ink,
+// subtle blue-tint on hover. For utility actions (filter, new chat) that should
+// recede beneath the content, not compete as filled pills.
+export const productButtonGhost = cn(
+  productButtonBase,
+  "border border-(--schemes-border-neutral) bg-transparent text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)",
 );
 
 export const productButtonCompact = "h-11 min-h-11 px-3 py-2 text-xs";
