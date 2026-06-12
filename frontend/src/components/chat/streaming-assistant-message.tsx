@@ -15,7 +15,7 @@ export function StreamingAssistantMessage({
   return (
     <MessageEntrance
       aria-live="polite"
-      className="w-fit max-w-full wrap-break-word rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm leading-relaxed text-(--schemes-ink-soft)"
+      className="w-full max-w-full break-words text-sm leading-relaxed text-(--schemes-ink-soft)"
     >
       <div className="markdown-content prose prose-sm max-w-none text-(--schemes-ink-soft)">
         <ReactMarkdown>{text}</ReactMarkdown>

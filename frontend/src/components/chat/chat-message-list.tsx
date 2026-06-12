@@ -135,10 +135,12 @@ export default function ChatMessageList({
         </MessageEntrance>
       ))}
 
-      {/* Status steps, then streaming message */}
+      {/* Status steps, then streaming message. Full width to match a finished
+          bot message — a narrower cap here would wrap the text mid-stream and
+          then visibly reflow wider once the message is finalized. */}
       {hasStreamActivity && (
         <div className="flex items-end gap-2.5">
-          <div className="flex max-w-[min(90%,450px)] flex-col items-start gap-2">
+          <div className="flex w-full max-w-full flex-col items-start gap-2">
             <StreamStatusSteps steps={statusSteps} isActive={isGenerating} />
             {displayedStreamingBlocks.map((block, index) => (
               <StreamingAssistantMessage key={index} text={block} />
