@@ -9,7 +9,7 @@ This module provides utilities for:
 The scheduled warmup task runs every 4 minutes and keeps the following endpoints warm:
 - schemes_search: POST endpoint for searching schemes
 - schemes: GET endpoint for retrieving individual schemes
-- chat_message: POST endpoint for chat interactions
+- agent_chat_message: POST endpoint for chat interactions
 - feedback: POST endpoint for user feedback
 - update_scheme: POST endpoint for scheme update requests
 - search_queries: GET endpoint for retrieving search history
@@ -22,7 +22,7 @@ load during warmup requests.
 For GET endpoints (schemes, search_queries), the warmup parameter is passed as a URL query:
   ?is_warmup=true
 
-For POST endpoints (schemes_search, chat_message, feedback, update_scheme), the warmup
+For POST endpoints (schemes_search, agent_chat_message, feedback, update_scheme), the warmup
 parameter is included in the request body:
   { "is_warmup": true }
 
@@ -184,9 +184,9 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
                 "data": None,
             },
             {
-                "name": "chat_message",
+                "name": "agent_chat_message",
                 "method": "POST",
-                "url": get_endpoint_url("chat_message"),
+                "url": get_endpoint_url("agent_chat_message"),
                 "data": {
                     "message": "Hello",
                     "sessionID": "warmup-test-session",

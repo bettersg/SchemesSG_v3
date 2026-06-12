@@ -9,7 +9,7 @@ The following endpoints are available:
    - retrieve_search_queries: Get search history for a session
 
 2. User Interaction:
-   - chat_message: Chat interface for scheme recommendations
+   - agent_chat_message: Chat interface for scheme recommendations
    - feedback: Submit user feedback
    - update_scheme: Submit new schemes or request edits
 
