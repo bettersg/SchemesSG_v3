@@ -9,6 +9,18 @@ export const zh: Translations = {
     searchSchemes: "\u641C\u7D22\u8BA1\u5212",
   },
 
+  chat: {
+    headline: "SchemeSG",
+    subtitle:
+      "\u8BF7\u544A\u8BC9\u6211\u4EEC\u60A8\u9700\u8981\u54EA\u65B9\u9762\u7684\u5E2E\u52A9\uFF0C\u5E76\u63D0\u4F9B\u66F4\u591A\u8BE6\u60C5\uFF0C\u8BA9\u6211\u4EEC\u4E3A\u60A8\u627E\u5230\u6700\u5408\u9002\u7684\u63F4\u52A9\u8BA1\u5212\u3002",
+    volunteerBanner: "\u7531\u5FD7\u613F\u8005\u5728",
+    getInvolved: "\u53C2\u4E0E\u5176\u4E2D",
+    searchPlaceholder:
+      "\u6211\u662F\u5355\u4EB2\u5BB6\u957F\uFF0C\u6B63\u5728\u5BFB\u627E\u7ECF\u6D4E\u63F4\u52A9\u2026\u2026",
+    searchHint:
+      "\u8BD5\u8BD5\uFF1A\u201C\u8001\u5E74\u4EBA\u533B\u7597\u8865\u8D34\u201D\u6216\u201C\u4F4E\u6536\u5165\u5BB6\u5EAD\u6559\u80B2\u8865\u52A9\u91D1\u201D",
+  },
+
   hero: {
     headline: "\u627E\u5230\u5408\u9002\u7684\n\u63F4\u52A9\u8BA1\u5212\n\u5C3D\u5728\u4E00\u5904",
     subtitle:
@@ -183,7 +195,7 @@ export const zh: Translations = {
     resourcesHeading: "\u8D44\u6E90",
     legalHeading: "\u6CD5\u5F8B",
     productLinks: [
-      { label: "\u641C\u7D22", href: "#" },
+      { label: "\u641C\u7D22", href: "/" },
       { label: "\u529F\u80FD", href: "#features" },
       { label: "\u5E38\u89C1\u95EE\u9898", href: "#faq" },
     ],
@@ -191,6 +203,7 @@ export const zh: Translations = {
       { label: "\u5173\u4E8E", href: "/about" },
       { label: "\u8D21\u732E", href: "/contribute" },
       { label: "\u53CD\u9988", href: "/feedback" },
+      { label: "\u7F51\u7AD9\u5730\u56FE", href: "/sitemap.xml" },
       { label: "\u8054\u7CFB\u6211\u4EEC", href: "#", comingSoon: true },
     ],
     legalLinks: [

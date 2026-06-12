@@ -1,10 +1,6 @@
 "use client";
 
-import MainHeader from "@/components/main-header";
-import { HeroUIProvider } from "@heroui/system";
-import React from "react";
-import { ChatProvider } from "./providers";
-import { AuthProvider } from "./providers/AuthProvider";
+import { Navbar } from "@/components/layout/navbar";
 
 export default function MainLayout({
   children,
@@ -12,17 +8,12 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <HeroUIProvider>
-      <AuthProvider>
-        <ChatProvider>
-          <div className="h-screen flex flex-col">
-            <MainHeader />
-            <div className="h-[calc(100vh-64px)] bg-[linear-gradient(117deg,#EFF6FF_0%,#FFF_50%,#FAF5FF_100%)] overflow-y-scroll">
-              {children}
-            </div>
-          </div>
-        </ChatProvider>
-      </AuthProvider>
-    </HeroUIProvider>
+    <>
+      <Navbar />
+      <div className="h-[var(--schemes-mobile-nav-offset)] transition-[height] duration-300 md:h-nav"></div>
+      <main className="h-[calc(100vh-var(--schemes-mobile-nav-offset))] transition-[height] duration-300 md:h-[calc(100vh-var(--spacing-nav))]">
+        {children}
+      </main>
+    </>
   );
 }

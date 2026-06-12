@@ -1,15 +1,22 @@
 "use client";
 
-import {
-  Button,
-  Card,
-  CardBody,
-  Input,
-  Spinner,
-} from "@heroui/react";
+import { Button, Card, Input, Label, TextField } from "@heroui/react";
 import { useState } from "react";
-import { fetchWithAuth } from "@/app/utils/api";
+import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
+import {
+  productButtonProminent,
+  productButtonSolidAmber,
+  productCardPadded,
+  productFormAlertMessage,
+  productFormInfoMessage,
+  productFormLabel,
+  productHeading,
+  productInputSurface,
+  productInputText,
+  productSubheading,
+} from "@/lib/design-system/product-styles";
+import PageShell from "@/components/layout/page-shell";
 
 export type SubmitSchemeParams = {
   typeOfRequest: "New";
@@ -27,10 +34,7 @@ export default function ContributePage() {
 
   const handleInputChange = (key: keyof SubmitSchemeParams, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
-    // Clear error when user starts typing
-    if (submitStatus?.type === "error") {
-      setSubmitStatus(null);
-    }
+    if (submitStatus?.type === "error") setSubmitStatus(null);
   };
 
   const validateForm = () => {
@@ -48,7 +52,6 @@ export default function ContributePage() {
       });
       return false;
     }
-    // Basic URL validation
     try {
       new URL(formData.Link);
     } catch {
@@ -64,34 +67,24 @@ export default function ContributePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus(null);
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setIsSubmitting(true);
-
     try {
       const payload: SubmitSchemeParams = {
         typeOfRequest: "New",
         Scheme: formData.Scheme!,
         Link: formData.Link!,
       };
-
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/update_scheme`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }
+        { method: "POST", body: JSON.stringify(payload) },
       );
-
       const data = await response.json();
-
       if (response.ok) {
         setSubmitStatus({
           type: "success",
-          message: "Thank you! Your submission has been received. We'll review it within a week.",
+          message:
+            "Thank you! Your submission has been received. We'll review it within a week.",
         });
         setFormData({});
       } else {
@@ -100,7 +93,7 @@ export default function ContributePage() {
           message: data.message || "Failed to submit. Please try again.",
         });
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus({
         type: "error",
         message: "An error occurred. Please try again later.",
@@ -111,80 +104,85 @@ export default function ContributePage() {
   };
 
   return (
-    <div className="w-full overflow-y-auto">
-      <div
-        className={clsx(
-          "max-w-[400px] sm:max-w-[600px]",
-          "mx-auto p-2 sm:p-4"
-        )}
-      >
-        <div className={clsx("text-center my-8", "flex flex-col gap-4")}>
-          <p className="text-2xl sm:text-3xl font-extrabold">
-            <span className="text-schemes-blue">Suggest a New Scheme</span>
-          </p>
-          <p className="font-medium text-center text-schemes-darkblue">
-            Know a scheme that&apos;s missing from our database? Share it with us!
-          </p>
-        </div>
+    <PageShell width="form">
+      <div className="mb-6 flex flex-col gap-2 text-left">
+        <h1 className={productHeading}>Suggest a new scheme</h1>
+        <p className={productSubheading}>
+          Know a scheme that&apos;s missing from our database? Share it with us!
+        </p>
+      </div>
 
-        <Card className="bg-white border border-schemes-lightgray shadow-none">
-          <CardBody>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              {/* How it works section */}
-              <div className="bg-blue-50 p-4 rounded-lg text-sm">
-                <p className="font-semibold mb-2 text-schemes-darkblue">How it works:</p>
-                <ol className="list-decimal list-inside space-y-1 text-gray-600">
-                  <li>You provide the scheme name and link</li>
-                  <li>AI agents responsibly gather publicly available details from the webpage</li>
-                  <li>A volunteer reviews and approves the listing</li>
-                </ol>
-                <p className="mt-3 text-gray-500 text-xs">
-                  Expected turnaround: ~1 week
-                </p>
-              </div>
+      <Card className={`${productCardPadded} shadow-none`}>
+        <Card.Content>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4 text-sm">
+              <p className="mb-2 font-semibold text-(--schemes-status-info-text)">
+                How it works:
+              </p>
+              <ol className="list-inside list-decimal space-y-1 text-(--schemes-muted)">
+                <li>You provide the scheme name and link</li>
+                <li>
+                  AI agents responsibly gather publicly available details from
+                  the webpage
+                </li>
+                <li>A volunteer reviews and approves the listing</li>
+              </ol>
+              <p className="mt-3 text-(--schemes-muted)">
+                Expected turnaround: ~1 week
+              </p>
+            </div>
 
+            <TextField isRequired>
+              <Label className={productFormLabel}>Scheme name</Label>
               <Input
-                label="Scheme Name"
-                isRequired
                 placeholder="e.g., ComCare Short-to-Medium Term Assistance"
                 value={formData.Scheme || ""}
                 onChange={(e) => handleInputChange("Scheme", e.target.value)}
-                variant="bordered"
-                labelPlacement="outside"
+                variant="primary"
+                className={`${productInputSurface} ${productInputText}`}
               />
+            </TextField>
 
+            <TextField isRequired>
+              <Label className={productFormLabel}>Scheme link</Label>
               <Input
-                label="Scheme Link"
-                isRequired
                 placeholder="e.g., https://www.msf.gov.sg/comcare"
                 type="url"
                 value={formData.Link || ""}
                 onChange={(e) => handleInputChange("Link", e.target.value)}
-                variant="bordered"
-                labelPlacement="outside"
-                description="The official webpage where details about this scheme can be found"
+                variant="primary"
+                className={`${productInputSurface} ${productInputText}`}
               />
+              <p className="mt-1 text-xs text-(--schemes-muted)">
+                The official webpage where details about this scheme can be
+                found
+              </p>
+            </TextField>
 
-              {submitStatus && (
-                <div
-                  className={clsx(
-                    "p-4 rounded-lg",
-                    submitStatus.type === "success"
-                      ? "successMessage"
-                      : "errorMessage"
-                  )}
-                >
-                  {submitStatus.message}
-                </div>
-              )}
+            {submitStatus && (
+              <div
+                className={clsx(
+                  "leading-5",
+                  submitStatus.type === "success"
+                    ? productFormInfoMessage
+                    : productFormAlertMessage,
+                )}
+              >
+                {submitStatus.message}
+              </div>
+            )}
 
-              <Button type="submit" color="primary" isDisabled={isSubmitting}>
-                {isSubmitting ? <Spinner color="white" size="sm" /> : "Submit Scheme"}
-              </Button>
-            </form>
-          </CardBody>
-        </Card>
-      </div>
-    </div>
+            <Button
+              type="submit"
+              variant="primary"
+              isPending={isSubmitting}
+              className={`${productButtonSolidAmber} ${productButtonProminent} w-full sm:w-fit sm:self-end`}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Scheme"}
+            </Button>
+          </form>
+        </Card.Content>
+      </Card>
+    </PageShell>
   );
 }

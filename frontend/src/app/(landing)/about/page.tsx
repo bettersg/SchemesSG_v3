@@ -1,76 +1,57 @@
-"use client";
+import type { Metadata } from "next";
+import AboutPageContent from "@/components/landing/about-page-content";
+import { SCHEMES_SG_LOGO_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
-import { lazy, Suspense } from "react";
-import {
-  HeroSkeleton,
-  FeaturedSkeleton,
-  FeaturesSkeleton,
-  AgenciesSkeleton,
-  TestimonialSkeleton,
-  FAQSkeleton,
-  CTASkeleton,
-} from "@/components/landing/shared/SectionSkeleton";
+export const metadata: Metadata = {
+  title: SEO_COPY.aboutTitle,
+  description: SEO_COPY.aboutDescription,
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: SEO_COPY.aboutTitle,
+    description: SEO_COPY.aboutDescription,
+    url: "/about",
+    siteName: SEO_COPY.productName,
+    type: "website",
+    images: [
+      {
+        url: SCHEMES_SG_LOGO_URL,
+        alt: "Schemes.sg logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SEO_COPY.aboutTitle,
+    description: SEO_COPY.aboutDescription,
+    images: [SCHEMES_SG_LOGO_URL],
+  },
+};
 
-const HeroSection = lazy(() =>
-  import("@/components/landing/sections/HeroSection").then((m) => ({
-    default: m.HeroSection,
-  }))
-);
-const FeaturedSection = lazy(() =>
-  import("@/components/landing/sections/FeaturedSection").then((m) => ({
-    default: m.FeaturedSection,
-  }))
-);
-const FeaturesSection = lazy(() =>
-  import("@/components/landing/sections/FeaturesSection").then((m) => ({
-    default: m.FeaturesSection,
-  }))
-);
-const AgenciesSection = lazy(() =>
-  import("@/components/landing/sections/AgenciesSection").then((m) => ({
-    default: m.AgenciesSection,
-  }))
-);
-const TestimonialSection = lazy(() =>
-  import("@/components/landing/sections/TestimonialSection").then((m) => ({
-    default: m.TestimonialSection,
-  }))
-);
-const FAQSection = lazy(() =>
-  import("@/components/landing/sections/FAQSection").then((m) => ({
-    default: m.FAQSection,
-  }))
-);
-const CTASection = lazy(() =>
-  import("@/components/landing/sections/CTASection").then((m) => ({
-    default: m.CTASection,
-  }))
-);
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: "About Schemes.sg",
+  url: `${SITE_URL}/about`,
+  description: SEO_COPY.aboutDescription,
+  mainEntity: {
+    "@type": "Organization",
+    name: SEO_COPY.productName,
+    url: SITE_URL,
+  },
+};
 
 export default function AboutPage() {
   return (
     <>
-      <Suspense fallback={<HeroSkeleton />}>
-        <HeroSection />
-      </Suspense>
-      <Suspense fallback={<FeaturedSkeleton />}>
-        <FeaturedSection />
-      </Suspense>
-      <Suspense fallback={<FeaturesSkeleton />}>
-        <FeaturesSection />
-      </Suspense>
-      <Suspense fallback={<AgenciesSkeleton />}>
-        <AgenciesSection />
-      </Suspense>
-      <Suspense fallback={<TestimonialSkeleton />}>
-        <TestimonialSection />
-      </Suspense>
-      <Suspense fallback={<FAQSkeleton />}>
-        <FAQSection />
-      </Suspense>
-      <Suspense fallback={<CTASkeleton />}>
-        <CTASection />
-      </Suspense>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <AboutPageContent />
     </>
   );
 }

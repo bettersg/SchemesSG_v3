@@ -1,0 +1,58 @@
+"use client";
+import { RefObject, useCallback, useEffect, useState } from "react";
+
+interface UseAutoGrowTextareaOptions {
+  /** Height of a single line (px) — content taller than this is "multiline". */
+  lineHeight: number;
+  /** Cap while collapsed; past this the textarea scrolls internally. */
+  collapsedMaxHeight: number;
+  /** Cap while expanded — a tall composer the user opts into. */
+  expandedMaxHeight: number;
+}
+
+/**
+ * Gemini-style composer sizing: a textarea that grows with its content up to a
+ * fixed collapsed height (then scrolls), with an opt-in expanded mode that
+ * grows to a much taller cap.
+ *
+ * - `multiline` flips once content wraps past one line, so the composer can
+ *   switch from a single-row pill to a stacked rounded-rectangle.
+ * - `canExpand` gates the expand/collapse toggle to when content actually
+ *   overflows the collapsed height.
+ */
+export function useAutoGrowTextarea(
+  ref: RefObject<HTMLTextAreaElement | null>,
+  value: string,
+  { lineHeight, collapsedMaxHeight, expandedMaxHeight }: UseAutoGrowTextareaOptions,
+) {
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+  const [multiline, setMultiline] = useState(false);
+
+  const resize = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const cap = expanded ? expandedMaxHeight : collapsedMaxHeight;
+    // Measure natural content height by collapsing first, then clamp to the cap.
+    el.style.height = "auto";
+    const natural = el.scrollHeight;
+    el.style.height = Math.min(natural, cap) + "px";
+    setMultiline(natural > lineHeight + 1);
+    // The expand affordance is only meaningful once content exceeds the
+    // collapsed cap (i.e. there's more to reveal than the collapsed view shows).
+    setCanExpand(natural > collapsedMaxHeight + 1);
+  }, [ref, expanded, lineHeight, collapsedMaxHeight, expandedMaxHeight]);
+
+  useEffect(() => {
+    resize();
+  }, [value, resize]);
+
+  // Collapsing back: drop expanded state and re-clamp on the next frame.
+  const reset = useCallback(() => {
+    setExpanded(false);
+    const el = ref.current;
+    if (el) el.style.height = "auto";
+  }, [ref]);
+
+  return { expanded, setExpanded, canExpand, multiline, reset };
+}
