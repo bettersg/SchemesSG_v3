@@ -25,10 +25,13 @@ The product also depends on community correction. Each chat response carries a q
 The chat agent is the product's front door. Its behavior is shaped by these expectations, not just its tools:
 
 - **Relevance-driven results, not a fixed count.** A search returns as many schemes as are genuinely relevant to the situation — a narrow need returns a short list, a broad one returns many. The agent does not pad to or cap at a fixed number; it only requests a specific count when the user explicitly asks for one ("show me 20").
+- **Cards stay in sync with the answer.** The results pane always reflects what the agent just said. When the agent shortlists, ranks, or recommends a specific subset ("the best 3 for you"), the cards narrow to exactly that set, in the same order — not the full unranked list. A spoken recommendation and the visible cards never disagree.
 - **Reads the source, not just snippets.** When a user needs a contact, phone, email, or application step that isn't in our stored scheme record, the agent fetches the scheme's live page (and follows a relevant child link such as a Contact or Apply page) to find the concrete detail, rather than stopping at a search snippet or handing back a homepage URL. If a web search is needed first, it does that, then reads the page. It reports what it found or states plainly which detail isn't published.
 - **Brief by default, detailed on request.** Replies are answer-first and short (a few sentences or bullets) because the scheme cards are already visible, and end by offering one or two specific things to elaborate on. When the user explicitly asks to explain, compare, or go deeper, the agent pulls full scheme details and gives a thorough, well-structured answer.
 - **Speaks the user's language.** The agent replies in the language the user writes in (Chinese, Malay, Tamil, etc.), best-effort, defaulting to English when unclear. Follow-up suggestions match the same language. Proper nouns — scheme names, agencies, URLs, emails — stay in their original form. This is independent of the EN/中文 UI toggle, which only translates static page chrome.
 - **Cites, never freelances.** Every scheme claim traces to its source; the agent does not invent eligibility or benefits beyond available data (reinforces *Trust through citation*).
+
+Users can also narrow the results themselves: the results pane carries lightweight per-dimension filters (location, agency) that refine the current set without a new search. On mobile these open as a bottom sheet sized for touch rather than a cramped dropdown. Filtering is a quiet refinement layer over the agent's results, not a replacement for asking.
 
 ## Safety
 

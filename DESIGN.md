@@ -252,12 +252,33 @@ Shadows appear only as a response to state. The `SchemeCard` lifts on hover with
 - **Style:** Top nav, `--spacing-nav` height (70px). White surface, full bottom border in `--schemes-border-neutral`.
 - **Typography:** Body face (Open Sans), 14px, weight 500.
 - **States:** Default `--schemes-ink-soft`, hover `--schemes-blue-600`, active route `--schemes-blue-900` with a 2px underline in `--schemes-blue-600`.
-- **Mobile:** Disclosed sheet, full-height, same color rules. No off-canvas drawer with translucent overlay.
+- **Mobile:** Disclosed sheet, full-height, same color rules. The *navigation* never uses an off-canvas drawer with a translucent overlay. (A bottom sheet with a dark scrim is allowed elsewhere for touch-sized controls — see Filter Chips & Mobile Sheet — but not for the nav.)
 
 ### Status Banners
 - **Info:** `bg --schemes-status-info-bg`, border `--schemes-status-info-border`, text `--schemes-status-info-text`. 10px radius, full border. Used for non-blocking guidance.
 - **Alert:** `bg --schemes-status-alert-bg`, border `--schemes-status-alert-border`, text `--schemes-status-alert-text`. Used for advisories and known issues.
 - **Both** sit inline in content flow. Banners are not modals. They never dismiss themselves and never animate in.
+
+### Composer (chat input)
+
+The agent's text input, used in two places: the landing search bar and the in-chat follow-up bar. Both share one auto-growing-textarea behavior (`useAutoGrowTextarea`).
+
+- **Shape transition.** Single line → a **pill** (`{rounded.full}`): leading icon, text, and the send button on one centered row. Multi-line → a **rounded rectangle** (`{rounded.xl}`+): the text fills the top, and the controls reflow to a bottom row (on the landing bar the search icon drops down beside the send button). The box is compact when empty; it does not reserve multi-line height up front.
+- **Auto-grow.** The textarea grows with content up to a fixed collapsed cap (a clean multiple of the line-height so a clamped textarea never cuts a line in half), then scrolls internally. Caps live in the hook, not the markup.
+- **Expand / collapse.** Once content overflows the collapsed cap, a small expand toggle appears **pinned at the top-right corner**. It opens a much taller cap for reviewing a long query, and collapses back. The toggle never shows when there's nothing to reveal.
+- **Send / stop button.** Amber circle (matching the One Accent exception for a deliberate primary action). While the agent is generating it becomes a **stop** button — the same amber circle with a dark-grey square glyph — not a new color. Enter submits; Shift+Enter inserts a newline.
+
+### Filter Chips & Mobile Sheet
+
+The results pane carries per-dimension filter chips (location, agency) that refine the current set in place.
+
+- **Chip.** A quiet ghost pill when empty (`📍 Location ⌄`); when active it tints to `--schemes-blue-50` and shows a count plus a separate ✕ clear control sitting beside the trigger (never nested inside it). Clicking the body opens a searchable multi-select; selecting applies live, with no Apply button.
+- **Desktop:** the multi-select opens as a popover.
+- **Mobile:** the same multi-select opens as a **bottom sheet** — full-width rows at ≥44px touch height, larger checkboxes, a sticky Done button, and a dark scrim (`black/50`) dimming the page behind. This is the one sanctioned overlay-with-scrim in the system: it exists because a desktop popover's rows are too small to tap, and the scrim signals "the page is still here, tap to dismiss." It does **not** override the No-Glass rule — the sheet surface is opaque; only the backdrop dims, and there is no `backdrop-filter` blur.
+
+### Chat Message Action Row
+
+Each completed agent response carries a quiet trailing action row: thumbs up, thumbs down, copy, and an ellipsis (more) menu. Icons are 15px, on 32px (≥mobile-target) hit areas, muted ink with a blue-tint hover. The row stays visible on every prior message while a new response streams — it is never hidden during generation. Icon sizing is set explicitly (not via the icon library's size prop alone) so a HeroUI `Button`-wrapped icon does not collapse in Firefox.
 
 ### Signature Component: BulletItem
 A custom list item with a 6px dot in `--schemes-muted`, `gap-2.5` between dot and text, body-size copy. Used in scheme detail pages for eligibility lists, supporting documents, next-step lists. It replaces native `<ul>` markers because the library-tag aesthetic prefers a single calm dot to a bullet glyph that varies across browsers and fonts.
@@ -359,6 +380,7 @@ as debt, not precedent, when extending the brand surface:
 - **Do** respect `prefers-reduced-motion`. Motion is always decorative, never required to convey state.
 - **Do** provide explicit static equivalents for persistent loading and notification animations.
 - **Do** maintain a minimum 44px mobile target for buttons, links styled as buttons, icon actions, tabs, and compact filters.
+- **Do** open dense controls (e.g. the results filters) as a touch-sized bottom sheet with a dark scrim on mobile, rather than shrinking a desktop popover. The sheet surface stays opaque; only the backdrop dims.
 - **Do** keep transitions at 150–200ms (state) and 400ms (entrance), easeOut.
 
 ### Don't:
