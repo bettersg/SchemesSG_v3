@@ -11,7 +11,7 @@ export default function MainLayout({
     <>
       <Navbar />
       <div className="h-[var(--schemes-mobile-nav-offset)] transition-[height] duration-300 md:h-nav"></div>
-      <main className="h-[calc(100vh-var(--schemes-mobile-nav-offset))] transition-[height] duration-300 md:h-[calc(100vh-var(--spacing-nav))]">
+      <main className="h-[calc(100dvh-var(--schemes-mobile-nav-offset))] transition-[height] duration-300 md:h-[calc(100dvh-var(--spacing-nav))]">
         {children}
       </main>
     </>

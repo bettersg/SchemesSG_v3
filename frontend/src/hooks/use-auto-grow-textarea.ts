@@ -33,10 +33,20 @@ export function useAutoGrowTextarea(
     const el = ref.current;
     if (!el) return;
     const cap = expanded ? expandedMaxHeight : collapsedMaxHeight;
-    // Measure natural content height by collapsing first, then clamp to the cap.
-    el.style.height = "auto";
+    // Measure the true height of the actual VALUE. Two things would otherwise
+    // inflate scrollHeight and wrongly flag the composer as multi-line:
+    //   - a CSS min-height (reads as an extra line on some high-DPR mobile);
+    //   - a long placeholder that wraps to 2 lines on a narrow textarea.
+    // Neutralise both, collapse to 0, measure, then restore.
+    const prevMinHeight = el.style.minHeight;
+    const placeholder = el.placeholder;
+    el.placeholder = "";
+    el.style.minHeight = "0px";
+    el.style.height = "0px";
     const natural = el.scrollHeight;
     el.style.height = Math.min(natural, cap) + "px";
+    el.style.minHeight = prevMinHeight;
+    el.placeholder = placeholder;
     setMultiline(natural > lineHeight + 1);
     // The expand affordance is only meaningful once content exceeds the
     // collapsed cap (i.e. there's more to reveal than the collapsed view shows).

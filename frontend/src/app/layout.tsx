@@ -94,7 +94,7 @@ export default function RootLayout({
         }}
       >
         <AppProviders>
-          <div className="h-full min-h-screen">{children}</div>
+          <div className="h-full min-h-dvh">{children}</div>
         </AppProviders>
       </body>
     </html>
