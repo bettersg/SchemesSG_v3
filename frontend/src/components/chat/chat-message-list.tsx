@@ -115,14 +115,17 @@ export default function ChatMessageList({
               {i === latestBotMessageIndex && msg.schemeUpdateCount ? (
                 <SchemeUpdateNotice count={msg.schemeUpdateCount} />
               ) : null}
-              {i !== latestBotMessageIndex || !isGenerating ? (
-                <FeedbackPrompt
-                  variant="rating"
-                  text={msg.text}
-                  rating={msg.rating}
-                  onRate={(rating) => onRate?.(i, rating)}
-                />
-              ) : null}
+              {/* Every message in `messages` is already complete — the
+                  in-flight response streams separately (StreamingAssistantMessage
+                  below) and isn't in this list. So actions always show; gating
+                  on isGenerating wrongly hid the previous message's actions while
+                  a new query was answering. */}
+              <FeedbackPrompt
+                variant="rating"
+                text={msg.text}
+                rating={msg.rating}
+                onRate={(rating) => onRate?.(i, rating)}
+              />
             </div>
           ) : (
             <div className="max-w-[min(90%,450px)] wrap-break-words rounded-2xl rounded-br-md bg-(--schemes-blue-50) px-3.5 py-2.5 text-sm leading-relaxed text-(--schemes-ink)">

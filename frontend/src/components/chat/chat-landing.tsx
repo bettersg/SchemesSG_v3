@@ -13,15 +13,20 @@ export default function ChatLanding() {
     setDraftMessage(trimmed);
     setMessages([{ type: "user", text: trimmed }]);
   };
+  // Scrollable column: the content centers via my-auto when the viewport is
+  // tall enough, but scrolls from the top (with padding) on short screens
+  // instead of overflowing upward under the fixed navbar.
   return (
-    <div className="grain-overlay flex h-full w-screen items-center justify-center bg-neutral-50">
+    <div className="grain-overlay flex h-full w-full flex-col overflow-y-auto bg-neutral-50">
       <div className="pointer-events-none absolute bottom-[10%] left-[10%] h-[600px] w-[600px] rounded-full bg-amber-300/10 blur-[120px]" />
       <div className="pointer-events-none absolute top-[10%] right-[5%] h-[600px] w-[600px] rounded-full bg-blue-300/20 blur-[120px]" />
-      <ChatLandingInput
-        query={draftMessage}
-        setQuery={setDraftMessage}
-        handleSubmit={handleSubmit}
-      />
+      <div className="my-auto flex w-full justify-center py-8">
+        <ChatLandingInput
+          query={draftMessage}
+          setQuery={setDraftMessage}
+          handleSubmit={handleSubmit}
+        />
+      </div>
     </div>
   );
 }

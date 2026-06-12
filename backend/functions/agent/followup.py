@@ -16,6 +16,37 @@ MODEL_TEMPERATURE = 0.7
 MODEL_NAME = "gpt-5.4-mini"
 BRACKETED_PLACEHOLDER_PATTERN = re.compile(r"\[([^\[\]]+)\]")
 
+# Scripts that signal a non-English conversation language. We key off the
+# user's own messages only — the scheme data is full of CJK/Tamil names and
+# would otherwise flip suggestions to the wrong language on English chats.
+_CJK_PATTERN = re.compile(r"[一-鿿㐀-䶿]")  # Han characters
+_TAMIL_PATTERN = re.compile(r"[஀-௿]")
+_LATIN_WORD_PATTERN = re.compile(r"[A-Za-z]{2,}")  # an English-ish word
+
+
+def detect_user_language(human_text: str) -> str:
+    """Best-effort language label from the user's own writing.
+
+    English-first for mixed queries: we only pick a non-English language when
+    that script clearly dominates the message. A few Latin proper nouns (scheme
+    or agency names like "ComCare") in an otherwise Chinese message stay
+    Chinese, but a genuinely mixed English+Chinese query resolves to English.
+    Latin-script input (including Malay) defaults to English.
+    """
+    english_words = len(_LATIN_WORD_PATTERN.findall(human_text))
+
+    # Mixed queries prioritise English: two or more English words is enough to
+    # stay English even alongside Chinese or Tamil. A genuine Chinese/Tamil
+    # message carries at most a stray Latin proper noun (e.g. "ComCare"), so it
+    # falls through to the script check below.
+    if english_words >= 2:
+        return "English"
+    if _CJK_PATTERN.search(human_text):
+        return "Chinese"
+    if _TAMIL_PATTERN.search(human_text):
+        return "Tamil"
+    return "English"
+
 
 def parse_schemes_json(schemes_json: object) -> str:
     """Defensively parse various shapes of `current_results_json` and
@@ -112,10 +143,18 @@ class FollowupSubgraph:
         return self.subgraph.invoke(state)
 
     def followup_bot(self, state: RouterAgentState):
-        system_message = FOLLOWUP_SYSTEM_TEMPLATE.format(max_pairs=MAX_FOLLOWUP_KV)
+        # Determine language from the user's own (human) messages only. The
+        # scheme list and even the assistant's replies carry CJK/Tamil scheme
+        # names that would otherwise flip English chats to Chinese suggestions.
+        human_text = " ".join(
+            str(msg.content) for msg in state["messages"] if msg.type == "human"
+        )
+        language = detect_user_language(human_text)
+        system_message = FOLLOWUP_SYSTEM_TEMPLATE.format(
+            max_pairs=MAX_FOLLOWUP_KV, language=language
+        )
         # Exclude tool messages: scheme data often contains Chinese/Malay names
-        # and descriptions, which would otherwise skew the suggestion language
-        # away from the language the user is actually writing in.
+        # and descriptions, which would otherwise skew the suggestion language.
         transcript = "\n".join(
             [f"{msg.type}: {msg.content}" for msg in state["messages"] if msg.type in ["human", "ai"]]
         )

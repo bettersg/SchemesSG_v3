@@ -126,9 +126,15 @@ function RatingActions({
         <Button
           variant="ghost"
           aria-label="More actions"
-          className={cn(actionButtonBase, "min-h-0 min-w-0 border-0 bg-transparent p-0")}
+          className={cn(
+            actionButtonBase,
+            "min-h-0 min-w-0 border-0 bg-transparent p-0 [&_svg]:size-[15px]",
+          )}
         >
-          <MoreHorizontal size={15} strokeWidth={2} className="shrink-0" />
+          {/* Explicit h/w (not just size prop): HeroUI's Button theme otherwise
+              resizes the SVG, and Firefox can collapse it to 0 without intrinsic
+              dimensions, hiding the icon. */}
+          <MoreHorizontal className="size-[15px] shrink-0" strokeWidth={2} />
         </Button>
         <Popover.Content
           placement="bottom start"

@@ -10,23 +10,53 @@ prompt caps how many fetches it does per turn.
 
 import asyncio
 import os
+import urllib.request
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import trafilatura
+from trafilatura.settings import use_config
 from lxml import html as lxml_html
 from langgraph.config import get_stream_writer
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
+from utils.check_link import BROWSER_USER_AGENT
 from utils.logging_setup import setup_logging
 
 
 logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
 
+# Trafilatura's default user-agent (its own crawler string) is blocked by many
+# government and institutional sites (e.g. aic.sg, moh.gov.sg), which causes the
+# download to silently return nothing. Present a normal browser UA instead.
+_TRAFILATURA_CONFIG = use_config()
+_TRAFILATURA_CONFIG.set("DEFAULT", "user_agents", BROWSER_USER_AGENT)
+_TRAFILATURA_CONFIG.set("DEFAULT", "sleep_time", "0")
+
 ACTION_MESSAGE_ON_START = 'Reading the page "{url}"'
 ACTION_MESSAGE_ON_END = 'Read "{url}".'
+ACTION_MESSAGE_ON_FAIL = 'Couldn\'t read "{url}".'
 SHORT_ACTION_MESSAGE_ON_START = "Reading a web page"
 SHORT_ACTION_MESSAGE_ON_END = "Web page read"
+SHORT_ACTION_MESSAGE_ON_FAIL = "Web page unavailable"
+
+
+def _emit_action_message(label: str, message: str) -> None:
+    """Best-effort stream event for the live status trace. Never raises."""
+    try:
+        writer = get_stream_writer()
+        writer(
+            {
+                "type": "action_message",
+                "data": {
+                    "phase": "action_message",
+                    "label": label,
+                    "message": message,
+                },
+            }
+        )
+    except Exception as e:
+        logger.debug(f"Failed to emit action message to stream: {e}")
 
 # Keep returned text bounded so a long page doesn't blow up the agent's context.
 MAX_TEXT_CHARS = 6000
@@ -80,26 +110,39 @@ def extract_links(html: str, base_url: str) -> list[dict[str, str]]:
     return (same_domain + other_domain)[:MAX_LINKS]
 
 
+def _download_html(url: str) -> str | None:
+    """Download a page's HTML, with a plain-urllib fallback.
+
+    Trafilatura's downloader fails on some sites (e.g. aic.sg) that a normal
+    browser-UA request fetches fine, so fall back to urllib before giving up.
+    """
+    raw = trafilatura.fetch_url(url, config=_TRAFILATURA_CONFIG)
+    if raw:
+        return raw
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": BROWSER_USER_AGENT})
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_SECONDS) as resp:
+            charset = resp.headers.get_content_charset() or "utf-8"
+            return resp.read().decode(charset, errors="replace")
+    except Exception as e:
+        logger.debug(f"urllib fallback download failed | url={url} | {e}")
+        return None
+
+
 def _fetch_webpage_sync(url: str) -> dict[str, Any]:
     logger.info(f"fetch_webpage tool invoked | url={url}")
-    try:
-        writer = get_stream_writer()
-        writer(
-            {
-                "type": "action_message",
-                "data": {
-                    "phase": "action_message",
-                    "label": SHORT_ACTION_MESSAGE_ON_START,
-                    "message": ACTION_MESSAGE_ON_START.format(url=url),
-                },
-            },
-        )
-    except Exception as e:
-        logger.debug(f"Failed to emit fetch input to stream: {e}")
+    _emit_action_message(
+        SHORT_ACTION_MESSAGE_ON_START, ACTION_MESSAGE_ON_START.format(url=url)
+    )
 
     try:
-        raw = trafilatura.fetch_url(url)
+        raw = _download_html(url)
         if not raw:
+            # Emit a closing status so the live trace doesn't strand on
+            # "Reading the page …" forever when a site blocks or times us out.
+            _emit_action_message(
+                SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url)
+            )
             return {"url": url, "error": "fetch_webpage failed: could not download page"}
 
         # Clean main-content text (boilerplate stripped), plus navigable links.
@@ -108,24 +151,15 @@ def _fetch_webpage_sync(url: str) -> dict[str, Any]:
             text = text[:MAX_TEXT_CHARS] + " …[truncated]"
         links = extract_links(raw, url)
 
-        try:
-            writer = get_stream_writer()
-            writer(
-                {
-                    "type": "action_message",
-                    "data": {
-                        "phase": "action_message",
-                        "label": SHORT_ACTION_MESSAGE_ON_END,
-                        "message": ACTION_MESSAGE_ON_END.format(url=url),
-                    },
-                }
-            )
-        except Exception as e:
-            logger.debug(f"Failed to emit fetch results to stream: {e}")
-
+        _emit_action_message(
+            SHORT_ACTION_MESSAGE_ON_END, ACTION_MESSAGE_ON_END.format(url=url)
+        )
         return {"url": url, "text": text, "links": links}
     except Exception as e:
         logger.exception("fetch_webpage failed")
+        _emit_action_message(
+            SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url)
+        )
         return {"url": url, "error": f"fetch_webpage failed: {e}"}
 
 
@@ -137,6 +171,9 @@ async def _fetch_webpage_async(url: str) -> dict[str, Any]:
         )
     except asyncio.TimeoutError:
         logger.warning("fetch_webpage timed out")
+        _emit_action_message(
+            SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url)
+        )
         return {"url": url, "error": "fetch_webpage timed out"}
 
 

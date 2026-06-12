@@ -8,7 +8,8 @@ the agent can follow a child page. Text extraction is delegated to Trafilatura
 
 from urllib.parse import urlparse
 
-from agent.tools.fetch_webpage import extract_links
+from agent.tools import fetch_webpage
+from agent.tools.fetch_webpage import _download_html, extract_links
 
 
 BASE = "https://example.org/programmes/aid.html"
@@ -57,3 +58,29 @@ def test_links_carry_anchor_label():
 
 def test_malformed_html_returns_empty_not_crash():
     assert extract_links("", BASE) == []
+
+
+def test_download_uses_trafilatura_when_it_succeeds(mocker):
+    # When trafilatura returns content, the urllib fallback is never reached.
+    mocker.patch.object(fetch_webpage.trafilatura, "fetch_url", return_value="<html>ok</html>")
+    fallback = mocker.patch.object(fetch_webpage.urllib.request, "urlopen")
+    assert _download_html("https://example.org") == "<html>ok</html>"
+    fallback.assert_not_called()
+
+
+def test_download_falls_back_to_urllib_when_trafilatura_returns_nothing(mocker):
+    # Sites that block trafilatura (e.g. aic.sg) but serve a normal browser
+    # request must still be recovered via the urllib fallback.
+    mocker.patch.object(fetch_webpage.trafilatura, "fetch_url", return_value=None)
+    resp = mocker.MagicMock()
+    resp.read.return_value = b"<html>fallback</html>"
+    resp.headers.get_content_charset.return_value = "utf-8"
+    resp.__enter__.return_value = resp
+    mocker.patch.object(fetch_webpage.urllib.request, "urlopen", return_value=resp)
+    assert _download_html("https://blocked.example") == "<html>fallback</html>"
+
+
+def test_download_returns_none_when_both_paths_fail(mocker):
+    mocker.patch.object(fetch_webpage.trafilatura, "fetch_url", return_value=None)
+    mocker.patch.object(fetch_webpage.urllib.request, "urlopen", side_effect=OSError("blocked"))
+    assert _download_html("https://blocked.example") is None
