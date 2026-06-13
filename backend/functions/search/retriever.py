@@ -2,12 +2,14 @@ import os
 from typing import Dict, List, Optional
 
 import pandas as pd
+from dotenv import find_dotenv, load_dotenv
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
+from integrations import EmbeddingsManager, FirebaseManager
 from loguru import logger
-from integrations import FirebaseManager, EmbeddingsManager
-from .scorers import rank_results, compute_vec_scores
-from dotenv import load_dotenv, find_dotenv
+
+from .scorers import compute_vec_scores, rank_results
+
 
 load_dotenv(find_dotenv())
 
@@ -17,28 +19,57 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 EMBEDDINGS_COLLECTION = "schemes_embeddings"
 SCHEMES_COLLECTION = "schemes"
 
-# Search funnel tuning. We score essentially the whole candidate pool, then
-# keep everything that clears the relevance bar. The result count is driven by
-# relevance (and an optional user-requested target), not a fixed top-N. Values
-# are starting points to be tuned against real queries.
+# Search funnel tuning. We score essentially the whole candidate pool, then keep
+# a ranked prefix. The result count is driven by either a user-requested target
+# or the endpoint's `top_k`.
 #
 # RETRIEVAL_LIMIT is a sentinel, not a result count: find_nearest returns at
 # most the whole collection, so a value at/above the corpus size means
 # "retrieve everything". 1000 is Firestore's hard maximum for find_nearest.limit
 # and comfortably exceeds the current corpus, so it stands in for "all
-# candidates". The relevance threshold (not this number) decides what's returned.
+# candidates".
 RETRIEVAL_LIMIT = 1000  # Firestore's max find_nearest limit; effectively "all candidates"
-# Permissive relevance floor on the normalized combined score (0-1). It is not a
-# precise relevance gate (embedding distances are too compressed for that without
-# a reranker); empirically it keeps hundreds of results for a broad query and a
-# focused handful for a specific one, while dropping the clearly-irrelevant tail.
-# Ranking carries relevance; this only trims the tail. Tune against real queries.
-RELEVANCE_THRESHOLD = 0.6
 SAFETY_CEILING = 300  # hard upper bound on results returned, regardless of request
-# How many top-ranked schemes the LLM reads to write its answer. The UI shows all
-# relevant results (the user scrolls); the LLM only needs the top slice, which
-# bounds per-turn token cost as the corpus grows.
-LLM_RESULT_LIMIT = 50
+DEFAULT_MIN_RESULTS = 10
+DEFAULT_MAX_RESULTS = 80
+ELBOW_MIN_SCORE_DROP = 0.08
+# How many top-ranked schemes the LLM reads to write its answer. The UI still
+# receives the full ranked scheme set; the LLM only sees this top slice so its
+# response stays aligned with the visible first-page cards.
+LLM_RESULT_LIMIT = 10
+
+
+def apply_elbow_cutoff(
+    ranked: pd.DataFrame,
+    *,
+    min_results: int = DEFAULT_MIN_RESULTS,
+    max_results: int = DEFAULT_MAX_RESULTS,
+    min_score_drop: float = ELBOW_MIN_SCORE_DROP,
+) -> pd.DataFrame:
+    """Cut a ranked result list at the first meaningful post-minimum score drop.
+
+    `combined_scores` is query-relative, so this avoids treating a fixed score
+    as absolute relevance. We keep enough results for useful browsing, then cut
+    when the ranking curve shows a clear elbow. If no elbow appears, return a
+    bounded ranked prefix instead of the whole candidate pool.
+    """
+
+    if ranked.empty or "combined_scores" not in ranked.columns:
+        return ranked.head(max_results)
+
+    result_count = len(ranked)
+    if result_count <= min_results:
+        return ranked
+
+    max_cutoff = min(result_count, max_results, SAFETY_CEILING)
+    scores = ranked["combined_scores"].fillna(0).tolist()
+
+    for cutoff in range(min_results, max_cutoff):
+        drop = scores[cutoff - 1] - scores[cutoff]
+        if drop >= min_score_drop:
+            return ranked.head(cutoff)
+
+    return ranked.head(max_cutoff)
 
 
 def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str]) -> tuple[List[Dict], List[str]]:
@@ -170,6 +201,7 @@ class SearchModel:
 
         # Convert the real cosine distances into normalized relevance scores
         score_df = compute_vec_scores(ids, distances)
+        score_df["vector_distance"] = distances
 
         # Step 3: Fetch full scheme data from schemes collection
         try:
@@ -188,7 +220,7 @@ class SearchModel:
 
     def rank(self, query_text: str, results: pd.DataFrame) -> pd.DataFrame:
         """
-        Apply BM25 ranking to the provided search results and compute combined scores.
+        Apply RRF-like ranking to the provided search results and compute combined scores.
         """
         # Delegate ranking to the external ranker helper
         return rank_results(query_text, results)
@@ -196,26 +228,18 @@ class SearchModel:
     def aggregate_and_rank_results(
         self,
         query_text: str,
-        threshold: Optional[float] = None,
+        *,
         requested_target: Optional[int] = None,
     ) -> pd.DataFrame:
         """
-        Perform hybrid vector + BM25 retrieval, then return a relevance-driven
-        result set: every candidate whose combined score clears `threshold`,
-        ordered best-first.
+        Perform hybrid vector + BM25 retrieval, then return ranked candidates.
 
         `requested_target` is the count the user asked for (e.g. "20 healthcare
-        schemes"). It caps the results, but the relevance floor always wins: we
-        never pad below `threshold` to hit the number. When no target is given,
-        all above-threshold results are returned. A hard `SAFETY_CEILING` always
-        applies. The result count therefore varies with the query.
+        schemes"). It is used as the result cap when present. Otherwise, an
+        elbow cutoff is applied to avoid returning the whole weakly related
+        candidate tail.
         """
-        if threshold is None:
-            threshold = RELEVANCE_THRESHOLD
-
-        cap = SAFETY_CEILING if requested_target is None else min(requested_target, SAFETY_CEILING)
-
-        cache_key = (query_text, threshold)
+        cache_key = ("ranked", query_text)
         if cache_key in self.query_cache:
             logger.debug("Cache hit for query '%s'", query_text)
             ranked = self.query_cache[cache_key]
@@ -232,5 +256,7 @@ class SearchModel:
             ranked = self.rank(query_text, results).drop_duplicates("scheme_id")
             self.query_cache[cache_key] = ranked
 
-        relevant = ranked[ranked["combined_scores"] >= threshold]
-        return relevant.head(cap)
+        if requested_target is not None:
+            return ranked.head(min(requested_target, SAFETY_CEILING))
+
+        return apply_elbow_cutoff(ranked)

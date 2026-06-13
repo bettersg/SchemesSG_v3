@@ -191,7 +191,6 @@ export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
         "financial assistance healthcare housing employment education family eldercare disability mental health food support social assistance",
       limit: 1000,
       top_k: 1000,
-      similarity_threshold: 0,
       cursor: null,
     }),
     next: { revalidate: 86_400 },
@@ -235,7 +234,6 @@ export const getSchemes = async (
     query: userQuery,
     limit: 20,
     top_k: 50,
-    similarity_threshold: 0,
     cursor: nextCursor || null, // Send null instead of empty string
   };
 
@@ -444,7 +442,6 @@ export async function searchSchemes(
         query: query || "social assistance",
         limit: 20,
         top_k: 50,
-        similarity_threshold: 0,
         cursor: cursor || null,
       }),
     });

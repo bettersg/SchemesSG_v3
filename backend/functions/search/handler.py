@@ -1,14 +1,15 @@
 import os
 from datetime import datetime, timezone
-from uuid import uuid1
 from typing import Any
+from uuid import uuid1
 
 import pandas as pd
-from loguru import logger
 from integrations import FirebaseManager
+from loguru import logger
 from utils.pagination import decode_cursor, get_paginated_results
-from .types import PredictParams, PaginatedSearchParams
+
 from .retriever import SearchModel
+from .types import PaginatedSearchParams, PredictParams
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -100,7 +101,8 @@ class QueryHandler:
         """Main method to be called by endpoint handler"""
 
         final_results = self.search_model.aggregate_and_rank_results(
-            params.query, params.top_k, params.similarity_threshold
+            params.query,
+            requested_target=params.top_k,
         )
 
         session_id = str(uuid1())
@@ -116,7 +118,7 @@ class QueryHandler:
     def predict_paginated(self, params: PaginatedSearchParams) -> dict[str, Any]:
         """Method for paginated search results"""
 
-        # Use the top_k parameter for vector search
+        # Use top_k as the maximum ranked result count before pagination.
         internal_top_k = params.top_k
 
         # Check if we have a cursor and extract session_id from it
@@ -132,7 +134,8 @@ class QueryHandler:
 
         # Get complete results first (using top_k)
         complete_results = self.search_model.aggregate_and_rank_results(
-            params.query, internal_top_k, params.similarity_threshold
+            params.query,
+            requested_target=internal_top_k,
         )
 
         filters = params.filters
@@ -172,16 +175,14 @@ class QueryHandler:
     def predict_for_agent(self, params: PredictParams) -> dict[str, Any]:
         """Method to be called by agent for search tool.
 
-        Returns up to the user's requested count of relevant schemes (the
-        relevance floor always wins, so we never pad below it), and flags a
-        shortfall when fewer relevant schemes exist than the user asked for so
-        the agent can explain the gap.
+        Returns up to the user's requested count of ranked schemes, and flags a
+        shortfall when fewer ranked schemes are available than the user asked
+        for so the agent can explain the gap.
         """
 
         final_results = self.search_model.aggregate_and_rank_results(
             params.query,
-            params.similarity_threshold,
-            params.requested_target,
+            requested_target=params.requested_target,
         )
 
         session_id = params.session_id if params.session_id else str(uuid1())

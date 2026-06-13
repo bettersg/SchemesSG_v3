@@ -1,17 +1,13 @@
 """Search tool defined for agent use."""
 
-import asyncio
-import os
-from typing import Any
-
-# Import ToolRuntime from langgraph.prebuilt
-from langgraph.prebuilt import ToolRuntime
+from integrations import FirebaseManager
 from langchain_core.tools import StructuredTool
 from langgraph.config import get_stream_writer
-from search import PredictParams, QueryHandler, LLM_RESULT_LIMIT, slim_for_llm
+from langgraph.prebuilt import ToolRuntime
 from pydantic import BaseModel, Field
+from search import LLM_RESULT_LIMIT, PredictParams, QueryHandler, slim_for_llm
 from utils.logging_setup import setup_logging
-from integrations import FirebaseManager
+
 
 logger = setup_logging()
 
@@ -30,13 +26,12 @@ class SchemeSearchToolInput(BaseModel):
         default=None,
         ge=1,
         description=(
-            "Leave this UNSET for almost every query. The search already returns all "
-            "sufficiently relevant schemes, ranked best-first, on its own. ONLY set a "
-            "number when the user themselves states an explicit quantity in their "
-            "message, e.g. 'show me 20 healthcare schemes' -> 20, 'give me 5 options' "
-            "-> 5. Do NOT set it for an ordinary request like 'I need health support' "
-            "or to pick a 'reasonable' count yourself. It never pads with irrelevant "
-            "results to reach the number."
+            "Leave this UNSET for almost every query. The search already returns a "
+            "ranked result set on its own. ONLY set a number when the user "
+            "themselves states an explicit quantity in their message, e.g. "
+            "'show me 20 healthcare schemes' -> 20, 'give me 5 options' -> 5. "
+            "Do NOT set it for an ordinary request like 'I need health support' "
+            "or to pick a 'reasonable' count yourself."
         ),
     )
     # 1. REMOVED session_id from here so the LLM doesn't see or input it.
@@ -106,7 +101,7 @@ def _search_schemes_sync(
     except Exception as e:
         logger.debug(f"Failed to emit search results to stream: {e}")
 
-    # The UI already received every relevant scheme via the schemes_update
+    # The UI already received the ranked scheme set via the schemes_update
     # stream above. The LLM only reads the top slice with minimal keys, to keep
     # the answer focused and bound per-turn token cost.
     results["data"] = slim_for_llm(results.get("data", []), LLM_RESULT_LIMIT)

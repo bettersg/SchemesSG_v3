@@ -1,15 +1,13 @@
-"""Unit tests for relevance-driven result cutoff in aggregate_and_rank_results.
+"""Unit tests for dynamic ranked result cutoff in aggregate_and_rank_results.
 
-Behaviour under test: the agent search returns a *variable* number of schemes
-driven by relevance, not a fixed count. Candidates below the relevance
-threshold are dropped; the result is bounded by a safety cap. The vector
-search itself is stubbed so these tests need no Firestore.
+Behaviour under test: search returns a dynamically cut ranked prefix unless the
+user explicitly asks for a count. The vector search itself is stubbed so these
+tests need no Firestore.
 """
 
 import pandas as pd
 import pytest
-
-from search.retriever import SearchModel, SAFETY_CEILING, RELEVANCE_THRESHOLD
+from search.retriever import DEFAULT_MAX_RESULTS, DEFAULT_MIN_RESULTS, SearchModel, apply_elbow_cutoff
 
 
 def _candidate_df(scores: dict[str, float]) -> pd.DataFrame:
@@ -29,7 +27,7 @@ def model(mocker):
     """A SearchModel with vector search and BM25 ranking stubbed out.
 
     rank() is stubbed to pass vec scores straight through as combined_scores so
-    the test isolates the *cutoff*, not the fusion maths.
+    the test isolates result count, not the fusion maths.
     """
     mocker.patch.object(SearchModel, "initialise", return_value=None)
     SearchModel._instance = None
@@ -46,56 +44,48 @@ def model(mocker):
     return m
 
 
-def test_only_candidates_above_threshold_are_returned(model, mocker):
-    """A narrow query where few clear the bar returns just those few."""
-    mocker.patch.object(
-        model,
-        "search",
-        return_value=_candidate_df({"a": 0.95, "b": 0.80, "c": 0.10, "d": 0.05}),
+def test_elbow_cutoff_keeps_at_least_minimum_then_cuts_on_score_drop():
+    scores = [0.95 - (i * 0.01) for i in range(DEFAULT_MIN_RESULTS)]
+    scores.extend([0.70, 0.69, 0.68])
+    ranked = pd.DataFrame(
+        {
+            "scheme_id": [f"s{i}" for i in range(len(scores))],
+            "combined_scores": scores,
+        }
     )
 
-    results = model.aggregate_and_rank_results("narrow query", RELEVANCE_THRESHOLD, None)
+    results = apply_elbow_cutoff(ranked)
 
-    kept = set(results["scheme_id"])
-    assert kept == {"a", "b"}
-    assert "c" not in kept and "d" not in kept
+    assert len(results) == DEFAULT_MIN_RESULTS
+    assert results["scheme_id"].tolist() == [f"s{i}" for i in range(DEFAULT_MIN_RESULTS)]
 
 
-def test_no_target_returns_all_above_threshold(model, mocker):
-    """A broad query with no requested count returns every relevant scheme."""
-    scores = {f"s{i}": 0.9 for i in range(25)}  # 25 all clear the bar
+def test_no_elbow_returns_bounded_ranked_prefix(model, mocker):
+    """Without a clear elbow, return a bounded prefix instead of 300 results."""
+    scores = {f"s{i}": 1.0 - (i * 0.001) for i in range(DEFAULT_MAX_RESULTS + 30)}
     mocker.patch.object(model, "search", return_value=_candidate_df(scores))
 
-    results = model.aggregate_and_rank_results("broad query", 0.5, None)
+    results = model.aggregate_and_rank_results("smooth broad query")
 
-    assert len(results) == 25
+    assert len(results) == DEFAULT_MAX_RESULTS
 
 
 def test_requested_target_caps_results(model, mocker):
-    """When the user asks for N and more than N are relevant, return N."""
-    scores = {f"s{i}": 0.9 for i in range(40)}  # 40 relevant
+    """When the user asks for N, return the top N ranked candidates."""
+    scores = {f"s{i}": 1.0 - (i * 0.01) for i in range(40)}
     mocker.patch.object(model, "search", return_value=_candidate_df(scores))
 
-    results = model.aggregate_and_rank_results("healthcare", 0.5, requested_target=20)
+    results = model.aggregate_and_rank_results("healthcare", requested_target=20)
 
     assert len(results) == 20
 
 
-def test_relevance_floor_wins_over_target(model, mocker):
-    """Asking for more than qualify returns only the qualifying ones, not padded."""
-    scores = {"a": 0.9, "b": 0.8, "c": 0.7, "d": 0.1, "e": 0.05}  # only 3 clear 0.5
+def test_small_result_set_returns_all_results(model, mocker):
+    """If fewer than the minimum exist, return them all."""
+    scores = {"a": 0.9, "b": 0.7, "c": 0.1, "d": 0.05}
     mocker.patch.object(model, "search", return_value=_candidate_df(scores))
 
-    results = model.aggregate_and_rank_results("rare topic", 0.5, requested_target=100)
+    results = model.aggregate_and_rank_results("small query")
 
-    assert len(results) == 3  # never padded with the sub-threshold d, e
-
-
-def test_safety_ceiling_caps_even_without_target(model, mocker):
-    """A pathological all-relevant query is bounded by the safety ceiling."""
-    scores = {f"s{i}": 0.9 for i in range(SAFETY_CEILING + 30)}
-    mocker.patch.object(model, "search", return_value=_candidate_df(scores))
-
-    results = model.aggregate_and_rank_results("everything", 0.5, None)
-
-    assert len(results) == SAFETY_CEILING
+    assert len(results) == 4
+    assert results["scheme_id"].tolist() == ["a", "b", "c", "d"]

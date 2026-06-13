@@ -7,8 +7,8 @@ import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
-from langchain_core.documents import Document
 from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
 from pydantic import BaseModel
@@ -26,7 +26,6 @@ class PredictParams(BaseModel):
 
     query: str
     top_k: Optional[int] = 20
-    similarity_threshold: Optional[int] = None
     is_warmup: Optional[bool] = False  # Add flag for warmup requests
 
 
@@ -36,7 +35,6 @@ class PaginatedSearchParams(BaseModel):
     query: str
     limit: Optional[int] = 20
     cursor: Optional[str] = None
-    similarity_threshold: Optional[int] = None
     is_warmup: Optional[bool] = False
     top_k: Optional[int] = 100  # Number of items to retrieve from vector search
     filters: Optional[Dict[str, List[str]]] = {}
@@ -245,7 +243,9 @@ class SearchModel:
         return results.sort_values("combined_scores", ascending=False)
 
     def aggregate_and_rank_results(
-        self, query_text: str, top_k: int, similarity_threshold: Optional[int]
+        self,
+        query_text: str,
+        top_k: int,
     ) -> pd.DataFrame:
         """
         Perform hybrid vector + BM25 retrieval with caching.
@@ -256,34 +256,31 @@ class SearchModel:
 
         Args:
             query_text (str): The user's search query.
-            top_k (int): Maximum number of top-matching schemes to return.
-            similarity_threshold (Optional[int]): Minimum similarity score required
-                (currently unused; reserved for future filtering).
+            top_k (int): Maximum vector candidate pool size and ranked result count.
 
         Returns:
-            pd.DataFrame: A DataFrame with at most `top_k` unique schemes, sorted by
+            pd.DataFrame: A DataFrame with retained unique schemes, sorted by
                 combined vector and BM25 scores in descending order.
 
         Notes:
-            - The `similarity_threshold` parameter is accepted but not yet implemented.
             - Caching is keyed by `(query_text, top_k)` tuple.
         """
-        cache_key = (query_text, top_k)
+        cache_key = ("ranked", query_text, top_k)
         if cache_key in self.query_cache:
             logger.debug("Cache hit for query '%s'", query_text)
-            return self.query_cache[cache_key]
+            results = self.query_cache[cache_key]
+        else:
+            results = self.search(query_text, top_k)
 
-        results = self.search(query_text, top_k)
+            # Handle empty results - skip ranking if no vector results
+            if results.empty:
+                logger.warning(f"No search results to rank for query: {query_text}")
+                self.query_cache[cache_key] = results
+                return results
 
-        # Handle empty results - skip ranking if no vector results
-        if results.empty:
-            logger.warning(f"No search results to rank for query: {query_text}")
+            results = self.rank(query_text, results).drop_duplicates("scheme_id")
             self.query_cache[cache_key] = results
-            return results
 
-        results = self.rank(query_text, results).drop_duplicates("scheme_id")
-
-        self.query_cache[cache_key] = results
         return results.head(top_k)
 
     def _sanitize_for_firestore(self, data):
@@ -345,7 +342,7 @@ class SearchModel:
         """
 
         # Searches the database for appropriate schemes per need and aggregates their overall suitability
-        final_results = self.aggregate_and_rank_results(params.query, params.top_k, params.similarity_threshold)
+        final_results = self.aggregate_and_rank_results(params.query, params.top_k)
 
         session_id = str(uuid1())
         results_dict = final_results.to_dict(orient="records")
@@ -384,7 +381,7 @@ class SearchModel:
             session_id = str(uuid1())
 
         # Get complete results first (using top_k)
-        complete_results = self.aggregate_and_rank_results(params.query, internal_top_k, params.similarity_threshold)
+        complete_results = self.aggregate_and_rank_results(params.query, internal_top_k)
 
         filters = params.filters
         if filters:
