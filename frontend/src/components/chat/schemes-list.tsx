@@ -7,7 +7,7 @@ import { ScrollShadow, Spinner } from "@heroui/react";
 import { SearchX } from "lucide-react";
 import { FilterObjType } from "@/types/types";
 import SchemesFilter from "../schemes/schemes-filter";
-import { parseArrayString } from "@/lib/utils";
+import { matchesSchemeFilters } from "@/lib/matches-scheme-filters";
 import NewChatButton from "./new-chat-button";
 import { StatusTextShimmer } from "./status-text-shimmer";
 import { motion, useReducedMotion } from "framer-motion";
@@ -70,25 +70,7 @@ export default function SchemesList({
     setFilterObj({});
   };
   const filteredSchemes = useMemo(
-    () =>
-      schemes.filter((scheme) => {
-        if (filterObj.planningArea && filterObj.planningArea.size > 0) {
-          if (
-            !scheme.planningArea ||
-            filterObj.planningArea.intersection(
-              new Set(parseArrayString(scheme.planningArea)),
-            ).size == 0
-          ) {
-            return false;
-          }
-        }
-        if (filterObj.agency && filterObj.agency.size > 0) {
-          if (!scheme.agency || !filterObj.agency.has(scheme.agency)) {
-            return false;
-          }
-        }
-        return true;
-      }),
+    () => schemes.filter((scheme) => matchesSchemeFilters(scheme, filterObj)),
     [schemes, filterObj],
   );
   const schemeSignature = useMemo(
