@@ -98,7 +98,6 @@ function ShareButton({
       text: `
       ${scheme.schemeName} - ${scheme.agency} | Schemes.sg\n
       ${scheme.summary}\n
-      ${scheme.description}\n
       Check out this scheme on SchemesSG`,
       url,
     };
@@ -146,17 +145,17 @@ function ShareButton({
     >
       {status === "copied" ? (
         <>
-          <Check size={14} strokeWidth={2} />
+          <Check size={14} strokeWidth={2} className="shrink-0" />
           Link copied
         </>
       ) : status === "failed" ? (
         <>
-          <AlertCircle size={14} strokeWidth={2} />
+          <AlertCircle size={14} strokeWidth={2} className="shrink-0" />
           Copy failed, try again
         </>
       ) : (
         <>
-          <Share2 size={14} strokeWidth={2} />
+          <Share2 size={14} strokeWidth={2} className="shrink-0" />
           Share scheme
         </>
       )}
@@ -178,7 +177,7 @@ function VisitWebsiteButton({
       rel="noopener noreferrer"
       className={`${productButtonSolidAmber} ${productButtonProminent} w-full no-underline hover:no-underline ${className ?? ""}`}
     >
-      <ExternalLink size={14} strokeWidth={2} />
+      <ExternalLink size={14} strokeWidth={2} className="shrink-0" />
       Visit website
     </Link>
   );
@@ -237,7 +236,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
     <PageShell contentClassName="pb-24 md:pb-8">
       <div
         ref={stickyHeaderRef}
-        className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) px-4 sm:px-6 md:mx-auto md:w-full md:max-w-3xl"
+        className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) md:mx-auto md:w-full md:max-w-3xl"
       >
         <div
           className={clsx(
@@ -253,7 +252,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <SchemeLogo
                 agency={scheme.agency}
                 image={scheme.image}
-                size="header"
+                size="lg"
               />
               <div className="flex min-w-0 flex-col gap-2">
                 {scheme.agency && (
@@ -284,7 +283,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           <nav
             aria-label="On this page"
             className={clsx(
-              "border-t border-(--schemes-border-neutral) py-2 transition-[border-color] duration-300",
+              "transition-[border-color] duration-300",
               stickyHeaderHidden && "max-md:border-transparent",
             )}
           >
@@ -296,7 +295,9 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <Tabs.ListContainer>
                 <ScrollShadow
                   orientation="horizontal"
-                  className="no-scrollbar w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible"
+                  className="w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain sm:overflow-x-visible p-1"
+                  hideScrollBar
+                  size={20}
                 >
                   <Tabs.List
                     aria-label="On this page"
@@ -469,7 +470,6 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                 variant="correction"
                 schemeId={scheme.schemeId}
                 schemeName={scheme.schemeName}
-                section={activeAnchor}
               />
               <FeedbackPrompt variant="general" />
             </div>
@@ -479,9 +479,9 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
 
       <div className="fixed right-0 bottom-0 left-0 z-30 border-t border-(--schemes-border-neutral) bg-(--schemes-surface) p-3 md:hidden">
         <div className="mx-auto grid max-w-sm grid-cols-2 gap-3">
-          <ShareButton scheme={scheme} className="" />
+          <ShareButton scheme={scheme} className="h-full" />
           {scheme.link ? (
-            <VisitWebsiteButton href={scheme.link} />
+            <VisitWebsiteButton href={scheme.link} className="h-full" />
           ) : (
             <div aria-hidden="true" />
           )}

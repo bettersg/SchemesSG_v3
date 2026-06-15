@@ -69,7 +69,7 @@ export const productButtonDefault = "min-h-11 px-4 py-2.5";
 export const productButtonProminent = "min-h-12 px-6 py-3";
 
 export const productSegmentedList =
-  "rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50) p-1";
+  "rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50)";
 
 export const productSegmentedTab =
   "relative z-10 rounded-lg text-sm font-semibold !text-(--schemes-blue-900)";

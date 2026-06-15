@@ -50,7 +50,12 @@ export function useAutoGrowTextarea(
     setMultiline(natural > lineHeight + 1);
     // The expand affordance is only meaningful once content exceeds the
     // collapsed cap (i.e. there's more to reveal than the collapsed view shows).
-    setCanExpand(natural > collapsedMaxHeight + 1);
+    const overflows = natural > collapsedMaxHeight + 1;
+    setCanExpand(overflows);
+    // Once content shrinks below the collapsed cap there's nothing left to
+    // expand, so drop expanded state — otherwise its toggle lingers and
+    // overlaps the inline submit button on the single-line pill.
+    if (!overflows) setExpanded(false);
   }, [ref, expanded, lineHeight, collapsedMaxHeight, expandedMaxHeight]);
 
   useEffect(() => {

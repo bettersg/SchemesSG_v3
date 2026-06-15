@@ -3,11 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, Maximize2, Minimize2, Search } from "lucide-react";
 import { FormEvent, KeyboardEvent, useRef } from "react";
 import { flushSync } from "react-dom";
-import { SCHEME_CATEGORIES } from "@/lib/design-system/categories";
 import { duration } from "@/lib/design-system/motion";
 import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
-
-const CATEGORY_CHIPS = SCHEME_CATEGORIES;
 
 interface ChatLandingInputProps {
   query: string;
@@ -32,12 +29,10 @@ function ChatLandingInput({
       expandedMaxHeight: 448,
     });
 
-  const handleChipClick = (label: string) => {
-    const q = `I need ${label.toLowerCase()} support`;
+  const handleChipClick = (prompt: string) => {
     flushSync(() => {
-      setQuery(q);
+      setQuery(prompt);
     });
-    formRef.current?.requestSubmit();
   };
 
   // Enter submits; Shift+Enter inserts a newline (standard composer behaviour).
@@ -107,7 +102,7 @@ function ChatLandingInput({
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              aria-label={expanded ? "Collapse input" : "Expand input"}
+              aria-label={expanded ? t.a11y.collapseInput : t.a11y.expandInput}
               className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
             >
               {expanded ? (
@@ -160,11 +155,11 @@ function ChatLandingInput({
             </p> */}
         {/* Category chips */}
         <div className="flex flex-wrap gap-2 justify-center">
-          {CATEGORY_CHIPS.map((label) => (
+          {t.chat.categoryChips.map(({ label, prompt }) => (
             <button
               type="button"
               key={label}
-              onClick={() => handleChipClick(label)}
+              onClick={() => handleChipClick(prompt)}
               className="inline-flex items-center gap-1.5 p-3 bg-white border-2 border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
             >
               {label}

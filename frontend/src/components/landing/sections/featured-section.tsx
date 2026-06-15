@@ -45,6 +45,7 @@ export function FeaturedSection() {
               alt={logo.name}
               width={160}
               height={64}
+              unoptimized
               className={cn(
                 "w-auto object-contain transition-opacity duration-200",
                 logo.name === "Better.sg" ? "h-10 md:h-11" : "h-14 md:h-16",
@@ -65,6 +66,7 @@ export function FeaturedSection() {
                 alt={logo.name}
                 width={180}
                 height={64}
+                unoptimized
                 className="h-14 md:h-16 w-auto object-contain transition-opacity duration-200"
               />
             ))}

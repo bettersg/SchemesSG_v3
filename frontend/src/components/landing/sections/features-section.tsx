@@ -2,458 +2,515 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  Search,
-  SlidersHorizontal,
-  Sparkles,
-  Globe,
+  ArrowRight,
+  Building2,
+  Check,
+  ChevronDown,
+  ExternalLink,
+  HeartPulse,
+  Mail,
+  MapPin,
   MousePointer2,
-  UserCheck,
+  MousePointerClick,
+  Phone,
+  Search,
+  Share2,
+  Sparkles,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import SchemeLogo from "@/components/schemes/scheme-logo";
+import BulletItem from "@/components/schemes/bullet-item";
+import SectionLabel from "@/components/schemes/section-label";
+import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
 import { useLanguage } from "@/lib/landing-i18n";
+import {
+  productButtonDefault,
+  productButtonOutlineBlue,
+  productButtonOutlineNeutral,
+  productButtonProminent,
+  productButtonSolidAmber,
+  productCard,
+} from "@/lib/design-system/product-styles";
+import { duration, ease } from "@/lib/design-system/motion";
+import { getSchemeCategoryChipClassName } from "@/lib/design-system/categories";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import type { Translations } from "@/lib/landing-i18n/types";
 
-/* ------------------------------------------------------------------ */
-/*  Decorative illustration components for each bento card             */
-/* ------------------------------------------------------------------ */
+type TutorialCopy = Translations["features"]["tutorial"] & {
+  submitExampleQuery: string;
+};
 
-function SearchIllustration() {
+type PreviewScheme = {
+  agency: string;
+  image: string;
+  name: string;
+  summary: string;
+  typeKey: string;
+  typeLabel: string;
+};
+
+const PREVIEW_SCHEME_META = [
+  {
+    image: "/landing/logos/msf.jpg",
+    typeKey: "Financial Assistance",
+  },
+  {
+    image: "/landing/logos/MOH.jpg",
+    typeKey: "Health & Wellbeing",
+  },
+] as const;
+
+function TutorialFrame({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="relative rounded-xl bg-neutral-50 border border-neutral-100 p-4 overflow-hidden">
-      {/* Mock browser chrome */}
-      <div className="flex items-center gap-1.5 mb-3">
-        <div className="h-2 w-2 rounded-full bg-neutral-300" />
-        <div className="h-2 w-2 rounded-full bg-neutral-200" />
-        <div className="h-2 w-2 rounded-full bg-neutral-200" />
-        <div className="ml-3 h-3 w-32 rounded-full bg-neutral-100" />
-      </div>
-      {/* Search bar */}
-      <div className="rounded-lg bg-white border border-neutral-200 p-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Search className="h-3.5 w-3.5 text-neutral-400" />
-          <span className="text-xs text-neutral-500">
-            I&rsquo;m a single mother looking for financial aid...
-          </span>
-        </div>
-      </div>
-      {/* Result cards */}
-      <div className="mt-3 space-y-2">
-        <div className="rounded-lg bg-white border border-neutral-200 p-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/landing/logos/msf.jpg"
-              alt=""
-              width={24}
-              height={24}
-              className="h-6 w-6 rounded-full"
-            />
-            <div>
-              <p className="text-xs font-semibold text-neutral-800">
-                ComCare Short-to-Medium-Term
-              </p>
-              <p className="text-[10px] text-neutral-400">
-                Ministry of Social and Family Development
-              </p>
-            </div>
-          </div>
-          <p className="mt-1.5 text-[10px] text-neutral-500 leading-relaxed">
-            Financial assistance for lower-income families facing
-            difficulties...
-          </p>
-          <div className="mt-2 flex gap-1.5">
-            <span className="rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-medium text-amber-700">
-              Financial Aid
-            </span>
-            <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">
-              Families
-            </span>
-            <span className="rounded-full bg-neutral-50 border border-neutral-200 px-2 py-0.5 text-[9px] font-medium text-neutral-500">
-              Monthly
-            </span>
-          </div>
-        </div>
-        <div className="rounded-lg bg-white/60 border border-neutral-100 p-3">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-neutral-100" />
-            <div className="h-2.5 w-28 rounded bg-neutral-100" />
-          </div>
-          <div className="mt-2 h-2 w-full rounded bg-neutral-50" />
-          <div className="mt-1 h-2 w-3/4 rounded bg-neutral-50" />
-        </div>
-      </div>
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-(--schemes-border) bg-(--schemes-bg) p-3 sm:p-5",
+        className,
+      )}
+    >
+      {children}
     </div>
   );
 }
 
-function DatabaseIllustration() {
-  const shouldReduceMotion = useReducedMotion();
-  const cards = [
-    {
-      posStyle: {
-        top: "0%",
-        left: "10%",
-        rotate: "-6deg",
-      },
-      text: "Healthcare",
-      textStyle: "bg-blue-100 text-blue-600",
-    },
-    {
-      posStyle: {
-        top: "0%",
-        left: "50%",
-        rotate: "4deg",
-      },
-      text: "Education",
-      textStyle: "bg-amber-100 text-amber-600",
-    },
-    {
-      posStyle: {
-        top: "34%",
-        left: "2%",
-        rotate: "2deg",
-      },
-      text: "Financial Aid",
-      textStyle: "bg-red-100 text-red-600",
-    },
-    {
-      posStyle: {
-        top: "36%",
-        left: "56%",
-        rotate: "-3deg",
-      },
-      text: "Disability",
-      textStyle: "bg-purple-100 text-purple-600",
-    },
-    {
-      posStyle: {
-        top: "70%",
-        left: "50%",
-        rotate: "5deg",
-      },
-      text: "Childcare",
-      textStyle: "bg-rose-100 text-rose-600",
-    },
-    {
-      posStyle: {
-        top: "70%",
-        left: "10%",
-        rotate: "-2deg",
-      },
-      text: "Eldercare",
-      textStyle: "bg-teal-100 text-teal-600",
-    },
-  ];
+function ComposerPreview({
+  copy,
+  placeholder,
+}: {
+  copy: TutorialCopy;
+  placeholder: string;
+}) {
+  const [query, setQuery] = useState(placeholder);
+
+  useEffect(() => {
+    setQuery(placeholder);
+  }, [placeholder]);
+
   return (
-    <div className="relative flex items-center justify-center py-4">
-      {/* Scattered scheme category cards */}
-      <div className="relative h-40 w-full">
-        {cards.map((card) => (
-          <div
-            key={card.text}
-            className={cn(
-              "absolute rounded-lg bg-white border border-neutral-200 px-3 py-2 shadow-sm",
-            )}
-            style={{ ...card.posStyle }}
+    <TutorialFrame>
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-(--schemes-blue-900)">
+        <Search size={15} />
+        {copy.composerLabel}
+      </div>
+      <div className="rounded-2xl border border-(--schemes-blue-100) bg-white p-3 shadow-sm focus-within:ring-2 focus-within:ring-(--schemes-blue-100)">
+        <textarea
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          rows={3}
+          className="w-full resize-none bg-transparent text-sm leading-relaxed text-(--schemes-ink) outline-none placeholder:text-(--schemes-muted)"
+        />
+        <div className="mt-2 flex justify-end">
+          <button
+            type="button"
+            aria-label={copy.submitExampleQuery}
+            className="flex size-10 items-center justify-center rounded-full bg-(--schemes-amber-400) text-(--schemes-ink) transition-colors hover:bg-(--schemes-amber-500)"
           >
-            <div className="flex items-center gap-1.5">
-              <div
-                className={cn(
-                  "w-5 h-5 sm:w-8 sm:h-8 rounded bg-blue-100 flex items-center justify-center text-[8px] sm:text-[12px] font-bold",
-                  card.textStyle,
-                )}
-              >
-                {card.text.charAt(0)}
-              </div>
-              <span className="text-[10px] sm:text-[14px] font-medium text-neutral-700">
-                {card.text}
-              </span>
-            </div>
+            <ArrowRight size={17} />
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {copy.categoryPrompts.map((category) => (
+          <button
+            type="button"
+            key={category}
+            onClick={() => setQuery(category)}
+            className="rounded-full border border-(--schemes-border) bg-white px-3 py-2 text-xs font-semibold text-(--schemes-ink-soft) transition-colors hover:border-(--schemes-blue-100) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)"
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+    </TutorialFrame>
+  );
+}
+
+function SearchProgressPreview({ copy }: { copy: TutorialCopy }) {
+  return (
+    <TutorialFrame className="flex min-h-72 flex-col justify-center">
+      <div className="mb-4 flex items-center gap-2">
+        {[
+          ["/landing/logos/msf.jpg", "MSF"],
+          ["/landing/logos/MOH.jpg", "MOH"],
+          ["/landing/logos/hdb.jpg", "HDB"],
+          ["/landing/logos/cpf.jpg", "CPF"],
+        ].map(([src, agency]) => (
+          <SchemeLogo key={agency} agency={agency} image={src} />
+        ))}
+      </div>
+      <div className="space-y-2">
+        {copy.progress.map((message, index) => (
+          <div
+            key={message}
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-(--schemes-ink-soft)"
+          >
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-(--schemes-blue-50) text-(--schemes-blue-600)">
+              {index === copy.progress.length - 1 ? (
+                <Sparkles size={12} />
+              ) : (
+                <Check size={12} strokeWidth={3} />
+              )}
+            </span>
+            {index === copy.progress.length - 1 ? (
+              <StatusTextShimmer>{message}</StatusTextShimmer>
+            ) : (
+              <span>{message}</span>
+            )}
           </div>
         ))}
       </div>
-    </div>
+      <div className="mt-4 max-w-[92%] rounded-2xl rounded-bl-md border border-(--schemes-border) bg-white px-3.5 py-3 text-sm leading-relaxed text-(--schemes-ink-soft)">
+        {copy.assistant}
+      </div>
+      <button
+        type="button"
+        className="mt-2 inline-flex w-fit items-center gap-2 rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) px-3 py-1.5 text-xs font-semibold text-(--schemes-status-info-text)"
+      >
+        <span className="size-1.5 rounded-full bg-(--schemes-blue-400)" />
+        {copy.found}
+      </button>
+    </TutorialFrame>
   );
 }
 
-function FilterIllustration() {
+function MiniSchemeCard({ scheme }: { scheme: PreviewScheme }) {
   return (
-    <div className="rounded-xl bg-neutral-50 border border-neutral-100 p-4 space-y-4">
-      {/* Agency logo row + filter */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center">
-          <Image
-            src="/landing/logos/hdb.jpg"
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm"
-          />
-          <Image
-            src="/landing/logos/MOH.jpg"
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
-          />
-          <Image
-            src="/landing/logos/cpf.jpg"
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
-          />
-          <Image
-            src="/landing/logos/msf.jpg"
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-full ring-2 ring-neutral-50 shadow-sm -ml-2"
-          />
-        </div>
-        <div className="relative">
-          <div className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-neutral-500" />
-            <span className="text-xs font-medium text-neutral-600">Filter</span>
-          </div>
-          {/* Mouse cursor */}
-          <MousePointer2
-            className="absolute -bottom-2 -right-1 h-4 w-4 text-neutral-700 drop-shadow-sm"
-            strokeWidth={2}
-          />
+    <div className={cn(productCard, "flex min-h-36 flex-col p-3")}>
+      <div className="mb-2 flex items-start gap-3">
+        <SchemeLogo agency={scheme.agency} image={scheme.image} />
+        <div className="min-w-0 flex-1">
+          <h4 className="font-(--font-head) text-sm font-semibold leading-snug text-(--schemes-blue-900)">
+            {scheme.name}
+          </h4>
+          <p className="mt-1 truncate text-[11px] text-(--schemes-muted)">
+            {scheme.agency}
+          </p>
         </div>
       </div>
-      {/* Category pills */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-          <Image
-            src="/landing/logos/sgenable.jpg"
-            alt=""
-            width={20}
-            height={20}
-            className="h-5 w-5 rounded-full"
-          />
-          <span className="text-xs font-medium text-neutral-700">
-            Disability Support
-          </span>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 shadow-sm">
-          <Image
-            src="/landing/logos/aic.jpg"
-            alt=""
-            width={20}
-            height={20}
-            className="h-5 w-5 rounded-full"
-          />
-          <span className="text-xs font-medium text-neutral-700">
-            Eldercare
-          </span>
-        </div>
-      </div>
-      {/* Tags row */}
-      <div className="flex items-center gap-4 text-xs text-neutral-500">
-        <span>Singapore</span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-amber-400" />
-          Eligible
+      <p className="line-clamp-2 text-xs leading-relaxed text-(--schemes-ink-soft)">
+        {scheme.summary}
+      </p>
+      <div className="mt-auto pt-3">
+        <span
+          className={getSchemeCategoryChipClassName(
+            scheme.typeKey,
+            "px-2 py-0.5 text-[10px] font-semibold",
+          )}
+        >
+          {scheme.typeLabel}
         </span>
-        <Sparkles className="h-3.5 w-3.5 text-neutral-300" />
       </div>
     </div>
   );
 }
 
-function SuggestSchemeIllustration() {
+function ResultsPreview({ copy }: { copy: TutorialCopy }) {
+  const [filter, setFilter] = useState<"all" | "msf" | "health">("all");
+  const previewSchemes: PreviewScheme[] = copy.previewSchemes.map(
+    (scheme, index) => ({
+      ...scheme,
+      ...PREVIEW_SCHEME_META[index],
+    }),
+  );
+  const schemes =
+    filter === "msf"
+      ? previewSchemes.slice(0, 1)
+      : filter === "health"
+        ? previewSchemes.slice(1)
+        : previewSchemes;
+
+  const filters = [
+    { id: "all" as const, label: copy.filterAll, icon: Search },
+    { id: "msf" as const, label: copy.filterAgency, icon: Building2 },
+    { id: "health" as const, label: copy.filterHealthcare, icon: HeartPulse },
+  ];
+
   return (
-    <div className="relative rounded-xl bg-neutral-50 border border-neutral-100 p-3.5 overflow-hidden">
-      {/* Step 1: User submits URL */}
-      <div className="flex items-center gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200 text-neutral-500 text-[10px] font-bold">
-          1
-        </div>
-        <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <Globe className="h-3 w-3 shrink-0 text-neutral-400" />
-            <span className="text-[10px] text-neutral-500 truncate">
-              https://gov.sg/schemes/new-grant
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="ml-3 border-l-2 border-dashed border-neutral-200 h-3" />
-
-      {/* Step 2: AI agents extract */}
-      <div className="flex items-center gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
-          2
-        </div>
-        <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 shrink-0 text-blue-600" />
-            <span className="text-[10px] text-neutral-700 font-medium">
-              AI extracting scheme details
-            </span>
-          </div>
-          <div className="mt-1.5 flex gap-1">
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">
-              Eligibility
-            </span>
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">
-              Benefits
-            </span>
-            <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[8px] text-neutral-500">
-              Agency
-            </span>
-          </div>
+    <TutorialFrame className="p-0">
+      <div className="border-b border-(--schemes-border) bg-white px-3 py-3">
+        <p className="text-sm font-semibold text-(--schemes-blue-600)">
+          {copy.found}
+        </p>
+        <p className="mt-0.5 text-xs text-(--schemes-muted)">{copy.filters}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {filters.map(({ id, label, icon: Icon }) => (
+            <button
+              type="button"
+              key={id}
+              onClick={() => setFilter(id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors",
+                filter === id
+                  ? "border-(--schemes-blue-100) bg-(--schemes-blue-50) text-(--schemes-blue-600)"
+                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600)",
+              )}
+            >
+              <Icon size={13} />
+              {label}
+            </button>
+          ))}
         </div>
       </div>
+      <div className="grid gap-3 pt-3 sm:grid-cols-2">
+        {schemes.map((scheme) => (
+          <MiniSchemeCard key={scheme.name} scheme={scheme} />
+        ))}
+      </div>
+    </TutorialFrame>
+  );
+}
 
-      <div className="ml-3 border-l-2 border-dashed border-neutral-200 h-3" />
+function DetailPreview({ copy }: { copy: TutorialCopy }) {
+  const [activeTab, setActiveTab] = useState(0);
 
-      {/* Step 3: Slack approval */}
-      <div className="flex items-start gap-2.5">
-        <div className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-800 text-white text-[10px] font-bold">
-          3
-        </div>
-        <div className="flex-1 rounded-lg bg-white border border-neutral-200 px-2.5 py-2 shadow-sm">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm6.33 2.521a2.528 2.528 0 0 1 2.52-2.521A2.528 2.528 0 0 1 20.206 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.52V8.834zm-1.272 0a2.528 2.528 0 0 1-2.52 2.521 2.527 2.527 0 0 1-2.521-2.521V2.522A2.527 2.527 0 0 1 11.372 0a2.528 2.528 0 0 1 2.52 2.522v6.312zm-2.52 6.33a2.528 2.528 0 0 1 2.52 2.52 2.527 2.527 0 0 1-2.52 2.522 2.527 2.527 0 0 1-2.521-2.522v-2.52h2.52zm0-1.272a2.528 2.528 0 0 1-2.521-2.52 2.528 2.528 0 0 1 2.521-2.521h6.312A2.528 2.528 0 0 1 24 11.372a2.528 2.528 0 0 1-2.522 2.52h-6.312z"
-                fill="#E01E5A"
-              />
-            </svg>
-            <span className="text-[10px] font-semibold text-neutral-700">
-              #scheme-reviews
-            </span>
-          </div>
-          <div className="rounded bg-neutral-50 border border-neutral-100 px-2 py-1.5">
-            <p className="text-[10px] text-neutral-600">
-              <span className="font-semibold">New Housing Grant 2025</span> —
-              HDB
+  return (
+    <TutorialFrame className="p-0">
+      <div className="border-b border-(--schemes-border-neutral) bg-white p-4">
+        <div className="flex items-center gap-3">
+          <SchemeLogo
+            agency={copy.detailAgency}
+            image="/landing/logos/msf.jpg"
+            size="lg"
+          />
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-(--schemes-muted)">
+              {copy.detailAgency}
             </p>
-            <div className="mt-1.5 flex gap-1.5">
-              <span className="flex items-center gap-1 rounded bg-blue-600 px-2 py-0.5 text-[9px] font-semibold text-white">
-                <UserCheck className="h-2.5 w-2.5" /> Approve
-              </span>
-              <span className="rounded bg-white border border-neutral-200 px-2 py-0.5 text-[9px] text-neutral-500">
-                Reject
+            <h4 className="mt-1 font-(--font-head) text-lg font-semibold leading-tight text-(--schemes-blue-900)">
+              {copy.detailScheme}
+            </h4>
+            <div className="mt-2">
+              <span
+                className={getSchemeCategoryChipClassName(
+                  "Financial Assistance",
+                  "px-2 py-0.5 text-[10px] font-semibold",
+                )}
+              >
+                {copy.detailCategoryLabel}
               </span>
             </div>
           </div>
         </div>
+        <div className="no-scrollbar mt-4 flex gap-1 overflow-x-auto rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50) p-1">
+          {copy.detailTabs.map((tab, index) => (
+            <button
+              type="button"
+              key={tab}
+              onClick={() => setActiveTab(index)}
+              className={cn(
+                "shrink-0 grow rounded-lg px-3 py-2 text-xs font-semibold text-(--schemes-blue-900) transition-colors",
+                activeTab === index && "bg-white shadow-sm",
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+      <div className="min-h-36 bg-white p-4">
+        {activeTab === 0 && (
+          <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
+            {copy.overview}
+          </p>
+        )}
+        {activeTab === 1 && (
+          <div className="space-y-2">
+            {copy.qualifies.map((item) => (
+              <BulletItem key={item}>{item}</BulletItem>
+            ))}
+          </div>
+        )}
+        {activeTab === 2 && (
+          <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
+            {copy.apply}
+          </p>
+        )}
+        {activeTab === 3 && (
+          <div className="space-y-5">
+            <div>
+              <SectionLabel>{copy.serviceArea}</SectionLabel>
+              <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
+                {copy.serviceAreaValue}
+              </p>
+            </div>
+            <div>
+              <SectionLabel>{copy.contacts}</SectionLabel>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  {
+                    area: copy.branchCentral,
+                    address: copy.centralAddress,
+                  },
+                  {
+                    area: copy.branchWest,
+                    address: copy.westAddress,
+                  },
+                ].map((contact) => (
+                  <div
+                    key={contact.area}
+                    className="flex flex-col gap-2 rounded-xl border border-(--schemes-blue-100) bg-(--schemes-surface) p-3 text-xs text-(--schemes-muted)"
+                  >
+                    <p className="font-semibold tracking-wide text-(--schemes-blue-900) uppercase">
+                      {contact.area}
+                    </p>
+                    <div className="flex items-start gap-2">
+                      <MapPin
+                        size={15}
+                        strokeWidth={2}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <span>{contact.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-(--schemes-blue-600)">
+                      <Phone size={15} strokeWidth={2} className="shrink-0" />
+                      {copy.phone}
+                    </div>
+                    <div className="flex items-center gap-2 break-all text-(--schemes-blue-600)">
+                      <Mail size={15} strokeWidth={2} className="shrink-0" />
+                      {copy.email}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <div
+            aria-hidden="true"
+            className={`${productButtonOutlineNeutral} ${productButtonProminent} pointer-events-none w-full`}
+          >
+            <Share2 size={14} strokeWidth={2} className="shrink-0" />
+            {copy.share}
+          </div>
+          <div
+            aria-hidden="true"
+            className={`${productButtonSolidAmber} ${productButtonProminent} pointer-events-none relative w-full`}
+          >
+            <ExternalLink size={14} strokeWidth={2} className="shrink-0" />
+            {copy.visit}
+            <MousePointerClick
+              size={32}
+              strokeWidth={1.2}
+              className="absolute right-2 bottom-2 fill-white text-(--schemes-blue-900) drop-shadow-sm"
+            />
+          </div>
+        </div>
+      </div>
+    </TutorialFrame>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Main section                                                       */
-/* ------------------------------------------------------------------ */
+function WalkthroughRow({
+  step,
+  title,
+  description,
+  preview,
+  reverse = false,
+  stepLabel,
+}: {
+  step: number;
+  title: string;
+  description: string;
+  preview: React.ReactNode;
+  reverse?: boolean;
+  stepLabel: string;
+}) {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.article
+      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: duration.entrance, ease: ease.outQuart }}
+      className={`grid items-center gap-8 ${!reverse ? "md:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]" : "md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]"} md:gap-12`}
+    >
+      <div className={cn(reverse && "md:order-2")}>
+        <div className="mb-4 flex size-9 items-center justify-center rounded-full bg-(--schemes-blue-50) text-sm font-semibold text-(--schemes-blue-600)">
+          <span className="sr-only">{stepLabel} </span>
+          {step}
+        </div>
+        <h3 className="font-(--font-head) text-2xl font-semibold leading-tight text-(--schemes-blue-900)">
+          {title}
+        </h3>
+        <p className="mt-3 max-w-xl text-base leading-relaxed text-(--schemes-muted)">
+          {description}
+        </p>
+      </div>
+      <div className={cn(reverse && "md:order-1")}>{preview}</div>
+    </motion.article>
+  );
+}
 
 export function FeaturesSection() {
   const { t } = useLanguage();
+  const copy = {
+    ...t.features.tutorial,
+    submitExampleQuery: t.a11y.submitExampleQuery,
+  };
 
   return (
-    <SectionWrapper id="features" className="bg-neutral-50 overflow-hidden">
-      <div className="text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-            {t.features.heading}
-          </h2>
-          <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            {t.features.subtitle}
-          </p>
-        </motion.div>
-      </div>
+    <SectionWrapper id="features" className="overflow-hidden bg-neutral-50">
+      <motion.div
+        className="mx-auto max-w-3xl text-center"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: duration.entrance, ease: ease.out }}
+      >
+        <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
+          {t.features.heading}
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+          {t.features.subtitle}
+        </p>
+      </motion.div>
 
-      {/* Bento grid — two flex columns */}
-      <div className="relative mt-16 mx-auto max-w-5xl grid grid-cols-1 gap-5 md:grid-cols-2">
-        {/* Background gradient glows */}
-        <div className="pointer-events-none absolute z-0 -top-40 -left-20 h-[600px] w-[600px] rounded-full bg-amber-200 opacity-40 blur-[150px]" />
-        <div className="pointer-events-none absolute z-0 top-1/4 -right-10 h-[500px] w-[500px] rounded-full bg-blue-200 opacity-30 blur-[130px]" />
-        <div className="pointer-events-none absolute z-0 -bottom-20 left-1/3 h-[500px] w-[500px] rounded-full bg-amber-100 opacity-40 blur-[120px]" />
-        {/* Left column */}
-        <div className="relative z-10 flex flex-col gap-5">
-          {/* Card 1 — AI-Powered Search */}
-          <motion.div
-            className="flex-1 rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5 }}
-          >
-            <SearchIllustration />
-            <h3 className="mt-5 text-lg font-bold tracking-tight">
-              {t.features.cards.search.title}
-            </h3>
-            <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              {t.features.cards.search.description}
-            </p>
-          </motion.div>
-
-          {/* Card 4 — Eligibility Matching */}
-          <motion.div
-            className="flex-1 rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <SuggestSchemeIllustration />
-            <h3 className="mt-5 text-lg font-bold tracking-tight">
-              {t.features.cards.suggest.title}
-            </h3>
-            <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              {t.features.cards.suggest.description}
-            </p>
-          </motion.div>
-        </div>
-
-        {/* Right column */}
-        <div className="relative z-10 flex flex-col gap-5">
-          {/* Card 2 — Comprehensive Database */}
-          <motion.div
-            className="flex-1 rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <div className="w-full h-[200px] sm:h-[300px] relative">
-              <DatabaseIllustration />
-            </div>
-            <h3 className="mt-4 text-lg font-bold tracking-tight">
-              {t.features.cards.database.title}
-            </h3>
-            <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              {t.features.cards.database.description}
-            </p>
-          </motion.div>
-
-          {/* Card 3 — Smart Filtering */}
-          <motion.div
-            className="flex-1 rounded-2xl border border-neutral-200/60 bg-white p-6 hover:shadow-lg hover:shadow-neutral-200/50 transition-all duration-300"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-          >
-            <FilterIllustration />
-            <h3 className="mt-4 text-lg font-bold tracking-tight">
-              {t.features.cards.filter.title}
-            </h3>
-            <p className="mt-2 text-muted-foreground leading-relaxed text-[15px]">
-              {t.features.cards.filter.description}
-            </p>
-          </motion.div>
-        </div>
+      <div className="mx-auto mt-12 max-w-5xl md:mt-16 flex flex-col gap-20 md:gap-24">
+        <WalkthroughRow
+          step={1}
+          stepLabel={copy.step}
+          title={t.features.cards.search.title}
+          description={t.features.cards.search.description}
+          preview={
+            <ComposerPreview
+              copy={copy}
+              placeholder={t.hero.searchPlaceholder}
+            />
+          }
+        />
+        <WalkthroughRow
+          step={2}
+          stepLabel={copy.step}
+          title={t.features.cards.database.title}
+          description={t.features.cards.database.description}
+          preview={<SearchProgressPreview copy={copy} />}
+          reverse
+        />
+        <WalkthroughRow
+          step={3}
+          stepLabel={copy.step}
+          title={t.features.cards.filter.title}
+          description={t.features.cards.filter.description}
+          preview={<ResultsPreview copy={copy} />}
+        />
+        <WalkthroughRow
+          step={4}
+          stepLabel={copy.step}
+          title={t.howItWorks.steps[2].title}
+          description={t.howItWorks.steps[2].description}
+          preview={<DetailPreview copy={copy} />}
+          reverse
+        />
       </div>
     </SectionWrapper>
   );

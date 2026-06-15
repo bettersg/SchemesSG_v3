@@ -1,4 +1,4 @@
-import type { Translations } from "../types"
+import type { Translations } from "../types";
 
 export const en: Translations = {
   nav: {
@@ -15,9 +15,52 @@ export const en: Translations = {
       "Let us know how we can help you. Please give us more details on which schemes best suit your needs.",
     volunteerBanner: "Built by volunteers at",
     getInvolved: "Get involved",
-    searchPlaceholder: "I'm a single parent looking for financial assistance...",
+    searchPlaceholder:
+      "I'm a single parent looking for financial assistance...",
     searchHint:
-      'Try: \u201Chealthcare subsidies for seniors\u201D or \u201Ceducation grants for low-income families\u201D',
+      "Try: \u201Chealthcare subsidies for seniors\u201D or \u201Ceducation grants for low-income families\u201D",
+    categoryChips: [
+      {
+        label: "Financial Assistance",
+        prompt: "I need financial assistance",
+      },
+      {
+        label: "Family & Children",
+        prompt: "I need support for my family or children",
+      },
+      {
+        label: "Health & Wellbeing",
+        prompt: "I need health and wellbeing support",
+      },
+      {
+        label: "Housing & Food",
+        prompt: "I need housing or food support",
+      },
+      {
+        label: "Education",
+        prompt: "I need education support",
+      },
+      {
+        label: "Employment & Training",
+        prompt: "I need employment or training support",
+      },
+      {
+        label: "Seniors & Caregiving",
+        prompt: "I need support for seniors or caregivers",
+      },
+      {
+        label: "Disability & Transport",
+        prompt: "I need disability or transport support",
+      },
+      {
+        label: "Legal & Safety",
+        prompt: "I need legal or safety support",
+      },
+      {
+        label: "Community Support",
+        prompt: "I need community support",
+      },
+    ],
   },
 
   hero: {
@@ -26,9 +69,10 @@ export const en: Translations = {
       "AI-powered search to help you discover the social assistance schemes you deserve. Over 500 schemes from 200+ agencies.",
     volunteerBanner: "Built by volunteers at",
     getInvolved: "Get involved",
-    searchPlaceholder: "I'm a single parent looking for financial assistance...",
+    searchPlaceholder:
+      "I'm a single parent looking for financial assistance...",
     searchHint:
-      'Try: \u201Chealthcare subsidies for seniors\u201D or \u201Ceducation grants for low-income families\u201D',
+      "Try: \u201Chealthcare subsidies for seniors\u201D or \u201Ceducation grants for low-income families\u201D",
   },
 
   schemeCategories: [
@@ -67,9 +111,9 @@ export const en: Translations = {
           "Our AI agents responsibly gather publicly available details from the webpage. A volunteer then reviews and approves the listing before it goes live.",
       },
       database: {
-        title: "500+ Schemes, One Place.",
+        title: "See How We Find Your Matches",
         description:
-          "Access government and community schemes from agencies like MSF, MOH, HDB, CPF, and more \u2014 all in one searchable database.",
+          "After you send your question, Schemes.sg searches over 500 government and community schemes from agencies like MSF, MOH, HDB, and CPF, then explains what it found.",
       },
       filter: {
         title: "Find the Right Scheme, No Noise",
@@ -81,6 +125,70 @@ export const en: Translations = {
         description:
           "Government ministries, statutory boards, and community organisations.",
       },
+    },
+    tutorial: {
+      step: "Step",
+      composerLabel: "Describe your situation",
+      categoryPrompts: [
+        "Financial Assistance",
+        "Family & Children",
+        "Health & Wellbeing",
+      ],
+      progress: [
+        "Understanding what support may fit your situation",
+        "Comparing schemes from trusted agencies",
+      ],
+      assistant:
+        "I found schemes that may help with household expenses and childcare costs.",
+      found: "10 schemes found",
+      filterAll: "All matches",
+      filterAgency: "MSF",
+      filterHealthcare: "Health & Wellbeing",
+      filters: "Filter by agency or support type",
+      detailTabs: [
+        "Overview",
+        "Who qualifies",
+        "How to apply",
+        "Agency details",
+      ],
+      previewSchemes: [
+        {
+          agency: "Ministry of Social and Family Development",
+          name: "ComCare Short-to-Medium-Term Assistance",
+          summary:
+            "Financial support for households facing temporary difficulty with essential expenses.",
+          typeLabel: "Financial Assistance",
+        },
+        {
+          agency: "Ministry of Health",
+          name: "Community Health Assist Scheme (CHAS)",
+          summary:
+            "Subsidies for medical and dental care at participating clinics.",
+          typeLabel: "Health & Wellbeing",
+        },
+      ],
+      detailAgency: "Ministry of Social and Family Development",
+      detailScheme: "ComCare Short-to-Medium-Term Assistance",
+      detailCategoryLabel: "Financial Assistance",
+      overview:
+        "Short-term financial support for lower-income households facing temporary difficulty.",
+      qualifies: [
+        "Singapore Citizens and Permanent Residents",
+        "Households needing help with essential expenses",
+      ],
+      apply:
+        "Contact your nearest Social Service Office to discuss your circumstances and next steps.",
+      serviceArea: "Service area",
+      serviceAreaValue: "Available islandwide through Social Service Offices.",
+      contacts: "Branches and contacts",
+      branchCentral: "Central Singapore",
+      branchWest: "West Singapore",
+      centralAddress: "512 Thomson Road, Singapore 298136",
+      westAddress: "Block 135 Jurong Gateway Road, Singapore 600135",
+      phone: "1800 222 0000",
+      email: "comcare@msf.gov.sg",
+      visit: "Visit website",
+      share: "Share scheme",
     },
   },
 
@@ -114,10 +222,7 @@ export const en: Translations = {
   },
 
   stats: {
-    items: [
-      { label: "Schemes Indexed" },
-      { label: "Agencies Covered" },
-    ],
+    items: [{ label: "Schemes Indexed" }, { label: "Agencies Covered" }],
   },
 
   testimonials: [
@@ -217,5 +322,8 @@ export const en: Translations = {
     openMenu: "Open menu",
     closeMenu: "Close menu",
     search: "Search",
+    expandInput: "Expand input",
+    collapseInput: "Collapse input",
+    submitExampleQuery: "Submit example query",
   },
-}
+};

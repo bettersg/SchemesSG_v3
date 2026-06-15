@@ -34,6 +34,20 @@ export const CATALOG_CATEGORY_SLUGS: Record<CatalogCategory, string> = {
   "Community Support": "community-support",
 };
 
+export const CATALOG_CATEGORY_ICON_SRC: Record<CatalogCategory, string> = {
+  All: "/catalog/all.svg",
+  "Disability & Transport": "/catalog/disability-transport.svg",
+  Education: "/catalog/education.svg",
+  "Employment & Training": "/catalog/employment-training.svg",
+  "Family & Children": "/catalog/family-children.svg",
+  "Financial Assistance": "/catalog/financial-assistance.svg",
+  "Health & Wellbeing": "/catalog/health-wellbeing.svg",
+  "Housing & Food": "/catalog/housing-food.svg",
+  "Seniors & Caregiving": "/catalog/seniors-caregiving.svg",
+  "Legal & Safety": "/catalog/legal-safety.svg",
+  "Community Support": "/catalog/community-support.svg",
+};
+
 export const CATALOG_CATEGORIES_BY_SLUG = Object.fromEntries(
   CATALOG_CATEGORY_OPTIONS.map((category) => [
     CATALOG_CATEGORY_SLUGS[category],
@@ -170,7 +184,11 @@ const CATEGORY_CLASS_NAMES: Record<SchemeCategory, string> = {
 
 export function getSchemeCategory(label: string): SchemeCategory | undefined {
   const normalized = label.trim().toLowerCase();
-  return SCHEME_TYPE_CATEGORY_MAP[normalized];
+  const canonicalCategory = SCHEME_CATEGORIES.find(
+    (category) => category.toLowerCase() === normalized,
+  );
+
+  return canonicalCategory ?? SCHEME_TYPE_CATEGORY_MAP[normalized];
 }
 
 export function getSchemeCategoryClassName(label: string) {

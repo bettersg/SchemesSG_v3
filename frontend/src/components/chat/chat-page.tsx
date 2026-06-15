@@ -2,7 +2,7 @@
 import { useChat } from "@/providers";
 import type { BotMessage, QuickReplySuggestion, StatusStep } from "@/providers";
 import { RawSchemeData, Scheme } from "@/types/types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import SchemesList from "@/components/chat/schemes-list";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
@@ -47,6 +47,8 @@ export default function ChatPage() {
   const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
   const streamingBlocksRef = useRef<string[]>([]);
+  // Mobile-only Tabs selection (desktop shows chat + schemes side by side).
+  const [selectedTab, setSelectedTab] = useState<"chat" | "schemes">("chat");
 
   // tracks number of schemes found when schemes list updates
   const schemesFoundCountRef = useRef(0);
@@ -97,7 +99,7 @@ export default function ChatPage() {
   // Toggle a thumbs rating on a bot message. Clicking the active rating clears
   // it (undo). State persists in sessionStorage for instant UI; we also POST
   // the rating to the backend (best-effort) so it's recorded server-side.
-  const handleRate = (index: number, rating: "up" | "down") => {
+  const handleMsgRate = (index: number, rating: "up" | "down") => {
     const current = messages[index];
     const nextRating =
       current?.type === "bot" && current.rating === rating ? null : rating;
@@ -431,19 +433,24 @@ export default function ChatPage() {
     return () => clearTimeout(timeout);
   }, [pulseSchemesTab]);
 
+  const handleNoticePress = () => {
+    setSelectedTab("schemes");
+  };
+
   return (
     <div className="w-full max-w-[1400px] h-full mx-auto flex flex-col bg-(--schemes-bg) overflow-hidden">
       {/* Desktop: Split layout: Chat + SchemeList */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Chat column — position:relative so the left drawer can anchor to it */}
         <div className="basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">
-          {/* Messages */}
+          {/* Messages — no onNoticePress: desktop shows the schemes list
+              alongside, so the notice is a static badge, not a tab jump. */}
           <ChatMessageList
             messages={messages}
             streamingBlocks={streamingBlocks}
             statusSteps={statusSteps}
             isGenerating={isGenerating}
-            onRate={handleRate}
+            onMsgRate={handleMsgRate}
           />
 
           {/* Quick replies */}
@@ -482,7 +489,13 @@ export default function ChatPage() {
       </div>
       {/* Mobile:  Tabs layout */}
       <div className="relative md:hidden h-full">
-        <Tabs className="w-full h-full flex flex-col gap-0!">
+        <Tabs
+          className="w-full h-full flex flex-col gap-0!"
+          selectedKey={selectedTab}
+          onSelectionChange={(key) =>
+            setSelectedTab(key === "schemes" ? "schemes" : "chat")
+          }
+        >
           <Tabs.ListContainer className="p-4 flex gap-2 items-center">
             <Tabs.List aria-label="Options" className={productSegmentedList}>
               <Tabs.Tab id="chat" className={productSegmentedTab}>
@@ -506,7 +519,8 @@ export default function ChatPage() {
                 streamingBlocks={streamingBlocks}
                 statusSteps={statusSteps}
                 isGenerating={isGenerating}
-                onRate={handleRate}
+                onMsgRate={handleMsgRate}
+                onNoticePress={handleNoticePress}
               />
 
               {/* Quick replies */}
