@@ -1,116 +1,159 @@
-export type Locale = "en" | "zh"
+export type Locale = "en" | "zh";
 // Future: "ms" | "ta"
 
 export interface Translations {
   nav: {
-    about: string
-    contribute: string
-    catalog: string
-    comingSoon: string
-    searchSchemes: string
-  }
+    about: string;
+    contribute: string;
+    catalog: string;
+    comingSoon: string;
+    searchSchemes: string;
+  };
 
   chat: {
-    headline: string
-    subtitle: string
-    volunteerBanner: string
-    getInvolved: string
-    searchPlaceholder: string
-    searchHint: string
-  }
+    headline: string;
+    subtitle: string;
+    volunteerBanner: string;
+    getInvolved: string;
+    searchPlaceholder: string;
+    searchHint: string;
+    categoryChips: Array<{
+      label: string;
+      prompt: string;
+    }>;
+  };
 
   hero: {
-    headline: string
-    subtitle: string
-    volunteerBanner: string
-    getInvolved: string
-    searchPlaceholder: string
-    searchHint: string
-  }
+    headline: string;
+    subtitle: string;
+    volunteerBanner: string;
+    getInvolved: string;
+    searchPlaceholder: string;
+    searchHint: string;
+  };
 
-  schemeCategories: string[]
+  schemeCategories: string[];
 
   featured: {
-    heading: string
-    partnersHeading: string
-  }
+    heading: string;
+    partnersHeading: string;
+  };
 
   features: {
-    heading: string
-    subtitle: string
+    heading: string;
+    subtitle: string;
     cards: {
-      search: { title: string; description: string }
-      suggest: { title: string; description: string }
-      database: { title: string; description: string }
-      filter: { title: string; description: string }
-      agencies: { title: string; description: string }
-    }
-  }
+      search: { title: string; description: string };
+      suggest: { title: string; description: string };
+      database: { title: string; description: string };
+      filter: { title: string; description: string };
+      agencies: { title: string; description: string };
+    };
+    tutorial: {
+      step: string;
+      composerLabel: string;
+      categoryPrompts: string[];
+      progress: string[];
+      assistant: string;
+      found: string;
+      filterAll: string;
+      filterAgency: string;
+      filterHealthcare: string;
+      filters: string;
+      detailTabs: string[];
+      previewSchemes: Array<{
+        agency: string;
+        name: string;
+        summary: string;
+        typeLabel: string;
+      }>;
+      detailAgency: string;
+      detailScheme: string;
+      detailCategoryLabel: string;
+      overview: string;
+      qualifies: string[];
+      apply: string;
+      serviceArea: string;
+      serviceAreaValue: string;
+      contacts: string;
+      branchCentral: string;
+      branchWest: string;
+      centralAddress: string;
+      westAddress: string;
+      phone: string;
+      email: string;
+      visit: string;
+      share: string;
+    };
+  };
 
   agencies: {
-    heading: string
-    subtitle: string
-    cta: string
-  }
+    heading: string;
+    subtitle: string;
+    cta: string;
+  };
 
   howItWorks: {
-    badge: string
-    heading: string
+    badge: string;
+    heading: string;
     steps: Array<{
-      title: string
-      description: string
-    }>
-  }
+      title: string;
+      description: string;
+    }>;
+  };
 
   stats: {
     items: Array<{
-      label: string
-    }>
-  }
+      label: string;
+    }>;
+  };
 
   testimonials: Array<{
-    quote: string
-    author: string
-    role: string
-    avatar?: string
-  }>
+    quote: string;
+    author: string;
+    role: string;
+    avatar?: string;
+  }>;
 
   faq: {
-    heading: string
-    subtitle: string
+    heading: string;
+    subtitle: string;
     items: Array<{
-      question: string
-      answer: string
-    }>
+      question: string;
+      answer: string;
+    }>;
     sidebar: {
-      title: string
-      description: string
-      cta: string
-    }
-  }
+      title: string;
+      description: string;
+      cta: string;
+    };
+  };
 
   cta: {
-    headline: string
-    subtitle: string
-    button: string
-    note: string
-  }
+    headline: string;
+    subtitle: string;
+    button: string;
+    note: string;
+  };
 
   footer: {
-    tagline: string
-    productHeading: string
-    resourcesHeading: string
-    legalHeading: string
-    productLinks: Array<{ label: string; href: string; comingSoon?: boolean }>
-    resourceLinks: Array<{ label: string; href: string; comingSoon?: boolean }>
-    legalLinks: Array<{ label: string; href: string; comingSoon?: boolean }>
-    copyright: string
-    madeIn: string
-  }
+    tagline: string;
+    productHeading: string;
+    resourcesHeading: string;
+    legalHeading: string;
+    productLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;
+    resourceLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;
+    legalLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;
+    copyright: string;
+    madeIn: string;
+  };
 
   a11y: {
-    openMenu: string
-    closeMenu: string
-    search: string
-  }
+    openMenu: string;
+    closeMenu: string;
+    search: string;
+    expandInput: string;
+    collapseInput: string;
+    submitExampleQuery: string;
+  };
 }

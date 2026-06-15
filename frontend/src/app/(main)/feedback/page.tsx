@@ -33,18 +33,16 @@ function getFeedbackContext(searchParams: URLSearchParams) {
   if (source === "scheme") {
     const schemeId = searchParams.get("schemeId")?.trim();
     const schemeName = searchParams.get("scheme")?.trim();
-    const section = searchParams.get("section")?.trim();
     const details = [
       schemeId ? `Scheme ID: ${schemeId}` : null,
       schemeName ? `Scheme: ${schemeName}` : null,
-      section ? `Section: ${section}` : null,
     ].filter(Boolean);
 
     return {
       label: schemeName
         ? `Suggest a correction for ${schemeName}`
         : "Suggest a scheme correction",
-      draft: `Scheme correction${details.length ? `\n${details.join("\n")}` : ""}:\n\n`,
+      draft: `Scheme correction${details.length ? `\n${details.join("\n")}` : ""}\n\n`,
     };
   }
 

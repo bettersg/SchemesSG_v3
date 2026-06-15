@@ -9,7 +9,7 @@ export default function SchemeLogo({
 }: {
   agency: string;
   image?: string;
-  size?: "md" | "header" | "lg";
+  size?: "md" | "lg";
 }) {
   const [imageError, setImageError] = useState(
     image === undefined || image === "",
@@ -21,8 +21,7 @@ export default function SchemeLogo({
   const tile = clsx(
     "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-(--schemes-border) bg-white",
     size == "md" && "h-10 w-10 p-1",
-    size == "header" && "h-16 w-16 p-1.5",
-    size == "lg" && "h-24 w-24 p-2",
+    size == "lg" && "h-16 w-16 p-1.5",
   );
 
   if (!imageError && image) {
@@ -32,8 +31,8 @@ export default function SchemeLogo({
           className="h-full w-full object-contain"
           src={image}
           alt={`${agency} image`}
-          width={size === "lg" ? 96 : size === "header" ? 64 : 40}
-          height={size === "lg" ? 96 : size === "header" ? 64 : 40}
+          width={size === "lg" ? 64 : 40}
+          height={size === "lg" ? 64 : 40}
           unoptimized
           onError={() => setImageError(true)}
         />
@@ -50,7 +49,8 @@ export default function SchemeLogo({
     <div
       className={clsx(
         tile,
-        "text-sm font-semibold text-(--schemes-blue-600)",
+        size === "lg" ? "text-xl" : "text-sm",
+        "font-semibold text-(--schemes-blue-600)",
       )}
     >
       {initials}

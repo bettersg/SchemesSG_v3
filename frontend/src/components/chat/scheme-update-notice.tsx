@@ -2,12 +2,20 @@
 
 import { motion } from "framer-motion";
 import { duration, ease } from "@/lib/design-system/motion";
+import { Button } from "../landing/ui/button";
+import { PressEvent } from "@heroui/react";
+import { clsx } from "clsx";
+import { productButtonOutlineBlue } from "@/lib/design-system/product-styles";
 
 type SchemeUpdateNoticeProps = {
   count: number;
+  onNoticePress: (e: PressEvent) => void;
 };
 
-export function SchemeUpdateNotice({ count }: SchemeUpdateNoticeProps) {
+export function SchemeUpdateNotice({
+  count,
+  onNoticePress,
+}: SchemeUpdateNoticeProps) {
   if (count <= 0) return null;
 
   return (
@@ -16,10 +24,18 @@ export function SchemeUpdateNotice({ count }: SchemeUpdateNoticeProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: duration.state, ease: ease.out }}
-      className="inline-flex w-fit items-center gap-2 rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) px-3 py-1.5 text-xs font-semibold text-(--schemes-status-info-text)"
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-(--schemes-blue-400)" />
-      {count} {count === 1 ? "scheme" : "schemes"} found
+      <Button
+        className={clsx(
+          "inline-flex w-fit items-center gap-2",
+          productButtonOutlineBlue,
+          "text-xs font-semibold text-(--schemes-status-info-text)",
+        )}
+        onPress={onNoticePress}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-(--schemes-blue-400)" />
+        {count} {count === 1 ? "scheme" : "schemes"} found
+      </Button>
     </motion.div>
   );
 }

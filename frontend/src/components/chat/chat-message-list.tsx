@@ -11,7 +11,7 @@ import { SchemeUpdateNotice } from "@/components/chat/scheme-update-notice";
 import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
 import { StatusStep } from "@/providers/chat-provider";
 import FeedbackPrompt from "@/components/feedback/feedback-prompt";
-import { ScrollShadow } from "@heroui/react";
+import { PressEvent, ScrollShadow } from "@heroui/react";
 
 const SchemesSGAvatar = () => (
   <div className="flex h-7 w-7 items-center justify-center">
@@ -30,7 +30,8 @@ interface ChatMessageListProps {
   streamingBlocks: string[];
   statusSteps?: StatusStep[];
   isGenerating?: boolean;
-  onRate?: (index: number, rating: "up" | "down") => void;
+  onMsgRate?: (index: number, rating: "up" | "down") => void;
+  onNoticePress: (e: PressEvent) => void;
 }
 
 export default function ChatMessageList({
@@ -38,7 +39,8 @@ export default function ChatMessageList({
   streamingBlocks,
   statusSteps = [],
   isGenerating,
-  onRate,
+  onMsgRate,
+  onNoticePress,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserPinnedToBottomRef = useRef(true);
@@ -113,7 +115,10 @@ export default function ChatMessageList({
                 </div>
               </div>
               {i === latestBotMessageIndex && msg.schemeUpdateCount ? (
-                <SchemeUpdateNotice count={msg.schemeUpdateCount} />
+                <SchemeUpdateNotice
+                  count={msg.schemeUpdateCount}
+                  onNoticePress={onNoticePress}
+                />
               ) : null}
               {/* Every message in `messages` is already complete — the
                   in-flight response streams separately (StreamingAssistantMessage
@@ -124,7 +129,7 @@ export default function ChatMessageList({
                 variant="rating"
                 text={msg.text}
                 rating={msg.rating}
-                onRate={(rating) => onRate?.(i, rating)}
+                onMsgRate={(rating) => onMsgRate?.(i, rating)}
               />
             </div>
           ) : (

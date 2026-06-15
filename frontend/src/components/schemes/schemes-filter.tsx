@@ -1,12 +1,6 @@
 import { Button, Drawer, Popover, useOverlayState } from "@heroui/react";
 import { Scheme } from "@/types/types";
-import {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
 import {
   Building2,
@@ -127,7 +121,12 @@ function FilterPanel({
           </button>
         )}
       </div>
-      <div className={clsx("thin-scrollbar min-h-0 flex-1 overflow-y-auto", lg ? "p-2" : "p-1")}>
+      <div
+        className={clsx(
+          "thin-scrollbar min-h-0 flex-1 overflow-y-auto",
+          lg ? "p-2" : "p-1",
+        )}
+      >
         {visible.length === 0 ? (
           <p
             className={clsx(
@@ -204,7 +203,11 @@ function FilterChip({
       <Icon size={14} strokeWidth={2} className="shrink-0" />
       <span>{active ? `${selected.size} ${unit}` : label}</span>
       {!active && (
-        <ChevronDown size={13} strokeWidth={2} className="shrink-0 opacity-70" />
+        <ChevronDown
+          size={13}
+          strokeWidth={2}
+          className="shrink-0 opacity-70"
+        />
       )}
     </Button>
   );
@@ -259,29 +262,29 @@ function FilterChip({
                 CloseTrigger slots because their theme absolutely-positions them
                 to the top of the sheet. */}
             <Drawer.Content placement="bottom" className="bg-transparent">
-            <Drawer.Dialog className="flex h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) p-0 outline-none">
-              <Drawer.Handle />
-              <h2 className="shrink-0 px-4 pb-2 pt-1 text-base font-semibold text-(--schemes-blue-900)">
-                {label}
-              </h2>
-              <FilterPanel
-                label={label}
-                options={options}
-                selected={selected}
-                onChange={onChange}
-                formatOption={formatOption}
-                size="lg"
-              />
-              <div className="shrink-0 border-t border-(--schemes-border-neutral) p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-                <button
-                  type="button"
-                  onClick={() => drawerState.close()}
-                  className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-(--schemes-blue-600) text-sm font-semibold text-white transition-colors hover:bg-(--schemes-blue-800)"
-                >
-                  Done
-                </button>
-              </div>
-            </Drawer.Dialog>
+              <Drawer.Dialog className="flex h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) pt-3 outline-none">
+                <Drawer.Handle />
+                <h2 className="shrink-0 px-4 pb-2 pt-1 text-base font-semibold text-(--schemes-blue-900)">
+                  {label}
+                </h2>
+                <FilterPanel
+                  label={label}
+                  options={options}
+                  selected={selected}
+                  onChange={onChange}
+                  formatOption={formatOption}
+                  size="lg"
+                />
+                <div className="shrink-0 border-t border-(--schemes-border-neutral) p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                  <button
+                    type="button"
+                    onClick={() => drawerState.close()}
+                    className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-(--schemes-blue-600) text-sm font-semibold text-white transition-colors hover:bg-(--schemes-blue-800)"
+                  >
+                    Done
+                  </button>
+                </div>
+              </Drawer.Dialog>
             </Drawer.Content>
           </Drawer.Backdrop>
         </Drawer>
@@ -319,7 +322,8 @@ function SchemesFilter({
   }, [schemes]);
 
   const allAgencies = useMemo(
-    () => Array.from(new Set(schemes.map((s) => s.agency).filter(Boolean))).sort(),
+    () =>
+      Array.from(new Set(schemes.map((s) => s.agency).filter(Boolean))).sort(),
     [schemes],
   );
 

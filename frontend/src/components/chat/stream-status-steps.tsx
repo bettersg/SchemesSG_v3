@@ -27,7 +27,7 @@ export function StreamStatusSteps({
     <div className={statusStepContainerClass}>
       <div className={statusStepSummaryClass}>
         <span className={`${statusStepIndicatorClass} relative`}>
-          <ChatSpinner className="absolute left-1/2 top-1/2 size-8 max-w-none -translate-x-1/2 -translate-y-1/2" />
+          <ChatSpinner className="absolute -left-2 top-1/2 size-8 max-w-none -translate-x-2 -translate-y-1/2" />
         </span>
         <WordRotate
           words={[latestStep.label]}

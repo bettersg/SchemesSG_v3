@@ -2,7 +2,7 @@
 import { useChat } from "@/providers";
 import type { BotMessage, QuickReplySuggestion, StatusStep } from "@/providers";
 import { RawSchemeData, Scheme } from "@/types/types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import SchemesList from "@/components/chat/schemes-list";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
@@ -47,6 +47,7 @@ export default function ChatPage() {
   const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
   const streamingBlocksRef = useRef<string[]>([]);
+  const schemesTabRef = useRef<HTMLDivElement>(null);
 
   // tracks number of schemes found when schemes list updates
   const schemesFoundCountRef = useRef(0);
@@ -97,7 +98,7 @@ export default function ChatPage() {
   // Toggle a thumbs rating on a bot message. Clicking the active rating clears
   // it (undo). State persists in sessionStorage for instant UI; we also POST
   // the rating to the backend (best-effort) so it's recorded server-side.
-  const handleRate = (index: number, rating: "up" | "down") => {
+  const handleMsgRate = (index: number, rating: "up" | "down") => {
     const current = messages[index];
     const nextRating =
       current?.type === "bot" && current.rating === rating ? null : rating;
@@ -431,6 +432,12 @@ export default function ChatPage() {
     return () => clearTimeout(timeout);
   }, [pulseSchemesTab]);
 
+  const handleNoticePress = () => {
+    if (schemesTabRef.current) {
+      schemesTabRef.current.click();
+    }
+  };
+
   return (
     <div className="w-full max-w-[1400px] h-full mx-auto flex flex-col bg-(--schemes-bg) overflow-hidden">
       {/* Desktop: Split layout: Chat + SchemeList */}
@@ -443,7 +450,8 @@ export default function ChatPage() {
             streamingBlocks={streamingBlocks}
             statusSteps={statusSteps}
             isGenerating={isGenerating}
-            onRate={handleRate}
+            onMsgRate={handleMsgRate}
+            onNoticePress={handleNoticePress}
           />
 
           {/* Quick replies */}
@@ -489,7 +497,11 @@ export default function ChatPage() {
                 Chat
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
-              <Tabs.Tab id="schemes" className={productSegmentedTab}>
+              <Tabs.Tab
+                id="schemes"
+                className={productSegmentedTab}
+                ref={schemesTabRef}
+              >
                 <SchemesPanelPulse active={pulseSchemesTab}>
                   Schemes
                 </SchemesPanelPulse>
@@ -506,7 +518,8 @@ export default function ChatPage() {
                 streamingBlocks={streamingBlocks}
                 statusSteps={statusSteps}
                 isGenerating={isGenerating}
-                onRate={handleRate}
+                onMsgRate={handleMsgRate}
+                onNoticePress={handleNoticePress}
               />
 
               {/* Quick replies */}

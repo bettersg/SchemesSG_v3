@@ -21,7 +21,7 @@ export function TestimonialSection() {
             transition={{ duration: 0.6, delay: index * 0.15 }}
           >
             {/* Quote */}
-            <blockquote className="flex-1 font-sans text-foreground text-lg leading-relaxed tracking-tight">
+            <blockquote className="flex-1 font-sans text-(--schemes-muted) text-lg leading-relaxed tracking-tight">
               &ldquo;{item.quote}&rdquo;
             </blockquote>
 

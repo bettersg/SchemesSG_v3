@@ -20,7 +20,7 @@ type FeedbackPromptProps =
       variant: "rating";
       text: string;
       rating?: "up" | "down";
-      onRate: (rating: "up" | "down") => void;
+      onMsgRate: (rating: "up" | "down") => void;
       className?: string;
     }
   | {
@@ -117,7 +117,11 @@ function RatingActions({
         className={actionButtonBase}
       >
         {copied ? (
-          <Check size={15} strokeWidth={2} className="shrink-0 text-(--schemes-blue-600)" />
+          <Check
+            size={15}
+            strokeWidth={2}
+            className="shrink-0 text-(--schemes-blue-600)"
+          />
         ) : (
           <Copy size={15} strokeWidth={2} className="shrink-0" />
         )}
@@ -157,7 +161,11 @@ function RatingActions({
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-(--schemes-ink-soft) no-underline transition-colors hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900)"
             >
-              <MessageSquareText size={15} strokeWidth={2} className="shrink-0" />
+              <MessageSquareText
+                size={15}
+                strokeWidth={2}
+                className="shrink-0"
+              />
               Give feedback
             </Link>
           </Popover.Dialog>
@@ -173,7 +181,7 @@ export default function FeedbackPrompt(props: FeedbackPromptProps) {
       <RatingActions
         text={props.text}
         rating={props.rating}
-        onRate={props.onRate}
+        onRate={props.onMsgRate}
         className={props.className}
       />
     );
@@ -188,7 +196,6 @@ export default function FeedbackPrompt(props: FeedbackPromptProps) {
             source: "scheme",
             schemeId: props.schemeId,
             scheme: props.schemeName,
-            ...(props.section ? { section: props.section } : {}),
           },
         }}
         target="_blank"

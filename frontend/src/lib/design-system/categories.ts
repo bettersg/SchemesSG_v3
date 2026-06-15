@@ -170,7 +170,11 @@ const CATEGORY_CLASS_NAMES: Record<SchemeCategory, string> = {
 
 export function getSchemeCategory(label: string): SchemeCategory | undefined {
   const normalized = label.trim().toLowerCase();
-  return SCHEME_TYPE_CATEGORY_MAP[normalized];
+  const canonicalCategory = SCHEME_CATEGORIES.find(
+    (category) => category.toLowerCase() === normalized,
+  );
+
+  return canonicalCategory ?? SCHEME_TYPE_CATEGORY_MAP[normalized];
 }
 
 export function getSchemeCategoryClassName(label: string) {
