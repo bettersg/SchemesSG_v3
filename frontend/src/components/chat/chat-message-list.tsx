@@ -31,7 +31,7 @@ interface ChatMessageListProps {
   statusSteps?: StatusStep[];
   isGenerating?: boolean;
   onMsgRate?: (index: number, rating: "up" | "down") => void;
-  onNoticePress: (e: PressEvent) => void;
+  onNoticePress?: (e: PressEvent) => void;
 }
 
 export default function ChatMessageList({

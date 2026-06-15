@@ -9,7 +9,10 @@ import { productButtonOutlineBlue } from "@/lib/design-system/product-styles";
 
 type SchemeUpdateNoticeProps = {
   count: number;
-  onNoticePress: (e: PressEvent) => void;
+  // When provided (mobile), the notice is a button that jumps to the Schemes
+  // tab. On desktop the schemes list is always visible, so it renders as a
+  // static badge instead.
+  onNoticePress?: (e: PressEvent) => void;
 };
 
 export function SchemeUpdateNotice({
@@ -18,6 +21,13 @@ export function SchemeUpdateNotice({
 }: SchemeUpdateNoticeProps) {
   if (count <= 0) return null;
 
+  const label = (
+    <>
+      <span className="h-1.5 w-1.5 rounded-full bg-(--schemes-blue-400)" />
+      {count} {count === 1 ? "scheme" : "schemes"} found
+    </>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
@@ -25,17 +35,28 @@ export function SchemeUpdateNotice({
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: duration.state, ease: ease.out }}
     >
-      <Button
-        className={clsx(
-          "inline-flex w-fit items-center gap-2",
-          productButtonOutlineBlue,
-          "text-xs font-semibold text-(--schemes-status-info-text)",
-        )}
-        onPress={onNoticePress}
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-(--schemes-blue-400)" />
-        {count} {count === 1 ? "scheme" : "schemes"} found
-      </Button>
+      {onNoticePress ? (
+        <Button
+          className={clsx(
+            "inline-flex w-fit items-center gap-2",
+            productButtonOutlineBlue,
+            "text-xs font-semibold text-(--schemes-status-info-text)",
+          )}
+          onPress={onNoticePress}
+        >
+          {label}
+        </Button>
+      ) : (
+        <span
+          className={clsx(
+            "inline-flex w-fit items-center gap-2",
+            productButtonOutlineBlue,
+            "text-xs font-semibold text-(--schemes-status-info-text)",
+          )}
+        >
+          {label}
+        </span>
+      )}
     </motion.div>
   );
 }

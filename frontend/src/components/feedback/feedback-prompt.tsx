@@ -27,7 +27,6 @@ type FeedbackPromptProps =
       variant: "correction";
       schemeId: string;
       schemeName: string;
-      section?: string;
       className?: string;
     }
   | {

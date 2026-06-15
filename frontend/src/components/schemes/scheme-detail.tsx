@@ -470,7 +470,6 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                 variant="correction"
                 schemeId={scheme.schemeId}
                 schemeName={scheme.schemeName}
-                section={activeAnchor}
               />
               <FeedbackPrompt variant="general" />
             </div>
