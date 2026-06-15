@@ -7,7 +7,6 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/agent_chat_message
 from __future__ import annotations
 
 import json
-from typing import Any
 from uuid import uuid1
 
 from firebase_functions import https_fn, options
@@ -18,6 +17,7 @@ from utils.logging_setup import setup_logging
 
 from .engine import stream_chat_events
 from .event_type import AgentStreamEventType, StatusPhase
+from .output_sanitizer import sanitize_assistant_text_for_user_scripts
 
 
 logger = setup_logging()
@@ -104,6 +104,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
 
                     if event_type == AgentStreamEventType.TEXT:
                         text_value = str(event_data.get("text", "") or "")
+                        text_value = sanitize_assistant_text_for_user_scripts(text_value, input_text)
                         if text_value:
                             yield f"data: {safe_json_dumps({'type': AgentStreamEventType.TEXT, 'data': {'text': text_value}})}\n\n"
                         continue
@@ -144,7 +145,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             if event_type == AgentStreamEventType.TEXT:
                 text = event_data.get("text", "")
                 if isinstance(text, str) and text:
-                    buffered_chunks.append(text)
+                    buffered_chunks.append(sanitize_assistant_text_for_user_scripts(text, input_text))
             elif event_type == AgentStreamEventType.STATUS:
                 phase_raw = event_data.get("phase", "")
                 if hasattr(phase_raw, "value"):

@@ -4,6 +4,7 @@ from integrations import FirebaseManager
 from langchain_core.messages import HumanMessage
 
 from .event_type import AgentStreamEventType
+from .output_sanitizer import sanitize_assistant_text_for_user_scripts
 from .router import RouterAgentGraph
 from .tracing import load_langfuse_client_and_handler
 
@@ -24,7 +25,7 @@ def restore_messages_state(graph: Any, thread_id: str) -> dict[str, Any]:
     }
 
 
-def process_streaming_chunk(chunk: dict) -> dict:
+def process_streaming_chunk(chunk: dict, user_text: str = "") -> dict:
     if isinstance(chunk, dict) and chunk.get("type") == "messages":
         data = chunk.get("data")
 
@@ -45,6 +46,7 @@ def process_streaming_chunk(chunk: dict) -> dict:
             content = "\n".join(parts)
 
         if content:
+            content = sanitize_assistant_text_for_user_scripts(content, user_text)
             return {"type": AgentStreamEventType.TEXT, "data": {"text": content}}
 
     return {}
@@ -75,7 +77,7 @@ def stream_chat_events(input_text: str, session_id: str) -> Iterator[dict[str, A
     ):
         # Process message chunks into text events
         if isinstance(chunk, dict) and chunk.get("type") == "messages":
-            result = process_streaming_chunk(chunk)
+            result = process_streaming_chunk(chunk, input_text)
             if result:
                 yield result
             continue

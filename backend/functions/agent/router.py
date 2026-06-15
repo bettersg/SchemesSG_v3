@@ -1,30 +1,27 @@
+import json
 from typing import Annotated, Any, TypedDict
 
-
-import hashlib
-import json
-from typing import Any
-
-
+from integrations import LLMManager
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langgraph.types import CachePolicy
+from utils.logging_setup import setup_logging
+
+from .cache import InMemoryCacheWithMaxsize
 from .firestore_saver import FirestoreChatSaver
+from .followup import FollowupSubgraph
+from .output_sanitizer import sanitize_assistant_text_for_user_scripts
+from .prompts.router import ROUTER_AGENT_SYSTEM_TEMPLATE
 from .tools import (
-    search_schemes_tool,
-    filter_rerank_by_directive_tool,
-    retrieve_schemes_by_ids_tool,
     duckduckgo_web_search_tool,
     fetch_webpage_tool,
+    filter_rerank_by_directive_tool,
     load_skills_tool,
+    retrieve_schemes_by_ids_tool,
+    search_schemes_tool,
 )
-from .followup import FollowupSubgraph
-from .cache import InMemoryCacheWithMaxsize
-from integrations import LLMManager
-from utils.logging_setup import setup_logging
-from .prompts.router import ROUTER_AGENT_SYSTEM_TEMPLATE
 
 
 logger = setup_logging()
@@ -93,6 +90,9 @@ class RouterAgentGraph:
     def call_chat_llm(self, state: RouterAgentState) -> dict[str, Any]:
         llm_with_tools = self._build_llm_with_tools()
         all_messages = state.get("messages", [])
+        user_text = "\n".join(
+            message.content for message in all_messages if isinstance(message, HumanMessage) and isinstance(message.content, str)
+        )
         try:
             response = llm_with_tools.invoke([SystemMessage(ROUTER_AGENT_SYSTEM_TEMPLATE)] + all_messages)
         except Exception as err:
@@ -103,6 +103,9 @@ class RouterAgentGraph:
                 logger.info("Content filter triggered; returning safe refusal")
                 return {"messages": [AIMessage(content=CONTENT_FILTER_REFUSAL)]}
             raise RuntimeError(f"LLM invocation failed: {err}") from err
+
+        if isinstance(response.content, str):
+            response.content = sanitize_assistant_text_for_user_scripts(response.content, user_text)
 
         return {"messages": [response]}
 
