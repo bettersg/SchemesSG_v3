@@ -12,7 +12,6 @@ from utils.logging_setup import setup_logging
 from .cache import InMemoryCacheWithMaxsize
 from .firestore_saver import FirestoreChatSaver
 from .followup import FollowupSubgraph
-from .output_sanitizer import sanitize_assistant_text_for_user_scripts
 from .prompts.router import ROUTER_AGENT_SYSTEM_TEMPLATE
 from .tools import (
     duckduckgo_web_search_tool,
@@ -90,9 +89,6 @@ class RouterAgentGraph:
     def call_chat_llm(self, state: RouterAgentState) -> dict[str, Any]:
         llm_with_tools = self._build_llm_with_tools()
         all_messages = state.get("messages", [])
-        user_text = "\n".join(
-            message.content for message in all_messages if isinstance(message, HumanMessage) and isinstance(message.content, str)
-        )
         try:
             response = llm_with_tools.invoke([SystemMessage(ROUTER_AGENT_SYSTEM_TEMPLATE)] + all_messages)
         except Exception as err:
@@ -103,9 +99,6 @@ class RouterAgentGraph:
                 logger.info("Content filter triggered; returning safe refusal")
                 return {"messages": [AIMessage(content=CONTENT_FILTER_REFUSAL)]}
             raise RuntimeError(f"LLM invocation failed: {err}") from err
-
-        if isinstance(response.content, str):
-            response.content = sanitize_assistant_text_for_user_scripts(response.content, user_text)
 
         return {"messages": [response]}
 
