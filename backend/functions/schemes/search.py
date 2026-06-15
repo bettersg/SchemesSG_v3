@@ -62,7 +62,6 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         query = body.get("query", None)
         limit = body.get("limit", 20)
         cursor = body.get("cursor", None)
-        similarity_threshold = body.get("similarity_threshold", 0)
         is_warmup = body.get("is_warmup", False)
         top_k = body.get("top_k", 100)
         filters = body.get("filters", None)
@@ -86,7 +85,6 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
         query=query,
         limit=int(limit),
         cursor=cursor,
-        similarity_threshold=int(similarity_threshold),
         is_warmup=is_warmup,
         top_k=int(top_k),
         filters=filters,

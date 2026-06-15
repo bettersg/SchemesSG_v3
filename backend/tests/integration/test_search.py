@@ -92,7 +92,6 @@ def test_search_valid_request(mock_search_model, mock_request, mock_verify_auth)
             "query": "education",
             "limit": 2,
             "top_k": 50,
-            "similarity_threshold": 0,
         },
         headers={"Content-Type": "application/json"},
     )
@@ -125,7 +124,6 @@ def test_search_valid_request(mock_search_model, mock_request, mock_verify_auth)
     assert call_args.query == "education"
     assert call_args.limit == 2
     assert call_args.top_k == 50
-    assert call_args.similarity_threshold == 0
 
 
 def test_search_auth_failure(mock_search_model, mock_request, monkeypatch):

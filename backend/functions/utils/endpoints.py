@@ -167,7 +167,6 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
                 "data": {
                     "query": "education",
                     "top_k": 1,
-                    "similarity_threshold": 0,
                     "is_warmup": True,  # Endpoint will return 200 immediately
                 },
             },

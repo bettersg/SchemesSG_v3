@@ -1,11 +1,11 @@
 """Unit tests for what the agent sends to the LLM vs the UI.
 
-Behaviour under test: the UI receives every relevant scheme (the user scrolls
+Behaviour under test: the UI receives the ranked scheme set (the user scrolls
 and self-selects), but the LLM receives only the top-ranked slice with minimal
 keys, to bound per-turn token cost. The slice is a pure, testable function.
 """
 
-from search import LLM_RESULT_LIMIT, slim_for_llm, MINIMAL_LLM_KEYS
+from search import LLM_RESULT_LIMIT, MINIMAL_LLM_KEYS, slim_for_llm
 
 
 def _schemes(n):
@@ -23,7 +23,7 @@ def _schemes(n):
 
 
 def test_llm_slice_is_capped_to_limit():
-    """Far more relevant schemes than the LLM needs -> only the top slice goes."""
+    """Far more ranked schemes than the LLM needs -> only the top slice goes."""
     slimmed = slim_for_llm(_schemes(200), LLM_RESULT_LIMIT)
     assert len(slimmed) == LLM_RESULT_LIMIT
 

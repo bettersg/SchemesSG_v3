@@ -13,8 +13,10 @@ from langgraph.prebuilt import ToolNode
 from langgraph.types import CachePolicy
 from .firestore_saver import FirestoreChatSaver
 from .tools import (
+    request_clarification_tool,
     search_schemes_tool,
-    filter_rerank_by_directive_tool,
+    select_current_schemes_by_position_tool,
+    search_current_schemes_bm25_tool,
     retrieve_schemes_by_ids_tool,
     duckduckgo_web_search_tool,
     fetch_webpage_tool,
@@ -62,8 +64,10 @@ class RouterAgentGraph:
 
     def __init__(self, *, firestore_client: Any | None = None, cache_maxsize: int = 1000):
         self._tools = [
+            request_clarification_tool,
             search_schemes_tool,
-            filter_rerank_by_directive_tool,
+            select_current_schemes_by_position_tool,
+            search_current_schemes_bm25_tool,
             retrieve_schemes_by_ids_tool,
             duckduckgo_web_search_tool,
             fetch_webpage_tool,

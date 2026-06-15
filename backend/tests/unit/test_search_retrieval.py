@@ -6,8 +6,7 @@ live index is needed.
 """
 
 import pytest
-
-from search.retriever import SearchModel, RETRIEVAL_LIMIT
+from search.retriever import RETRIEVAL_LIMIT, SearchModel
 
 
 def _fake_doc(doc_id, distance):
@@ -51,8 +50,10 @@ def test_search_preserves_real_distance_as_relevance(model, mocker):
 
     merged = model.search("a query")
     scores = dict(zip(merged["scheme_id"], merged["vec_similarity_score"]))
+    distances = dict(zip(merged["scheme_id"], merged["vector_distance"]))
 
     assert scores["near"] > scores["far"]
+    assert distances == {"near": 0.1, "far": 0.9}
 
 
 def test_retrieval_limit_within_firestore_maximum():

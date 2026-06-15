@@ -1,6 +1,6 @@
 """Project search results down to what the agent's LLM should read.
 
-The UI receives every relevant scheme (the user scrolls and self-selects); the
+The UI receives the ranked scheme set (the user scrolls and self-selects); the
 LLM only reads a top slice with minimal keys, which keeps its answer focused and
 bounds per-turn token cost as the corpus grows. Pure functions, no framework
 dependencies, so they're testable in isolation.
