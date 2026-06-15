@@ -432,7 +432,7 @@ function WalkthroughRow({
       whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: duration.entrance, ease: ease.outQuart }}
-      className={`grid items-center gap-8 border-t border-(--schemes-border-neutral) first:border-t-0 ${!reverse ? "md:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]" : "md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]"} md:gap-12`}
+      className={`grid items-center gap-8 ${!reverse ? "md:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]" : "md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]"} md:gap-12`}
     >
       <div className={cn(reverse && "md:order-2")}>
         <div className="mb-4 flex size-9 items-center justify-center rounded-full bg-(--schemes-blue-50) text-sm font-semibold text-(--schemes-blue-600)">
