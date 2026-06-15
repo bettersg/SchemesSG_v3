@@ -6,7 +6,10 @@ import { agencies } from "@/data/landing-agencies";
 import type { Agency } from "@/data/landing-agencies";
 import { useLanguage } from "@/lib/landing-i18n";
 import { ArrowRight } from "lucide-react";
-import { ScrollVelocityContainer, ScrollVelocityRow } from "@/components/animations/scroll-based-velocity";
+import {
+  ScrollVelocityContainer,
+  ScrollVelocityRow,
+} from "@/components/animations/scroll-based-velocity";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -23,6 +26,7 @@ function AgencyPill({ agency }: { agency: (typeof agencies)[0] }) {
         alt={agency.name}
         width={32}
         height={32}
+        unoptimized
         className="h-8 w-8 rounded-full object-cover border border-neutral-200/60 bg-neutral-50 flex-shrink-0"
       />
       <span className="text-[13px] font-medium text-neutral-700 whitespace-nowrap">

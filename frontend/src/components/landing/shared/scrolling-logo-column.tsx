@@ -1,27 +1,33 @@
 /* eslint-disable @next/next/no-img-element */
-"use client"
+"use client";
 
-import { MapPin } from "lucide-react"
-import { cn } from "@/lib/utils"
-import type { Agency } from "@/data/landing-agencies"
-import { Marquee } from "./Marquee"
-import Image from "next/image"
+import { MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { Agency } from "@/data/landing-agencies";
+import { Marquee } from "./Marquee";
+import Image from "next/image";
 
 interface ScrollingLogoColumnProps {
-  agencies: Agency[]
-  speed?: number
-  className?: string
+  agencies: Agency[];
+  speed?: number;
+  className?: string;
 }
 
-const ITEM_HEIGHT = 56
-const HIGHLIGHT_INDEX = 2
+const ITEM_HEIGHT = 56;
+const HIGHLIGHT_INDEX = 2;
 
-function AgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlighted: boolean }) {
+function AgencyItem({
+  agency,
+  isHighlighted,
+}: {
+  agency: Agency;
+  isHighlighted: boolean;
+}) {
   return (
     <div
       className={cn(
         "flex h-[56px] items-center gap-2 transition-opacity duration-300",
-        isHighlighted ? "opacity-100" : "opacity-40"
+        isHighlighted ? "opacity-100" : "opacity-40",
       )}
       title={agency.name}
     >
@@ -33,7 +39,7 @@ function AgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlighted: 
           "text-[14px] whitespace-nowrap",
           isHighlighted
             ? "text-foreground font-semibold"
-            : "text-muted-foreground font-medium"
+            : "text-muted-foreground font-medium",
         )}
       >
         {agency.shortName}
@@ -43,21 +49,28 @@ function AgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlighted: 
         alt={agency.name}
         width={36}
         height={36}
+        unoptimized
         className={cn(
           "h-9 w-9 shrink-0 rounded-full object-cover bg-white transition-all duration-300",
-          isHighlighted ? "shadow-md ring-2 ring-amber-300" : "shadow-sm"
+          isHighlighted ? "shadow-md ring-2 ring-amber-300" : "shadow-sm",
         )}
       />
     </div>
-  )
+  );
 }
 
-function StaticAgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlighted: boolean }) {
+function StaticAgencyItem({
+  agency,
+  isHighlighted,
+}: {
+  agency: Agency;
+  isHighlighted: boolean;
+}) {
   return (
     <div
       className={cn(
         "flex h-[56px] items-center gap-2.5",
-        isHighlighted ? "opacity-100" : "opacity-40"
+        isHighlighted ? "opacity-100" : "opacity-40",
       )}
       title={agency.name}
     >
@@ -69,10 +82,11 @@ function StaticAgencyItem({ agency, isHighlighted }: { agency: Agency; isHighlig
         alt={agency.name}
         width={36}
         height={36}
+        unoptimized
         className="h-9 w-9 rounded-full object-cover bg-white shadow-sm"
       />
     </div>
-  )
+  );
 }
 
 export function ScrollingLogoColumn({
@@ -104,5 +118,5 @@ export function ScrollingLogoColumn({
         />
       )}
     />
-  )
+  );
 }
