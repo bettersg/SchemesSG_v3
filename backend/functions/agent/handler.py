@@ -7,7 +7,6 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/agent_chat_message
 from __future__ import annotations
 
 import json
-from typing import Any
 from uuid import uuid1
 
 from firebase_functions import https_fn, options
