@@ -7,10 +7,12 @@ import Link from "next/link";
 import Image from "next/image";
 import SchemeCard from "@/components/schemes/scheme-card";
 import {
+  CATALOG_CATEGORY_ICON_SRC,
   CATALOG_CATEGORY_OPTIONS,
   CATALOG_CATEGORY_SLUGS,
   type CatalogCategory,
 } from "@/lib/design-system/categories";
+import CatalogCategoryDrawer from "@/components/catalog/catalog-category-drawer";
 import {
   productCard,
   productHeading,
@@ -32,20 +34,6 @@ type CatalogLoadState =
   | "ready"
   | "loadingMore"
   | "exhausted";
-
-const CATALOG_CATEGORY_ICON_SRC: Record<CatalogCategory, string> = {
-  All: "/catalog/all.svg",
-  "Disability & Transport": "/catalog/disability-transport.svg",
-  Education: "/catalog/education.svg",
-  "Employment & Training": "/catalog/employment-training.svg",
-  "Family & Children": "/catalog/family-children.svg",
-  "Financial Assistance": "/catalog/financial-assistance.svg",
-  "Health & Wellbeing": "/catalog/health-wellbeing.svg",
-  "Housing & Food": "/catalog/housing-food.svg",
-  "Seniors & Caregiving": "/catalog/seniors-caregiving.svg",
-  "Legal & Safety": "/catalog/legal-safety.svg",
-  "Community Support": "/catalog/community-support.svg",
-};
 
 function CatalogGridSkeleton() {
   return (
@@ -315,9 +303,23 @@ export default function CatalogPageClient({
 
       {/* Filter bar */}
       <div className="z-10">
+        {/* Mobile (<md): collapse the chip row into a single-select category
+            drawer trigger, with the Search mode-switch beside it. */}
+        <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2.5 md:hidden">
+          <CatalogCategoryDrawer activeCategory={activeCategory} />
+          <Link
+            href="/"
+            aria-label="Search schemes"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-4 py-2 text-sm font-semibold text-(--schemes-blue-600) transition-[background-color,border-color,color] hover:border-(--schemes-blue-600) hover:bg-(--schemes-blue-600) hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)"
+          >
+            <Search size={18} strokeWidth={2} />
+            Search
+          </Link>
+        </div>
+        {/* Desktop (md+): the original horizontal category chip row. */}
         <ScrollShadow
           orientation="horizontal"
-          className="no-scrollbar mx-auto flex max-w-5xl flex-wrap gap-2 overflow-x-auto px-4 py-2.5 sm:px-8"
+          className="no-scrollbar mx-auto hidden max-w-5xl flex-wrap gap-2 overflow-x-auto px-4 py-2.5 sm:px-8 md:flex"
         >
           {CATALOG_CATEGORY_OPTIONS.map((cat) => (
             <Link

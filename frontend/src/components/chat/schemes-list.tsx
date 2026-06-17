@@ -3,8 +3,9 @@ import { useChat } from "@/providers";
 import clsx from "clsx";
 import SchemeCard from "../schemes/scheme-card";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ScrollShadow, Spinner } from "@heroui/react";
+import { ScrollShadow, Skeleton } from "@heroui/react";
 import { SearchX } from "lucide-react";
+import { productCard } from "@/lib/design-system/product-styles";
 import { FilterObjType } from "@/types/types";
 import SchemesFilter from "../schemes/schemes-filter";
 import { parseArrayString } from "@/lib/utils";
@@ -42,6 +43,40 @@ function EmptySchemesState({
         <p className="mt-1 text-xs leading-5 text-(--schemes-muted)">
           {description}
         </p>
+      </div>
+    </div>
+  );
+}
+
+// Placeholder cards shown while the agent works, mirroring the real result-card
+// grid and anatomy (logo + title/agency, two description lines, a chip). Reads
+// as a faithful preview of the incoming list rather than a generic spinner.
+function SchemesListSkeleton() {
+  return (
+    <div
+      aria-label="Finding schemes"
+      className="flex-1 overflow-hidden p-3"
+    >
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className={clsx(productCard, "flex min-h-[148px] flex-col p-4")}
+          >
+            <div className="mb-3 flex items-start gap-3">
+              <Skeleton className="size-10 shrink-0 rounded-lg" />
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <Skeleton className="h-3.5 w-4/5 rounded-full" />
+                <Skeleton className="h-3 w-1/2 rounded-full" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-full rounded-full" />
+              <Skeleton className="h-3 w-11/12 rounded-full" />
+            </div>
+            <Skeleton className="mt-auto h-5 w-20 rounded-full" />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -216,9 +251,7 @@ export default function SchemesList({
 
       {/* Scrollable list */}
       {isGenerating ? (
-        <div className="flex flex-1 items-center justify-center">
-          <Spinner size="lg" />
-        </div>
+        <SchemesListSkeleton />
       ) : schemes.length === 0 ? (
         <EmptySchemesState
           title="No schemes found"

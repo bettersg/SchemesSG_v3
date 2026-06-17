@@ -48,7 +48,8 @@ export default function ChatPage() {
   const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
   const streamingBlocksRef = useRef<string[]>([]);
-  const schemesTabRef = useRef<HTMLDivElement>(null);
+  // Mobile-only Tabs selection (desktop shows chat + schemes side by side).
+  const [selectedTab, setSelectedTab] = useState<"chat" | "schemes">("chat");
 
   // tracks number of schemes found when schemes list updates
   const schemesFoundCountRef = useRef(0);
@@ -438,9 +439,7 @@ export default function ChatPage() {
   }, [pulseSchemesTab]);
 
   const handleNoticePress = () => {
-    if (schemesTabRef.current) {
-      schemesTabRef.current.click();
-    }
+    setSelectedTab("schemes");
   };
 
   return (
@@ -449,14 +448,14 @@ export default function ChatPage() {
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Chat column — position:relative so the left drawer can anchor to it */}
         <div className="basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">
-          {/* Messages */}
+          {/* Messages — no onNoticePress: desktop shows the schemes list
+              alongside, so the notice is a static badge, not a tab jump. */}
           <ChatMessageList
             messages={messages}
             streamingBlocks={streamingBlocks}
             statusSteps={statusSteps}
             isGenerating={isGenerating}
             onMsgRate={handleMsgRate}
-            onNoticePress={handleNoticePress}
           />
 
           {/* Quick replies */}
@@ -494,18 +493,20 @@ export default function ChatPage() {
       </div>
       {/* Mobile:  Tabs layout */}
       <div className="relative md:hidden h-full">
-        <Tabs className="w-full h-full flex flex-col gap-0!">
+        <Tabs
+          className="w-full h-full flex flex-col gap-0!"
+          selectedKey={selectedTab}
+          onSelectionChange={(key) =>
+            setSelectedTab(key === "schemes" ? "schemes" : "chat")
+          }
+        >
           <Tabs.ListContainer className="p-4 flex gap-2 items-center">
             <Tabs.List aria-label="Options" className={productSegmentedList}>
               <Tabs.Tab id="chat" className={productSegmentedTab}>
                 Chat
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
-              <Tabs.Tab
-                id="schemes"
-                className={productSegmentedTab}
-                ref={schemesTabRef}
-              >
+              <Tabs.Tab id="schemes" className={productSegmentedTab}>
                 <SchemesPanelPulse active={pulseSchemesTab}>
                   Schemes
                 </SchemesPanelPulse>
