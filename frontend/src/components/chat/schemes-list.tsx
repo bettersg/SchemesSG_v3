@@ -12,7 +12,12 @@ import { parseArrayString } from "@/lib/utils";
 import NewChatButton from "./new-chat-button";
 import { StatusTextShimmer } from "./status-text-shimmer";
 import { motion, useReducedMotion } from "framer-motion";
-import { duration, ease, stagger } from "@/lib/design-system/motion";
+import {
+  motionPreset,
+  stagger,
+  staggerLimit,
+  transition,
+} from "@/lib/design-system/motion";
 
 // Reveal cards progressively so a large result set (e.g. 193 schemes) doesn't
 // mount every card at once. All schemes are already client-side; this is purely
@@ -272,15 +277,18 @@ export default function SchemesList({
                 <motion.div
                   key={`${scheme.schemeId}-${cardAnimationVersion}`}
                   initial={
-                    reduceMotion ? false : { opacity: 0, y: 6, scale: 0.985 }
+                    reduceMotion ? false : motionPreset.schemeCardEnter.initial
                   }
                   animate={
-                    reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }
+                    reduceMotion
+                      ? undefined
+                      : motionPreset.schemeCardEnter.animate
                   }
                   transition={{
-                    duration: duration.entrance,
-                    ease: ease.outQuart,
-                    delay: reduceMotion ? 0 : Math.min(index, 8) * stagger,
+                    ...transition.richEntrance,
+                    delay: reduceMotion
+                      ? 0
+                      : Math.min(index, staggerLimit.schemeCards) * stagger,
                   }}
                   className="col-span-1"
                 >
@@ -289,7 +297,9 @@ export default function SchemesList({
               );
             })}
           </div>
-          {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-px" />}
+          {hasMore && (
+            <div ref={sentinelRef} aria-hidden="true" className="h-px" />
+          )}
         </ScrollShadow>
       )}
     </div>

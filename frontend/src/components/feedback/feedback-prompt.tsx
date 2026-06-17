@@ -14,6 +14,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { timeout as motionTimeout } from "@/lib/design-system/motion";
 
 type FeedbackPromptProps =
   | {
@@ -59,7 +60,7 @@ function RatingActions({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), motionTimeout.copiedResetMs);
     } catch {
       // Clipboard can be unavailable (insecure context / permissions); fail quietly.
     }

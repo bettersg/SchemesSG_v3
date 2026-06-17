@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/layout/navbar";
+import { cssTransition } from "@/lib/design-system/motion";
 
 export default function MainLayout({
   children,
@@ -10,8 +11,12 @@ export default function MainLayout({
   return (
     <>
       <Navbar />
-      <div className="h-[var(--schemes-mobile-nav-offset)] transition-[height] duration-300 md:h-nav"></div>
-      <main className="h-[calc(100dvh-var(--schemes-mobile-nav-offset))] transition-[height] duration-300 md:h-[calc(100dvh-var(--spacing-nav))]">
+      <div
+        className={`${cssTransition.heightState} h-[var(--schemes-mobile-nav-offset)] md:h-nav`}
+      ></div>
+      <main
+        className={`${cssTransition.heightState} h-[calc(100dvh-var(--schemes-mobile-nav-offset))] md:h-[calc(100dvh-var(--spacing-nav))]`}
+      >
         {children}
       </main>
     </>

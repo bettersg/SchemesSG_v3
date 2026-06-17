@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Marquee } from "./Marquee";
+import { cssTransition } from "@/lib/design-system/motion";
 
 interface ScrollingColumnProps {
   items: string[];
@@ -23,7 +24,8 @@ function Item({
   return (
     <div
       className={cn(
-        "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap transition-opacity duration-300",
+        "flex h-[52px] items-center px-3 text-[15px] font-medium whitespace-nowrap",
+        cssTransition.opacityState,
         isHighlighted ? "opacity-100" : "opacity-40",
       )}
     >

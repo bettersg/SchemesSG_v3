@@ -3,6 +3,17 @@ import { useRef, KeyboardEvent } from "react";
 import { StopGeneratingButton } from "@/components/chat/stop-generating-button";
 import { Maximize2, Minimize2, ShieldCheck } from "lucide-react";
 import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
+import {
+  productComposerChatSurface,
+  productComposerExpandButton,
+  productComposerMultiline,
+  productComposerSingleLine,
+  productComposerSurface,
+  productComposerTextarea,
+  productComposerTextareaMultiline,
+  productComposerTextareaSingleLine,
+} from "@/lib/design-system/product-styles";
+import { cn } from "@/lib/utils";
 
 interface ChatInputBarProps {
   onSend: (message: string) => void;
@@ -48,18 +59,23 @@ export default function ChatInputBar({
           Multi-line: a rounded rectangle with the text on top and send below.
           The expand/collapse toggle pins top-right once content overflows. */}
       <div
-        className={`relative border border-(--schemes-border) bg-white px-3 shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition-[border-color,box-shadow] focus-within:border-(--schemes-blue-100) focus-within:shadow-[0_4px_18px_rgba(15,23,42,0.10)] ${
+        className={cn(
+          productComposerSurface,
+          productComposerChatSurface,
           multiline
-            ? "flex flex-col rounded-3xl py-2.5"
-            : "flex items-center gap-2 rounded-full py-1.5"
-        }`}
+            ? cn(productComposerMultiline, "py-2.5")
+            : cn(productComposerSingleLine, "gap-2 py-1.5"),
+        )}
       >
         {(canExpand || expanded) && (
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-label={expanded ? "Collapse input" : "Expand input"}
-            className="absolute right-2 top-2 z-10 flex size-8 items-center justify-center rounded-full text-(--schemes-muted) transition-colors hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)"
+            className={cn(
+              productComposerExpandButton,
+              "right-2 top-2 text-(--schemes-muted) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)",
+            )}
           >
             {expanded ? (
               <Minimize2 className="h-4 w-4" />
@@ -77,9 +93,13 @@ export default function ChatInputBar({
           aria-disabled={isGenerating}
           placeholder="Ask a follow-up question…"
           rows={1}
-          className={`thin-scrollbar min-h-6 resize-none overscroll-contain bg-transparent px-1 py-0 text-sm leading-6 text-(--schemes-ink) placeholder:text-(--schemes-muted) focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 ${
-            multiline ? "w-full shrink-0 pr-8" : "flex-1"
-          }`}
+          className={cn(
+            productComposerTextarea,
+            "min-h-6 px-1 py-0 text-sm leading-6 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60",
+            multiline
+              ? productComposerTextareaMultiline
+              : productComposerTextareaSingleLine,
+          )}
         />
         {!multiline ? (
           <StopGeneratingButton

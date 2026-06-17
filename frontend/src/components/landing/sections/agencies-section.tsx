@@ -12,6 +12,12 @@ import {
 } from "@/components/animations/scroll-based-velocity";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  cssTransition,
+  motionPreset,
+  transition,
+  viewport,
+} from "@/lib/design-system/motion";
 
 // Build 3 rows from the 24 agencies (8 per row), tripled for overflow
 const rowA = agencies.slice(0, 8);
@@ -45,10 +51,10 @@ export function AgenciesSection() {
         {/* Header content */}
         <div className="text-center px-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
+            initial={motionPreset.fadeInUpMd.initial}
+            whileInView={motionPreset.fadeInUpMd.animate}
+            viewport={viewport.default}
+            transition={transition.entrance}
           >
             <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
               {t.agencies.heading.split("\n").map((line, i, arr) => (
@@ -68,7 +74,7 @@ export function AgenciesSection() {
             </p>
             <Button
               size="lg"
-              className="mt-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer transition-all duration-200"
+              className={`${cssTransition.allState} mt-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer`}
             >
               <Link href="/" className="flex items-center gap-4">
                 {t.agencies.cta} <ArrowRight className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { cssTransition } from "@/lib/design-system/motion";
 
 export const productPageShell =
   "h-full w-full overflow-y-auto bg-(--schemes-bg)";
@@ -84,6 +85,36 @@ export const productFormLabel =
 
 export const productInputSurface =
   "rounded-lg border border-(--schemes-blue-100) bg-white text-(--schemes-ink) shadow-none transition-[background-color,border-color,box-shadow] placeholder:text-(--schemes-muted) focus-visible:border-(--schemes-blue-400) focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)";
+
+export const productComposerSurface =
+  "relative border bg-white transition-[border-color,box-shadow]";
+
+export const productComposerLandingSurface = cn(
+  "border-neutral-300 px-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/50",
+  cssTransition.chromeState,
+);
+
+export const productComposerChatSurface =
+  "border-(--schemes-border) px-3 shadow-[0_2px_12px_rgba(15,23,42,0.06)] focus-within:border-(--schemes-blue-100) focus-within:shadow-[0_4px_18px_rgba(15,23,42,0.10)]";
+
+export const productComposerSingleLine = "flex items-center rounded-full";
+
+export const productComposerMultiline = "flex flex-col rounded-3xl";
+
+export const productComposerTextarea =
+  "thin-scrollbar resize-none overscroll-contain bg-transparent text-(--schemes-ink) placeholder:text-(--schemes-muted)";
+
+export const productComposerTextareaSingleLine = "flex-1";
+
+export const productComposerTextareaMultiline = "w-full shrink-0 pr-8";
+
+export const productComposerExpandButton =
+  "absolute z-10 flex size-8 items-center justify-center rounded-full transition-colors";
+
+export const productComposerSendButton = cn(
+  "flex shrink-0 items-center justify-center rounded-full bg-amber-400 text-neutral-900 shadow-sm hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-45",
+  cssTransition.colorsState,
+);
 
 export const productFormInfoMessage =
   "rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4 text-sm font-medium text-(--schemes-status-info-text)";

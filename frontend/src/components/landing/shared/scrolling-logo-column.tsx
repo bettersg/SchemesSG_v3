@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Agency } from "@/data/landing-agencies";
 import { Marquee } from "./Marquee";
 import Image from "next/image";
+import { cssTransition } from "@/lib/design-system/motion";
 
 interface ScrollingLogoColumnProps {
   agencies: Agency[];
@@ -26,7 +27,8 @@ function AgencyItem({
   return (
     <div
       className={cn(
-        "flex h-[56px] items-center gap-2 transition-opacity duration-300",
+        "flex h-[56px] items-center gap-2",
+        cssTransition.opacityState,
         isHighlighted ? "opacity-100" : "opacity-40",
       )}
       title={agency.name}
@@ -51,7 +53,8 @@ function AgencyItem({
         height={36}
         unoptimized
         className={cn(
-          "h-9 w-9 shrink-0 rounded-full object-cover bg-white transition-all duration-300",
+          "h-9 w-9 shrink-0 rounded-full object-cover bg-white",
+          cssTransition.allState,
           isHighlighted ? "shadow-md ring-2 ring-amber-300" : "shadow-sm",
         )}
       />

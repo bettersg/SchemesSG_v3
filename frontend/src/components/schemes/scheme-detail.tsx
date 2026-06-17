@@ -31,6 +31,10 @@ import {
 } from "@/hooks/use-scheme-detail-navigation";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import FeedbackPrompt from "@/components/feedback/feedback-prompt";
+import {
+  cssTransition,
+  timeout as motionTimeout,
+} from "@/lib/design-system/motion";
 
 // Scheme descriptions sometimes use literal bullet glyphs (• ● ‣ ·) on their
 // own lines instead of Markdown list syntax, and separate them with blank
@@ -88,7 +92,7 @@ function ShareButton({
 
   const flash = (next: "copied" | "failed") => {
     setStatus(next);
-    setTimeout(() => setStatus("idle"), 2000);
+    setTimeout(() => setStatus("idle"), motionTimeout.shareStatusResetMs);
   };
 
   const handleShare = async () => {
@@ -240,7 +244,8 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       >
         <div
           className={clsx(
-            "overflow-hidden py-3 transition-[max-height,opacity,transform,padding] duration-300 md:max-h-none md:translate-y-0 md:opacity-100",
+            "overflow-hidden py-3 md:max-h-none md:translate-y-0 md:opacity-100",
+            cssTransition.disclosureState,
             "flex flex-col gap-3",
             stickyHeaderHidden
               ? "max-md:max-h-0 max-md:-translate-y-full max-md:py-0 max-md:opacity-0"
@@ -283,7 +288,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           <nav
             aria-label="On this page"
             className={clsx(
-              "transition-[border-color] duration-300",
+              cssTransition.borderState,
               stickyHeaderHidden && "max-md:border-transparent",
             )}
           >

@@ -7,13 +7,12 @@ import {
   useRef,
   useState,
 } from "react";
+import { timeout as motionTimeout } from "@/lib/design-system/motion";
 
 export type SchemeDetailAnchor = {
   id: string;
   label: string;
 };
-
-const ANCHOR_SELECTION_LOCK_MS = 1000;
 
 /**
  * Measures the complete sticky scheme header and exposes its height as both
@@ -146,7 +145,7 @@ export function useSchemeSectionNavigation({
     selectionLockTimerRef.current = setTimeout(() => {
       selectionLockRef.current = null;
       selectionLockTimerRef.current = null;
-    }, ANCHOR_SELECTION_LOCK_MS);
+    }, motionTimeout.anchorSelectionLockMs);
   }, []);
 
   return { activeAnchor, selectAnchor };

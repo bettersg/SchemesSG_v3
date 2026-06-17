@@ -249,20 +249,15 @@ function FilterChip({
       ) : (
         <Drawer state={drawerState}>
           {trigger}
-          {/* Backdrop is the dark scrim AND the overlay that hosts the sheet —
-              Content must nest inside it. The dim signals the page is still
-              there (tap to dismiss), not a new screen. */}
           <Drawer.Backdrop className="bg-black/50">
-            {/* Content is the full-screen overlay (its theme aligns children to
-                the bottom). It must stay transparent — a background here would
-                paint over the whole screen and hide the scrim. The surface +
-                rounding live on the Dialog, which is the actual 80%-tall sheet:
-                a plain flex column we control end-to-end (handle + heading,
-                scrollable list, pinned Done). We avoid Drawer.Footer/Heading/
-                CloseTrigger slots because their theme absolutely-positions them
-                to the top of the sheet. */}
             <Drawer.Content placement="bottom" className="bg-transparent">
-              <Drawer.Dialog className="flex h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) pt-3 outline-none">
+              {/* This opt-out class "data-hide-on-scroll-ignore" protects the
+                  global navbar hide/reveal listener while page scroll ownership is still mixed. Once every useHideOnScroll caller is scoped to a scrollContainerRef,
+                  Drawer scrolls will be ignored by target and this marker can be removed. */}
+              <Drawer.Dialog
+                data-hide-on-scroll-ignore
+                className="flex h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) pt-3 outline-none"
+              >
                 <Drawer.Handle />
                 <h2 className="shrink-0 px-4 pb-2 pt-1 text-base font-semibold text-(--schemes-blue-900)">
                   {label}

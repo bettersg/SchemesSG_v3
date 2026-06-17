@@ -3,8 +3,20 @@ import { motion } from "framer-motion";
 import { ArrowRight, Maximize2, Minimize2, Search } from "lucide-react";
 import { FormEvent, KeyboardEvent, useRef } from "react";
 import { flushSync } from "react-dom";
-import { duration } from "@/lib/design-system/motion";
+import { delay, motionPreset, transition } from "@/lib/design-system/motion";
 import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
+import {
+  productComposerExpandButton,
+  productComposerLandingSurface,
+  productComposerMultiline,
+  productComposerSendButton,
+  productComposerSingleLine,
+  productComposerSurface,
+  productComposerTextarea,
+  productComposerTextareaMultiline,
+  productComposerTextareaSingleLine,
+} from "@/lib/design-system/product-styles";
+import { cn } from "@/lib/utils";
 
 interface ChatLandingInputProps {
   query: string;
@@ -51,9 +63,9 @@ function ChatLandingInput({
       {/* Headline */}
       <motion.h1
         className="font-serif font-bold leading-[1.08] tracking-tight text-5xl lg:text-[4.5rem] xl:text-[5rem]"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: duration.slow, delay: 0.1 }}
+        initial={motionPreset.fadeInUpHero.initial}
+        animate={motionPreset.fadeInUpHero.animate}
+        transition={{ ...transition.slowEntrance, delay: delay.heroHeadline }}
       >
         {t.hero.headline.split("\n").map((line, i, arr) => (
           <span key={i}>
@@ -66,9 +78,9 @@ function ChatLandingInput({
       {/* Subtitle */}
       <motion.p
         className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-neutral-500"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: duration.entrance, delay: 0.3 }}
+        initial={motionPreset.fadeInUpMd.initial}
+        animate={motionPreset.fadeInUpMd.animate}
+        transition={{ ...transition.entrance, delay: delay.heroSubtitle }}
       >
         {t.hero.subtitle}
       </motion.p>
@@ -78,20 +90,22 @@ function ChatLandingInput({
         ref={formRef}
         onSubmit={handleSubmit}
         className="mt-8 w-full max-w-lg flex flex-col gap-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: duration.entrance, delay: 0.45 }}
+        initial={motionPreset.fadeInUpMd.initial}
+        animate={motionPreset.fadeInUpMd.animate}
+        transition={{ ...transition.entrance, delay: delay.heroComposer }}
       >
         {/* Gemini-style composer. Single line: a pill with the icon, text and
             submit on one centered row. Multi-line: a rounded rectangle where the
             text fills the top and the icon drops to the bottom row beside the
             controls; an expand/collapse toggle is pinned top-right. */}
         <div
-          className={`relative bg-white border border-neutral-300 px-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.12)] transition-shadow duration-300 focus-within:ring-2 focus-within:ring-amber-400/50 focus-within:border-amber-400 ${
+          className={cn(
+            productComposerSurface,
+            productComposerLandingSurface,
             multiline
-              ? "flex flex-col rounded-3xl py-3"
-              : "flex items-center gap-2.5 rounded-full py-2"
-          }`}
+              ? cn(productComposerMultiline, "py-3")
+              : cn(productComposerSingleLine, "gap-2.5 py-2"),
+          )}
         >
           {/* Leading search icon — inline (left) on a single line. */}
           {!multiline && (
@@ -103,7 +117,10 @@ function ChatLandingInput({
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? t.a11y.collapseInput : t.a11y.expandInput}
-              className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+              className={cn(
+                productComposerExpandButton,
+                "right-3 top-3 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900",
+              )}
             >
               {expanded ? (
                 <Minimize2 className="h-4 w-4" />
@@ -120,16 +137,23 @@ function ChatLandingInput({
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder={t.chat.searchPlaceholder}
-            className={`thin-scrollbar min-h-7 resize-none overscroll-contain bg-transparent text-[15px] leading-7 text-(--schemes-ink) placeholder:text-(--schemes-muted) focus:outline-none ${
-              multiline ? "w-full shrink-0 pr-8" : "flex-1"
-            }`}
+            className={cn(
+              productComposerTextarea,
+              "min-h-7 text-[15px] leading-7 focus:outline-none",
+              multiline
+                ? productComposerTextareaMultiline
+                : productComposerTextareaSingleLine,
+            )}
           />
 
           {/* Single line: submit sits inline at the right of the pill. */}
           {!multiline && (
             <button
               type="submit"
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
+              className={cn(
+                productComposerSendButton,
+                "size-10 cursor-pointer",
+              )}
               aria-label={t.a11y.search}
             >
               <ArrowRight className="h-4 w-4" />
@@ -142,7 +166,10 @@ function ChatLandingInput({
               <Search className="h-5 w-5 shrink-0 text-neutral-500 pointer-events-none" />
               <button
                 type="submit"
-                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 hover:bg-amber-500 text-neutral-900 transition-colors duration-200 cursor-pointer shadow-sm"
+                className={cn(
+                  productComposerSendButton,
+                  "size-10 cursor-pointer",
+                )}
                 aria-label={t.a11y.search}
               >
                 <ArrowRight className="h-4 w-4" />
@@ -154,13 +181,13 @@ function ChatLandingInput({
               {t.hero.searchHint}
             </p> */}
         {/* Category chips */}
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap gap-4 justify-center">
           {t.chat.categoryChips.map(({ label, prompt }) => (
             <button
               type="button"
               key={label}
               onClick={() => handleChipClick(prompt)}
-              className="inline-flex items-center gap-1.5 p-3 bg-white border-2 border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+              className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
             >
               {label}
             </button>

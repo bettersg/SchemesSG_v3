@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { duration, ease } from "@/lib/design-system/motion";
+import { motionPreset, transition } from "@/lib/design-system/motion";
 import { Button } from "../landing/ui/button";
 import { PressEvent } from "@heroui/react";
 import { clsx } from "clsx";
@@ -34,11 +34,10 @@ export function SchemeUpdateNotice({
 
   return (
     <motion.div
-      className="flex"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: duration.state, ease: ease.out }}
+      initial={motionPreset.fadeInUpXs.initial}
+      animate={motionPreset.fadeInUpXs.animate}
+      exit={motionPreset.fadeOutUpXs.exit}
+      transition={transition.state}
     >
       {onNoticePress ? (
         <Button
