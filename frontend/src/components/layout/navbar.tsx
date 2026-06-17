@@ -12,6 +12,11 @@ import { usePathname } from "next/navigation";
 import { Tabs } from "@heroui/react";
 import Image from "next/image";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import {
+  cssTransition,
+  motionPreset,
+  transition,
+} from "@/lib/design-system/motion";
 
 type NavLink = {
   label: string;
@@ -59,7 +64,8 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 left-0 z-50 h-nav transition-all duration-300 md:translate-y-0",
+        "fixed top-0 right-0 left-0 z-50 h-nav md:translate-y-0",
+        cssTransition.chromeState,
         mobileHidden && !mobileOpen
           ? "max-md:-translate-y-full"
           : "translate-y-0",
@@ -99,7 +105,8 @@ export function Navbar() {
                     id={link.href}
                     isDisabled={link.disabled}
                     className={cn(
-                      "w-fit text-sm font-medium rounded-full transition-all duration-200 cursor-pointer",
+                      "w-fit text-sm font-medium rounded-full cursor-pointer",
+                      cssTransition.allState,
                       "text-neutral-500",
                       "hover:text-neutral-900",
                       "aria-selected:font-semibold aria-selected:text-neutral-900",
@@ -144,10 +151,10 @@ export function Navbar() {
         {mobileOpen && (
           <motion.div
             key="mobile-menu"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            initial={motionPreset.mobileMenu.initial}
+            animate={motionPreset.mobileMenu.animate}
+            exit={motionPreset.mobileMenu.exit}
+            transition={transition.stateEmphasis}
             className="z-50 border-b border-neutral-200 bg-background px-6 pb-6 backdrop-blur-xl md:hidden"
           >
             <div className="flex w-full flex-col items-center gap-1">

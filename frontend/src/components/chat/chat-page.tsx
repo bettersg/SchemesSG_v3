@@ -15,6 +15,7 @@ import {
   productSegmentedList,
   productSegmentedTab,
 } from "@/lib/design-system/product-styles";
+import { timeout as motionTimeout } from "@/lib/design-system/motion";
 import { FollowUpSuggestions } from "@/components/chat/follow-up-suggestions";
 import { SchemesPanelPulse } from "@/components/chat/schemes-panel-pulse";
 import { StreamingErrorCard } from "@/components/chat/streaming-error-card";
@@ -87,6 +88,7 @@ export default function ChatPage() {
     if (!trimmed || isGenerating) return;
     setMessages((prev) => [...prev, { type: "user", text: trimmed }]);
     setDraftMessage("");
+    setShowQuickReplies(false);
     await fetchResponse(trimmed, sessionId);
   };
 
@@ -425,10 +427,13 @@ export default function ChatPage() {
     setPulseSchemesTab(true);
     setPendingSchemesTabPulse(false);
   }, [pendingSchemesTabPulse, schemesListIsLoading]);
-  // clear pulsing schemes tab in mobile view after 2.2s
+  // clear pulsing schemes tab in mobile view after the notification window
   useEffect(() => {
     if (!pulseSchemesTab) return;
-    const timeout = setTimeout(() => setPulseSchemesTab(false), 2200);
+    const timeout = setTimeout(
+      () => setPulseSchemesTab(false),
+      motionTimeout.schemesTabPulseMs,
+    );
     return () => clearTimeout(timeout);
   }, [pulseSchemesTab]);
 
@@ -459,8 +464,7 @@ export default function ChatPage() {
             <FollowUpSuggestions
               suggestions={quickReplies}
               onSelect={(s) => {
-                setShowQuickReplies(false);
-                handleSend(s);
+                setDraftMessage(s);
               }}
             />
           )}
@@ -527,8 +531,7 @@ export default function ChatPage() {
                 <FollowUpSuggestions
                   suggestions={quickReplies}
                   onSelect={(s) => {
-                    setShowQuickReplies(false);
-                    handleSend(s);
+                    setDraftMessage(s);
                   }}
                 />
               )}

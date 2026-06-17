@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Separator } from "@heroui/react";
 import { useLanguage } from "@/lib/landing-i18n";
 import Image from "next/image";
+import { cssTransition } from "@/lib/design-system/motion";
 
 function FooterLinkColumn({
   heading,
@@ -91,7 +92,7 @@ export function Footer() {
             href="https://better.sg"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 rounded-full bg-neutral-900 border border-neutral-800 px-4 py-1.5 text-xs text-neutral-400 hover:border-neutral-700 hover:text-neutral-300 transition-colors duration-200 cursor-pointer"
+            className={`${cssTransition.colorsState} inline-flex items-center gap-3 rounded-full bg-neutral-900 border border-neutral-800 px-4 py-1.5 text-xs text-neutral-400 hover:border-neutral-700 hover:text-neutral-300 cursor-pointer`}
           >
             <span className="leading-none">{t.hero.volunteerBanner}</span>
             <Image

@@ -1,10 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 
 const MOBILE_BREAKPOINT = 768;
 const SCROLL_SUPPRESSION_MS = 360;
 const USER_INTENT_WINDOW_MS = 900;
+const IGNORE_SCROLL_SELECTOR = "[data-hide-on-scroll-ignore]";
+
+function getEventElement(event: Event) {
+  return event.target instanceof Element ? event.target : null;
+}
+
+function shouldIgnoreEvent(
+  event: Event,
+  scrollContainerRef?: RefObject<HTMLElement | null>,
+) {
+  const element = getEventElement(event);
+  if (element?.closest(IGNORE_SCROLL_SELECTOR)) return true;
+
+  const scrollContainer = scrollContainerRef?.current;
+  if (!scrollContainer) return false;
+
+  // When a container is supplied, the hook only tracks that element's own
+  // scroll events. Nested scroll regions, drawers, and popovers stay invisible
+  // to the hide/reveal logic even if they live inside the same React tree.
+  return event.type === "scroll" && event.target !== scrollContainer;
+}
 
 // Normalizes window and nested-container scroll events into the same metrics.
 function getScrollMetrics(event: Event) {
@@ -44,9 +65,11 @@ function getScrollMetrics(event: Event) {
 export function useHideOnScroll({
   disabled = false,
   resetKey,
+  scrollContainerRef,
 }: {
   disabled?: boolean;
   resetKey?: string;
+  scrollContainerRef?: RefObject<HTMLElement | null>;
 } = {}) {
   const [isHidden, setIsHidden] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -85,14 +108,17 @@ export function useHideOnScroll({
       setIsHidden(next);
     };
     const onWheel = (event: WheelEvent) => {
+      if (shouldIgnoreEvent(event, scrollContainerRef)) return;
       if (Math.abs(event.deltaY) >= 2) {
         markIntent(event.deltaY > 0 ? "down" : "up");
       }
     };
     const onTouchStart = (event: TouchEvent) => {
+      if (shouldIgnoreEvent(event, scrollContainerRef)) return;
       lastTouchYRef.current = event.touches[0]?.clientY ?? null;
     };
     const onTouchMove = (event: TouchEvent) => {
+      if (shouldIgnoreEvent(event, scrollContainerRef)) return;
       const nextY = event.touches[0]?.clientY;
       const previousY = lastTouchYRef.current;
       if (nextY == null || previousY == null) return;
@@ -102,6 +128,7 @@ export function useHideOnScroll({
       lastTouchYRef.current = nextY;
     };
     const onKeyDown = (event: KeyboardEvent) => {
+      if (shouldIgnoreEvent(event, scrollContainerRef)) return;
       if (["ArrowDown", "End", "PageDown", " "].includes(event.key)) {
         markIntent("down");
       } else if (["ArrowUp", "Home", "PageUp"].includes(event.key)) {
@@ -109,6 +136,8 @@ export function useHideOnScroll({
       }
     };
     const onScroll = (event: Event) => {
+      if (shouldIgnoreEvent(event, scrollContainerRef)) return;
+
       const { maxScrollTop, scrollTop, target } = getScrollMetrics(event);
       if (maxScrollTop <= 0) return;
 
@@ -159,7 +188,7 @@ export function useHideOnScroll({
       window.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("scroll", onScroll, { capture: true });
     };
-  }, [disabled]);
+  }, [disabled, scrollContainerRef]);
 
   return { isHidden, isScrolled };
 }

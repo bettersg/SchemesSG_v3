@@ -4,6 +4,12 @@ import { motion } from "framer-motion";
 import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
 import { useLanguage } from "@/lib/landing-i18n";
 import Image from "next/image";
+import {
+  delay,
+  motionPreset,
+  transition,
+  viewport,
+} from "@/lib/design-system/motion";
 
 export function TestimonialSection() {
   const { t } = useLanguage();
@@ -15,10 +21,13 @@ export function TestimonialSection() {
           <motion.div
             key={index}
             className="flex flex-col rounded-2xl border border-neutral-200/60 bg-neutral-50/50 p-8 lg:p-10"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6, delay: index * 0.15 }}
+            initial={motionPreset.fadeInUpHero.initial}
+            whileInView={motionPreset.fadeInUpHero.animate}
+            viewport={viewport.default}
+            transition={{
+              ...transition.entrance,
+              delay: index * delay.testimonialStagger,
+            }}
           >
             {/* Quote */}
             <blockquote className="flex-1 font-sans text-(--schemes-muted) text-lg leading-relaxed tracking-tight">

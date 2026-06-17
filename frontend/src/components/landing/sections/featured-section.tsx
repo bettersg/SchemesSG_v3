@@ -4,6 +4,12 @@ import { motion } from "framer-motion";
 import { useLanguage } from "@/lib/landing-i18n";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import {
+  cssTransition,
+  motionPreset,
+  transition,
+  viewport,
+} from "@/lib/design-system/motion";
 
 const featuredLogos = [
   { name: "Channel NewsAsia", src: "/landing/featured/cna-logo.svg" },
@@ -29,10 +35,10 @@ export function FeaturedSection() {
     <section className="border-t border-neutral-200/60 bg-neutral-50 py-14 px-6">
       <motion.div
         className="mx-auto max-w-5xl"
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.5 }}
+        initial={motionPreset.fadeInUpSm.initial}
+        whileInView={motionPreset.fadeInUpSm.animate}
+        viewport={viewport.close}
+        transition={transition.entrance}
       >
         <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
           {t.featured.heading}
@@ -47,7 +53,8 @@ export function FeaturedSection() {
               height={64}
               unoptimized
               className={cn(
-                "w-auto object-contain transition-opacity duration-200",
+                "w-auto object-contain",
+                cssTransition.opacityState,
                 logo.name === "Better.sg" ? "h-10 md:h-11" : "h-14 md:h-16",
               )}
             />
@@ -67,7 +74,7 @@ export function FeaturedSection() {
                 width={180}
                 height={64}
                 unoptimized
-                className="h-14 md:h-16 w-auto object-contain transition-opacity duration-200"
+                className={`${cssTransition.opacityState} h-14 md:h-16 w-auto object-contain`}
               />
             ))}
           </div>

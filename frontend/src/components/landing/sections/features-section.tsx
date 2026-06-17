@@ -33,7 +33,11 @@ import {
   productButtonSolidAmber,
   productCard,
 } from "@/lib/design-system/product-styles";
-import { duration, ease } from "@/lib/design-system/motion";
+import {
+  motionPreset,
+  transition,
+  viewport,
+} from "@/lib/design-system/motion";
 import { getSchemeCategoryChipClassName } from "@/lib/design-system/categories";
 import { cn } from "@/lib/utils";
 import type { Translations } from "@/lib/landing-i18n/types";
@@ -428,10 +432,12 @@ function WalkthroughRow({
 
   return (
     <motion.article
-      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: duration.entrance, ease: ease.outQuart }}
+      initial={reduceMotion ? false : motionPreset.fadeInUpWalkthrough.initial}
+      whileInView={
+        reduceMotion ? undefined : motionPreset.fadeInUpWalkthrough.animate
+      }
+      viewport={viewport.default}
+      transition={transition.richEntrance}
       className={`grid items-center gap-8 ${!reverse ? "md:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]" : "md:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]"} md:gap-12`}
     >
       <div className={cn(reverse && "md:order-2")}>
@@ -462,10 +468,10 @@ export function FeaturesSection() {
     <SectionWrapper id="features" className="overflow-hidden bg-neutral-50">
       <motion.div
         className="mx-auto max-w-3xl text-center"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: duration.entrance, ease: ease.out }}
+        initial={motionPreset.fadeInUpMd.initial}
+        whileInView={motionPreset.fadeInUpMd.animate}
+        viewport={viewport.default}
+        transition={transition.entrance}
       >
         <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
           {t.features.heading}
