@@ -2,8 +2,13 @@
 import { useChat } from "@/providers";
 import { FormEvent } from "react";
 import ChatLandingInput from "./chat-landing-input";
+import { cn } from "@/lib/utils";
 
-export default function ChatLanding() {
+type ChatLandingProps = {
+  onSubmitSuccess?: () => void;
+};
+
+export default function ChatLanding({ onSubmitSuccess }: ChatLandingProps) {
   const { draftMessage, setDraftMessage, setMessages } = useChat();
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -12,12 +17,17 @@ export default function ChatLanding() {
     if (!trimmed) return;
     setDraftMessage(trimmed);
     setMessages([{ type: "user", text: trimmed }]);
+    onSubmitSuccess?.();
   };
   // Scrollable column: the content centers via my-auto when the viewport is
   // tall enough, but scrolls from the top (with padding) on short screens
   // instead of overflowing upward under the fixed navbar.
   return (
-    <div className="grain-overlay h-full w-full overflow-y-auto bg-neutral-50">
+    <div
+      className={cn(
+        "grain-overlay h-full w-full overflow-y-auto bg-neutral-50",
+      )}
+    >
       <div className="relative flex min-h-full w-full flex-col overflow-x-clip">
         {/* Decorative glow orbs attach to this in-flow wrapper, so the layer
             grows with the scrollable landing content instead of stopping at the
