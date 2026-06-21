@@ -74,7 +74,7 @@ function normalizeBulletMarkdown(text: string): string {
 function MarkdownWrapper({ text }: { text: string }) {
   return (
     <div
-      className={`${styles.showMarker} max-w-[68ch] text-base leading-relaxed text-(--schemes-ink-soft)`}
+      className={`${styles.showMarker} text-base leading-relaxed text-(--schemes-ink-soft)`}
     >
       <Markdown>{normalizeBulletMarkdown(text)}</Markdown>
     </div>
