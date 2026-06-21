@@ -504,6 +504,10 @@ docker compose -f docker-compose-firebase.yml up -d
 8. **Security first**: Never commit credentials or production data
 9. **Git commits**: Always one-liner (`git add <files> && git commit -m "message"`), NO Claude signature
 
+## Branch Creation — STRICT RULE
+
+See root `CLAUDE.md`. Summary: never use `git checkout -b <new> origin/<base>`. Always `git switch -c <new> origin/<base> --no-track`, then `git push -u origin <new>` BEFORE any commits, then verify upstream is `origin/<new>`. Skipping this has caused commits to land directly on `main`.
+
 ## Git Commit Best Practices
 
 **Always use one-liner format without Claude signature:**

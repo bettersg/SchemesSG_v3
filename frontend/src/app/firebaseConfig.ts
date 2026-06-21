@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 
@@ -11,19 +11,33 @@ const firebaseConfig = {
   authDomain: `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`,
 };
 
-const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 let analytics: ReturnType<typeof getAnalytics> | undefined;
 
-isSupported()
-  .then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  })
-  .catch((error) => {
-    console.error("Firebase Analytics is not supported in this environment.", error);
-  });
+if (typeof window !== "undefined") {
+  const globalForAnalytics = globalThis as typeof globalThis & {
+    __schemesSgAnalytics?: ReturnType<typeof getAnalytics>;
+  };
+
+  if (globalForAnalytics.__schemesSgAnalytics) {
+    analytics = globalForAnalytics.__schemesSgAnalytics;
+  } else {
+    isSupported()
+      .then((supported) => {
+        if (supported) {
+          analytics = getAnalytics(app);
+          globalForAnalytics.__schemesSgAnalytics = analytics;
+        }
+      })
+      .catch((error) => {
+        console.error(
+          "Firebase Analytics is not supported in this environment.",
+          error,
+        );
+      });
+  }
+}
 
 export { app, auth, analytics };

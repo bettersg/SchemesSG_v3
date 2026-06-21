@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
+from google.cloud import firestore
 from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 
@@ -68,6 +69,34 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         if is_warmup:
             return https_fn.Response(
                 response=json.dumps({"success": True, "message": "Warmup request successful"}),
+                status=200,
+                mimetype="application/json",
+                headers=headers,
+            )
+
+        # Thumbs up/down on a chat response. Stored separately from free-text
+        # feedback as a per-session map keyed by message index, so a repeated
+        # click can overwrite and an undo (rating=None) can clear the entry.
+        if request_json.get("source") == "chat" and "messageIndex" in request_json:
+            session_id = request_json.get("sessionId")
+            message_index = request_json.get("messageIndex")
+            rating = request_json.get("rating")  # "up", "down", or None to undo
+            if not session_id or not isinstance(message_index, int) or rating not in ("up", "down", None):
+                return https_fn.Response(
+                    response=json.dumps({"success": False, "message": "Invalid rating payload"}),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
+            doc_ref = firebase_manager.firestore_client.collection("chatRatings").document(session_id)
+            field = f"ratings.{message_index}"
+            value = firestore.DELETE_FIELD if rating is None else rating
+            doc_ref.set({"sessionId": session_id, "updated": timestamp}, merge=True)
+            doc_ref.update({field: value})
+
+            return https_fn.Response(
+                response=json.dumps({"success": True, "message": "Rating recorded"}),
                 status=200,
                 mimetype="application/json",
                 headers=headers,

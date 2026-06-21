@@ -48,6 +48,8 @@ def dataframe_to_text(df: pd.DataFrame) -> str:
         eligibility = row.get("eligibility", "")
         email = row.get("email", "")
         what_it_gives = row.get("what_it_gives", "")
+        if isinstance(what_it_gives, list):
+            what_it_gives = ", ".join(what_it_gives)
         how_to_apply = row.get("how_to_apply", "")
         service_area = row.get("service_area", "")
 

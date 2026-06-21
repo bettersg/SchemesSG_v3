@@ -9,7 +9,7 @@ The following endpoints are available:
    - retrieve_search_queries: Get search history for a session
 
 2. User Interaction:
-   - chat_message: Chat interface for scheme recommendations
+   - agent_chat_message: Chat interface for scheme recommendations
    - feedback: Submit user feedback
    - update_scheme: Submit new schemes or request edits
 
@@ -47,12 +47,13 @@ import json
 import sys
 
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
-from chat.chat import chat_message  # noqa: F401
+from agent.handler import agent_chat_message  # noqa: F401
 from fb_manager.firebaseManager import FirebaseManager
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
 from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
+from schemes.catalog import catalog  # noqa: F401
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401
 from schemes.search_queries import retrieve_search_queries  # noqa: F401
