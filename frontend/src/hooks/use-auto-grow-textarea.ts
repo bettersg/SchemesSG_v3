@@ -1,5 +1,5 @@
 "use client";
-import { RefObject, useCallback, useEffect, useState } from "react";
+import { RefObject, useCallback, useLayoutEffect, useState } from "react";
 
 interface UseAutoGrowTextareaOptions {
   /** Height of a single line (px) — content taller than this is "multiline". */
@@ -23,7 +23,11 @@ interface UseAutoGrowTextareaOptions {
 export function useAutoGrowTextarea(
   ref: RefObject<HTMLTextAreaElement | null>,
   value: string,
-  { lineHeight, collapsedMaxHeight, expandedMaxHeight }: UseAutoGrowTextareaOptions,
+  {
+    lineHeight,
+    collapsedMaxHeight,
+    expandedMaxHeight,
+  }: UseAutoGrowTextareaOptions,
 ) {
   const [expanded, setExpanded] = useState(false);
   const [canExpand, setCanExpand] = useState(false);
@@ -58,7 +62,7 @@ export function useAutoGrowTextarea(
     if (!overflows) setExpanded(false);
   }, [ref, expanded, lineHeight, collapsedMaxHeight, expandedMaxHeight]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     resize();
   }, [value, resize]);
 

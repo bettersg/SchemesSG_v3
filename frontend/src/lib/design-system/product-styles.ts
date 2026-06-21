@@ -97,7 +97,7 @@ export const productComposerLandingSurface = cn(
 export const productComposerChatSurface =
   "border-(--schemes-border) px-3 shadow-[0_2px_12px_rgba(15,23,42,0.06)] focus-within:border-(--schemes-blue-100) focus-within:shadow-[0_4px_18px_rgba(15,23,42,0.10)]";
 
-export const productComposerSingleLine = "flex items-center rounded-full";
+export const productComposerSingleLine = "flex items-center rounded-3xl";
 
 export const productComposerMultiline = "flex flex-col rounded-3xl";
 
