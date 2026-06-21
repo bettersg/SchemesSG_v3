@@ -6,7 +6,8 @@
 
 .showMarker ul {
   list-style-type: disc;
-  list-style-position: inside;
+  list-style-position: outside;
+  padding-left: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -17,7 +18,7 @@
 }
 
 .showMarker li > p {
-  display: inline;
+  margin: 0;
 }
 
 .showMarker hr {
