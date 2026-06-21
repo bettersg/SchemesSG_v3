@@ -66,7 +66,7 @@ export const en: Translations = {
   hero: {
     headline: "Find the Right\nSchemes, All in\nOne Place",
     subtitle:
-      "AI-powered search to help you discover the social assistance schemes you deserve. Over 500 schemes from 200+ agencies.",
+      "AI-powered search to help you discover the social assistance schemes you deserve. Over 600 schemes from 200+ agencies.",
     volunteerBanner: "Built by volunteers at",
     getInvolved: "Get involved",
     searchPlaceholder:
@@ -113,7 +113,7 @@ export const en: Translations = {
       database: {
         title: "See How We Find Your Matches",
         description:
-          "After you send your question, Schemes.sg searches over 500 government and community schemes from agencies like MSF, MOH, HDB, and CPF, then explains what it found.",
+          "After you send your question, Schemes.sg searches over 600 government and community schemes from agencies like MSF, MOH, HDB, and CPF, then explains what it found.",
       },
       filter: {
         title: "Find the Right Scheme, No Noise",
@@ -211,7 +211,7 @@ export const en: Translations = {
       {
         title: "Get AI-Matched Results",
         description:
-          "Our AI engine searches across 500+ schemes and ranks them by relevance to your specific situation.",
+          "Our AI engine searches across 600+ schemes and ranks them by relevance to your specific situation.",
       },
       {
         title: "Apply with Confidence",
@@ -259,7 +259,7 @@ export const en: Translations = {
       {
         question: "How does the AI matching work?",
         answer:
-          "Our search is powered by the same technology behind the best-in-class search engines in the world. We index information from eligibility criteria, location, and many more factors across 500+ schemes. You can also chat with your search results to refine them further based on your needs.",
+          "Our search is powered by the same technology behind the best-in-class search engines in the world. We index information from eligibility criteria, location, and many more factors across 600+ schemes. You can also chat with your search results to refine them further based on your needs.",
       },
       {
         question: "What types of schemes are covered?",
