@@ -52,35 +52,62 @@ const splitCsv = (value?: string | null): string[] | undefined => {
   return parts.length ? parts : undefined;
 };
 
+// "No Location" is a placeholder the dataset uses when a scheme has no real
+// planning area. Treat it as "no label" rather than rendering a literal
+// "NO LOCATION" card.
+const cleanPlanningArea = (value?: string): string | undefined =>
+  value && value !== "No Location" ? value : undefined;
+
+// Some scraped sources obfuscate emails (e.g. Joomla/CleanTalk), so the scraper
+// captured placeholder text like "This email address is being protected from
+// spambots..." instead of a real address. Drop anything that isn't a plausible
+// email so it never renders as a broken mailto link.
+const isRealEmail = (value: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+const cleanEmails = (emails?: string[]): string[] | undefined => {
+  const valid = emails?.filter(isRealEmail);
+  return valid && valid.length ? valid : undefined;
+};
+
 const buildContacts = (raw: RawScheme): BranchContact[] => {
   const planningAreas = Array.isArray(raw.planning_area)
     ? raw.planning_area
-    : raw.planning_area && raw.planning_area !== "No Location"
+    : raw.planning_area
       ? [raw.planning_area]
       : undefined;
 
   if (planningAreas) {
+    const fieldCount = (value?: string | string[] | null) =>
+      Array.isArray(value) ? value.length : value ? 1 : 0;
     const maxContacts = Math.max(
-      Array.isArray(raw.phone) ? raw.phone.length : 0,
-      Array.isArray(raw.email) ? raw.email.length : 0,
-      Array.isArray(raw.address) ? raw.address.length : 0,
+      fieldCount(raw.phone),
+      fieldCount(raw.email),
+      fieldCount(raw.address),
     );
 
     if (maxContacts === 0) {
-      return Array.from(new Set(planningAreas)).map((planningArea) => ({
-        planningArea,
-        phones: undefined,
-        emails: undefined,
-        address: undefined,
-      }));
+      // No contact details at all — only keep real planning-area labels, and
+      // drop entries that would render an empty/"No Location" card.
+      return Array.from(new Set(planningAreas))
+        .map(cleanPlanningArea)
+        .filter((planningArea): planningArea is string => Boolean(planningArea))
+        .map((planningArea) => ({
+          planningArea,
+          phones: undefined,
+          emails: undefined,
+          address: undefined,
+        }));
     }
 
     if (planningAreas.length === 1) {
       return [
         {
-          planningArea: planningAreas[0],
+          planningArea: cleanPlanningArea(planningAreas[0]),
           phones: Array.isArray(raw.phone) ? raw.phone : splitCsv(raw.phone),
-          emails: Array.isArray(raw.email) ? raw.email : splitCsv(raw.email),
+          emails: cleanEmails(
+            Array.isArray(raw.email) ? raw.email : splitCsv(raw.email),
+          ),
           address: Array.isArray(raw.address)
             ? raw.address[0]
             : (raw.address ?? undefined),
@@ -96,9 +123,9 @@ const buildContacts = (raw: RawScheme): BranchContact[] => {
         : raw.address;
 
       return {
-        planningArea,
+        planningArea: cleanPlanningArea(planningArea),
         phones: splitCsv(phone),
-        emails: splitCsv(email),
+        emails: cleanEmails(splitCsv(email)),
         address: address || undefined,
       };
     });
@@ -107,8 +134,8 @@ const buildContacts = (raw: RawScheme): BranchContact[] => {
   const phones = splitCsv(
     Array.isArray(raw.phone) ? raw.phone.join(",") : raw.phone,
   );
-  const emails = splitCsv(
-    Array.isArray(raw.email) ? raw.email.join(",") : raw.email,
+  const emails = cleanEmails(
+    splitCsv(Array.isArray(raw.email) ? raw.email.join(",") : raw.email),
   );
   const address = Array.isArray(raw.address) ? raw.address[0] : raw.address;
 
