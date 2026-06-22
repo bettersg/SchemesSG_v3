@@ -10,7 +10,7 @@ Two main folders: `backend/` and `frontend/`. See their respective `CLAUDE.md` f
 ## Git Workflow
 
 - Branch from `stg`, PR to `stg`, then PR `stg` → `main` for production
-- Commit style: imperative mood, under 50 chars, no co-author lines
+- Commit style: **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`, …), imperative mood, no co-author lines. The `release.yml` workflow runs **semantic-release**, which bumps the version *only* from `feat:`/`fix:` (and `BREAKING CHANGE:`) commits — a plain `Fix …`/`Add …` subject is ignored and produces **no release**.
 
 ## Branch Creation — STRICT RULE
 
@@ -34,8 +34,13 @@ git rev-parse --abbrev-ref @{upstream}    # MUST return origin/<new-branch>
 
 ## Git Commits
 
-Always use one-liner format without Claude signature:
+Always use one-liner Conventional Commit format without Claude signature:
 
 ```bash
-git add <files> && git commit -m "Add feature description"
+git add <files> && git commit -m "feat: add scheme catalog filter"
+git add <files> && git commit -m "fix: show phone/email on scheme detail"
 ```
+
+Use `fix:` for bug fixes (patch bump), `feat:` for features (minor bump), and
+append `!` or a `BREAKING CHANGE:` footer for a major bump. Use `chore:`/`docs:`
+for changes that should **not** trigger a release.
