@@ -31,6 +31,29 @@ ERROR_PAGE_INDICATORS = [
     "404 - ",
 ]
 
+# Status codes that mean a page is definitively gone (vs. a server hiccup).
+HARD_DEAD_STATUS_CODES = {400, 401, 404, 410}
+
+
+def classify_link_result(result: Dict[str, Any]) -> str:
+    """Classify a ``check_link_health`` result for the weekly batch's
+    quarantine policy.
+
+    Returns one of:
+      - ``"alive"``     — up, or alive-but-uncertain (403/429/Cloudflare/soft-404,
+        which ``check_link_health`` already treats as alive).
+      - ``"hard_dead"`` — definitively gone (``HARD_DEAD_STATUS_CODES``).
+      - ``"transient"`` — possibly temporary: any 5xx, plus connection/timeout/
+        DNS/SSL failures (``status_code == 0``). A single occurrence must NOT
+        permanently inactivate a scheme — these flap.
+    """
+    if result.get("alive"):
+        return "alive"
+    code = result.get("status_code", 0) or 0
+    if code in HARD_DEAD_STATUS_CODES:
+        return "hard_dead"
+    return "transient"
+
 
 def _is_cloudflare_response(response) -> bool:
     """Check if response is from a Cloudflare-fronted site."""
