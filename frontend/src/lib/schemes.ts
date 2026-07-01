@@ -496,11 +496,12 @@ export async function searchSchemes(
 export async function getSchemesCategory(
   category = "",
   cursor = "",
+  limit = 20,
 ): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
   const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog`);
   const normalizedCategory = category.replace(/\+/g, " ").trim();
 
-  url.searchParams.set("limit", "20");
+  url.searchParams.set("limit", String(limit));
   if (normalizedCategory) {
     url.searchParams.set("category", normalizedCategory);
   }
