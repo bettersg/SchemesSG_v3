@@ -37,8 +37,11 @@ export type QuickReplySuggestion = {
 };
 
 type ChatContextType = {
+  hasActiveChat: boolean;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  resetModalIsOpen: boolean;
+  setResetModalIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   sessionId: string;
   setSessionId: React.Dispatch<React.SetStateAction<string>>;
   schemes: Scheme[];
@@ -75,6 +78,7 @@ function parseQuickReplies(value: string | null): QuickReplySuggestion[] {
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [quickReplies, setQuickReplies] = useState<QuickReplySuggestion[]>([]);
@@ -171,8 +175,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ChatContext.Provider
       value={{
+        hasActiveChat: messages.length > 0,
         messages,
         setMessages,
+        resetModalIsOpen,
+        setResetModalIsOpen,
         schemes,
         setSchemes,
         sessionId,

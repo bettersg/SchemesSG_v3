@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { MouseEvent, useEffect, useState } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
@@ -17,6 +17,7 @@ import {
   motionPreset,
   transition,
 } from "@/lib/design-system/motion";
+import { useChat } from "@/providers";
 
 type NavLink = {
   label: string;
@@ -27,6 +28,7 @@ type NavLink = {
 export function Navbar() {
   const { t } = useLanguage();
   const pathname = usePathname();
+  const { hasActiveChat, setResetModalIsOpen } = useChat();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isHidden: mobileHidden, isScrolled: scrolled } = useHideOnScroll({
     disabled: mobileOpen,
@@ -61,6 +63,15 @@ export function Navbar() {
     };
   }, [mobileHidden, mobileOpen]);
 
+  const handleSearchEntryClick = (event: MouseEvent<Element>) => {
+    setMobileOpen(false);
+
+    if (pathname === "/" && hasActiveChat) {
+      event.preventDefault();
+      setResetModalIsOpen(true);
+    }
+  };
+
   return (
     <header
       className={cn(
@@ -78,6 +89,7 @@ export function Navbar() {
         {/* Logo */}
         <a
           href="/"
+          onClick={handleSearchEntryClick}
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
           <Image
@@ -113,7 +125,12 @@ export function Navbar() {
                       "aria-disabled:text-neutral-300 aria-disabled:cursor-default",
                     )}
                   >
-                    <Link href={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={
+                        link.href === "/" ? handleSearchEntryClick : undefined
+                      }
+                    >
                       {link.label}
                       {link.href === "/" && (
                         <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
@@ -187,6 +204,7 @@ export function Navbar() {
               <Link href="/">
                 <Button
                   size="sm"
+                  onClick={handleSearchEntryClick}
                   className={cn(
                     "min-h-11 w-full cursor-pointer gap-1.5 rounded-full font-semibold",
                     selectedKey === "/"
