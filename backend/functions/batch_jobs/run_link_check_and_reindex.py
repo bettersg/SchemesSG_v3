@@ -23,13 +23,23 @@ from firebase_functions import options, scheduler_fn
 from loguru import logger
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from utils.check_link import check_link_health
+from utils.check_link import check_link_health, classify_link_result
 from utils.reindex_embeddings import reindex_embeddings
 
 from batch_jobs.slack_blocks import (
     build_link_check_error_message,
     build_link_check_summary_message,
 )
+
+# Quarantine policy: a scheme is only flipped to ``inactive`` after this many
+# CONSECUTIVE weekly checks classify its link ``hard_dead`` (404/410/…). The
+# first failure quarantines it (``link_suspect``) but leaves it searchable, so
+# a transient outage or a single bad weekly run never delists a live scheme.
+HARD_DEAD_FAIL_THRESHOLD = 2
+# Within a single run, retry a transient failure this many times before trusting
+# the verdict (kills concurrency-induced flaps).
+TRANSIENT_RETRIES = 2
+TRANSIENT_RETRY_DELAY_SEC = 2
 
 
 def get_slack_client() -> WebClient:
@@ -61,6 +71,14 @@ def check_single_scheme(doc_id: str, scheme_data: Dict[str, Any]) -> Tuple[str, 
     """
     link = scheme_data.get("link", "")
     result = check_link_health(link)
+    # Retry transient failures (5xx / timeout / DNS / conn-reset) before trusting
+    # the verdict. Under 20-way concurrency these flap, and a single flap should
+    # never drive a scheme toward inactivation.
+    attempts = 0
+    while classify_link_result(result) == "transient" and attempts < TRANSIENT_RETRIES:
+        time.sleep(TRANSIENT_RETRY_DELAY_SEC)
+        result = check_link_health(link)
+        attempts += 1
     return (doc_id, scheme_data, result)
 
 
@@ -102,9 +120,11 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
 
         # Step 2: Check links with concurrency
         alive_count = 0
-        dead_count = 0
+        dead_count = 0  # schemes that will be inactivated THIS run
+        suspect_count = 0  # failed but quarantined (kept searchable), not inactivated
         restored_count = 0  # Track schemes restored from inactive
         dead_links: List[Dict[str, Any]] = []
+        suspect_links: List[Dict[str, Any]] = []
         restored_links: List[Dict[str, Any]] = []  # Track restored schemes
         check_results: List[Tuple[str, Dict[str, Any], Dict[str, Any]]] = []
 
@@ -135,22 +155,41 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                                 }
                             )
                     else:
-                        dead_count += 1
-                        dead_links.append(
-                            {
-                                "doc_id": doc_id,
-                                "scheme_name": scheme_data.get("scheme", "Unknown"),
-                                "link": scheme_data.get("link", ""),
-                                "error": result.get("error", "Unknown"),
-                                "status_code": result.get("status_code", 0),
-                            }
-                        )
+                        # Decide disposition once, here, so counts/Slack and the
+                        # Firestore write (step 3) agree. Only HARD-dead links that
+                        # have failed >= HARD_DEAD_FAIL_THRESHOLD consecutive runs
+                        # are inactivated; everything else is quarantined (kept
+                        # searchable) and waits for recovery or a human.
+                        fail_class = classify_link_result(result)
+                        new_streak = (scheme_data.get("link_check_fail_streak", 0) or 0) + 1
+                        inactivate = fail_class == "hard_dead" and new_streak >= HARD_DEAD_FAIL_THRESHOLD
+                        result["_fail_class"] = fail_class
+                        result["_new_streak"] = new_streak
+                        result["_inactivate"] = inactivate
+                        entry = {
+                            "doc_id": doc_id,
+                            "scheme_name": scheme_data.get("scheme", "Unknown"),
+                            "link": scheme_data.get("link", ""),
+                            "error": result.get("error", "Unknown"),
+                            "status_code": result.get("status_code", 0),
+                            "fail_class": fail_class,
+                            "fail_streak": new_streak,
+                        }
+                        if inactivate:
+                            dead_count += 1
+                            dead_links.append(entry)
+                        else:
+                            suspect_count += 1
+                            suspect_links.append(entry)
 
                 except Exception as e:
                     logger.error(f"Error checking scheme: {e}")
-                    dead_count += 1
+                    suspect_count += 1
 
-        logger.info(f"Link check complete: {alive_count} alive, {dead_count} dead, {restored_count} to restore")
+        logger.info(
+            f"Link check complete: {alive_count} alive, {dead_count} to inactivate, "
+            f"{suspect_count} quarantined (kept searchable), {restored_count} to restore"
+        )
 
         # Step 3: Update Firestore
         logger.info("Updating Firestore...")
@@ -163,38 +202,51 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
             was_inactive = scheme_data.get("status") == "inactive"
 
             if result["alive"]:
+                # Alive → clear any prior suspicion / fail streak; restore if it
+                # had been inactivated.
+                update_fields = {
+                    "last_link_check": now_iso,
+                    "link_check_status_code": result.get("status_code", 200),
+                    "link_check_fail_streak": firestore.DELETE_FIELD,
+                    "link_suspect": firestore.DELETE_FIELD,
+                }
                 if was_inactive:
-                    # Restore inactive scheme to active (link is now alive)
-                    batch.update(
-                        scheme_ref,
+                    update_fields.update(
                         {
                             "status": firestore.DELETE_FIELD,
                             "status_reason": firestore.DELETE_FIELD,
                             "status_updated_at": firestore.DELETE_FIELD,
                             "link_check_error": firestore.DELETE_FIELD,
-                            "last_link_check": now_iso,
-                            "link_check_status_code": result.get("status_code", 200),
+                        }
+                    )
+                batch.update(scheme_ref, update_fields)
+            else:
+                fail_class = result.get("_fail_class", classify_link_result(result))
+                new_streak = result.get("_new_streak", 1)
+                common = {
+                    "last_link_check": now_iso,
+                    "link_check_status_code": result.get("status_code", 0),
+                    "link_check_error": result.get("error", "Unknown"),
+                    "link_check_fail_streak": new_streak,
+                    "link_check_fail_class": fail_class,
+                }
+                if result.get("_inactivate"):
+                    # Confirmed hard-dead across consecutive runs → inactivate.
+                    batch.update(
+                        scheme_ref,
+                        {
+                            **common,
+                            "status": "inactive",
+                            "status_reason": f"Dead link ({fail_class}, {new_streak} consecutive checks)",
+                            "status_updated_at": now_iso,
+                            "link_suspect": firestore.DELETE_FIELD,
                         },
                     )
                 else:
-                    # Update last check timestamp for alive links
-                    batch.update(
-                        scheme_ref,
-                        {"last_link_check": now_iso, "link_check_status_code": result.get("status_code", 200)},
-                    )
-            else:
-                # Mark dead links as inactive
-                batch.update(
-                    scheme_ref,
-                    {
-                        "status": "inactive",
-                        "status_reason": "Dead link detected",
-                        "status_updated_at": now_iso,
-                        "last_link_check": now_iso,
-                        "link_check_status_code": result.get("status_code", 0),
-                        "link_check_error": result.get("error", "Unknown"),
-                    },
-                )
+                    # Quarantine: keep the scheme active/searchable, flag suspect.
+                    # Transient failures (5xx/DNS/timeout) and first hard failures
+                    # land here, so a single bad run never delists a live scheme.
+                    batch.update(scheme_ref, {**common, "link_suspect": True})
 
             batch_count += 1
 
@@ -228,6 +280,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "total_checked": total_count,
                 "alive_count": alive_count,
                 "dead_count": dead_count,
+                "suspect_count": suspect_count,
                 "restored_count": restored_count,
                 "duration_seconds": duration_seconds,
             }
@@ -247,8 +300,10 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "total_checked": total_count,
                 "alive_count": alive_count,
                 "dead_count": dead_count,
+                "suspect_count": suspect_count,
                 "restored_count": restored_count,
                 "dead_links": dead_links,
+                "suspect_links": suspect_links,
                 "restored_links": restored_links,
             },
             "reindex": reindex_result,
