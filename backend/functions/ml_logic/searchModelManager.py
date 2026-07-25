@@ -91,13 +91,6 @@ class SearchModel:
         """
 
         """"""
-        # Create a cache key based on the scheme IDs
-        scheme_cache_key = tuple(scheme_ids)
-
-        # Check if the results are already in the cache
-        if scheme_cache_key in self.query_cache:
-            logger.info("Returning cached scheme details.")
-            return self.query_cache[scheme_cache_key]
 
         # Helper to chunk scheme_ids into batches of 30
         def chunk_list(lst, n):
@@ -109,14 +102,13 @@ class SearchModel:
             docs = self.__class__.db.collection("schemes").where("__name__", "in", batch).get()
             for doc in docs:
                 scheme_data = doc.to_dict()
+                if scheme_data.get("status") in {"inactive", "retired"}:
+                    continue
                 scheme_data["scheme_id"] = doc.id
                 # Remove 'scraped_text' field if present
                 if "scraped_text" in scheme_data:
                     del scheme_data["scraped_text"]
                 scheme_details.append(scheme_data)
-
-        # Store the results in the cache
-        self.query_cache[scheme_cache_key] = scheme_details
 
         return scheme_details
 
@@ -266,7 +258,7 @@ class SearchModel:
 
         Notes:
             - The `similarity_threshold` parameter is accepted but not yet implemented.
-            - Caching is keyed by `(query_text, top_k)` tuple.
+            - Results are not cached so lifecycle changes are immediately visible.
         """
         cache_key = (query_text, top_k)
         if cache_key in self.query_cache:
@@ -278,12 +270,10 @@ class SearchModel:
         # Handle empty results - skip ranking if no vector results
         if results.empty:
             logger.warning(f"No search results to rank for query: {query_text}")
-            self.query_cache[cache_key] = results
             return results
 
         results = self.rank(query_text, results).drop_duplicates("scheme_id")
 
-        self.query_cache[cache_key] = results
         return results.head(top_k)
 
     def _sanitize_for_firestore(self, data):

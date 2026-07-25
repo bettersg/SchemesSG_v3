@@ -54,6 +54,8 @@ def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str
             continue
 
         scheme_data = doc.to_dict()
+        if scheme_data.get("status") in {"inactive", "retired"}:
+            continue
         scheme_data["scheme_id"] = doc.id
         scheme_data.pop("scraped_text", None)
         scheme_details_by_id[scheme_id] = scheme_data
@@ -105,18 +107,8 @@ class SearchModel:
             List[Dict]: List of scheme details as dictionaries
         """
 
-        # Create a cache key based on the scheme IDs
-        scheme_cache_key = tuple(scheme_ids)
-        # Check if the results are already in the cache
-        if scheme_cache_key in self.query_cache:
-            logger.info("Returning cached scheme details.")
-            return self.query_cache[scheme_cache_key]
-
+        # Lifecycle changes must be visible immediately; do not cache documents.
         scheme_details, _ = fetch_schemes_by_ids(self.__class__.firebase_manager, scheme_ids)
-
-        # Store the results in the cache
-        self.query_cache[scheme_cache_key] = scheme_details
-
         return scheme_details
 
     def __new__(cls, firebase_manager: FirebaseManager):

@@ -109,14 +109,21 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
 
         schemes_to_check = []
         inactive_count = 0
+        retired_count = 0
         for doc in docs:
             data = doc.to_dict()
+            if data.get("status") == "retired":
+                retired_count += 1
+                continue
             if data.get("status") == "inactive":
                 inactive_count += 1
             schemes_to_check.append((doc.id, data))
 
         total_count = len(schemes_to_check)
-        logger.info(f"Found {total_count} schemes to check ({inactive_count} currently inactive)")
+        logger.info(
+            f"Found {total_count} schemes to check ({inactive_count} currently inactive, "
+            f"{retired_count} retired skipped)"
+        )
 
         # Step 2: Check links with concurrency
         alive_count = 0
@@ -129,7 +136,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
         check_results: List[Tuple[str, Dict[str, Any], Dict[str, Any]]] = []
 
         # Use ThreadPoolExecutor for concurrent checking
-        max_workers = min(20, total_count)  # Cap at 20 concurrent requests
+        max_workers = max(1, min(20, total_count))  # Cap at 20 concurrent requests
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
                 executor.submit(check_single_scheme, doc_id, data): (doc_id, data) for doc_id, data in schemes_to_check
@@ -283,6 +290,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "suspect_count": suspect_count,
                 "restored_count": restored_count,
                 "duration_seconds": duration_seconds,
+                "retired_skipped": retired_count,
             }
 
             message = build_link_check_summary_message(results_summary, dead_links, reindex_result, restored_links)
@@ -302,6 +310,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "dead_count": dead_count,
                 "suspect_count": suspect_count,
                 "restored_count": restored_count,
+                "retired_skipped": retired_count,
                 "dead_links": dead_links,
                 "suspect_links": suspect_links,
                 "restored_links": restored_links,

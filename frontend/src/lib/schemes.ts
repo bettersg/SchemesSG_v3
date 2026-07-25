@@ -164,6 +164,8 @@ export const mapToFullScheme = (raw: RawScheme): Scheme => ({
   eligibilityText: raw.eligibility || "",
   serviceArea:
     (raw.service_area !== "No Service Boundaries" && raw.service_area) || "",
+  status: raw.status,
+  mergedInto: raw.merged_into,
   lastUpdated: raw.last_scraped_update
     ? new Date(raw.last_scraped_update._seconds * 1000).toLocaleString()
     : "",
@@ -177,7 +179,7 @@ export const getSchemeById = cache(
     }
 
     const response = await fetchWithAuth(`${baseUrl}/schemes/${schemeId}`, {
-      next: { revalidate: 86_400 },
+      next: { revalidate: 300 },
     });
 
     if (response.status === 404) {

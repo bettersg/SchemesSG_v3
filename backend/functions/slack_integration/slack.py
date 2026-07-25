@@ -19,6 +19,7 @@ from new_scheme.approval_handler import (
     get_processed_data_from_entry,
     handle_new_scheme_approval,
     handle_new_scheme_rejection,
+    handle_scheme_retirement_approval,
 )
 
 # New scheme approval imports
@@ -352,6 +353,49 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     logger.debug(f"Modal view structure: {json.dumps(modal_view, indent=2)}")
                     logger.debug(traceback.format_exc())
                     # Still return 200 to prevent Slack from retrying
+
+                return https_fn.Response(
+                    response="",
+                    status=200,
+                    headers=headers,
+                )
+
+            # Handle terminal scheme retirement actions.
+            if action.get("action_id") in (
+                "approve_scheme_retirement",
+                "reject_scheme_retirement",
+            ):
+                entry_doc_id = action.get("value")
+                reviewer_id = event.get("user", {}).get("id", "")
+                container = event.get("container", {})
+                channel_id = container.get("channel_id")
+                message_ts = container.get("message_ts")
+
+                if action.get("action_id") == "approve_scheme_retirement":
+                    try:
+                        handle_scheme_retirement_approval(
+                            slack_client=slack_client,
+                            entry_doc_id=entry_doc_id,
+                            channel_id=channel_id,
+                            message_ts=message_ts,
+                            reviewer_id=reviewer_id,
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to approve retirement {entry_doc_id}: {e}")
+                        if channel_id:
+                            slack_client.chat_postMessage(
+                                channel=channel_id,
+                                text=f":warning: Could not retire scheme: {e}",
+                            )
+                else:
+                    handle_new_scheme_rejection(
+                        slack_client=slack_client,
+                        entry_doc_id=entry_doc_id,
+                        channel_id=channel_id,
+                        message_ts=message_ts,
+                        reviewer_id=reviewer_id,
+                        reason=None,
+                    )
 
                 return https_fn.Response(
                     response="",

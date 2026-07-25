@@ -20,6 +20,7 @@ from loguru import logger
 
 COLLECTION_SCHEMES = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"
+NON_SEARCHABLE_STATUSES = {"inactive", "retired"}
 
 
 def build_desc_booster(row) -> str:
@@ -50,12 +51,28 @@ def build_desc_booster(row) -> str:
     return " ".join(components)
 
 
+def delete_stale_embeddings(db, active_scheme_ids: set[str]) -> int:
+    """Delete embeddings whose source scheme is no longer searchable."""
+    existing_ids = {doc.id for doc in db.collection(COLLECTION_EMBEDDINGS).stream()}
+    stale_ids = sorted(existing_ids - active_scheme_ids)
+
+    for start in range(0, len(stale_ids), 500):
+        batch = db.batch()
+        for doc_id in stale_ids[start : start + 500]:
+            batch.delete(db.collection(COLLECTION_EMBEDDINGS).document(doc_id))
+        batch.commit()
+
+    if stale_ids:
+        logger.info(f"Deleted {len(stale_ids)} stale embeddings")
+    return len(stale_ids)
+
+
 def reindex_embeddings(db=None) -> Dict[str, Any]:
     """
     Update schemes_embeddings collection with embeddings.
 
     Reads from 'schemes' collection, writes to 'schemes_embeddings' collection.
-    Filters out inactive schemes.
+    Filters out inactive and retired schemes, and deletes stale embeddings.
 
     Args:
         db: Firestore client (optional, will create if not provided)
@@ -95,14 +112,19 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
         total_schemes = len(df)
         logger.info(f"Retrieved {total_schemes} documents from Firestore")
 
-        # Filter out inactive schemes (handles missing status field)
-        initial_count = len(df)
+        # Missing status is legacy-active; inactive and retired are not searchable.
+        skipped_inactive = 0
+        skipped_retired = 0
         if "status" in df.columns:
-            df = df[df["status"] != "inactive"]
-        skipped_inactive = initial_count - len(df)
+            skipped_inactive = int((df["status"] == "inactive").sum())
+            skipped_retired = int((df["status"] == "retired").sum())
+            df = df[~df["status"].isin(NON_SEARCHABLE_STATUSES)]
 
-        if skipped_inactive > 0:
-            logger.info(f"Filtered out {skipped_inactive} inactive schemes")
+        if skipped_inactive or skipped_retired:
+            logger.info(f"Filtered out {skipped_inactive} inactive and {skipped_retired} retired schemes")
+
+        active_scheme_ids = set(df["doc_id"].tolist()) if "doc_id" in df else set()
+        deleted_embeddings = delete_stale_embeddings(db, active_scheme_ids)
 
         if df.empty:
             return {
@@ -110,6 +132,8 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
                 "total_schemes": total_schemes,
                 "indexed_schemes": 0,
                 "skipped_inactive": skipped_inactive,
+                "skipped_retired": skipped_retired,
+                "deleted_embeddings": deleted_embeddings,
                 "duration_seconds": round(time.time() - start_time, 2),
                 "error": "No active schemes to index",
             }
@@ -148,7 +172,9 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
 
         duration = time.time() - start_time
         logger.info(
-            f"Reindex completed in {duration:.2f}s ({indexed} schemes indexed, {skipped_inactive} inactive skipped)"
+            f"Reindex completed in {duration:.2f}s ({indexed} schemes indexed, "
+            f"{skipped_inactive} inactive and {skipped_retired} retired skipped, "
+            f"{deleted_embeddings} stale embeddings deleted)"
         )
 
         return {
@@ -156,6 +182,8 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
             "total_schemes": total_schemes,
             "indexed_schemes": indexed,
             "skipped_inactive": skipped_inactive,
+            "skipped_retired": skipped_retired,
+            "deleted_embeddings": deleted_embeddings,
             "duration_seconds": round(duration, 2),
             "error": None,
         }
@@ -172,6 +200,8 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
             "total_schemes": 0,
             "indexed_schemes": 0,
             "skipped_inactive": 0,
+            "skipped_retired": 0,
+            "deleted_embeddings": 0,
             "duration_seconds": round(duration, 2),
             "error": str(e),
         }

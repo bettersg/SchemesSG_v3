@@ -140,13 +140,13 @@ def populate_embeddings() -> Dict[str, Any]:
         schemes = [{**doc.to_dict(), "doc_id": doc.id} for doc in docs]
         df = pd.DataFrame(schemes)
 
-        # Filter out inactive schemes (handles missing status field)
+        # Missing status is legacy-active; inactive and retired are not searchable.
         initial_count = len(df)
         if "status" in df.columns:
-            df = df[df["status"] != "inactive"]
+            df = df[~df["status"].isin({"inactive", "retired"})]
         skipped = initial_count - len(df)
 
-        logger.info(f"Found {len(df)} active schemes (skipped {skipped} inactive)")
+        logger.info(f"Found {len(df)} searchable schemes (skipped {skipped} inactive or retired)")
 
         if df.empty:
             return {
