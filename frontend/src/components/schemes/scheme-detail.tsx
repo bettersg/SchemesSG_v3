@@ -240,11 +240,15 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
     <PageShell contentClassName="pb-24 md:pb-8">
       <div
         ref={stickyHeaderRef}
-        className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) md:mx-auto md:w-full md:max-w-3xl"
+        className={clsx(
+          "sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] p-2 w-screen",
+          "flex flex-col gap-2",
+          "border-b border-(--schemes-border-neutral) bg-(--schemes-surface) md:mx-auto md:w-full md:max-w-3xl",
+        )}
       >
         <div
           className={clsx(
-            "overflow-hidden py-3 md:max-h-none md:translate-y-0 md:opacity-100",
+            "overflow-hidden md:max-h-none md:translate-y-0 md:opacity-100",
             cssTransition.disclosureState,
             "flex flex-col gap-3",
             stickyHeaderHidden
@@ -260,10 +264,19 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                 size="lg"
               />
               <div className="flex min-w-0 flex-col gap-2">
-                {scheme.agency && (
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
-                    {scheme.agency}
-                  </p>
+                {(scheme.agency || scheme.lastUpdated) && (
+                  <div className="flex items-start justify-between gap-3">
+                    {scheme.agency && (
+                      <p className="min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
+                        {scheme.agency}
+                      </p>
+                    )}
+                    {scheme.lastUpdated && (
+                      <p className="shrink-0 text-right text-xs leading-snug text-(--schemes-muted) max-sm:max-w-16">
+                        {scheme.lastUpdated}
+                      </p>
+                    )}
+                  </div>
                 )}
                 {scheme.schemeName && (
                   <h1 className="text-balance text-xl font-semibold leading-snug text-(--schemes-blue-900) md:text-2xl">
@@ -271,7 +284,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                   </h1>
                 )}
                 {scheme.summary && (
-                  <p className="line-clamp-2 max-w-2xl text-xs leading-relaxed text-(--schemes-ink-soft) md:text-sm">
+                  <p className="line-clamp-2 text-xs leading-relaxed text-(--schemes-ink-soft) md:text-sm">
                     {scheme.summary}
                   </p>
                 )}
@@ -300,7 +313,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <Tabs.ListContainer>
                 <ScrollShadow
                   orientation="horizontal"
-                  className="w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain sm:overflow-x-visible p-1"
+                  className="w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain sm:overflow-x-visible"
                   hideScrollBar
                   size={20}
                 >

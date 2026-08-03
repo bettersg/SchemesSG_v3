@@ -2,11 +2,71 @@ import { fetchWithAuth } from "@/lib/api";
 import { cache } from "react";
 import {
   BranchContact,
+  FirestoreTimestamp,
   RawScheme,
   RawSchemeData,
   SearchResponse,
   Scheme,
 } from "../types/types";
+
+type SchemeTimestamp = FirestoreTimestamp | string | undefined | null;
+
+const schemeUpdatedDateFormatter = new Intl.DateTimeFormat("en-SG", {
+  month: "short",
+  year: "numeric",
+  timeZone: "Asia/Singapore",
+});
+
+const parseDateString = (value: string): Date | null => {
+  const directDate = new Date(value);
+  if (!Number.isNaN(directDate.getTime())) {
+    return directDate;
+  }
+
+  const normalizedValue = value
+    .replace(/\s+at\s+/i, " ")
+    .replace(/\s+/g, " ")
+    .replace(/UTC([+-])(\d{1,2})(?::?(\d{2}))?$/i, "GMT$1$2$3");
+  const normalizedDate = new Date(normalizedValue);
+
+  return Number.isNaN(normalizedDate.getTime()) ? null : normalizedDate;
+};
+
+const toDate = (timestamp: SchemeTimestamp): Date | null => {
+  if (!timestamp) return null;
+
+  if (typeof timestamp === "string") {
+    return parseDateString(timestamp);
+  }
+
+  if ("toDate" in timestamp) {
+    const date = timestamp.toDate();
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const seconds =
+    "_seconds" in timestamp ? timestamp._seconds : timestamp.seconds;
+  const date = new Date(seconds * 1000);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export const formatSchemeUpdatedDate = (timestamp: SchemeTimestamp): string => {
+  const date = toDate(timestamp);
+  return date ? `Updated ${schemeUpdatedDateFormatter.format(date)}` : "";
+};
+
+const getSchemeUpdatedDate = (
+  rawData: Pick<
+    RawSchemeData,
+    "last_scraped_update" | "last_llm_processed_update" | "last_updated"
+  >,
+): string =>
+  formatSchemeUpdatedDate(
+    rawData.last_scraped_update ||
+      rawData.last_llm_processed_update ||
+      rawData.last_updated,
+  );
 
 export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
   schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || [],
@@ -34,7 +94,7 @@ export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
     (rawData as Record<string, string | undefined>)["Eligibility"] ||
     "",
   lastUpdated:
-    (rawData as Record<string, string | undefined>)["last_updated"] ||
+    getSchemeUpdatedDate(rawData) ||
     (rawData as Record<string, string | undefined>)["Last updated"] ||
     "",
   serviceArea:
@@ -164,9 +224,9 @@ export const mapToFullScheme = (raw: RawScheme): Scheme => ({
   eligibilityText: raw.eligibility || "",
   serviceArea:
     (raw.service_area !== "No Service Boundaries" && raw.service_area) || "",
-  lastUpdated: raw.last_scraped_update
-    ? new Date(raw.last_scraped_update._seconds * 1000).toLocaleString()
-    : "",
+  lastUpdated: formatSchemeUpdatedDate(
+    raw.last_llm_processed_update || raw.last_scraped_update,
+  ),
 });
 
 export const getSchemeById = cache(
@@ -197,6 +257,7 @@ export const getSchemeById = cache(
     if (!payload.data) {
       return null;
     }
+    console.log(payload.data);
 
     return {
       ...mapToFullScheme(payload.data),

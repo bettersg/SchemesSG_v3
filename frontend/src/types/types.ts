@@ -28,6 +28,9 @@ export interface RawSchemeData {
   quintile?: number;
   summary?: string;
   planning_area?: string;
+  last_updated?: string;
+  last_scraped_update?: FirestoreTimestamp | string;
+  last_llm_processed_update?: FirestoreTimestamp | string;
 }
 
 export interface EligibilityType {
@@ -114,10 +117,18 @@ export type BranchContact = {
   address?: string;
 };
 
-export interface FirestoreTimestamp {
-  _seconds: number;
-  _nanoseconds: number;
-}
+export type FirestoreTimestamp =
+  | {
+      _seconds: number;
+      _nanoseconds?: number;
+    }
+  | {
+      seconds: number;
+      nanoseconds?: number;
+    }
+  | {
+      toDate: () => Date;
+    };
 
 export interface RawScheme {
   scheme?: string;
@@ -140,8 +151,8 @@ export interface RawScheme {
   how_to_apply?: string | null;
   eligibility?: string | null;
   last_link_check?: string;
-  last_scraped_update?: FirestoreTimestamp;
-  last_llm_processed_update?: FirestoreTimestamp;
+  last_scraped_update?: FirestoreTimestamp | string;
+  last_llm_processed_update?: FirestoreTimestamp | string;
   link_check_status_code?: number;
   scheme_id?: string;
 }

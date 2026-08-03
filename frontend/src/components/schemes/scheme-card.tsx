@@ -53,9 +53,16 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       <p className="line-clamp-2 text-xs leading-relaxed text-(--schemes-ink-soft)">
         {scheme.summary || scheme.description}
       </p>
-      {topType && (
-        <div className="mt-auto flex flex-wrap gap-1 pt-3">
-          <CategoryTag label={topType} />
+      {(topType || scheme.lastUpdated) && (
+        <div className="mt-auto flex items-center justify-between gap-3 pt-3 flex-wrap">
+          <div className="flex min-w-0 flex-wrap gap-1">
+            {topType && <CategoryTag label={topType} />}
+          </div>
+          {scheme.lastUpdated && (
+            <p className="shrink-0 text-right text-xs leading-snug text-(--schemes-muted)">
+              {scheme.lastUpdated}
+            </p>
+          )}
         </div>
       )}
     </Link>
