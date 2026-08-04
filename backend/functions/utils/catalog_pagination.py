@@ -15,6 +15,21 @@ from loguru import logger
 # or a secure configuration system
 CURSOR_SECRET = os.environ.get("CURSOR_SECRET", "schemes_pagination_secret_key")
 
+CATALOG_FIELDS = (
+    "scheme",
+    "agency",
+    "summary",
+    "description",
+    "llm_description",
+    "scheme_type",
+    "who_is_it_for",
+    "what_it_gives",
+    "link",
+    "image",
+    "planning_area",
+    "last_scraped_update",
+)
+
 
 @dataclass
 class PaginationResult:
@@ -121,16 +136,13 @@ def _get_paginated_query(
     Returns:
         A Firestore query ready to execute.
     """
-    # Order by newest updates first and add __name__ as a deterministic
-    # ascending secondary sort key for documents sharing the same timestamp.
+    # Catalog pages only need card and routing data. Project at the Firestore
+    # query so large detail-only fields such as scraped_text are never fetched.
+    source = base_query if base_query is not None else collection_ref
     q = (
-        base_query.order_by("last_scraped_update", direction=Query.DESCENDING).limit(
-            limit + 1
-        )
-        if base_query
-        else collection_ref.order_by(
-            "last_scraped_update", direction=Query.DESCENDING
-        ).limit(limit + 1)
+        source.select(CATALOG_FIELDS)
+        .order_by("last_scraped_update", direction=Query.DESCENDING)
+        .limit(limit + 1)
     )
 
     if not cursor:

@@ -10,6 +10,7 @@ import {
   getCatalogJsonLd,
   getCatalogMetadata,
 } from "@/lib/catalog-seo";
+import { getCatalogData } from "@/lib/schemes.server";
 
 type CatalogCategoryPageProps = {
   params: Promise<{ category: string }>;
@@ -59,6 +60,7 @@ export default async function CatalogCategoryPage({
     category,
     path: getCatalogCategoryPath(category),
   });
+  const initialData = await getCatalogData(category);
 
   return (
     <>
@@ -68,7 +70,13 @@ export default async function CatalogCategoryPage({
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <CatalogPageClient initialCategory={category} />
+      <CatalogPageClient
+        key={slug}
+        initialCategory={category}
+        initialSchemes={initialData.schemes}
+        initialTotal={initialData.total}
+        initialCursor={initialData.nextCursor}
+      />
     </>
   );
 }
