@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SchemeDetail from "@/components/schemes/scheme-detail";
-import { getSchemeById } from "@/lib/schemes";
+import {
+  getAllCatalogSchemes,
+  getSchemeById,
+} from "@/lib/schemes.server";
 import {
   getSeoImages,
   SCHEMES_SG_LOGO_URL,
   SEO_COPY,
   SITE_URL,
 } from "@/lib/seo";
-import SchemeSkeleton from "@/components/schemes/scheme-skeleton";
-import { Suspense } from "react";
 
 type SchemePageProps = {
   params: Promise<{ schemeId: string }>;
 };
+
+export async function generateStaticParams() {
+  const schemes = await getAllCatalogSchemes();
+  return schemes.map(({ schemeId }) => ({ schemeId }));
+}
 
 const stripMarkdown = (text: string) =>
   text
@@ -122,9 +128,7 @@ export default async function SchemePage({ params }: SchemePageProps) {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <Suspense fallback={<SchemeSkeleton />}>
-        <SchemeDetail scheme={scheme} />
-      </Suspense>
+      <SchemeDetail scheme={scheme} />
     </>
   );
 }

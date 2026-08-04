@@ -24,16 +24,19 @@ import EmptyState from "@/components/feedback/empty-state";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { Search } from "lucide-react";
 
-type CatalogPageClientProps = {
-  initialCategory?: CatalogCategory;
-};
-
 type CatalogLoadState =
   | "idle"
   | "loadingInitial"
   | "ready"
   | "loadingMore"
   | "exhausted";
+
+type CatalogPageClientProps = {
+  initialCategory?: CatalogCategory;
+  initialSchemes?: Scheme[];
+  initialTotal?: number;
+  initialCursor?: string;
+};
 
 function CatalogGridSkeleton() {
   return (
@@ -69,17 +72,30 @@ function CatalogGridSkeleton() {
 
 export default function CatalogPageClient({
   initialCategory,
+  initialSchemes,
+  initialTotal,
+  initialCursor = "",
 }: CatalogPageClientProps) {
+  const hasInitialData = initialSchemes !== undefined;
+  const initialLoadState: CatalogLoadState = !initialCategory
+    ? "idle"
+    : !hasInitialData
+      ? "loadingInitial"
+      : initialCursor
+        ? "ready"
+        : "exhausted";
   const [activeCategory, setActiveCategory] = useState(
     initialCategory ?? "All",
   );
   const [hasSelectedCategory, setHasSelectedCategory] = useState(
     Boolean(initialCategory),
   );
-  const [schemes, setSchemes] = useState<Scheme[]>([]);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [schemes, setSchemes] = useState<Scheme[]>(initialSchemes ?? []);
+  const [totalCount, setTotalCount] = useState<number | null>(
+    initialTotal ?? null,
+  );
   const [loadState, setLoadState] = useState<CatalogLoadState>(
-    initialCategory ? "loadingInitial" : "idle",
+    initialLoadState,
   );
 
   // states for search feature (tbc)
@@ -89,7 +105,7 @@ export default function CatalogPageClient({
   // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const cursorRef = useRef("");
+  const cursorRef = useRef(initialCursor);
   const requestIdRef = useRef(0);
   const hasUserScrolledRef = useRef(false);
   const isLoadingInitial = loadState === "loadingInitial";
@@ -173,6 +189,7 @@ export default function CatalogPageClient({
   // Initial load
   useEffect(() => {
     if (!hasSelectedCategory) return;
+    if (hasInitialData) return;
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     hasUserScrolledRef.current = false;
@@ -189,7 +206,11 @@ export default function CatalogPageClient({
       cursorRef.current = r.nextCursor;
       setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
-  }, [activeCategory, hasSelectedCategory]);
+  }, [
+    activeCategory,
+    hasSelectedCategory,
+    hasInitialData,
+  ]);
 
   // search feature (tbc)
   // const handleSearch = (e: React.FormEvent) => {

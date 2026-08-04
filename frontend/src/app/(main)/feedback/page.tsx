@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Card, Input, Label, TextArea, TextField } from "@heroui/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
 import {
@@ -49,7 +49,7 @@ function getFeedbackContext(searchParams: URLSearchParams) {
   return null;
 }
 
-export default function FeedbackPage() {
+function FeedbackForm() {
   const searchParams = useSearchParams();
   const feedbackContext = getFeedbackContext(searchParams);
   const [feedbackText, setFeedbackText] = useState(
@@ -193,5 +193,26 @@ export default function FeedbackPage() {
         </Card.Content>
       </Card>
     </PageShell>
+  );
+}
+
+function FeedbackFallback() {
+  return (
+    <PageShell width="form">
+      <div className="mb-6 flex flex-col gap-2 text-left">
+        <h1 className={productHeading}>Share feedback</h1>
+        <p className={productSubheading}>
+          Help us improve Schemes.sg with your valuable input
+        </p>
+      </div>
+    </PageShell>
+  );
+}
+
+export default function FeedbackPage() {
+  return (
+    <Suspense fallback={<FeedbackFallback />}>
+      <FeedbackForm />
+    </Suspense>
   );
 }

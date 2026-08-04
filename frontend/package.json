@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development next dev",
     "build": "npm run clean && npm install && next build",
+    "build:local": "next build",
     "start": "cross-env NODE_ENV=production next start",
     "start:staging": "cross-env NODE_ENV=staging next start",
     "lint": "next lint",
