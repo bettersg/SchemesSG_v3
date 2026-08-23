@@ -769,6 +769,30 @@ def build_scheme_retirement_review_message(
     }
 
 
+def build_scheme_retirement_rejection_modal(metadata: str) -> dict:
+    """Build a modal that requires a reason for rejecting retirement."""
+    return {
+        "type": "modal",
+        "callback_id": "scheme_retirement_rejection_submit",
+        "title": {"type": "plain_text", "text": "Reject Retirement"},
+        "submit": {"type": "plain_text", "text": "Reject"},
+        "close": {"type": "plain_text", "text": "Cancel"},
+        "private_metadata": metadata,
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "retirement_rejection_reason_block",
+                "label": {"type": "plain_text", "text": "Reason for rejection"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "retirement_rejection_reason",
+                    "multiline": True,
+                },
+            }
+        ],
+    }
+
+
 def build_scheme_retirement_approved_message(
     doc_id: str,
     scheme_name: str,

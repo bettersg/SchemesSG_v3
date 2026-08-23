@@ -179,6 +179,7 @@ export const getSchemeById = cache(
     }
 
     const response = await fetchWithAuth(`${baseUrl}/schemes/${schemeId}`, {
+      // Retirements must become visible promptly so redirects/unlisted states do not remain stale.
       next: { revalidate: 300 },
     });
 

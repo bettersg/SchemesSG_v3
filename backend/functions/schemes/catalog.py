@@ -18,10 +18,12 @@ from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from utils.auth import verify_auth_token
-from utils.catalog_pagination import PaginationResult, get_paginated_results
+from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
+from utils.scheme_lifecycle import RETIRED_STATUS
 from werkzeug.datastructures import MultiDict
+
 
 DEFAULT_LIMIT = 10
 
@@ -88,14 +90,21 @@ def _filter_scheme_types_for_category(
     )
 
 
-def _filter_unlisted_schemes(results: PaginationResult) -> PaginationResult:
-    """Remove inactive and terminally retired schemes from catalog responses."""
+def _keep_listed_schemes(results: PaginationResult) -> PaginationResult:
+    """Remove terminally retired schemes from catalog responses."""
     return PaginationResult(
-        data=[item for item in results.data if item.get("status") not in {"inactive", "retired"}],
+        data=[item for item in results.data if item.get("status") != RETIRED_STATUS],
         next_cursor=results.next_cursor,
         has_more=results.has_more,
         total_count=results.total_count,
     )
+
+
+def _count_retired_schemes(collection_ref, base_query: Any = None) -> int | None:
+    """Count retired documents matching the unpaginated catalog query."""
+    source = base_query if base_query is not None else collection_ref
+    retired_query = source.where("status", "==", RETIRED_STATUS)
+    return _count_total(collection_ref, retired_query)
 
 
 def _get_listed_paginated_results(
@@ -105,11 +114,12 @@ def _get_listed_paginated_results(
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> PaginationResult:
-    """Fill a catalog page while skipping inactive and retired documents."""
+    """Fill a catalog page while skipping terminally retired documents."""
     data = []
     current_cursor = cursor
     seen_cursors = {cursor} if cursor else set()
     last_result = PaginationResult(data=[])
+    repeated_cursor = False
 
     while len(data) < limit:
         last_result = get_paginated_results(
@@ -118,19 +128,29 @@ def _get_listed_paginated_results(
             cursor=current_cursor,
             limit=limit - len(data),
         )
-        data.extend(_filter_unlisted_schemes(last_result).data)
+        data.extend(_keep_listed_schemes(last_result).data)
 
         next_cursor = last_result.next_cursor
-        if not last_result.has_more or not next_cursor or next_cursor in seen_cursors:
+        if not last_result.has_more or not next_cursor:
+            break
+        if next_cursor in seen_cursors:
+            repeated_cursor = True
             break
         seen_cursors.add(next_cursor)
         current_cursor = next_cursor
 
+    retired_count = _count_retired_schemes(collection_ref, base_query)
+    listed_total = (
+        last_result.total_count - retired_count
+        if last_result.total_count is not None and retired_count is not None
+        else None
+    )
+
     return PaginationResult(
         data=data[:limit],
-        next_cursor=last_result.next_cursor,
-        has_more=last_result.has_more,
-        total_count=last_result.total_count,
+        next_cursor=None if repeated_cursor else last_result.next_cursor,
+        has_more=False if repeated_cursor else last_result.has_more,
+        total_count=listed_total,
     )
 
 

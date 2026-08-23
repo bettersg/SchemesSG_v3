@@ -17,10 +17,12 @@ from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
 
+from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
+
 
 COLLECTION_SCHEMES = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"
-NON_SEARCHABLE_STATUSES = {"inactive", "retired"}
+MAX_STALE_DELETE_FRACTION = 0.2
 
 
 def build_desc_booster(row) -> str:
@@ -51,10 +53,25 @@ def build_desc_booster(row) -> str:
     return " ".join(components)
 
 
-def delete_stale_embeddings(db, active_scheme_ids: set[str]) -> int:
+def delete_stale_embeddings(
+    db,
+    active_scheme_ids: set[str],
+    max_delete_fraction: float | None = None,
+) -> int:
     """Delete embeddings whose source scheme is no longer searchable."""
     existing_ids = {doc.id for doc in db.collection(COLLECTION_EMBEDDINGS).stream()}
     stale_ids = sorted(existing_ids - active_scheme_ids)
+
+    if (
+        max_delete_fraction is not None
+        and existing_ids
+        and len(stale_ids) / len(existing_ids) > max_delete_fraction
+    ):
+        percentage = len(stale_ids) / len(existing_ids) * 100
+        raise RuntimeError(
+            f"Refusing to delete {len(stale_ids)}/{len(existing_ids)} embeddings "
+            f"({percentage:.1f}%); safety limit is {max_delete_fraction:.0%}"
+        )
 
     for start in range(0, len(stale_ids), 500):
         batch = db.batch()
@@ -123,9 +140,6 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
         if skipped_inactive or skipped_retired:
             logger.info(f"Filtered out {skipped_inactive} inactive and {skipped_retired} retired schemes")
 
-        active_scheme_ids = set(df["doc_id"].tolist()) if "doc_id" in df else set()
-        deleted_embeddings = delete_stale_embeddings(db, active_scheme_ids)
-
         if df.empty:
             return {
                 "success": True,
@@ -133,10 +147,17 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
                 "indexed_schemes": 0,
                 "skipped_inactive": skipped_inactive,
                 "skipped_retired": skipped_retired,
-                "deleted_embeddings": deleted_embeddings,
+                "deleted_embeddings": 0,
                 "duration_seconds": round(time.time() - start_time, 2),
                 "error": "No active schemes to index",
             }
+
+        active_scheme_ids = set(df["doc_id"].tolist())
+        deleted_embeddings = delete_stale_embeddings(
+            db,
+            active_scheme_ids,
+            max_delete_fraction=MAX_STALE_DELETE_FRACTION,
+        )
 
         # Build desc_booster field
         logger.info("Building desc_booster field...")

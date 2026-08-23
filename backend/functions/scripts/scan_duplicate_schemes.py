@@ -25,12 +25,14 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from firebase_admin import credentials, firestore, initialize_app
+from firebase_admin import credentials, firestore, get_app, initialize_app
+from loguru import logger
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from new_scheme.url_utils import normalize_url  # noqa: E402
+from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -88,7 +90,7 @@ def build_duplicate_report(
         return [
             {
                 key_name: key,
-                "active_candidates": sum(item["status"] not in {"inactive", "retired"} for item in items),
+                "active_candidates": sum(item["status"] not in NON_SEARCHABLE_STATUSES for item in items),
                 "schemes": sorted(items, key=lambda item: item["doc_id"]),
             }
             for key, items in sorted(groups.items())
@@ -119,11 +121,20 @@ def _load_firestore(use_prod: bool):
             "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
         }
     )
+    app_name = "production" if use_prod else "development"
     try:
-        initialize_app(credential)
+        app = get_app(app_name)
     except ValueError:
-        pass
-    return firestore.client()
+        app = initialize_app(credential, name=app_name)
+
+    expected_project_id = os.getenv("FB_PROJECT_ID")
+    if app.project_id != expected_project_id:
+        raise RuntimeError(
+            f"Firebase app {app_name!r} targets {app.project_id!r}, "
+            f"expected {expected_project_id!r}"
+        )
+    logger.info(f"Connected to Firebase project {app.project_id!r} using app {app.name!r}")
+    return firestore.client(app=app)
 
 
 def _write_markdown(path: Path, report: dict[str, Any]) -> None:
@@ -164,7 +175,7 @@ def main() -> None:
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     markdown_path = args.output.with_suffix(".md")
     _write_markdown(markdown_path, report)
-    print(f"Wrote {args.output} and {markdown_path}")
+    logger.info(f"Wrote {args.output} and {markdown_path}")
 
 
 if __name__ == "__main__":

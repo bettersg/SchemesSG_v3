@@ -17,6 +17,7 @@ from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from loguru import logger
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
+from utils.scheme_lifecycle import RETIRED_STATUS, retirement_validation_error
 
 from new_scheme.new_scheme_blocks import (
     build_new_scheme_approved_message,
@@ -291,26 +292,37 @@ def handle_scheme_retirement_approval(
     merged_into = entry_data.get("mergedInto")
     if not target_scheme_id or not reason:
         raise ValueError("Retirement entry is missing targetSchemeId or retiredReason")
-    if merged_into == target_scheme_id:
-        raise ValueError("A retired scheme cannot be merged into itself")
-
     target_ref = db.collection("schemes").document(target_scheme_id)
     target_snap = target_ref.get()
     if not target_snap.exists:
         raise ValueError(f"Target scheme {target_scheme_id!r} does not exist")
     target_data = target_snap.to_dict() or {}
 
-    if target_data.get("status") == "retired":
+    if target_data.get("status") == RETIRED_STATUS:
         if target_data.get("retirement_entry_id") == entry_doc_id:
             logger.info(f"Scheme {target_scheme_id} is already retired by this entry")
             return
         raise ValueError(f"Target scheme {target_scheme_id!r} is already retired")
 
+    validation_error = retirement_validation_error(target_scheme_id, merged_into)
+    if validation_error:
+        raise ValueError(validation_error)
+
+    merge_target_exists = True
+    merge_data = None
     if merged_into:
         merge_snap = db.collection("schemes").document(merged_into).get()
         merge_data = merge_snap.to_dict() if merge_snap.exists else {}
-        if not merge_snap.exists or merge_data.get("status") == "retired":
-            raise ValueError(f"Merge target {merged_into!r} must exist and must not be retired")
+        merge_target_exists = merge_snap.exists
+
+    validation_error = retirement_validation_error(
+        target_scheme_id,
+        merged_into,
+        merge_target_exists=merge_target_exists,
+        merge_target_data=merge_data,
+    )
+    if validation_error:
+        raise ValueError(validation_error)
 
     reviewer_email = None
     try:
@@ -325,7 +337,7 @@ def handle_scheme_retirement_approval(
     batch.update(
         target_ref,
         {
-            "status": "retired",
+            "status": RETIRED_STATUS,
             "retired_reason": reason,
             "merged_into": merged_into or firestore.DELETE_FIELD,
             "retired_at": SERVER_TIMESTAMP,

@@ -22,6 +22,7 @@ from firebase_admin import credentials, firestore, initialize_app
 from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
+from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
 
 def parse_args():
@@ -143,7 +144,7 @@ def populate_embeddings() -> Dict[str, Any]:
         # Missing status is legacy-active; inactive and retired are not searchable.
         initial_count = len(df)
         if "status" in df.columns:
-            df = df[~df["status"].isin({"inactive", "retired"})]
+            df = df[~df["status"].isin(NON_SEARCHABLE_STATUSES)]
         skipped = initial_count - len(df)
 
         logger.info(f"Found {len(df)} searchable schemes (skipped {skipped} inactive or retired)")

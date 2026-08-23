@@ -17,6 +17,7 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.scheme_lifecycle import retirement_validation_error
 
 
 # Firestore client
@@ -153,34 +154,35 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
                     headers=headers,
                 )
 
-            if mergedInto == targetSchemeId:
+            validation_error = retirement_validation_error(targetSchemeId, mergedInto)
+            if validation_error:
                 return https_fn.Response(
-                    response=json.dumps(
-                        {
-                            "success": False,
-                            "message": "A retired scheme cannot be merged into itself",
-                        }
-                    ),
+                    response=json.dumps({"success": False, "message": validation_error}),
                     status=400,
                     mimetype="application/json",
                     headers=headers,
                 )
 
+            merge_target_exists = True
+            merge_data = None
             if mergedInto:
                 merge_snap = firebase_manager.firestore_client.collection("schemes").document(mergedInto).get()
                 merge_data = merge_snap.to_dict() if merge_snap.exists else {}
-                if not merge_snap.exists or merge_data.get("status") == "retired":
-                    return https_fn.Response(
-                        response=json.dumps(
-                            {
-                                "success": False,
-                                "message": f"Merge target '{mergedInto}' must be an existing, non-retired scheme",
-                            }
-                        ),
-                        status=400,
-                        mimetype="application/json",
-                        headers=headers,
-                    )
+                merge_target_exists = merge_snap.exists
+
+            validation_error = retirement_validation_error(
+                targetSchemeId,
+                mergedInto,
+                merge_target_exists=merge_target_exists,
+                merge_target_data=merge_data,
+            )
+            if validation_error:
+                return https_fn.Response(
+                    response=json.dumps({"success": False, "message": validation_error}),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
 
         # Prepare the data for Firestore
         update_scheme_data = {

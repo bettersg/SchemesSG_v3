@@ -20,9 +20,9 @@ from google.oauth2 import service_account
 from loguru import logger
 from slack_sdk.web import WebClient
 from utils.json_utils import safe_json_dumps
+from utils.scheme_lifecycle import retirement_validation_error
 
-from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message
-from new_scheme.new_scheme_blocks import build_scheme_retirement_review_message
+from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message, build_scheme_retirement_review_message
 from new_scheme.url_utils import check_duplicate_scheme
 
 
@@ -84,22 +84,30 @@ def process_scheme_retirement_entry(doc_id: str, data: dict) -> None:
             raise ValueError("Retirement request requires targetSchemeId")
         if not isinstance(reason, str) or not reason.strip():
             raise ValueError("Retirement request requires retiredReason")
-        if merged_into == target_scheme_id:
-            raise ValueError("A retired scheme cannot be merged into itself")
-
         target_snap = db.collection("schemes").document(target_scheme_id).get()
         if not target_snap.exists:
             raise ValueError(f"Target scheme {target_scheme_id!r} does not exist")
         target_data = target_snap.to_dict() or {}
 
+        validation_error = retirement_validation_error(target_scheme_id, merged_into)
+        if validation_error:
+            raise ValueError(validation_error)
+
         merge_target_data = None
+        merge_target_exists = True
         if merged_into:
             merge_snap = db.collection("schemes").document(merged_into).get()
-            if not merge_snap.exists:
-                raise ValueError(f"Merge target {merged_into!r} does not exist")
-            merge_target_data = merge_snap.to_dict() or {}
-            if merge_target_data.get("status") == "retired":
-                raise ValueError(f"Merge target {merged_into!r} is retired")
+            merge_target_data = merge_snap.to_dict() if merge_snap.exists else {}
+            merge_target_exists = merge_snap.exists
+
+        validation_error = retirement_validation_error(
+            target_scheme_id,
+            merged_into,
+            merge_target_exists=merge_target_exists,
+            merge_target_data=merge_target_data,
+        )
+        if validation_error:
+            raise ValueError(validation_error)
 
         entry_ref.update(
             {

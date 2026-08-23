@@ -7,12 +7,13 @@ import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
-from langchain_core.documents import Document
 from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
 from pydantic import BaseModel
 from utils.pagination import decode_cursor, get_paginated_results
+from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -54,9 +55,6 @@ class SearchModel:
     firebase_manager = None
 
     initialised = False
-
-    # Add a cache to store query results
-    query_cache = {}
 
     @classmethod
     def initialise(cls):
@@ -102,7 +100,7 @@ class SearchModel:
             docs = self.__class__.db.collection("schemes").where("__name__", "in", batch).get()
             for doc in docs:
                 scheme_data = doc.to_dict()
-                if scheme_data.get("status") in {"inactive", "retired"}:
+                if scheme_data.get("status") in NON_SEARCHABLE_STATUSES:
                     continue
                 scheme_data["scheme_id"] = doc.id
                 # Remove 'scraped_text' field if present
@@ -240,11 +238,10 @@ class SearchModel:
         self, query_text: str, top_k: int, similarity_threshold: Optional[int]
     ) -> pd.DataFrame:
         """
-        Perform hybrid vector + BM25 retrieval with caching.
+        Perform hybrid vector + BM25 retrieval.
 
         This method combines vector similarity search and BM25 text ranking to produce
-        a ranked list of schemes. Results are cached by query and top_k to avoid
-        redundant computation.
+        a ranked list of schemes.
 
         Args:
             query_text (str): The user's search query.
@@ -260,11 +257,6 @@ class SearchModel:
             - The `similarity_threshold` parameter is accepted but not yet implemented.
             - Results are not cached so lifecycle changes are immediately visible.
         """
-        cache_key = (query_text, top_k)
-        if cache_key in self.query_cache:
-            logger.debug("Cache hit for query '%s'", query_text)
-            return self.query_cache[cache_key]
-
         results = self.search(query_text, top_k)
 
         # Handle empty results - skip ranking if no vector results

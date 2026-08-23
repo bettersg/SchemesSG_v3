@@ -175,6 +175,7 @@ tags
 backend/prod_schemes_data.json
 backend/dev_schemes_data.json
 backend/firestore-backup/
+backend/functions/reports/
 
 # Google Sheets credentials
 **/google_sheets_credentials.json

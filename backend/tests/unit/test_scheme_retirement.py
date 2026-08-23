@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 
 from new_scheme.new_scheme_blocks import build_scheme_retirement_review_message
-from schemes.catalog import _filter_unlisted_schemes, _get_listed_paginated_results
+from schemes.catalog import _get_listed_paginated_results, _keep_listed_schemes
 from scripts.scan_duplicate_schemes import build_duplicate_report, normalize_name
 from utils.catalog_pagination import PaginationResult
 from utils.reindex_embeddings import delete_stale_embeddings
@@ -140,8 +140,8 @@ def test_retirement_approval_updates_audit_and_deletes_embedding(mocker):
     batch.commit.assert_called_once()
 
 
-def test_catalog_filters_inactive_and_retired_schemes():
-    result = _filter_unlisted_schemes(
+def test_catalog_filters_retired_schemes():
+    result = _keep_listed_schemes(
         PaginationResult(
             data=[
                 {"scheme_id": "legacy"},
@@ -151,7 +151,7 @@ def test_catalog_filters_inactive_and_retired_schemes():
             ]
         )
     )
-    assert [item["scheme_id"] for item in result.data] == ["legacy", "active"]
+    assert [item["scheme_id"] for item in result.data] == ["legacy", "active", "inactive"]
 
 
 def test_delete_stale_embeddings_removes_non_searchable_ids():

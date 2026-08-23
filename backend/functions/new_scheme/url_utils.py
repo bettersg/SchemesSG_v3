@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 from firebase_admin import firestore
 from loguru import logger
+from utils.scheme_lifecycle import RETIRED_STATUS
 
 
 def normalize_url(url: str) -> str:
@@ -134,6 +135,12 @@ def check_duplicate_scheme(
         existing_normalized = normalize_url(existing_link)
 
         if existing_normalized == submitted_normalized:
+            if data.get("status") == RETIRED_STATUS:
+                logger.info(
+                    f"Ignoring URL collision with retired scheme {doc.id}: "
+                    f"{existing_link} (normalized: {existing_normalized})"
+                )
+                continue
             logger.info(f"Found duplicate: {existing_link} (normalized: {existing_normalized})")
             # Try different field names for scheme name
             scheme_name = (

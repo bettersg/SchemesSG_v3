@@ -2,12 +2,15 @@ import os
 from typing import Dict, List, Optional
 
 import pandas as pd
+from dotenv import find_dotenv, load_dotenv
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
+from integrations import EmbeddingsManager, FirebaseManager
 from loguru import logger
-from integrations import FirebaseManager, EmbeddingsManager
-from .scorers import rank_results, compute_vec_scores
-from dotenv import load_dotenv, find_dotenv
+from utils.scheme_lifecycle import RETIRED_STATUS
+
+from .scorers import compute_vec_scores, rank_results
+
 
 load_dotenv(find_dotenv())
 
@@ -54,7 +57,7 @@ def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str
             continue
 
         scheme_data = doc.to_dict()
-        if scheme_data.get("status") in {"inactive", "retired"}:
+        if scheme_data.get("status") == RETIRED_STATUS:
             continue
         scheme_data["scheme_id"] = doc.id
         scheme_data.pop("scraped_text", None)
@@ -78,9 +81,6 @@ class SearchModel:
     firebase_manager = None
 
     initialised = False
-
-    # Add a cache to store query results
-    query_cache = {}
 
     @classmethod
     def initialise(cls):
@@ -207,22 +207,16 @@ class SearchModel:
 
         cap = SAFETY_CEILING if requested_target is None else min(requested_target, SAFETY_CEILING)
 
-        cache_key = (query_text, threshold)
-        if cache_key in self.query_cache:
-            logger.debug("Cache hit for query '%s'", query_text)
-            ranked = self.query_cache[cache_key]
-        else:
-            # Retrieve the full candidate pool, independent of how many we return.
-            results = self.search(query_text)
+        # Retrieve the full candidate pool, independent of how many we return.
+        # Lifecycle changes must be visible immediately, so ranked metadata is not cached.
+        results = self.search(query_text)
 
-            # Handle empty results - skip ranking if no vector results
-            if results.empty:
-                logger.warning(f"No search results to rank for query: {query_text}")
-                self.query_cache[cache_key] = results
-                return results
+        # Handle empty results - skip ranking if no vector results
+        if results.empty:
+            logger.warning(f"No search results to rank for query: {query_text}")
+            return results
 
-            ranked = self.rank(query_text, results).drop_duplicates("scheme_id")
-            self.query_cache[cache_key] = ranked
+        ranked = self.rank(query_text, results).drop_duplicates("scheme_id")
 
         relevant = ranked[ranked["combined_scores"] >= threshold]
         return relevant.head(cap)
