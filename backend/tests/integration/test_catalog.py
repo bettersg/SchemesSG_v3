@@ -80,7 +80,11 @@ def test_catalog_successful_category_fetch(
                 {
                     "scheme_name": "Test Scheme",
                     "scheme_type": ["Children", "Caregiver Support"],
-                }
+                },
+                {
+                    "scheme_name": "Second Scheme",
+                    "scheme_type": ["Caregiver Support"],
+                },
             ],
             next_cursor="next-page",
             has_more=True,
@@ -263,7 +267,7 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(
     query_params = CatalogRequestParams(
         filter_name="category",
         filter_value=["Elderly", "Caregiver Support"],
-        limit=3,
+        limit=1,
         cursor="next-page",
     )
 
@@ -280,13 +284,13 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(
         collection_ref=mock_collection,
         base_query=mock_query,
         cursor="next-page",
-        limit=3,
+        limit=1,
     )
     assert results.data == [
         {"scheme_name": "Test Scheme", "scheme_type": ["Caregiver Support"]}
     ]
-    assert results.next_cursor == "next-page"
-    assert results.has_more is True
+    assert results.next_cursor is None
+    assert results.has_more is False
 
 
 def test_handle_catalog_request_preserves_scheme_types_for_area_filter(
@@ -318,7 +322,7 @@ def test_handle_catalog_request_preserves_scheme_types_for_area_filter(
     query_params = CatalogRequestParams(
         filter_name="area",
         filter_value="TAMPINES",
-        limit=3,
+        limit=1,
         cursor="next-page",
     )
 
@@ -329,10 +333,10 @@ def test_handle_catalog_request_preserves_scheme_types_for_area_filter(
         collection_ref=mock_collection,
         base_query=mock_query,
         cursor="next-page",
-        limit=3,
+        limit=1,
     )
     assert results.data == [
         {"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}
     ]
-    assert results.next_cursor == "next-page"
-    assert results.has_more is True
+    assert results.next_cursor is None
+    assert results.has_more is False

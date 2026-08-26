@@ -23,7 +23,7 @@ The following endpoints are available:
      (scraping, LLM extraction, planning area), then posts to Slack for human review
 
 5. Batch Jobs:
-   - scheduled_link_check_and_reindex: Monthly scheduled job to check all scheme links,
+   - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
 
 6. System:

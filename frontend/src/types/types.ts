@@ -105,6 +105,8 @@ export interface Scheme {
   application?: ApplicationType;
   additionalInfo?: AdditionalInfoType;
   serviceArea: string;
+  status?: "active" | "inactive" | "retired";
+  mergedInto?: string;
 }
 
 export type BranchContact = {
@@ -144,4 +146,6 @@ export interface RawScheme {
   last_llm_processed_update?: FirestoreTimestamp;
   link_check_status_code?: number;
   scheme_id?: string;
+  status?: "active" | "inactive" | "retired";
+  merged_into?: string;
 }

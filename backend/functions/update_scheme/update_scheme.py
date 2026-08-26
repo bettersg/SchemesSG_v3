@@ -17,6 +17,7 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
+from utils.scheme_lifecycle import retirement_validation_error
 
 
 # Firestore client
@@ -81,6 +82,8 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         typeOfRequest = request_json.get("typeOfRequest")
         targetSchemeId = request_json.get("targetSchemeId")
         oldLink = request_json.get("oldLink")
+        retiredReason = request_json.get("retiredReason")
+        mergedInto = request_json.get("mergedInto")
         is_warmup = request_json.get("is_warmup", False)
         timestamp = datetime.now(timezone.utc)
 
@@ -95,12 +98,12 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
 
         type_lower = (typeOfRequest or "").lower()
 
-        if type_lower == "update":
+        if type_lower in ("update", "retire"):
             if not targetSchemeId or not isinstance(targetSchemeId, str):
                 return https_fn.Response(
                     response=json.dumps({
                         "success": False,
-                        "message": "targetSchemeId (string) is required when typeOfRequest is 'update'",
+                        "message": f"targetSchemeId (string) is required when typeOfRequest is '{type_lower}'",
                     }),
                     status=400,
                     mimetype="application/json",
@@ -124,6 +127,63 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
                     headers=headers,
                 )
 
+        if type_lower == "retire":
+            if not isinstance(retiredReason, str) or not retiredReason.strip():
+                return https_fn.Response(
+                    response=json.dumps(
+                        {
+                            "success": False,
+                            "message": "retiredReason is required when typeOfRequest is 'retire'",
+                        }
+                    ),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
+            if mergedInto is not None and (not isinstance(mergedInto, str) or not mergedInto.strip()):
+                return https_fn.Response(
+                    response=json.dumps(
+                        {
+                            "success": False,
+                            "message": "mergedInto must be a non-empty string when provided",
+                        }
+                    ),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
+            validation_error = retirement_validation_error(targetSchemeId, mergedInto)
+            if validation_error:
+                return https_fn.Response(
+                    response=json.dumps({"success": False, "message": validation_error}),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
+            merge_target_exists = True
+            merge_data = None
+            if mergedInto:
+                merge_snap = firebase_manager.firestore_client.collection("schemes").document(mergedInto).get()
+                merge_data = merge_snap.to_dict() if merge_snap.exists else {}
+                merge_target_exists = merge_snap.exists
+
+            validation_error = retirement_validation_error(
+                targetSchemeId,
+                mergedInto,
+                merge_target_exists=merge_target_exists,
+                merge_target_data=merge_data,
+            )
+            if validation_error:
+                return https_fn.Response(
+                    response=json.dumps({"success": False, "message": validation_error}),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+
         # Prepare the data for Firestore
         update_scheme_data = {
             "Changes": changes,
@@ -134,6 +194,8 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             "entryId": entryId,
             "targetSchemeId": targetSchemeId,
             "oldLink": oldLink,
+            "retiredReason": retiredReason.strip() if isinstance(retiredReason, str) else None,
+            "mergedInto": mergedInto.strip() if isinstance(mergedInto, str) else None,
             "timestamp": timestamp,
             "userName": userName,
             "userEmail": userEmail,
@@ -147,7 +209,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
 
         # In local dev mode (without Firestore emulator), triggers don't fire
         # So we call the pipeline in a background thread for new scheme submissions
-        if is_local_dev() and type_lower in ("new", "update"):
+        if is_local_dev() and type_lower in ("new", "update", "retire"):
             logger.info(f"Local dev mode: calling pipeline in background for {doc_id}")
 
             def run_pipeline():

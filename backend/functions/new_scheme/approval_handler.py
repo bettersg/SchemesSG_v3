@@ -17,10 +17,13 @@ from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from loguru import logger
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
+from utils.scheme_lifecycle import RETIRED_STATUS, retirement_validation_error
 
 from new_scheme.new_scheme_blocks import (
     build_new_scheme_approved_message,
     build_new_scheme_rejected_message,
+    build_scheme_retirement_approved_message,
+    build_scheme_retirement_rejected_message,
     build_scheme_update_approved_message,
     build_scheme_update_rejected_message,
 )
@@ -261,6 +264,127 @@ def handle_new_scheme_approval(
         return {"response_action": "errors", "errors": {"scheme_name_block": f"Error saving scheme: {str(e)}"}}
 
 
+def handle_scheme_retirement_approval(
+    slack_client: WebClient,
+    entry_doc_id: str,
+    channel_id: Optional[str],
+    message_ts: Optional[str],
+    reviewer_id: str,
+) -> None:
+    """Approve a terminal retirement and remove its search embedding atomically."""
+    logger.info(f"Processing retirement approval for entry {entry_doc_id}")
+
+    db = firestore.client()
+    entry_ref = db.collection("schemeEntries").document(entry_doc_id)
+    entry_snap = entry_ref.get()
+    if not entry_snap.exists:
+        raise ValueError(f"Retirement entry {entry_doc_id!r} does not exist")
+
+    entry_data = entry_snap.to_dict() or {}
+    if entry_data.get("Status") == "approved":
+        logger.info(f"Retirement entry {entry_doc_id} is already approved")
+        return
+    if (entry_data.get("typeOfRequest") or "").lower() != "retire":
+        raise ValueError(f"Entry {entry_doc_id!r} is not a retirement request")
+
+    target_scheme_id = entry_data.get("targetSchemeId")
+    reason = entry_data.get("retiredReason")
+    merged_into = entry_data.get("mergedInto")
+    if not target_scheme_id or not reason:
+        raise ValueError("Retirement entry is missing targetSchemeId or retiredReason")
+    target_ref = db.collection("schemes").document(target_scheme_id)
+    target_snap = target_ref.get()
+    if not target_snap.exists:
+        raise ValueError(f"Target scheme {target_scheme_id!r} does not exist")
+    target_data = target_snap.to_dict() or {}
+
+    if target_data.get("status") == RETIRED_STATUS:
+        if target_data.get("retirement_entry_id") == entry_doc_id:
+            logger.info(f"Scheme {target_scheme_id} is already retired by this entry")
+            return
+        raise ValueError(f"Target scheme {target_scheme_id!r} is already retired")
+
+    validation_error = retirement_validation_error(target_scheme_id, merged_into)
+    if validation_error:
+        raise ValueError(validation_error)
+
+    merge_target_exists = True
+    merge_data = None
+    if merged_into:
+        merge_snap = db.collection("schemes").document(merged_into).get()
+        merge_data = merge_snap.to_dict() if merge_snap.exists else {}
+        merge_target_exists = merge_snap.exists
+
+    validation_error = retirement_validation_error(
+        target_scheme_id,
+        merged_into,
+        merge_target_exists=merge_target_exists,
+        merge_target_data=merge_data,
+    )
+    if validation_error:
+        raise ValueError(validation_error)
+
+    reviewer_email = None
+    try:
+        user_info = slack_client.users_info(user=reviewer_id)
+        if user_info.get("ok"):
+            reviewer_email = user_info.get("user", {}).get("profile", {}).get("email")
+    except Exception as e:
+        logger.warning(f"Could not get reviewer email from Slack: {e}")
+
+    reviewer = reviewer_email or reviewer_id
+    batch = db.batch()
+    batch.update(
+        target_ref,
+        {
+            "status": RETIRED_STATUS,
+            "retired_reason": reason,
+            "merged_into": merged_into or firestore.DELETE_FIELD,
+            "retired_at": SERVER_TIMESTAMP,
+            "retired_by": reviewer,
+            "retirement_entry_id": entry_doc_id,
+            "status_updated_at": SERVER_TIMESTAMP,
+        },
+    )
+    batch.update(
+        entry_ref,
+        {
+            "Status": "approved",
+            "pipeline_status": "approved",
+            "approved_by": reviewer,
+            "approved_at": SERVER_TIMESTAMP,
+            "approved_scheme_id": target_scheme_id,
+            "reviewed_data": {
+                "targetSchemeId": target_scheme_id,
+                "retiredReason": reason,
+                "mergedInto": merged_into,
+            },
+        },
+    )
+    embedding_ref = db.collection("schemes_embeddings").document(target_scheme_id)
+    batch.delete(embedding_ref)
+    batch.commit()
+
+    scheme_name = target_data.get("scheme", entry_data.get("Scheme", "Unknown"))
+    reviewed_at = datetime.now(timezone.utc).isoformat()
+    if channel_id and message_ts:
+        message = build_scheme_retirement_approved_message(
+            entry_doc_id,
+            scheme_name,
+            target_scheme_id,
+            merged_into,
+            reviewer_id,
+            reviewed_at,
+        )
+        slack_client.chat_update(channel=channel_id, ts=message_ts, **message)
+
+    if channel_id:
+        slack_client.chat_postMessage(
+            channel=channel_id,
+            text=(f"Thank you <@{reviewer_id}>! Scheme *{scheme_name}* (ID: `{target_scheme_id}`) has been retired."),
+        )
+
+
 def handle_new_scheme_rejection(
     slack_client: WebClient,
     entry_doc_id: str,
@@ -299,6 +423,7 @@ def handle_new_scheme_rejection(
             entry_ref.update(
                 {
                     "Status": "rejected",
+                    "pipeline_status": "rejected",
                     "rejected_by": reviewer_id,
                     "rejected_at": SERVER_TIMESTAMP,
                     "rejection_reason": reason,
@@ -308,11 +433,20 @@ def handle_new_scheme_rejection(
         type_of_request = (entry_data.get("typeOfRequest") or "").lower()
         target_scheme_id = entry_data.get("targetSchemeId")
         is_update = type_of_request == "update" and bool(target_scheme_id)
+        is_retire = type_of_request == "retire" and bool(target_scheme_id)
 
         # Update original Slack message
         if channel_id and message_ts:
             try:
-                if is_update:
+                if is_retire:
+                    rejected_message = build_scheme_retirement_rejected_message(
+                        doc_id=entry_doc_id,
+                        scheme_name=scheme_name,
+                        target_scheme_id=target_scheme_id,
+                        reviewer_id=reviewer_id,
+                        reason=reason,
+                    )
+                elif is_update:
                     rejected_message = build_scheme_update_rejected_message(
                         doc_id=entry_doc_id,
                         scheme_name=scheme_name,

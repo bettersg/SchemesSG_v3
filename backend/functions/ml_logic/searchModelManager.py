@@ -7,12 +7,13 @@ import pandas as pd
 from fb_manager.firebaseManager import FirebaseManager
 from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
-from langchain_core.documents import Document
 from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
 from pydantic import BaseModel
 from utils.pagination import decode_cursor, get_paginated_results
+from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -55,9 +56,6 @@ class SearchModel:
 
     initialised = False
 
-    # Add a cache to store query results
-    query_cache = {}
-
     @classmethod
     def initialise(cls):
         """Initialises the class by loading data from firestore, and loading pretrained models to Transformers"""
@@ -91,13 +89,6 @@ class SearchModel:
         """
 
         """"""
-        # Create a cache key based on the scheme IDs
-        scheme_cache_key = tuple(scheme_ids)
-
-        # Check if the results are already in the cache
-        if scheme_cache_key in self.query_cache:
-            logger.info("Returning cached scheme details.")
-            return self.query_cache[scheme_cache_key]
 
         # Helper to chunk scheme_ids into batches of 30
         def chunk_list(lst, n):
@@ -109,14 +100,13 @@ class SearchModel:
             docs = self.__class__.db.collection("schemes").where("__name__", "in", batch).get()
             for doc in docs:
                 scheme_data = doc.to_dict()
+                if scheme_data.get("status") in NON_SEARCHABLE_STATUSES:
+                    continue
                 scheme_data["scheme_id"] = doc.id
                 # Remove 'scraped_text' field if present
                 if "scraped_text" in scheme_data:
                     del scheme_data["scraped_text"]
                 scheme_details.append(scheme_data)
-
-        # Store the results in the cache
-        self.query_cache[scheme_cache_key] = scheme_details
 
         return scheme_details
 
@@ -248,11 +238,10 @@ class SearchModel:
         self, query_text: str, top_k: int, similarity_threshold: Optional[int]
     ) -> pd.DataFrame:
         """
-        Perform hybrid vector + BM25 retrieval with caching.
+        Perform hybrid vector + BM25 retrieval.
 
         This method combines vector similarity search and BM25 text ranking to produce
-        a ranked list of schemes. Results are cached by query and top_k to avoid
-        redundant computation.
+        a ranked list of schemes.
 
         Args:
             query_text (str): The user's search query.
@@ -266,24 +255,17 @@ class SearchModel:
 
         Notes:
             - The `similarity_threshold` parameter is accepted but not yet implemented.
-            - Caching is keyed by `(query_text, top_k)` tuple.
+            - Results are not cached so lifecycle changes are immediately visible.
         """
-        cache_key = (query_text, top_k)
-        if cache_key in self.query_cache:
-            logger.debug("Cache hit for query '%s'", query_text)
-            return self.query_cache[cache_key]
-
         results = self.search(query_text, top_k)
 
         # Handle empty results - skip ranking if no vector results
         if results.empty:
             logger.warning(f"No search results to rank for query: {query_text}")
-            self.query_cache[cache_key] = results
             return results
 
         results = self.rank(query_text, results).drop_duplicates("scheme_id")
 
-        self.query_cache[cache_key] = results
         return results.head(top_k)
 
     def _sanitize_for_firestore(self, data):

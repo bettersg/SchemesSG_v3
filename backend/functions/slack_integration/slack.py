@@ -19,10 +19,14 @@ from new_scheme.approval_handler import (
     get_processed_data_from_entry,
     handle_new_scheme_approval,
     handle_new_scheme_rejection,
+    handle_scheme_retirement_approval,
 )
 
 # New scheme approval imports
-from new_scheme.new_scheme_blocks import build_new_scheme_review_modal
+from new_scheme.new_scheme_blocks import (
+    build_new_scheme_review_modal,
+    build_scheme_retirement_rejection_modal,
+)
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
 
@@ -359,6 +363,52 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     headers=headers,
                 )
 
+            # Handle terminal scheme retirement actions.
+            if action.get("action_id") in (
+                "approve_scheme_retirement",
+                "reject_scheme_retirement",
+            ):
+                entry_doc_id = action.get("value")
+                reviewer_id = event.get("user", {}).get("id", "")
+                container = event.get("container", {})
+                channel_id = container.get("channel_id")
+                message_ts = container.get("message_ts")
+
+                if action.get("action_id") == "approve_scheme_retirement":
+                    try:
+                        handle_scheme_retirement_approval(
+                            slack_client=slack_client,
+                            entry_doc_id=entry_doc_id,
+                            channel_id=channel_id,
+                            message_ts=message_ts,
+                            reviewer_id=reviewer_id,
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to approve retirement {entry_doc_id}: {e}")
+                        if channel_id:
+                            slack_client.chat_postMessage(
+                                channel=channel_id,
+                                text=f":warning: Could not retire scheme: {e}",
+                            )
+                else:
+                    rejection_metadata = json.dumps(
+                        {
+                            "doc_id": entry_doc_id,
+                            "channel": channel_id,
+                            "message_ts": message_ts,
+                        }
+                    )
+                    slack_client.views_open(
+                        trigger_id=event.get("trigger_id"),
+                        view=build_scheme_retirement_rejection_modal(rejection_metadata),
+                    )
+
+                return https_fn.Response(
+                    response="",
+                    status=200,
+                    headers=headers,
+                )
+
             # Handle new scheme review button
             if action.get("action_id") == "review_new_scheme":
                 import time
@@ -577,6 +627,44 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                 metadata = json.loads(metadata_raw)
             except json.JSONDecodeError:
                 metadata = {"doc_id": metadata_raw}
+
+            if callback_id == "scheme_retirement_rejection_submit":
+                state = view.get("state", {}).get("values", {})
+                reason = (
+                    state.get("retirement_rejection_reason_block", {})
+                    .get("retirement_rejection_reason", {})
+                    .get("value", "")
+                    .strip()
+                )
+                if not reason:
+                    return https_fn.Response(
+                        response=json.dumps(
+                            {
+                                "response_action": "errors",
+                                "errors": {
+                                    "retirement_rejection_reason_block": "A rejection reason is required"
+                                },
+                            }
+                        ),
+                        status=200,
+                        mimetype="application/json",
+                        headers=headers,
+                    )
+
+                handle_new_scheme_rejection(
+                    slack_client=slack_client,
+                    entry_doc_id=metadata.get("doc_id", ""),
+                    channel_id=metadata.get("channel"),
+                    message_ts=metadata.get("message_ts"),
+                    reviewer_id=event.get("user", {}).get("id", ""),
+                    reason=reason,
+                )
+                return https_fn.Response(
+                    response=json.dumps({"response_action": "clear"}),
+                    status=200,
+                    mimetype="application/json",
+                    headers=headers,
+                )
 
             # Handle new scheme approval submission
             if callback_id == "new_scheme_approval_submit":
