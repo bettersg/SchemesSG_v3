@@ -160,6 +160,14 @@ uv run python scripts/normalize_and_export_to_sheets.py
 
 ## Complete Workflows
 
+### Search and agent quality benchmarks
+
+Benchmark scripts live in `backend/scripts/`. Run instructions and metric
+definitions are in `BENCHMARK_README.md`.
+
+Raw JSON/CSV artifacts are written to `backend/scripts/benchmark_out/` and are
+gitignored. Only the reviewed `SEARCH_BENCHMARK_BRIEF.md` summary is committed.
+
 ### Initial Environment Setup
 
 ```bash
