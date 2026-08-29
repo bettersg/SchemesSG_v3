@@ -226,7 +226,7 @@ class SearchModel:
 
         bm25_results = [
             (doc.metadata["id"], 1.0 - (i / retriever.k))
-            for i, doc in enumerate(retriever.get_relevant_documents(query_text))
+            for i, doc in enumerate(retriever.invoke(query_text))
         ]
         bm25_df = pd.DataFrame(bm25_results, columns=["scheme_id", "bm25_score"])
 
