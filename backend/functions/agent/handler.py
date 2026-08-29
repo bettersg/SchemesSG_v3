@@ -23,8 +23,7 @@ logger = setup_logging()
 
 
 def stream_chat_events_sync(input_text: str, session_id: str):
-    for event in stream_chat_events(input_text=input_text, session_id=session_id):
-        yield event
+    yield from stream_chat_events(input_text=input_text, session_id=session_id)
 
 
 @https_fn.on_request(
@@ -95,20 +94,26 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
 
             def generate():
                 yield f"data: {safe_json_dumps({'type': AgentStreamEventType.STATUS, 'data': {'phase': StatusPhase.SESSION_STARTED, 'sessionID': session_id, 'label': 'Session started'}})}\n\n"
-                for event in stream_chat_events_sync(input_text=input_text, session_id=session_id):
-                    event_type = event.get("type", "")
-                    event_data = event.get("data", {})
-                    if not isinstance(event_data, dict):
-                        event_data = {}
+                events = stream_chat_events_sync(input_text=input_text, session_id=session_id)
+                try:
+                    for event in events:
+                        event_type = event.get("type", "")
+                        event_data = event.get("data", {})
+                        if not isinstance(event_data, dict):
+                            event_data = {}
 
-                    if event_type == AgentStreamEventType.TEXT:
-                        text_value = str(event_data.get("text", "") or "")
-                        if text_value:
-                            yield f"data: {safe_json_dumps({'type': AgentStreamEventType.TEXT, 'data': {'text': text_value}})}\n\n"
-                        continue
+                        if event_type == AgentStreamEventType.TEXT:
+                            text_value = str(event_data.get("text", "") or "")
+                            if text_value:
+                                yield f"data: {safe_json_dumps({'type': AgentStreamEventType.TEXT, 'data': {'text': text_value}})}\n\n"
+                            continue
 
-                    # Forward non-text events with explicit type/data for frontend handling.
-                    yield f"data: {safe_json_dumps({'type': event_type, 'data': event_data})}\n\n"
+                        # Forward non-text events with explicit type/data for frontend handling.
+                        yield f"data: {safe_json_dumps({'type': event_type, 'data': event_data})}\n\n"
+                finally:
+                    close = getattr(events, "close", None)
+                    if close is not None:
+                        close()
 
             stream_headers = {
                 **headers,

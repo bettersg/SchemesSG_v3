@@ -82,15 +82,23 @@ def schemes_search(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
-    params = PaginatedSearchParams(
-        query=query,
-        limit=int(limit),
-        cursor=cursor,
-        similarity_threshold=int(similarity_threshold),
-        is_warmup=is_warmup,
-        top_k=int(top_k),
-        filters=filters,
-    )
+    try:
+        params = PaginatedSearchParams(
+            query=query,
+            limit=int(limit),
+            cursor=cursor,
+            similarity_threshold=int(similarity_threshold),
+            is_warmup=is_warmup,
+            top_k=int(top_k),
+            filters=filters,
+        )
+    except (TypeError, ValueError):
+        return https_fn.Response(
+            response=safe_json_dumps({"error": "Invalid request body"}),
+            status=400,
+            mimetype="application/json",
+            headers=headers,
+        )
 
     try:
         results = search_model.predict_paginated(params)
