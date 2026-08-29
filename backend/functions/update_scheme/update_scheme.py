@@ -131,6 +131,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
                 )
 
         if type_lower == "retire":
+            assert firebase_manager is not None
             if not isinstance(retiredReason, str) or not retiredReason.strip():
                 return https_fn.Response(
                     response=json.dumps(

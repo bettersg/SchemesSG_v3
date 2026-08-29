@@ -55,7 +55,7 @@ and no secret environment values. Wall time is from `/usr/bin/time -p`.
 | --- | ---: | ---: | ---: |
 | `uv run --frozen pytest -m unit --no-cov -q` | 102 passed | 2.42s | 3.47s |
 | `uv run --frozen pytest -m "integration and not smoke" --no-cov -q` | 79 passed | 2.42s | 3.46s |
-| `uv run --frozen pytest` | 181 passed, 49% statement coverage | 4.34s | 5.27s |
+| `uv run --frozen pytest` | 181 passed, 49% statement coverage | 4.20s | 5.20s |
 
-The full baseline covers 4,113 statements with 2,105 missed. This is the
+The full baseline covers 4,114 statements with 2,105 missed. This is the
 starting point for later coverage-expansion tickets, not a target reduction.
