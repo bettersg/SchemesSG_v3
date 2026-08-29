@@ -8,7 +8,7 @@ from update_scheme.update_scheme import update_scheme
 def test_update_scheme_warmup_request(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint with warmup request."""
     mock_manager = mocker.MagicMock()
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Changes": "Test changes",
@@ -38,7 +38,7 @@ def test_update_scheme_warmup_request(mock_request, mock_https_response, mock_au
 def test_update_scheme_invalid_method(mock_request, mock_https_response, mock_auth, mocker):
     """Test update scheme endpoint with invalid HTTP method."""
     mock_manager = mocker.MagicMock()
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request = mock_request(method="GET")
 
@@ -56,7 +56,7 @@ def test_update_scheme_successful_new_request(mock_request, mock_https_response,
     mock_doc_ref = mocker.MagicMock()
     mock_doc_ref.id = "test-doc-id"
     mock_manager.firestore_client.collection().add.return_value = (mocker.MagicMock(), mock_doc_ref)
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Changes": "New scheme details",
@@ -91,7 +91,7 @@ def test_update_scheme_successful_edit_request(mock_request, mock_https_response
     mock_doc_ref = mocker.MagicMock()
     mock_doc_ref.id = "test-doc-id"
     mock_manager.firestore_client.collection().add.return_value = (mocker.MagicMock(), mock_doc_ref)
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Changes": "Updated eligibility criteria",
@@ -126,7 +126,7 @@ def test_update_scheme_missing_required_fields(mock_request, mock_https_response
     mock_doc_ref = mocker.MagicMock()
     mock_doc_ref.id = "test-doc-id"
     mock_manager.firestore_client.collection().add.return_value = (mocker.MagicMock(), mock_doc_ref)
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     # Missing several required fields
     request_data = {"Changes": "Some changes", "Scheme": "Test Scheme"}
@@ -144,7 +144,7 @@ def test_update_scheme_firestore_error(mock_request, mock_https_response, mock_a
     """Test update scheme endpoint when Firestore operation fails."""
     mock_manager = mocker.MagicMock()
     mock_manager.firestore_client.collection().add.side_effect = Exception("Firestore error")
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Changes": "Test changes",
@@ -183,7 +183,7 @@ def test_update_scheme_update_type_missing_target(
 ):
     """typeOfRequest=update requires targetSchemeId."""
     mock_manager = mocker.MagicMock()
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Link": "https://example.com/replacement",
@@ -208,7 +208,7 @@ def test_update_scheme_update_type_unknown_target(
     mock_doc = mocker.MagicMock()
     mock_doc.exists = False
     mock_manager.firestore_client.collection().document().get.return_value = mock_doc
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Link": "https://example.com/replacement",
@@ -240,7 +240,7 @@ def test_update_scheme_update_type_happy_path(
         mocker.MagicMock(),
         mock_doc_ref,
     )
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Link": "https://example.com/replacement",
@@ -277,7 +277,7 @@ def test_update_scheme_update_type_non_string_target_rejected(
 ):
     """typeOfRequest=update with non-string targetSchemeId -> 400."""
     mock_manager = mocker.MagicMock()
-    mocker.patch("update_scheme.update_scheme.firebase_manager", mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
 
     request_data = {
         "Link": "https://example.com/replacement",

@@ -41,7 +41,7 @@ def test_feedback_missing_required_fields(mock_request, mock_https_response, moc
 def test_feedback_successful_submission(mocker, mock_request, mock_https_response, mock_auth, mock_firebase_manager):
     """Test successful feedback submission."""
     # Mock the FirebaseManager
-    mocker.patch("feedback.feedback.firebase_manager", mock_firebase_manager)
+    mocker.patch("feedback.feedback.create_firebase_manager", return_value=mock_firebase_manager)
 
     # Test data
     feedback_data = {

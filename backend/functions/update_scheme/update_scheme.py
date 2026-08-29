@@ -20,8 +20,9 @@ from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.scheme_lifecycle import retirement_validation_error
 
 
-# Firestore client
-firebase_manager = FirebaseManager()
+def create_firebase_manager() -> FirebaseManager:
+    """Create the Firestore adapter when a request needs it."""
+    return FirebaseManager()
 
 
 def is_local_dev() -> bool:
@@ -97,6 +98,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
             )
 
         type_lower = (typeOfRequest or "").lower()
+        firebase_manager = None
 
         if type_lower in ("update", "retire"):
             if not targetSchemeId or not isinstance(targetSchemeId, str):
@@ -110,6 +112,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
                     headers=headers,
                 )
 
+            firebase_manager = create_firebase_manager()
             target_snap = (
                 firebase_manager.firestore_client
                 .collection("schemes")
@@ -128,6 +131,7 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
                 )
 
         if type_lower == "retire":
+            assert firebase_manager is not None
             if not isinstance(retiredReason, str) or not retiredReason.strip():
                 return https_fn.Response(
                     response=json.dumps(
@@ -203,6 +207,8 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
         }
 
         # Add the data to Firestore
+        if firebase_manager is None:
+            firebase_manager = create_firebase_manager()
         _, doc_ref = firebase_manager.firestore_client.collection("schemeEntries").add(update_scheme_data)
         doc_id = doc_ref.id
         logger.info(f"Created schemeEntries document: {doc_id}")

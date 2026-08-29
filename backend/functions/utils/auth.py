@@ -1,11 +1,15 @@
-from typing import Tuple
+from typing import Mapping, Protocol, Tuple
 
+from fb_manager.firebaseManager import FirebaseManager
 from firebase_admin import auth
-from firebase_functions import https_fn
 from loguru import logger
 
 
-def verify_auth_token(req: https_fn.Request) -> Tuple[bool, str]:
+class RequestWithHeaders(Protocol):
+    headers: Mapping[str, str]
+
+
+def verify_auth_token(req: RequestWithHeaders) -> Tuple[bool, str]:
     """Verify Firebase Auth token from request headers."""
     auth_header = req.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
@@ -13,6 +17,7 @@ def verify_auth_token(req: https_fn.Request) -> Tuple[bool, str]:
 
     try:
         token = auth_header.split("Bearer ")[1]
+        FirebaseManager()
         # Verify the Firebase ID token
         decoded_token = auth.verify_id_token(token)
         return True, decoded_token["uid"]

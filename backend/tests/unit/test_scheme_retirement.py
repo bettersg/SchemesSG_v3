@@ -58,7 +58,7 @@ def test_retirement_pipeline_bypasses_scraping_and_duplicate_gate(mocker):
         return col
 
     db.collection.side_effect = collection
-    mocker.patch.object(mod.firestore, "client", return_value=db)
+    mocker.patch.object(mod, "get_firestore_client", return_value=db)
     duplicate_check = mocker.patch.object(mod, "check_duplicate_scheme")
     processor_post = mocker.patch.object(mod.requests, "post")
     slack = MagicMock()
@@ -119,7 +119,7 @@ def test_retirement_approval_updates_audit_and_deletes_embedding(mocker):
         return col
 
     db.collection.side_effect = collection
-    mocker.patch.object(mod.firestore, "client", return_value=db)
+    mocker.patch.object(mod, "get_firestore_client", return_value=db)
     slack = MagicMock()
     slack.users_info.return_value = {
         "ok": True,

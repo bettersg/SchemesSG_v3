@@ -105,7 +105,7 @@ def test_chatbot_calls_init_chat_model_with_env(mocker):
 
     # Assert init_chat_model was called
     mock_init.assert_called_once_with(
-        "azure_openai:gpt-4.1-mini",
+        "azure_openai:test-deployment",
         azure_deployment="test-deployment",
         **ChatbotConfig().__dict__,
     )
