@@ -8,6 +8,8 @@
     "start": "cross-env NODE_ENV=production next start",
     "start:staging": "cross-env NODE_ENV=staging next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
@@ -39,12 +41,15 @@
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^6.0.2",
     "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "^16.2.3",
     "postcss": "^8.4.47",
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.8"
   }
 }

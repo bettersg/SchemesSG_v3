@@ -1,11 +1,13 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
-import { Scheme } from "@/types/types";
-import { ScrollShadow, Skeleton, Spinner } from "@heroui/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getSchemesCategory } from "@/lib/schemes";
+import { FilterObjType, Scheme } from "@/types/types";
+import { ScrollShadow, Skeleton } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
 import SchemeCard from "@/components/schemes/scheme-card";
+import SchemesFilter from "@/components/schemes/schemes-filter";
+import { matchesSchemeFilters } from "@/lib/matches-scheme-filters";
 import {
   CATALOG_CATEGORY_ICON_SRC,
   CATALOG_CATEGORY_OPTIONS,
@@ -23,6 +25,11 @@ import PageShell from "@/components/layout/page-shell";
 import EmptyState from "@/components/feedback/empty-state";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { Search } from "lucide-react";
+
+// Upper bound on schemes fetched per catalog view. The full catalog is ~495
+// and the largest category ~300, so one request returns everything and the
+// Location/Agency filters run client-side over the whole set.
+const CATALOG_FETCH_LIMIT = 600;
 
 type CatalogPageClientProps = {
   initialCategory?: CatalogCategory;
@@ -70,146 +77,68 @@ function CatalogGridSkeleton() {
 export default function CatalogPageClient({
   initialCategory,
 }: CatalogPageClientProps) {
-  const [activeCategory, setActiveCategory] = useState(
-    initialCategory ?? "All",
-  );
-  const [hasSelectedCategory, setHasSelectedCategory] = useState(
-    Boolean(initialCategory),
-  );
+  const [activeCategory] = useState(initialCategory ?? "All");
+  const hasSelectedCategory = Boolean(initialCategory);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [loadState, setLoadState] = useState<CatalogLoadState>(
     initialCategory ? "loadingInitial" : "idle",
   );
 
-  // states for search feature (tbc)
-  // const [searchQuery, setSearchQuery] = useState("");
-  // const [inputValue, setInputValue] = useState("");
+  // Location/Agency filters, applied client-side over the fully-loaded set —
+  // the same model as the chat results view. The catalog is small enough
+  // (≤~300 per category, 495 total) to load whole and filter in memory, which
+  // sidesteps Firestore's one-array-clause-per-query limit on combining
+  // category + planning_area.
+  const [filterObj, setFilterObj] = useState<FilterObjType>({});
+  const [selectedLocations, setSelectedLocations] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedAgencies, setSelectedAgencies] = useState<Set<string>>(
+    new Set(),
+  );
+  const resetFilters = () => {
+    setSelectedLocations(new Set());
+    setSelectedAgencies(new Set());
+    setFilterObj({});
+  };
 
-  // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const cursorRef = useRef("");
   const requestIdRef = useRef(0);
-  const hasUserScrolledRef = useRef(false);
   const isLoadingInitial = loadState === "loadingInitial";
-  const isLoadingMore = loadState === "loadingMore";
 
-  const loadMoreSchemes = useCallback(() => {
-    const cursor = cursorRef.current;
-    if (loadState !== "ready" || !cursor || !hasUserScrolledRef.current) {
-      return;
-    }
+  const filteredSchemes = useMemo(
+    () => schemes.filter((scheme) => matchesSchemeFilters(scheme, filterObj)),
+    [schemes, filterObj],
+  );
+  const hasActiveFilters =
+    selectedLocations.size > 0 || selectedAgencies.size > 0;
+  // Client-side filtering only covers the schemes we loaded. Today the whole
+  // catalog fits under CATALOG_FETCH_LIMIT, but if the collection grows past it
+  // a category could be truncated — surface that rather than filter silently
+  // over a partial set. (Signal to migrate to server-side filtering.)
+  const isCapped = totalCount !== null && schemes.length < totalCount;
 
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
-    hasUserScrolledRef.current = false;
-    setLoadState("loadingMore");
-
-    const category =
-      activeCategory === "All" ? "" : activeCategory.toLowerCase();
-    getSchemesCategory(category, cursor)
-      .then((r) => {
-        if (requestIdRef.current !== requestId) return;
-        setSchemes((prev) => [...prev, ...r.schemes]);
-        cursorRef.current = r.nextCursor;
-        setLoadState(r.nextCursor ? "ready" : "exhausted");
-      })
-      .catch(() => {
-        if (requestIdRef.current === requestId) {
-          setLoadState(cursorRef.current ? "ready" : "exhausted");
-        }
-      });
-  }, [
-    activeCategory,
-    loadState,
-    // searchQuery
-  ]);
-
-  useEffect(() => {
-    const root = scrollRef.current;
-    const target = bottomRef.current;
-    if (!hasSelectedCategory || !root || !target) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && hasUserScrolledRef.current) {
-          loadMoreSchemes();
-        }
-      },
-      {
-        root,
-        rootMargin: "0px 0px 240px 0px",
-      },
-    );
-
-    observer.observe(target);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [hasSelectedCategory, loadMoreSchemes]);
-
-  useEffect(() => {
-    const root = scrollRef.current;
-    if (!hasSelectedCategory || !root) return;
-
-    const handleScroll = () => {
-      if (root.scrollTop > 0) {
-        hasUserScrolledRef.current = true;
-      }
-      if (root.scrollHeight - root.scrollTop - root.clientHeight < 320) {
-        loadMoreSchemes();
-      }
-    };
-
-    root.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      root.removeEventListener("scroll", handleScroll);
-    };
-  }, [hasSelectedCategory, loadMoreSchemes]);
-
-  // Initial load
+  // Load the whole category (or all schemes) in one request, then filter
+  // client-side. CATALOG_FETCH_LIMIT comfortably exceeds the largest category.
   useEffect(() => {
     if (!hasSelectedCategory) return;
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
-    hasUserScrolledRef.current = false;
-    cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
     setLoadState("loadingInitial");
     setTotalCount(null);
     getSchemesCategory(
       activeCategory === "All" ? "" : activeCategory.toLowerCase(),
+      "",
+      CATALOG_FETCH_LIMIT,
     ).then((r) => {
       if (requestIdRef.current !== requestId) return;
       setSchemes(r.schemes);
       setTotalCount(r.total);
-      cursorRef.current = r.nextCursor;
-      setLoadState(r.nextCursor ? "ready" : "exhausted");
+      setLoadState("exhausted");
     });
   }, [activeCategory, hasSelectedCategory]);
-
-  // search feature (tbc)
-  // const handleSearch = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const requestId = requestIdRef.current + 1;
-  //   requestIdRef.current = requestId;
-  //   hasUserScrolledRef.current = false;
-  //   cursorRef.current = "";
-  //   scrollRef.current?.scrollTo({ top: 0 });
-  //   setActiveCategory("All");
-  //   setHasSelectedCategory(true);
-  //   setLoadState("loadingInitial");
-  //   searchSchemes(inputValue).then((r) => {
-  //     if (requestIdRef.current !== requestId) return;
-  //     setSchemes(r.schemes);
-  //     cursorRef.current = r.nextCursor;
-  //     setSearchQuery(inputValue);
-  //     setLoadState(r.nextCursor ? "ready" : "exhausted");
-  //   });
-  // };
 
   if (!hasSelectedCategory) {
     return (
@@ -351,7 +280,7 @@ export default function CatalogPageClient({
       <div className="flex">
         {/* Results */}
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
-          <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-3 pt-2">
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-(--schemes-bg) pb-3 pt-2">
             <p className="text-sm font-semibold text-(--schemes-ink-soft)">
               {isLoadingInitial ? (
                 <StatusTextShimmer>
@@ -363,31 +292,49 @@ export default function CatalogPageClient({
                 <>
                   {activeCategory === "All" ? "All schemes" : activeCategory}
                   <span className="ml-2 text-(--schemes-blue-600)">
-                    {totalCount !== null && schemes.length < totalCount
-                      ? `(${schemes.length} of ${totalCount})`
+                    {hasActiveFilters
+                      ? `(${filteredSchemes.length} of ${totalCount ?? schemes.length})`
                       : `(${totalCount ?? schemes.length})`}
                   </span>
                 </>
               )}
             </p>
+            {!isLoadingInitial && schemes.length > 0 && (
+              <SchemesFilter
+                schemes={schemes}
+                setFilterObj={setFilterObj}
+                selectedLocations={selectedLocations}
+                setSelectedLocations={setSelectedLocations}
+                selectedAgencies={selectedAgencies}
+                setSelectedAgencies={setSelectedAgencies}
+                resetFilters={resetFilters}
+              />
+            )}
           </div>
+          {!isLoadingInitial && isCapped && (
+            <p className="mb-3 rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) px-3 py-2 text-xs text-(--schemes-status-info-text)">
+              Showing the first {schemes.length} of {totalCount}. Filters apply
+              to these for now.
+            </p>
+          )}
           {isLoadingInitial ? (
             <CatalogGridSkeleton />
-          ) : schemes.length === 0 ? (
+          ) : filteredSchemes.length === 0 ? (
             <EmptyState
               title="No schemes found"
-              description="Try a different search or category"
+              description={
+                hasActiveFilters
+                  ? "Try clearing a filter or choosing a different area or agency."
+                  : "Try a different category."
+              }
             />
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-              {schemes.map((s) => (
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 pb-6">
+              {filteredSchemes.map((s) => (
                 <SchemeCard key={s.schemeId} scheme={s} />
               ))}
             </div>
           )}
-          <div ref={bottomRef} className="flex justify-center py-6">
-            {isLoadingMore && <Spinner />}
-          </div>
         </div>
       </div>
     </div>
