@@ -24,6 +24,9 @@
     "test:integration": "vitest run src/test/integration",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e:report": "playwright show-report",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
@@ -49,6 +52,7 @@
     "tailwind-variants": "^3.2.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
