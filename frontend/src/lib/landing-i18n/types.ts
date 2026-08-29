@@ -138,9 +138,11 @@ export interface Translations {
 
   footer: {
     tagline: string;
+    schemesHeading: string;
     productHeading: string;
     resourcesHeading: string;
     legalHeading: string;
+    schemesLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;
     productLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;
     resourceLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;
     legalLinks: Array<{ label: string; href: string; comingSoon?: boolean }>;

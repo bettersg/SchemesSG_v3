@@ -308,9 +308,16 @@ export const zh: Translations = {
   footer: {
     tagline:
       "\u8BA9\u6BCF\u4E2A\u4EBA\u90FD\u80FD\u83B7\u53D6\u793E\u4F1A\u63F4\u52A9\u3002",
+    schemesHeading: "\u8BA1\u5212",
     productHeading: "\u4EA7\u54C1",
     resourcesHeading: "\u8D44\u6E90",
     legalHeading: "\u6CD5\u5F8B",
+    schemesLinks: [
+      { label: "\u7ECF\u6D4E\u63F4\u52A9", href: "/catalog/financial-assistance" },
+      { label: "\u533B\u7597\u4FDD\u5065", href: "/catalog/health-wellbeing" },
+      { label: "\u4F4F\u623F\u4E0E\u98DF\u54C1", href: "/catalog/housing-food" },
+      { label: "\u6240\u6709\u5206\u7C7B", href: "/catalog" },
+    ],
     productLinks: [
       { label: "\u641C\u7D22", href: "/" },
       { label: "\u529F\u80FD", href: "#features" },
