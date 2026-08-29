@@ -79,10 +79,22 @@ npm run test:unit         # unit tests
 npm run test:integration  # integrated provider/page tests
 npm run test:watch        # watch mode
 npm run test:coverage     # coverage report, without enforcement thresholds
+npm run test:e2e:install  # install the Chromium browser once
+npm run test:e2e          # Chromium landing-to-results browser journey
+npm run test:e2e:report   # open the latest Playwright HTML report
 npm run typecheck         # TypeScript
 npm run lint              # ESLint
 npm run build             # production build; install dependencies separately
 ```
+
+The Playwright journey starts a deterministic Next.js development server and
+intercepts anonymous Firebase authentication and backend SSE traffic with dummy
+credentials and fixture data. All other external browser requests are blocked.
+No environment file, deployed service, or production data is used.
+
+On failure, Playwright writes screenshots and local traces to `test-results/`
+and an HTML report to `playwright-report/`. CI retries once and captures the
+first-retry trace for a future workflow to upload.
 
 See [ADR 0001](docs/adr/0001-frontend-testing-foundation.md) for the accepted
 testing boundaries and deferred work.
