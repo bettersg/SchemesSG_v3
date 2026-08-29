@@ -13,7 +13,7 @@ import google.auth
 import google.auth.compute_engine
 import google.auth.transport.requests
 import requests
-from firebase_admin import firestore
+from fb_manager.firebaseManager import get_firestore_client
 from firebase_functions import firestore_fn, options
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
 from google.oauth2 import service_account
@@ -73,7 +73,7 @@ def get_slack_channel() -> str:
 
 def process_scheme_retirement_entry(doc_id: str, data: dict) -> None:
     """Validate a retirement request and send it directly to Slack review."""
-    db = firestore.client()
+    db = get_firestore_client()
     entry_ref = db.collection("schemeEntries").document(doc_id)
     target_scheme_id = data.get("targetSchemeId")
     reason = data.get("retiredReason")
@@ -188,7 +188,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         logger.warning(f"Duplicate URL detected for {doc_id}: {duplicate}")
 
         # Update schemeEntries with duplicate status
-        db = firestore.client()
+        db = get_firestore_client()
         entry_ref = db.collection("schemeEntries").document(doc_id)
         entry_ref.update(
             {
@@ -257,7 +257,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
 def _update_error_status(doc_id: str, error_msg: str) -> None:
     """Update schemeEntries with error status."""
     try:
-        db = firestore.client()
+        db = get_firestore_client()
         entry_ref = db.collection("schemeEntries").document(doc_id)
         entry_ref.update(
             {

@@ -13,8 +13,9 @@ from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 
 
-# Firestore client
-firebase_manager = FirebaseManager()
+def create_firebase_manager() -> FirebaseManager:
+    """Create the Firestore adapter when a request needs it."""
+    return FirebaseManager()
 
 
 @https_fn.on_request(
@@ -89,6 +90,7 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
                     headers=headers,
                 )
 
+            firebase_manager = create_firebase_manager()
             doc_ref = firebase_manager.firestore_client.collection("chatRatings").document(session_id)
             field = f"ratings.{message_index}"
             value = firestore.DELETE_FIELD if rating is None else rating
@@ -119,6 +121,7 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         }
 
         # Add the data to Firestore
+        firebase_manager = create_firebase_manager()
         firebase_manager.firestore_client.collection("userFeedback").add(feedback_data)
 
         # Return a success response

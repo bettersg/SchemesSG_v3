@@ -12,6 +12,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+from fb_manager.firebaseManager import get_firestore_client
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from loguru import logger
@@ -75,7 +76,7 @@ def handle_new_scheme_approval(
     logger.info(f"Processing approval for entry {entry_doc_id}")
 
     try:
-        db = firestore.client()
+        db = get_firestore_client()
 
         # Get reviewer email from Slack
         reviewer_email = None
@@ -274,7 +275,7 @@ def handle_scheme_retirement_approval(
     """Approve a terminal retirement and remove its search embedding atomically."""
     logger.info(f"Processing retirement approval for entry {entry_doc_id}")
 
-    db = firestore.client()
+    db = get_firestore_client()
     entry_ref = db.collection("schemeEntries").document(entry_doc_id)
     entry_snap = entry_ref.get()
     if not entry_snap.exists:
@@ -407,7 +408,7 @@ def handle_new_scheme_rejection(
     logger.info(f"Processing rejection for entry {entry_doc_id}")
 
     try:
-        db = firestore.client()
+        db = get_firestore_client()
 
         # Get scheme name from entry
         entry_ref = db.collection("schemeEntries").document(entry_doc_id)
@@ -522,7 +523,7 @@ def get_processed_data_from_entry(entry_doc_id: str) -> Dict[str, Any]:
         Processed data dict for modal pre-filling
     """
     try:
-        db = firestore.client()
+        db = get_firestore_client()
         entry_ref = db.collection("schemeEntries").document(entry_doc_id)
         entry_doc = entry_ref.get()
 

@@ -9,7 +9,7 @@ from langgraph.types import CachePolicy
 from utils.logging_setup import setup_logging
 
 from .cache import InMemoryCacheWithMaxsize, generate_cache_key
-from .config import PROVIDER_MODEL_NAME, ChatbotConfig
+from .config import ChatbotConfig
 from .firestore_saver import FirestoreChatSaver
 from .prompt import SYSTEM_TEMPLATE
 from .states import ChatbotState
@@ -43,9 +43,10 @@ class Chatbot:
         chatbot_config = ChatbotConfig()
 
         try:
+            deployment_name = os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"]
             cls.llm = init_chat_model(
-                PROVIDER_MODEL_NAME,
-                azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
+                f"azure_openai:{deployment_name}",
+                azure_deployment=deployment_name,
                 **chatbot_config.__dict__,
             )
             logger.info("Chatbot initialised")

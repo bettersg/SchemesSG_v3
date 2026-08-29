@@ -164,6 +164,7 @@ tags
 
 # .lock
 *.lock
+!backend/uv.lock
 
 # DS_Store (MacOS)
 .DS_Store

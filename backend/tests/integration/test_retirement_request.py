@@ -5,10 +5,9 @@ import json
 
 def _load_update_scheme(mocker, manager):
     """Import the endpoint without constructing a real Firebase manager."""
-    mocker.patch("fb_manager.firebaseManager.FirebaseManager", return_value=manager)
     from update_scheme import update_scheme as module
 
-    mocker.patch.object(module, "firebase_manager", manager)
+    mocker.patch.object(module, "create_firebase_manager", return_value=manager)
     return module.update_scheme
 
 

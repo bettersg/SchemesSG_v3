@@ -150,12 +150,16 @@ uv run python scripts/load_local_data.py
 
 ### Running Tests
 
-From `backend/` (config in `pytest.ini`):
+From `backend/` (canonical config in `pyproject.toml`):
 ```bash
-uv run pytest                    # All tests with coverage
-uv run pytest tests/unit/        # Unit tests only
-uv run pytest tests/integration/ # Integration tests only
+uv run --frozen pytest                              # Secretless suite with coverage
+uv run --frozen pytest -m unit --no-cov             # Unit tier
+uv run --frozen pytest -m "integration and not smoke" --no-cov
+uv run --frozen pytest -m smoke --no-cov            # Opt-in, non-production only
 ```
+
+See [tests/README.md](tests/README.md) for tier definitions and the current
+coverage/runtime baseline.
 
 ## API Endpoints
 

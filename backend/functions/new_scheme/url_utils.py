@@ -7,7 +7,7 @@ Provides URL normalization and duplicate checking functionality.
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
-from firebase_admin import firestore
+from fb_manager.firebaseManager import get_firestore_client
 from loguru import logger
 from utils.scheme_lifecycle import RETIRED_STATUS
 
@@ -121,7 +121,7 @@ def check_duplicate_scheme(
 
     logger.info(f"Checking for duplicate URL: {submitted_normalized}")
 
-    db = firestore.client()
+    db = get_firestore_client()
     schemes_ref = db.collection("schemes")
 
     # Query all schemes and check normalized URLs

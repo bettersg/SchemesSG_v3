@@ -12,7 +12,7 @@ import time
 from typing import Any, Dict
 
 import pandas as pd
-from firebase_admin import firestore
+from fb_manager.firebaseManager import get_firestore_client
 from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
@@ -109,7 +109,7 @@ def reindex_embeddings(db=None) -> Dict[str, Any]:
         logger.info("Starting Firestore embedding reindex...")
 
         if db is None:
-            db = firestore.client()
+            db = get_firestore_client()
 
         # Initialize embeddings model (same config as searchModelManager.py)
         # Use dimensions=2048 for text-embedding-3-large (Firestore max is 2048)
