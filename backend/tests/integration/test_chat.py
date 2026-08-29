@@ -2,12 +2,18 @@
 
 import json
 
+import pytest
 from agent.event_type import AgentStreamEventType
 from agent.handler import agent_chat_message
 
 
 def response_json(response):
     return json.loads(response.get_data(as_text=True))
+
+
+def response_stream_events(response):
+    chunks = response.get_data(as_text=True).strip().split("\n\n")
+    return [json.loads(chunk.removeprefix("data: ")) for chunk in chunks]
 
 
 def test_chat_warmup_request(mock_request, mock_https_response, mock_auth):
@@ -103,6 +109,113 @@ def test_chat_streaming_response(mock_request, mock_https_response, mock_auth, m
 
     assert response.status_code == 200
     assert response.mimetype == "text/event-stream"
+
+
+def test_chat_stream_preserves_event_order_and_ends_with_done(
+    mock_request, mock_https_response, mock_auth, mocker
+):
+    mocker.patch(
+        "agent.handler.stream_chat_events",
+        return_value=iter(
+            [
+                {
+                    "type": AgentStreamEventType.STATUS,
+                    "data": {"phase": "started", "label": "Searching"},
+                },
+                {"type": AgentStreamEventType.TEXT, "data": {"text": "Found help."}},
+                {
+                    "type": AgentStreamEventType.SCHEMES_UPDATE,
+                    "data": {"schemes": [{"scheme_id": "scheme-1"}]},
+                },
+                {"type": AgentStreamEventType.DONE, "data": {}},
+            ]
+        ),
+    )
+    request = mock_request(
+        method="POST",
+        json_data={"message": "test", "sessionID": "test-session", "stream": True},
+    )
+
+    response = agent_chat_message(request)
+
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-cache"
+    assert response.headers["Content-Type"].startswith("text/event-stream")
+    assert response_stream_events(response) == [
+        {
+            "type": "status",
+            "data": {
+                "phase": "session_started",
+                "sessionID": "test-session",
+                "label": "Session started",
+            },
+        },
+        {"type": "status", "data": {"phase": "started", "label": "Searching"}},
+        {"type": "text", "data": {"text": "Found help."}},
+        {
+            "type": "schemes_update",
+            "data": {"schemes": [{"scheme_id": "scheme-1"}]},
+        },
+        {"type": "done", "data": {}},
+    ]
+
+
+def test_chat_stream_cancellation_closes_agent_events(
+    mock_request, mock_https_response, mock_auth, mocker
+):
+    cancelled = False
+
+    def agent_events():
+        nonlocal cancelled
+        try:
+            yield {"type": AgentStreamEventType.TEXT, "data": {"text": "Hello"}}
+            yield {"type": AgentStreamEventType.DONE, "data": {}}
+        finally:
+            cancelled = True
+
+    mocker.patch("agent.handler.stream_chat_events", return_value=agent_events())
+    request = mock_request(
+        method="POST",
+        json_data={"message": "test", "sessionID": "test-session", "stream": True},
+    )
+
+    response = agent_chat_message(request)
+    stream = iter(response.response)
+    next(stream)
+    next(stream)
+
+    response.close()
+
+    assert cancelled is True
+
+
+def test_chat_stream_runtime_error_aborts_and_closes_agent_events(
+    mock_request, mock_https_response, mock_auth, mocker
+):
+    closed = False
+
+    def agent_events():
+        nonlocal closed
+        try:
+            yield {"type": AgentStreamEventType.TEXT, "data": {"text": "Partial"}}
+            raise RuntimeError("Agent failed")
+        finally:
+            closed = True
+
+    mocker.patch("agent.handler.stream_chat_events", return_value=agent_events())
+    request = mock_request(
+        method="POST",
+        json_data={"message": "test", "sessionID": "test-session", "stream": True},
+    )
+    response = agent_chat_message(request)
+    stream = iter(response.response)
+
+    next(stream)
+    next(stream)
+    with pytest.raises(RuntimeError, match="Agent failed"):
+        next(stream)
+
+    assert closed is True
 
 
 def test_chat_runtime_error(mock_request, mock_https_response, mock_auth, mocker):

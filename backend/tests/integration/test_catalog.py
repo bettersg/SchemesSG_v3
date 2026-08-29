@@ -2,6 +2,7 @@
 
 import json
 from collections import Counter
+from types import SimpleNamespace
 
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING, SCHEME_TYPE
 from schemes.catalog import (
@@ -65,14 +66,15 @@ def test_catalog_successful_category_fetch(
     mock_collection = mocker.MagicMock()
     mock_query = mocker.MagicMock()
     mock_collection.where.return_value = mock_query
+    mock_query.where.return_value.count.return_value.get.return_value = [
+        [SimpleNamespace(value=1)]
+    ]
 
     mock_manager = mocker.MagicMock()
     mock_manager.firestore_client.collection.return_value = mock_collection
 
     mocker.patch("schemes.catalog.create_firebase_manager", return_value=mock_manager)
-    field_filter = mocker.patch(
-        "schemes.catalog.FieldFilter", return_value="category-filter"
-    )
+    mocker.patch("schemes.catalog.FieldFilter", return_value="category-filter")
     mocker.patch(
         "schemes.catalog.get_paginated_results",
         return_value=PaginationResult(
@@ -88,6 +90,7 @@ def test_catalog_successful_category_fetch(
             ],
             next_cursor="next-page",
             has_more=True,
+            total_count=7,
         ),
     )
 
@@ -98,18 +101,17 @@ def test_catalog_successful_category_fetch(
     response = catalog(request)
 
     assert response.status_code == 200
-    response_data = json.loads(response.get_data())
-    assert response_data["data"][0]["scheme_name"] == "Test Scheme"
-    assert response_data["data"][0]["scheme_type"] == ["Caregiver Support"]
-    assert response_data["next_cursor"] == "next-page"
-    assert response_data["has_more"] is True
-    mock_manager.firestore_client.collection.assert_called_once_with("schemes")
-    field_filter.assert_called_once_with(
-        "scheme_type",
-        "array_contains_any",
-        ["Elderly", "Caregiver Support"],
-    )
-    mock_collection.where.assert_called_once_with(filter="category-filter")
+    assert response.content_type == "application/json"
+    assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
+    assert json.loads(response.get_data()) == {
+        "data": [
+            {"scheme_name": "Test Scheme", "scheme_type": ["Caregiver Support"]},
+            {"scheme_name": "Second Scheme", "scheme_type": ["Caregiver Support"]},
+        ],
+        "next_cursor": "next-page",
+        "has_more": True,
+        "total_count": 6,
+    }
 
 
 def test_catalog_not_found(mock_request, mock_https_response, mock_auth, mocker):
