@@ -53,7 +53,8 @@ export const getSchemeById = cache(
 export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
-    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+    // Secretless validation builds still publish the static sitemap routes.
+    return [];
   }
 
   const response = await fetchWithAuth(`${baseUrl}/schemes_search`, {

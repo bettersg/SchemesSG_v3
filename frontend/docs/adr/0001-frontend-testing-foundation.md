@@ -23,6 +23,10 @@ deterministic, and runnable without Firebase or API credentials.
   deterministic MSW handlers.
 - Unhandled HTTP requests fail tests. The suite never calls Firebase, deployed
   APIs, or production services.
+- Firebase App/Auth initialization occurs only when the auth gateway is used.
+  Secretless validation builds skip remote sitemap entries and contact neither
+  Firebase nor a deployed API; deployable builds still receive environment
+  configuration from the deployment path.
 - Unit tests live beside the module as `*.test.ts(x)`. Integrated flows live in
   `src/test/integration` as `*.integration.test.tsx`.
 - Coverage is reported on demand without thresholds. Threshold enforcement is

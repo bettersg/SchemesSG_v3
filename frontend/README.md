@@ -30,7 +30,7 @@ Before we dive in, make sure you've got:
    npm is the only supported frontend package manager. Commit changes to
    `package-lock.json`; do not replace it with another lockfile.
 
-   > 🔑 **Important**: Download the environment files (.env.*) from [Google Drive](https://drive.google.com/drive/u/2/folders/1RtqR8vZtjMrgqIGa-uQEZJa9x4dL3z4U) and place them in the frontend root directory before running the app or a build. Unit and integration tests do not need these files.
+   > 🔑 **Important**: Download the environment files (.env.*) from [Google Drive](https://drive.google.com/drive/u/2/folders/1RtqR8vZtjMrgqIGa-uQEZJa9x4dL3z4U) and place them in the frontend root directory before running the app or creating a deployable build. Unit tests, integration tests, and validation builds do not need these files.
 
 2. **Development (Where the magic happens)**
    ```bash
@@ -67,6 +67,11 @@ Before we dive in, make sure you've got:
 
 The fast frontend suite uses Vitest, React Testing Library, and deterministic
 MSW handlers. It does not require Firebase or API credentials.
+
+`npm run build` also supports secretless validation. Without Firebase or API
+configuration, it creates no Firebase client, makes no deployed API request,
+and generates a sitemap containing static routes only. Supply the environment
+files when producing an artifact for deployment.
 
 ```bash
 npm test                  # all unit and integration tests once

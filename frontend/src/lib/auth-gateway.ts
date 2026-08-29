@@ -1,4 +1,4 @@
-import { auth } from "@/app/firebaseConfig";
+import { getFirebaseAuth } from "@/app/firebaseConfig";
 import {
   signInAnonymously,
   type Unsubscribe,
@@ -9,10 +9,12 @@ import {
 export function observeAuthState(
   listener: (user: User | null) => void,
 ): Unsubscribe {
+  const auth = getFirebaseAuth();
   return auth.onAuthStateChanged(listener);
 }
 
 export async function getAuthToken(): Promise<string> {
+  const auth = getFirebaseAuth();
   let user: User;
   if (auth.currentUser) {
     user = auth.currentUser;
