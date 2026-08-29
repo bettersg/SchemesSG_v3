@@ -9,13 +9,15 @@ type ChatLandingProps = {
 };
 
 export default function ChatLanding({ onSubmitSuccess }: ChatLandingProps) {
-  const { draftMessage, setDraftMessage, setMessages } = useChat();
+  const { draftMessage, setDraftMessage, setMessages, setHasStartedChat } =
+    useChat();
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = draftMessage.trim();
     if (!trimmed) return;
     setDraftMessage(trimmed);
+    setHasStartedChat(true);
     setMessages([{ type: "user", text: trimmed }]);
     onSubmitSuccess?.();
   };

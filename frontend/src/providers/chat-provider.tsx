@@ -49,6 +49,8 @@ type ChatContextType = {
   setShowQuickReplies: React.Dispatch<React.SetStateAction<boolean>>;
   draftMessage: string;
   setDraftMessage: React.Dispatch<React.SetStateAction<string>>;
+  hasStartedChat: boolean;
+  setHasStartedChat: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -81,6 +83,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [draftMessage, setDraftMessage] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
+  // Tracks whether the user has committed to a chat session, independent of
+  // `messages.length`: a failed first send rolls its message back out of
+  // `messages` (see chat-page.tsx rollbackActiveRequest), and ChatHome must
+  // not mistake that empty array for "never started" and drop back to the
+  // landing screen mid-error.
+  const [hasStartedChat, setHasStartedChat] = useState(false);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -183,6 +191,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setShowQuickReplies,
         draftMessage,
         setDraftMessage,
+        hasStartedChat,
+        setHasStartedChat,
       }}
     >
       {children}

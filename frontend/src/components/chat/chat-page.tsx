@@ -37,10 +37,11 @@ export default function ChatPage() {
     setShowQuickReplies,
     draftMessage,
     setDraftMessage,
+    setHasStartedChat,
   } = useChat();
 
   const [isGenerating, setIsGenerating] = useState(
-    messages[messages.length - 1].type == "user",
+    messages[messages.length - 1]?.type == "user",
   );
   const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
   const statusStepsRef = useRef<StatusStep[]>([]);
@@ -409,6 +410,7 @@ export default function ChatPage() {
     setSchemes([]);
     setMessages([]);
     setSessionId("");
+    setHasStartedChat(false);
     abortControllerRef.current?.abort();
     resetStreamUi();
     setQuickReplies([]);
