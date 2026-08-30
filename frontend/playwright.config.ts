@@ -44,10 +44,10 @@ export default defineConfig({
       },
     },
     {
-      name: "mobile-chromium",
+      name: "mobile-narrow-chromium",
       testMatch: "**/mobile-*.spec.ts",
       use: {
-        ...devices["Pixel 5"],
+        ...devices["Pixel 10"],
       },
     },
   ],
