@@ -4,6 +4,11 @@ const nextConfig = {
   env: {
     APP_ENV: process.env.APP_ENV || "development",
   },
+  // Lets next.onFetch intercept async Server Component requests only in E2E.
+  experimental: {
+    testProxy:
+      process.env.NEXT_PUBLIC_API_BASE_URL === "https://api.e2e.test",
+  },
   images: {
     remotePatterns: [
       {
