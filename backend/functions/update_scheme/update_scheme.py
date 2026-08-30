@@ -11,6 +11,7 @@ import json
 import os
 import threading
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
@@ -99,6 +100,33 @@ def update_scheme(req: https_fn.Request) -> https_fn.Response:
 
         type_lower = (typeOfRequest or "").lower()
         firebase_manager = None
+
+        if type_lower in ("new", "update"):
+            if not isinstance(scheme, str) or not scheme.strip() or not isinstance(link, str) or not link.strip():
+                return https_fn.Response(
+                    response=json.dumps(
+                        {
+                            "success": False,
+                            "message": f"Scheme and Link are required when typeOfRequest is '{type_lower}'",
+                        }
+                    ),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
+            parsed_link = urlparse(link.strip())
+            if parsed_link.scheme not in ("http", "https") or not parsed_link.netloc:
+                return https_fn.Response(
+                    response=json.dumps(
+                        {
+                            "success": False,
+                            "message": "Link must be a valid http(s) URL",
+                        }
+                    ),
+                    status=400,
+                    mimetype="application/json",
+                    headers=headers,
+                )
 
         if type_lower in ("update", "retire"):
             if not targetSchemeId or not isinstance(targetSchemeId, str):

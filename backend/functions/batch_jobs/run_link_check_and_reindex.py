@@ -217,6 +217,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                     "last_link_check": now_iso,
                     "link_check_status_code": result.get("status_code", 200),
                     "link_check_fail_streak": firestore.DELETE_FIELD,
+                    "link_check_fail_class": firestore.DELETE_FIELD,
                     "link_suspect": firestore.DELETE_FIELD,
                 }
                 if was_inactive:

@@ -1,8 +1,11 @@
 """Shared test fixtures and tier classification."""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+
+from tests.fakes import FakeFirestore, FakeSlackClient
 
 
 TEST_ROOT = Path(__file__).parent
@@ -28,3 +31,18 @@ def mock_firebase_manager(mocker):
     mock_manager = mocker.MagicMock()
     mock_manager.firestore_client = mocker.MagicMock()
     return mock_manager
+
+
+@pytest.fixture
+def fake_firestore():
+    return FakeFirestore()
+
+
+@pytest.fixture
+def fake_firebase_manager(fake_firestore):
+    return SimpleNamespace(firestore_client=fake_firestore)
+
+
+@pytest.fixture
+def fake_slack_client():
+    return FakeSlackClient()

@@ -78,11 +78,15 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         # Thumbs up/down on a chat response. Stored separately from free-text
         # feedback as a per-session map keyed by message index, so a repeated
         # click can overwrite and an undo (rating=None) can clear the entry.
-        if request_json.get("source") == "chat" and "messageIndex" in request_json:
+        if request_json.get("source") == "chat":
             session_id = request_json.get("sessionId")
             message_index = request_json.get("messageIndex")
             rating = request_json.get("rating")  # "up", "down", or None to undo
-            if not session_id or not isinstance(message_index, int) or rating not in ("up", "down", None):
+            valid_session_id = isinstance(session_id, str) and bool(session_id.strip())
+            valid_message_index = (
+                isinstance(message_index, int) and not isinstance(message_index, bool) and message_index >= 0
+            )
+            if not valid_session_id or not valid_message_index or rating not in ("up", "down", None):
                 return https_fn.Response(
                     response=json.dumps({"success": False, "message": "Invalid rating payload"}),
                     status=400,

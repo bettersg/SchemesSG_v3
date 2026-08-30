@@ -50,13 +50,16 @@ def test_update_scheme_invalid_method(mock_request, mock_https_response, mock_au
     assert "Only POST requests are allowed" in response_data["message"]
 
 
-def test_update_scheme_successful_new_request(mock_request, mock_https_response, mock_auth, mocker):
-    """Test successful new scheme update request."""
-    mock_manager = mocker.MagicMock()
-    mock_doc_ref = mocker.MagicMock()
-    mock_doc_ref.id = "test-doc-id"
-    mock_manager.firestore_client.collection().add.return_value = (mocker.MagicMock(), mock_doc_ref)
-    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
+def test_update_scheme_successful_new_request(
+    mock_request,
+    mock_https_response,
+    mock_auth,
+    mocker,
+    fake_firebase_manager,
+    fake_firestore,
+):
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=fake_firebase_manager)
+    mocker.patch("update_scheme.update_scheme.is_local_dev", return_value=False)
 
     request_data = {
         "Changes": "New scheme details",
@@ -78,11 +81,10 @@ def test_update_scheme_successful_new_request(mock_request, mock_https_response,
     response_data = json.loads(response.get_data())
     assert response_data["success"] is True
     assert "Request for scheme update successfully added" in response_data["message"]
-
-    # Verify Firestore operation - collection is called once during mock setup and once during execution
-    mock_manager.firestore_client.collection.assert_called_with("schemeEntries")
-    # Verify add was called (once during mock setup, once during execution)
-    assert mock_manager.firestore_client.collection().add.call_count >= 1
+    stored = fake_firestore.get_document("schemeEntries", response_data["docId"])
+    assert stored["Scheme"] == "New Government Scheme"
+    assert stored["Link"] == "https://example.com/scheme"
+    assert stored["typeOfRequest"] == "New"
 
 
 def test_update_scheme_successful_edit_request(mock_request, mock_https_response, mock_auth, mocker):
@@ -120,31 +122,71 @@ def test_update_scheme_successful_edit_request(mock_request, mock_https_response
     assert mock_manager.firestore_client.collection().add.call_count >= 1
 
 
-def test_update_scheme_missing_required_fields(mock_request, mock_https_response, mock_auth, mocker):
-    """Test update scheme endpoint with missing required fields."""
-    mock_manager = mocker.MagicMock()
-    mock_doc_ref = mocker.MagicMock()
-    mock_doc_ref.id = "test-doc-id"
-    mock_manager.firestore_client.collection().add.return_value = (mocker.MagicMock(), mock_doc_ref)
-    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
+def test_contribution_rejects_missing_name_and_link(
+    mock_request,
+    mock_https_response,
+    mock_auth,
+    mocker,
+    fake_firebase_manager,
+    fake_firestore,
+):
+    """A contribution must identify the scheme and its public page."""
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=fake_firebase_manager)
 
-    # Missing several required fields
-    request_data = {"Changes": "Some changes", "Scheme": "Test Scheme"}
+    request_data = {"typeOfRequest": "New", "Scheme": "  ", "Link": ""}
 
     request = mock_request(method="POST", json_data=request_data)
 
     response = update_scheme(request)
 
-    assert response.status_code == 200  # The function still returns 200 but with success=False
+    assert response.status_code == 400
     response_data = json.loads(response.get_data())
-    assert response_data["success"] is True  # Current implementation doesn't validate required fields
+    assert response_data == {
+        "success": False,
+        "message": "Scheme and Link are required when typeOfRequest is 'new'",
+    }
+    assert fake_firestore.list_documents("schemeEntries") == {}
 
 
-def test_update_scheme_firestore_error(mock_request, mock_https_response, mock_auth, mocker):
-    """Test update scheme endpoint when Firestore operation fails."""
-    mock_manager = mocker.MagicMock()
-    mock_manager.firestore_client.collection().add.side_effect = Exception("Firestore error")
-    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
+def test_contribution_rejects_non_http_url(
+    mock_request,
+    mock_https_response,
+    mock_auth,
+    mocker,
+    fake_firebase_manager,
+    fake_firestore,
+):
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=fake_firebase_manager)
+
+    response = update_scheme(
+        mock_request(
+            method="POST",
+            json_data={
+                "typeOfRequest": "New",
+                "Scheme": "Test Scheme",
+                "Link": "javascript:alert(1)",
+            },
+        )
+    )
+
+    assert response.status_code == 400
+    assert json.loads(response.get_data()) == {
+        "success": False,
+        "message": "Link must be a valid http(s) URL",
+    }
+    assert fake_firestore.list_documents("schemeEntries") == {}
+
+
+def test_update_scheme_firestore_error(
+    mock_request,
+    mock_https_response,
+    mock_auth,
+    mocker,
+    fake_firebase_manager,
+    fake_firestore,
+):
+    fake_firestore.fail_writes_for.add("schemeEntries")
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=fake_firebase_manager)
 
     request_data = {
         "Changes": "Test changes",
@@ -201,14 +243,14 @@ def test_update_scheme_update_type_missing_target(
 
 
 def test_update_scheme_update_type_unknown_target(
-    mock_request, mock_https_response, mock_auth, mocker
+    mock_request,
+    mock_https_response,
+    mock_auth,
+    mocker,
+    fake_firebase_manager,
 ):
     """typeOfRequest=update with unknown targetSchemeId -> 400."""
-    mock_manager = mocker.MagicMock()
-    mock_doc = mocker.MagicMock()
-    mock_doc.exists = False
-    mock_manager.firestore_client.collection().document().get.return_value = mock_doc
-    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=fake_firebase_manager)
 
     request_data = {
         "Link": "https://example.com/replacement",
@@ -226,21 +268,17 @@ def test_update_scheme_update_type_unknown_target(
 
 
 def test_update_scheme_update_type_happy_path(
-    mock_request, mock_https_response, mock_auth, mocker
+    mock_request,
+    mock_https_response,
+    mock_auth,
+    mocker,
+    fake_firebase_manager,
+    fake_firestore,
 ):
     """typeOfRequest=update with valid target persists targetSchemeId on entry row."""
-    mock_manager = mocker.MagicMock()
-    mock_doc_ref = mocker.MagicMock()
-    mock_doc_ref.id = "entry-42"
-    mock_target = mocker.MagicMock()
-    mock_target.exists = True
-    mock_target.to_dict.return_value = {"scheme": "Existing Scheme"}
-    mock_manager.firestore_client.collection().document().get.return_value = mock_target
-    mock_manager.firestore_client.collection().add.return_value = (
-        mocker.MagicMock(),
-        mock_doc_ref,
-    )
-    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=mock_manager)
+    fake_firestore.seed("schemes", "scheme-abc", {"scheme": "Existing Scheme"})
+    mocker.patch("update_scheme.update_scheme.create_firebase_manager", return_value=fake_firebase_manager)
+    mocker.patch("update_scheme.update_scheme.is_local_dev", return_value=False)
 
     request_data = {
         "Link": "https://example.com/replacement",
@@ -257,19 +295,9 @@ def test_update_scheme_update_type_happy_path(
 
     body = json.loads(response.get_data())
     assert body["success"] is True
-    assert body["docId"] == "entry-42"
-
-    add_calls = mock_manager.firestore_client.collection().add.call_args_list
-    persisted = next(
-        (
-            call.args[0]
-            for call in add_calls
-            if call.args and call.args[0].get("targetSchemeId") == "scheme-abc"
-        ),
-        None,
-    )
-    assert persisted is not None
-    assert persisted.get("oldLink") == "https://old-dead-url.example/"
+    persisted = fake_firestore.get_document("schemeEntries", body["docId"])
+    assert persisted["targetSchemeId"] == "scheme-abc"
+    assert persisted["oldLink"] == "https://old-dead-url.example/"
 
 
 def test_update_scheme_update_type_non_string_target_rejected(
