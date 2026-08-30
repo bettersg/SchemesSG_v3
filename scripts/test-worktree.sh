@@ -41,6 +41,15 @@ assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-preflight.sh'"
   assert_fails "$ROOT/scripts/worktree-preflight.sh"
   git branch --set-upstream-to=origin/feat/test >/dev/null
 )
+(
+  cd "$TASK"
+  echo dirty > dirty.txt
+)
+assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' remove '$TASK'"
+rm "$TASK/dirty.txt"
+sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' doctor >/dev/null"
+sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' remove '$TASK' >/dev/null"
+[ ! -e "$TASK" ] || { echo "Clean worktree was not removed" >&2; exit 1; }
 assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-create.sh' feat/test '$TMP/reused'"
 assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-create.sh' stg '$TMP/protected'"
 printf 'Worktree create/preflight tests passed.\n'

@@ -35,13 +35,14 @@ Ensure you have the following installed:
 
 ### Required Files Setup
 
-1. **Environment Variables**
-Download the following required files from Google Drive (contact maintainers for access):
-- `.env` → `backend/functions/` (local development, uses local scheme-processor)
-- `.env.dev` → `backend/functions/` (dev deployment credentials for `schemessg-v3-dev`)
-- `.env.prod` → `backend/functions/` (prod deployment credentials for `schemessg`)
+Download the required ignored configuration from the maintainers:
 
-Note: These files contain sensitive configuration for Firebase, Azure OpenAI, and Slack services. Never commit them to version control.
+- `backend/functions/.env` — local Functions and scheme-processor configuration for `schemessg-v3-dev`
+- `backend/functions/creds.json` — development Firebase service account
+- `frontend/.env.staging` — frontend configuration for `schemessg-v3-dev`
+- `.env.dev` / `.env.prod` — deployment-only configuration where documented
+
+These files contain sensitive Firebase, Azure OpenAI, and Slack configuration. Never commit or copy them into task worktrees. The smoke runner locates them in the primary checkout and mounts them read-only.
 
 ## Project Structure
 
@@ -61,23 +62,19 @@ Note: These files contain sensitive configuration for Firebase, Azure OpenAI, an
 | Production | https://schemes.sg | https://asia-southeast1-schemessg.cloudfunctions.net/ |
 | Development | https://schemessg-v3-dev.web.app/ | https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/ |
 
-## Development Workflow
+## Local Development and Verification
 
-1. Frontend changes:
-   - Branch from `stg`
-   - Make changes
-   - Test locally
-   - Create PR to `stg`
-   - When PR is merged, github action `.github/workflows/firebase-hosting-staging.yml` will be triggered to deploy to firebase hosting in Schemes dev
-   - Then create PR to merge `stg` into `main`
-   - When PR is merged, github action `.github/workflows/firebase-hosting-production.yml` will be triggered to deploy to firebase hosting in Schemes prod
+Choose the smallest runtime that covers the change:
 
-2. Backend changes:
-   - Test using Firebase emulator
-   - When `stg` branch is pushed, the github action `.github/workflows/deploy_functions_dev.yml` will be triggered to deploy to Schemes dev
-   - When `main` branch is pushed, the github action `.github/workflows/deploy_functions_prod.yml` will be triggered to deploy to Schemes prod
+| Need | Runtime | Command |
+|---|---|---|
+| Frontend-only development | Next.js on the host; use deterministic tests for API behavior | `cd frontend && npm run dev` |
+| Backend pipeline development (Functions, triggers, scraping, Slack, scheme-processor) | Backend development Compose stack | `cd backend && docker compose -f docker-compose-firebase.yml up --build` |
+| Real frontend-to-search verification | Root credentialed development smoke against `schemessg-v3-dev` | `./scripts/smoke-dev-search.sh` |
 
-Note: For local frontend development to work, you must have the backend running via Docker. Please refer to `backend/README.md` for Docker setup and running instructions.
+Keep `backend/docker-compose-firebase.yml`: it includes `scheme-processor`, hot reload, and backend ports needed for backend-only work. It is not the cross-boundary acceptance runner. The root `compose.dev-smoke.yml` runs the real frontend and Functions, waits for health, and executes a real browser search against the development Firestore. See `docs/smoke-testing.md` for credentials, safety, limitations, and evidence.
+
+Normal changes branch from `stg` and open a PR to `stg`. Merging `stg` deploys the development environment. Production promotion is a separate `stg` → `main` PR; merging `main` deploys production.
 
 ## Link Check & Reindex
 
