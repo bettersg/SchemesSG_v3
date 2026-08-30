@@ -27,6 +27,7 @@
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:update-snapshots": "playwright test --update-snapshots=changed",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "test-build:staging": "npm run build:staging && npx serve@latest out",

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-29
+- Last amended: 2026-08-30 (#378)
 
 ## Context
 
@@ -29,26 +30,75 @@ deterministic, and runnable without Firebase or API credentials.
   configuration from the deployment path.
 - Unit tests live beside the module as `*.test.ts(x)`. Integrated flows live in
   `src/test/integration` as `*.integration.test.tsx`.
-- Coverage is reported on demand without thresholds. Threshold enforcement is
-  deferred to #378.
+- Coverage includes untested runtime files and enforces global floors of 70%
+  for statements, functions, and lines and 60% for branches.
+
+## Coverage measurement policy
+
+`src/**/*.{ts,tsx}` is measured by default. The allowlist is expressed as
+named exclusions in `vitest.config.mts`; a module is never excluded merely
+because it is uncovered.
+
+Critical runtime behavior stays measured. This includes all hooks and
+providers; authentication and Firebase initialization; scheme retrieval,
+mapping, filtering, and detail behavior; chat storage, streaming, state, and
+orchestration; catalog state; language state; the navbar; and feedback and
+contribution forms. Async Server Components continue to run at the browser
+seam.
+
+The exclusion categories are:
+
+| Category                    | Files                                                                                                                            | Reason                                                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Test support                | `src/test/**`                                                                                                                    | Fixtures, MSW setup, and test harnesses are not shipped runtime behavior.                                                                |
+| Static configuration        | The named landing-agency data, design tokens, motion constants, and translation catalogs                                         | These modules are declarative data with no domain or state decisions.                                                                    |
+| Next.js/browser entrypoints | The individually named root/route layouts, metadata routes, async catalog pages, async scheme page, and landing page entrypoints | React Server Components and framework metadata lifecycle are not simulated in jsdom; their output is covered by Playwright.              |
+| Visual-only modules         | The individually named animation components                                                                                      | Timing, layout, and paint are browser concerns; these modules own no product or domain state.                                              |
+| Presentational UI           | The individually named landing sections/primitives, layout wrappers, and skeletons                                              | These modules arrange copy, run self-contained visual demos, or render placeholders. Interactive product and domain state stays included. |
+
+Every non-test exclusion is listed as a concrete file in `vitest.config.mts`,
+apart from the route-safe wildcard needed to match Next.js route-group names.
+Adding an exclusion requires updating this policy with the category and test
+seam that owns the behavior.
+
+## Runtime and visual-baseline policy
+
+- PR unit/integration coverage and Chromium E2E are separate parallel jobs.
+  Their stable job IDs and display names remain `frontend-quality` / Frontend
+  quality and `frontend-e2e` / Frontend E2E.
+- Each test command, including Playwright web-server startup, is measured and
+  terminated at 120 seconds. CI writes the measured duration to the step
+  summary and emits an error annotation with the local reproduction command on
+  timeout or failure. Dependency installation and production build are outside
+  the test-lane measurement.
+- PR E2E runs both current Chromium projects: desktop Chrome and Pixel 10.
+- Normal Playwright runs set `updateSnapshots: "none"`; CI can neither create
+  missing goldens nor update changed goldens.
+- `npm run test:e2e:update-snapshots` is the only supported update command.
+  Run it in the target platform, inspect the image diff, and commit the result
+  explicitly. Linux baselines retain Playwright's existing `-linux.png`
+  convention and must be generated in a matching Linux environment.
 
 The supported commands are:
 
-| Purpose | Command |
-| --- | --- |
-| Full unit and integration run | `npm test` |
-| Unit run | `npm run test:unit` |
-| Integration run | `npm run test:integration` |
-| Watch mode | `npm run test:watch` |
-| Coverage report | `npm run test:coverage` |
-| Type checking | `npm run typecheck` |
-| Linting | `npm run lint` |
-| Production build | `npm run build` |
+| Purpose                         | Command                             |
+| ------------------------------- | ----------------------------------- |
+| Full unit and integration run   | `npm test`                          |
+| Unit run                        | `npm run test:unit`                 |
+| Integration run                 | `npm run test:integration`          |
+| Watch mode                      | `npm run test:watch`                |
+| Coverage report                 | `npm run test:coverage`             |
+| Chromium browser run            | `npm run test:e2e`                  |
+| Explicit visual-baseline update | `npm run test:e2e:update-snapshots` |
+| Type checking                   | `npm run typecheck`                 |
+| Linting                         | `npm run lint`                      |
+| Production build                | `npm run build`                     |
 
 ## Consequences
 
 - Contributors get one fast, secretless feedback loop based on npm.
-- Browser journeys remain the responsibility of #374. Coverage gates and PR
-  workflows remain the responsibility of #378 and #379.
+- Browser journeys remain the responsibility of #374-#377. Coverage gates and
+  PR runtime enforcement are owned by #378; the secretless workflow foundation
+  remains owned by #379.
 - Async Server Components are not simulated in jsdom; they remain browser-test
   seams.

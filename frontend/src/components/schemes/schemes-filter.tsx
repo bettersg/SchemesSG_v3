@@ -344,9 +344,9 @@ function SchemesFilter({
       if (
         scheme.agency &&
         scheme.planningArea &&
-        selectedLocations.intersection(
-          new Set(parseArrayString(scheme.planningArea)),
-        ).size > 0
+        (parseArrayString(scheme.planningArea) ?? []).some((location) =>
+          selectedLocations.has(location),
+        )
       ) {
         set.add(scheme.agency);
       }
