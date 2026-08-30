@@ -72,7 +72,7 @@ Choose the smallest runtime that covers the change:
 | Backend pipeline development (Functions, triggers, scraping, Slack, scheme-processor) | Backend development Compose stack | `cd backend && docker compose -f docker-compose-firebase.yml up --build` |
 | Real frontend-to-search verification | Root credentialed development smoke against `schemessg-v3-dev` | `./scripts/smoke-dev-search.sh` |
 
-Keep `backend/docker-compose-firebase.yml`: it includes `scheme-processor`, hot reload, and backend ports needed for backend-only work. It is not the cross-boundary acceptance runner. The root `compose.dev-smoke.yml` runs the real frontend and Functions, waits for health, and executes a real browser search against the development Firestore. See `docs/smoke-testing.md` for credentials, safety, limitations, and evidence.
+Keep `backend/docker-compose-firebase.yml`: it includes `scheme-processor`, hot reload, and backend ports needed for backend-only work. The root `compose.dev-smoke.yml` is the cross-boundary acceptance stack: it starts `scheme-processor`, waits for its health check, starts Functions, waits for Functions health, starts the frontend, and executes a real browser search against development Firestore. See `docs/smoke-testing.md` for credentials, safety, limitations, and evidence.
 
 Normal changes branch from `stg` and open a PR to `stg`. Merging `stg` deploys the development environment. Production promotion is a separate `stg` → `main` PR; merging `main` deploys production.
 

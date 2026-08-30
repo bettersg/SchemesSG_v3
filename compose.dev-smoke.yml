@@ -1,6 +1,22 @@
 name: ${COMPOSE_PROJECT_NAME:-schemessg-dev-smoke}
 
 services:
+  scheme-processor:
+    build:
+      context: ./backend/scheme-processor
+      dockerfile: Dockerfile
+    env_file:
+      - ${SCHEMESSG_DEV_CONFIG_DIR:?Set SCHEMESSG_DEV_CONFIG_DIR}/.env
+    environment:
+      PORT: "8081"
+      PYTHONUNBUFFERED: "1"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
+
   backend:
     build:
       context: ./backend
@@ -20,9 +36,12 @@ services:
       FUNCTIONS_HOST: 0.0.0.0
       FUNCTIONS_PORT: "5001"
       FUNCTIONS_DISCOVERY_TIMEOUT: "90000"
-      PROCESSOR_SERVICE_URL: http://host.docker.internal:8081
+      PROCESSOR_SERVICE_URL: http://scheme-processor:8081
       PYTHONUNBUFFERED: "1"
       PYTHONDONTWRITEBYTECODE: "1"
+    depends_on:
+      scheme-processor:
+        condition: service_healthy
     ports:
       - "${DEV_SMOKE_BACKEND_PORT:-15001}:5001"
     healthcheck:

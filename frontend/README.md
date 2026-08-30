@@ -40,11 +40,11 @@ Before we dive in, make sure you've got:
 
 3. **Real development search**
 
-   From the repository root, run `./scripts/smoke-dev-search.sh`. It starts the real Next.js frontend and local Firebase Functions, connects search to `schemessg-v3-dev`, waits for both services to become healthy, and requires real results through Playwright. This credentialed smoke is separate from secretless PR tests; see `../docs/smoke-testing.md`.
+   From the repository root, run `./scripts/smoke-dev-search.sh`. It health-checks `scheme-processor`, local Firebase Functions, and the real Next.js frontend in dependency order; connects search to `schemessg-v3-dev`; and requires real results through Playwright. This credentialed smoke is separate from secretless PR tests; see `../docs/smoke-testing.md`.
 
 4. **Backend pipeline development**
 
-   Use `backend/docker-compose-firebase.yml` when the work needs `scheme-processor`, triggers, scraping, or Slack. Do not start that heavier stack for frontend-only work or search-only smoke.
+   Use `backend/docker-compose-firebase.yml` for hands-on `scheme-processor`, trigger, scraping, or Slack development with hot reload. The root smoke also starts `scheme-processor`, but only proves its non-mutating `/health` endpoint before testing search.
 5. **Build & Test (Time to shine)**
    Staging:
    ```bash

@@ -133,7 +133,7 @@ docker compose -f docker-compose-firebase.yml down
 
 This is a **credentialed development stack**. It mounts `functions/.env` and `functions/creds.json` and, by default, local Functions access the shared `schemessg-v3-dev` Firestore because the Firestore emulator does not support the vector-search behavior used by scheme discovery. The UI at port 4000 inspects local emulated Functions; it does not display cloud Firestore documents.
 
-For a real frontend-to-search acceptance check, run `./scripts/smoke-dev-search.sh` from the repository root instead. That root stack runs the real frontend and Functions, waits for health, then uses Playwright to require real results from `schemessg-v3-dev`. It does not start `scheme-processor`, because search does not need it. See `../docs/smoke-testing.md`.
+For a cross-boundary acceptance check, run `./scripts/smoke-dev-search.sh` from the repository root instead. That root stack health-checks `scheme-processor`, Functions, and the frontend in dependency order, then uses Playwright to require real results from `schemessg-v3-dev`. It proves the processor's non-mutating `/health` endpoint but does not call `/process`, avoiding scraping, LLM calls, Firestore writes, and Slack side effects. See `../docs/smoke-testing.md`.
 
 ### Development Data
 
@@ -334,4 +334,4 @@ grep '^FB_PROJECT_ID=schemessg-v3-dev$' functions/.env
 
 - Confirm the `scheme-processor` service is healthy in the backend Compose logs.
 - Confirm `PROCESSOR_SERVICE_URL=http://scheme-processor:8081` inside the backend container.
-- The root development-search smoke intentionally omits `scheme-processor`; this is not an error for search-only verification.
+- The root development-search smoke includes `scheme-processor` and checks `/health`; it intentionally does not call the mutating `/process` pipeline.

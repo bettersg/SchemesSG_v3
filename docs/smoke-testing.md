@@ -14,7 +14,7 @@ The runner locates the primary checkout and mounts its ignored development input
 
 Override `SCHEMESSG_DEV_CONFIG_DIR` or `SCHEMESSG_FRONTEND_ENV` when those files live elsewhere. The runner refuses configurations whose Firebase project is not `schemessg-v3-dev`.
 
-The Compose stack builds the real Firebase Functions and Next.js applications. Functions run locally but connect to the shared development Firestore because the emulator does not provide the vector-search behavior used by production search. Playwright opens the actual search page, submits a query, and requires one or more real scheme results. Health checks bound startup; failures retain Compose logs, Playwright traces, and screenshots. Cleanup removes task containers and networks without deleting external data.
+The Compose stack builds the real `scheme-processor`, Firebase Functions, and Next.js applications. Startup is ordered by health: `scheme-processor` → Functions → frontend. The smoke proves the processor's non-mutating `/health` endpoint but does not call `/process`, which would scrape external sites, invoke an LLM, write Firestore, and post to Slack. Functions connect to shared development Firestore because the emulator does not provide the vector-search behavior used by production search. Playwright submits an actual search and requires one or more real scheme results. Failures retain Compose logs, Playwright traces, and screenshots; cleanup removes task containers and networks without deleting external data.
 
 The default frontend URL is `http://localhost:3000`, matching the backend's checked-in CORS allowlist. Override the port only after adding the corresponding local origin to the development CORS configuration.
 
