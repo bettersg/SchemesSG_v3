@@ -115,38 +115,29 @@ backend/
    cp functions/.env.example functions/.env
    ```
 
-### Local Development
+### Backend Development Compose
+
+Keep and use `backend/docker-compose-firebase.yml` for backend-only work. It runs the local Firebase Functions emulator plus the real `scheme-processor` container with hot reload. This is the right runtime for Functions, triggers, scraping, Slack, and new-scheme pipeline development.
 
 ```bash
-# Start all services (Functions + scheme-processor)
+# From backend/: start Functions + scheme-processor
 docker compose -f docker-compose-firebase.yml up --build
 
-# Access points:
-# - Firebase Functions: http://localhost:5001
-# - Firestore UI: http://localhost:4000
-# - scheme-processor: http://localhost:8081
+# Functions: http://localhost:5001
+# Emulator UI / Functions inspector: http://localhost:4000
+# scheme-processor: http://localhost:8081
 
-# Stop services
-docker compose -f docker-compose-firebase.yml down
-
-# View logs
 docker compose -f docker-compose-firebase.yml logs -f
-
-# Attach to container shell
-docker exec -it backend-backend-1 /bin/bash
+docker compose -f docker-compose-firebase.yml down
 ```
 
-### Loading Production Data (Optional)
+This is a **credentialed development stack**. It mounts `functions/.env` and `functions/creds.json` and, by default, local Functions access the shared `schemessg-v3-dev` Firestore because the Firestore emulator does not support the vector-search behavior used by scheme discovery. The UI at port 4000 inspects local emulated Functions; it does not display cloud Firestore documents.
 
-To work with real scheme data locally:
+For a cross-boundary acceptance check, run `./scripts/smoke-dev-search.sh` from the repository root instead. That root stack health-checks `scheme-processor`, Functions, and the frontend in dependency order, then uses Playwright to require real results from `schemessg-v3-dev`. It proves the processor's non-mutating `/health` endpoint but does not call `/process`, avoiding scraping, LLM calls, Firestore writes, and Slack side effects. See `../docs/smoke-testing.md`.
 
-```bash
-# 1. Download from production
-uv run python scripts/download_prod_data.py
+### Development Data
 
-# 2. Load into emulator (start Docker first)
-uv run python scripts/load_local_data.py
-```
+Normal local development and search smoke use the shared development dataset. Do not connect these workflows to production. Production export/import is an exceptional, maintainer-approved data operation—not a prerequisite for local development. The environment and representative-data strategy is tracked in #393.
 
 ### Running Tests
 
@@ -319,26 +310,28 @@ See `functions/.env.example` for required variables:
 
 ## Troubleshooting
 
-### Docker Issues
+### Backend Development Compose Issues
+
 ```bash
-# Check if services are running
+# From backend/
 docker compose -f docker-compose-firebase.yml ps
-
-# View logs
-docker compose -f docker-compose-firebase.yml logs backend
-docker compose -f docker-compose-firebase.yml logs scheme-processor
-
-# Rebuild from scratch
-docker compose -f docker-compose-firebase.yml down -v
+docker compose -f docker-compose-firebase.yml logs backend scheme-processor
+docker compose -f docker-compose-firebase.yml down
 docker compose -f docker-compose-firebase.yml up --build
 ```
 
-### Emulator Shows No Data
-The emulator connects to cloud Firestore by default (for vector search support). To see data:
-1. Use the production data loading workflow (see [Loading Production Data](#loading-production-data-optional))
-2. Or create test data via the Functions API
+Use `down -v` only when you intentionally want to delete Compose-managed local volumes. It does not reset the shared cloud development database.
+
+### Emulator UI Shows No Firestore Data
+
+Expected: `start.sh` launches the Functions emulator only. Search uses cloud Firestore in `schemessg-v3-dev` for vector-search parity, so cloud documents do not appear in the local Emulator UI. Verify the configured project before investigating data:
+
+```bash
+grep '^FB_PROJECT_ID=schemessg-v3-dev$' functions/.env
+```
 
 ### scheme-processor Connection Issues
-- Ensure both services are running: `docker compose ps`
-- Check logs: `docker compose logs scheme-processor`
-- Verify `PROCESSOR_SERVICE_URL=http://scheme-processor:8081` in docker-compose
+
+- Confirm the `scheme-processor` service is healthy in the backend Compose logs.
+- Confirm `PROCESSOR_SERVICE_URL=http://scheme-processor:8081` inside the backend container.
+- The root development-search smoke includes `scheme-processor` and checks `/health`; it intentionally does not call the mutating `/process` pipeline.

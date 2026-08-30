@@ -1,0 +1,19 @@
+# Harness and repository control surfaces require maintainer review.
+/AGENTS.md @longwind48
+/CLAUDE.md @longwind48
+/backend/AGENTS.md @longwind48
+/backend/CLAUDE.md @longwind48
+/frontend/AGENTS.md @longwind48
+/frontend/CLAUDE.md @longwind48
+/scripts/ @longwind48
+/compose*.yml @longwind48
+/compose*.yaml @longwind48
+/backend/docker-compose*.yml @longwind48
+/.github/ @longwind48
+/package.json @longwind48
+/package-lock.json @longwind48
+/backend/pyproject.toml @longwind48
+/backend/uv.lock @longwind48
+/backend/functions/requirements.txt @longwind48
+/frontend/package.json @longwind48
+/frontend/package-lock.json @longwind48

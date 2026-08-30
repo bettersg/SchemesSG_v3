@@ -290,3 +290,6 @@ repo_dump.md
 # local directories
 .claude/
 tmp/
+
+# Harness smoke diagnostics
+.smoke-logs/

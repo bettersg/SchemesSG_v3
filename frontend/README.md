@@ -32,13 +32,20 @@ Before we dive in, make sure you've got:
 
    > 🔑 **Important**: Download the environment files (.env.*) from [Google Drive](https://drive.google.com/drive/u/2/folders/1RtqR8vZtjMrgqIGa-uQEZJa9x4dL3z4U) and place them in the frontend root directory before running the app or creating a deployable build. Unit tests, integration tests, and validation builds do not need these files.
 
-2. **Development (Where the magic happens)**
+2. **Frontend-only development**
    ```bash
    npm run dev
    ```
-   🌐 Access your creation at `http://localhost:3000`
+   Open `http://localhost:3000`. Use this for UI work; deterministic unit/integration/E2E tests replace Firebase and backend boundaries. A live local backend is not required unless the change crosses those boundaries.
 
-3. **Build & Test (Time to shine)**
+3. **Real development search**
+
+   From the repository root, run `./scripts/smoke-dev-search.sh`. It health-checks `scheme-processor`, local Firebase Functions, and the real Next.js frontend in dependency order; connects search to `schemessg-v3-dev`; and requires real results through Playwright. This credentialed smoke is separate from secretless PR tests; see `../docs/smoke-testing.md`.
+
+4. **Backend pipeline development**
+
+   Use `backend/docker-compose-firebase.yml` for hands-on `scheme-processor`, trigger, scraping, or Slack development with hot reload. The root smoke also starts `scheme-processor`, but only proves its non-mutating `/health` endpoint before testing search.
+5. **Build & Test (Time to shine)**
    Staging:
    ```bash
    npm run build:staging
