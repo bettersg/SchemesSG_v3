@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./e2e/dev-smoke",
+  testDir: "./dev-smoke",
   testMatch: "dev-search-smoke.spec.ts",
   timeout: 120_000,
   expect: { timeout: 90_000 },
