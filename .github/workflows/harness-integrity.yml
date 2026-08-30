@@ -1,0 +1,40 @@
+name: Harness integrity
+
+on:
+  pull_request:
+    branches: [stg, main]
+    paths:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "backend/AGENTS.md"
+      - "backend/CLAUDE.md"
+      - "frontend/AGENTS.md"
+      - "frontend/CLAUDE.md"
+      - "scripts/**"
+      - "compose*.yml"
+      - "compose*.yaml"
+      - ".github/workflows/harness-integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: harness-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify instruction links and worktree preflight
+        run: ./scripts/test-harness.sh
+      - name: Validate development smoke Compose definition
+        env:
+          SCHEMESSG_DEV_CONFIG_DIR: /tmp/schemessg-dev-config
+          SCHEMESSG_FRONTEND_ENV: /tmp/schemessg-frontend.env
+        run: |
+          mkdir -p "$SCHEMESSG_DEV_CONFIG_DIR"
+          touch "$SCHEMESSG_DEV_CONFIG_DIR/.env" "$SCHEMESSG_DEV_CONFIG_DIR/creds.json" "$SCHEMESSG_FRONTEND_ENV"
+          docker compose -f compose.dev-smoke.yml config --quiet

@@ -1,0 +1,54 @@
+name: ${COMPOSE_PROJECT_NAME:-schemessg-dev-smoke}
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.firebase
+    volumes:
+      - ./backend/functions:/app/functions
+      - /app/functions/venv
+      - ./backend/start.sh:/start.sh:ro
+      - ./backend/firebase.json:/app/firebase.json:ro
+      - ./backend/.firebaserc:/app/.firebaserc:ro
+      - ${SCHEMESSG_DEV_CONFIG_DIR:?Set SCHEMESSG_DEV_CONFIG_DIR}/creds.json:/root/.config/firebase/creds.json:ro
+    env_file:
+      - ${SCHEMESSG_DEV_CONFIG_DIR:?Set SCHEMESSG_DEV_CONFIG_DIR}/.env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /root/.config/firebase/creds.json
+      ENVIRONMENT: local
+      FUNCTIONS_HOST: 0.0.0.0
+      FUNCTIONS_PORT: "5001"
+      FUNCTIONS_DISCOVERY_TIMEOUT: "90000"
+      PROCESSOR_SERVICE_URL: http://host.docker.internal:8081
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    ports:
+      - "${DEV_SMOKE_BACKEND_PORT:-15001}:5001"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 45s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev-smoke
+    env_file:
+      - ${SCHEMESSG_FRONTEND_ENV:?Set SCHEMESSG_FRONTEND_ENV}
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${DEV_SMOKE_BACKEND_PORT:-15001}/schemessg-v3-dev/asia-southeast1
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "${DEV_SMOKE_FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 15s

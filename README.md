@@ -19,10 +19,10 @@ The core functionality is powered by a sophisticated search system that combines
 ## Prerequisites
 
 Ensure you have the following installed:
-- **Node.js** (v14 or later): [Download Node.js](https://nodejs.org/)
-- **npm** (v6 or later): Comes with Node.js
-- **Python** (v3.10): [Download Python](https://www.python.org/downloads/)
-- **Firebase CLI**: Install globally using `npm install -g firebase-tools`
+- **Node.js** (v20.19 or later): [Download Node.js](https://nodejs.org/)
+- **npm**: Comes with Node.js
+- **Python** (v3.10–3.12): [Download Python](https://www.python.org/downloads/)
+- **uv**: [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
 - **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
 - **Docker Compose**: Included with Docker Desktop
 
