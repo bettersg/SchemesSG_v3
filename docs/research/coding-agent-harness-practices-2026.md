@@ -20,4 +20,4 @@ Research date: 2026-08-29. Primary-source findings used for the harness decision
 
 ## Claims not made
 
-Symlinks are not universal across every agent or archive environment. Worktrees do not isolate runtime resources. A running container is not necessarily ready. The local deterministic adapter does not validate production Firestore vector search, external LLMs, Slack, or deployed Firebase configuration.
+Symlinks are not universal across every agent or archive environment. Worktrees do not isolate runtime resources. A running container is not necessarily ready. Deterministic PR browser tests do not validate cloud Firestore vector search, external LLMs, Slack, or deployed Firebase configuration; those require separately controlled non-production smoke.
