@@ -37,14 +37,23 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: "**/mobile-*.spec.ts",
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
       },
     },
+    {
+      name: "mobile-chromium",
+      testMatch: "**/mobile-*.spec.ts",
+      use: {
+        ...devices["Pixel 5"],
+      },
+    },
   ],
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+    command:
+      "npm run dev -- --webpack --hostname 127.0.0.1 --port 3100",
     env: {
       NEXT_PUBLIC_API_BASE_URL: E2E_API_ORIGIN,
       NEXT_PUBLIC_FB_API_KEY: E2E_FIREBASE_CONFIG.apiKey,

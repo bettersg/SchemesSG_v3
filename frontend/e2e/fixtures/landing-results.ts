@@ -55,7 +55,10 @@ export const E2E_AUTH_TOKEN = [
   "e2e-signature",
 ].join(".");
 
-const sseEvents = [
+export const LANDING_RESULT_EVENTS: Array<{
+  type: string;
+  data: unknown;
+}> = [
   {
     type: "status",
     data: { phase: "session_started", sessionID: "e2e-session" },
@@ -92,7 +95,7 @@ const sseEvents = [
   { type: "done", data: {} },
 ];
 
-const LANDING_RESULTS_SSE = sseEvents
+const LANDING_RESULTS_SSE = LANDING_RESULT_EVENTS
   .map((event) => `data: ${JSON.stringify(event)}\n\n`)
   .join("");
 
