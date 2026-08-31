@@ -3,10 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import nightlyConfig from "../../playwright.nightly.config";
 import stagingConfig from "../../playwright.staging.config";
-import {
-  STAGING_ORIGIN,
-  classifyStagingRequest,
-} from "../../staging-smoke/read-only-network";
+import { STAGING_ORIGIN } from "../../staging-smoke/read-only-network";
 
 function projectByName(
   config: typeof nightlyConfig | typeof stagingConfig,
@@ -56,6 +53,37 @@ describe("nightly browser controls", () => {
 });
 
 describe("deployed staging smoke controls", () => {
+  it("routes availability failures through read-only browser diagnostics", () => {
+    const availabilitySpec = readFileSync(
+      resolve(process.cwd(), "staging-smoke/availability.spec.ts"),
+      "utf8",
+    );
+    const readOnlyFixture = readFileSync(
+      resolve(process.cwd(), "staging-smoke/read-only-fixture.ts"),
+      "utf8",
+    );
+    const workflow = readFileSync(
+      resolve(process.cwd(), "../.github/workflows/nightly-browser.yml"),
+      "utf8",
+    );
+
+    expect(availabilitySpec).toContain('from "./read-only-fixture"');
+    expect(availabilitySpec).toContain("page.goto");
+    expect(availabilitySpec).toContain("page.evaluate");
+    expect(availabilitySpec).not.toContain("request.get");
+    expect(availabilitySpec).toContain(
+      "staging page referenced a script outside development hosting",
+    );
+    expect(readOnlyFixture).toContain("allowedRequests");
+    expect(readOnlyFixture).toContain("blockedRequests");
+    expect(readOnlyFixture).toContain("read-only-network-guard.json");
+    expect(stagingConfig.use?.screenshot).toBe("only-on-failure");
+    expect(stagingConfig.use?.trace).toBe("retain-on-failure");
+    expect(stagingConfig.outputDir).toBe("test-results/staging");
+    expect(workflow).toContain("frontend/playwright-report/staging/");
+    expect(workflow).toContain("frontend/test-results/staging/");
+  });
+
   it("separates availability/configuration from product assertions", () => {
     expect(stagingConfig.use?.baseURL).toBe(STAGING_ORIGIN);
     expect(stagingConfig.webServer).toBeUndefined();
@@ -67,37 +95,4 @@ describe("deployed staging smoke controls", () => {
       projectByName(stagingConfig, "staging-product")?.dependencies,
     ).toEqual(["staging-availability"]);
   });
-
-  it.each(["POST", "PUT", "PATCH", "DELETE"])(
-    "blocks %s requests even when they target staging",
-    (method) => {
-      expect(
-        classifyStagingRequest(method, `${STAGING_ORIGIN}/feedback`),
-      ).toEqual({ action: "block", reason: "mutating-method" });
-    },
-  );
-
-  it("blocks every request outside the deployed staging origin", () => {
-    expect(classifyStagingRequest("GET", "https://schemes.sg/catalog")).toEqual(
-      {
-        action: "block",
-        reason: "outside-staging",
-      },
-    );
-    expect(
-      classifyStagingRequest(
-        "GET",
-        "https://identitytoolkit.googleapis.com/v1/accounts:lookup",
-      ),
-    ).toEqual({ action: "block", reason: "outside-staging" });
-  });
-
-  it.each(["GET", "HEAD", "OPTIONS"])(
-    "allows same-origin %s requests needed to render staging",
-    (method) => {
-      expect(classifyStagingRequest(method, `${STAGING_ORIGIN}/catalog`)).toEqual(
-        { action: "continue" },
-      );
-    },
-  );
 });

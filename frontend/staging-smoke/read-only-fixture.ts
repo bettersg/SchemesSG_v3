@@ -1,47 +1,66 @@
+import { writeFile } from "node:fs/promises";
 import { test as base } from "@playwright/test";
 import {
   classifyStagingRequest,
   type StagingRequestDecision,
 } from "./read-only-network";
 
-type BlockedRequest = {
+type ObservedRequest = {
   method: string;
-  reason: Extract<StagingRequestDecision, { action: "block" }>["reason"];
+  resourceType: string;
   url: string;
 };
 
+type BlockedRequest = ObservedRequest & {
+  reason: Extract<StagingRequestDecision, { action: "block" }>["reason"];
+};
+
 type ReadOnlyNetwork = {
+  allowedRequests: ObservedRequest[];
   blockedRequests: BlockedRequest[];
 };
 
 export const test = base.extend<{ readOnlyNetwork: ReadOnlyNetwork }>({
   readOnlyNetwork: [
     async ({ context }, use, testInfo) => {
+      const allowedRequests: ObservedRequest[] = [];
       const blockedRequests: BlockedRequest[] = [];
 
       await context.route("**/*", async (route) => {
         const request = route.request();
+        const observedRequest = {
+          method: request.method(),
+          resourceType: request.resourceType(),
+          url: request.url(),
+        };
         const decision = classifyStagingRequest(
           request.method(),
           request.url(),
         );
         if (decision.action === "continue") {
+          allowedRequests.push(observedRequest);
           await route.continue();
           return;
         }
 
         blockedRequests.push({
-          method: request.method(),
+          ...observedRequest,
           reason: decision.reason,
-          url: request.url(),
         });
         await route.abort("blockedbyclient");
       });
 
-      await use({ blockedRequests });
+      await use({ allowedRequests, blockedRequests });
 
+      const networkLogPath = testInfo.outputPath(
+        "read-only-network-guard.json",
+      );
+      await writeFile(
+        networkLogPath,
+        JSON.stringify({ allowedRequests, blockedRequests }, null, 2),
+      );
       await testInfo.attach("read-only-network-guard.json", {
-        body: Buffer.from(JSON.stringify({ blockedRequests }, null, 2)),
+        path: networkLogPath,
         contentType: "application/json",
       });
     },

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./read-only-fixture";
 import {
   STAGING_API_ORIGIN,
   STAGING_FIREBASE_PROJECT_ID,
@@ -11,48 +11,53 @@ const PRODUCTION_FIREBASE_AUTH_DOMAIN = "schemessg.firebaseapp.com";
 const STAGING_FIREBASE_AUTH_DOMAIN = "schemessg-v3-dev.firebaseapp.com";
 
 test("staging deployment is available and serves the expected application", async ({
-  request,
+  page,
 }) => {
-  const response = await request.get("/", {
-    headers: { accept: "text/html" },
-    maxRedirects: 0,
-  });
+  const response = await page.goto("/");
 
-  expect(response.status(), "staging hosting did not return HTTP 200").toBe(200);
-  expect(new URL(response.url()).origin, "staging redirected to another host").toBe(
-    STAGING_ORIGIN,
+  if (response === null) {
+    throw new Error("staging hosting did not return a document response");
+  }
+  expect(
+    response.status(),
+    "staging hosting did not return HTTP 200",
+  ).toBe(200);
+  await expect(page).toHaveURL(`${STAGING_ORIGIN}/`);
+  await expect(page).toHaveTitle(
+    "Find the Right Schemes, All in One Place | Schemes.sg",
   );
-  await expect(response).toBeOK();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
   const html = await response.text();
-  expect(html).toContain(
-    "<title>Find the Right Schemes, All in One Place | Schemes.sg</title>",
-  );
-  expect(html).toContain('<html lang="en"');
-
   const scriptUrls = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(
-    ([, source]) => new URL(source, STAGING_ORIGIN),
+    ([, source]) => new URL(source, STAGING_ORIGIN).toString(),
   );
   expect(
     scriptUrls.length,
     "staging HTML did not reference application scripts",
   ).toBeGreaterThan(0);
   expect(
-    scriptUrls.every((url) => url.origin === STAGING_ORIGIN),
-    "staging HTML referenced a script outside development hosting",
+    scriptUrls.every((url) => new URL(url).origin === STAGING_ORIGIN),
+    "staging page referenced a script outside development hosting",
   ).toBe(true);
 
-  const scripts = await Promise.all(
-    scriptUrls.map(async (url) => {
-      const scriptResponse = await request.get(url.toString(), {
-        maxRedirects: 0,
-      });
-      expect(scriptResponse.status(), `${url.pathname} was unavailable`).toBe(
-        200,
-      );
-      expect(new URL(scriptResponse.url()).origin).toBe(STAGING_ORIGIN);
-      return scriptResponse.text();
-    }),
+  const scripts = await page.evaluate(
+    async (urls) =>
+      Promise.all(
+        urls.map(async (url) => {
+          const scriptResponse = await fetch(url, { redirect: "error" });
+          if (!scriptResponse.ok) {
+            throw new Error(
+              `${new URL(url).pathname} returned HTTP ${scriptResponse.status}`,
+            );
+          }
+          if (new URL(scriptResponse.url).origin !== window.location.origin) {
+            throw new Error(`${url} redirected outside development hosting`);
+          }
+          return scriptResponse.text();
+        }),
+      ),
+    scriptUrls,
   );
   const deployedJavascript = scripts.join("\n");
   expect(deployedJavascript).toContain(STAGING_API_ORIGIN);

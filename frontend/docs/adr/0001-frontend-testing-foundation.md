@@ -100,8 +100,15 @@ seam that owns the behavior.
   which also verifies the deployed development Firebase project and API origin,
   then checks only the landing and unselected catalog routes. It does not submit
   search, feedback, or contribution data.
+- Both staging projects use the same automatic read-only browser fixture. The
+  availability gate loads its document and application scripts through the
+  instrumented page so failures retain allowed and blocked request diagnostics,
+  a screenshot, and a trace.
 - Failed cross-browser and staging runs upload their HTML report, screenshots,
   traces, and read-only network log for seven days.
+- The workflow keeps each bounded shell flow explicit. Availability and product
+  failures need different annotations and exact reproduction commands; a shared
+  wrapper would obscure that classification for little reduction in code.
 
 The supported commands are:
 

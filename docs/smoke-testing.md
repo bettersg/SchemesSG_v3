@@ -39,11 +39,13 @@ deployed bundles contain the development Firebase project and Cloud Functions
 API origin. The second project runs only after that gate and verifies that the
 landing page can navigate to the unselected catalog page.
 
-The browser project blocks service workers, all off-origin requests, and every
-request method except GET, HEAD, and OPTIONS. Blocked traffic is attached to
-the Playwright result. The smoke uses no credential or secret, never submits a
-search or form, cannot contact the production host, and cannot write
-development or production data.
+Both projects load through the same instrumented browser fixture. It blocks
+service workers, all off-origin requests, and every request method except GET,
+HEAD, and OPTIONS. Allowed and blocked traffic is retained with request methods,
+resource types, URLs, and block reasons in a standalone JSON attachment.
+Availability failures also retain the page screenshot and trace. The smoke uses
+no credential or secret, never submits a search or form, cannot contact the
+production host, and cannot write development or production data.
 
 `.github/workflows/nightly-browser.yml` runs this smoke nightly and by manual
 dispatch. Availability/configuration and product steps have distinct names so
