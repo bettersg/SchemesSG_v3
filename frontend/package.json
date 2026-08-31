@@ -25,6 +25,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:nightly": "playwright test --config=playwright.nightly.config.ts",
+    "test:e2e:staging": "playwright test --config=playwright.staging.config.ts",
     "test:e2e:install": "playwright install chromium",
     "test:e2e:report": "playwright show-report",
     "test:e2e:update-snapshots": "playwright test --update-snapshots=changed",

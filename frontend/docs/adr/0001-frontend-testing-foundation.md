@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-29
-- Last amended: 2026-08-30 (#378)
+- Last amended: 2026-08-31 (#380)
 
 ## Context
 
@@ -79,6 +79,30 @@ seam that owns the behavior.
   explicitly. Linux baselines retain Playwright's existing `-linux.png`
   convention and must be generated in a matching Linux environment.
 
+## Nightly and deployed-staging policy
+
+- `playwright.nightly.config.ts` inherits the deterministic local-server
+  harness and replaces only its project list. Every desktop journey runs in
+  Chromium, Firefox, and WebKit. Mobile Chromium stays in the PR lane.
+- Firefox and WebKit set `ignoreSnapshots: true`. Chromium remains the sole
+  owner of the reviewed visual baselines, and every configuration keeps
+  `updateSnapshots: "none"`.
+- `.github/workflows/nightly-browser.yml` has only `schedule` and
+  `workflow_dispatch` triggers. It does not add Firefox, WebKit, or deployed
+  staging to ordinary pull-request runs.
+- Deployed staging is fixed to `https://schemessg-v3-dev.web.app`. The smoke
+  accepts no environment override, credentials, secrets, or production host.
+  Service workers are blocked. Browser routing aborts all off-origin traffic
+  and every request except GET, HEAD, and OPTIONS before it reaches the
+  network.
+- Staging availability/configuration and product behavior are separate
+  Playwright projects. The product project depends on the availability gate,
+  which also verifies the deployed development Firebase project and API origin,
+  then checks only the landing and unselected catalog routes. It does not submit
+  search, feedback, or contribution data.
+- Failed cross-browser and staging runs upload their HTML report, screenshots,
+  traces, and read-only network log for seven days.
+
 The supported commands are:
 
 | Purpose                         | Command                             |
@@ -89,6 +113,8 @@ The supported commands are:
 | Watch mode                      | `npm run test:watch`                |
 | Coverage report                 | `npm run test:coverage`             |
 | Chromium browser run            | `npm run test:e2e`                  |
+| Nightly cross-browser run        | `npm run test:e2e:nightly`          |
+| Deployed staging smoke           | `npm run test:e2e:staging`          |
 | Explicit visual-baseline update | `npm run test:e2e:update-snapshots` |
 | Type checking                   | `npm run typecheck`                 |
 | Linting                         | `npm run lint`                      |
