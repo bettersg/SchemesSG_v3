@@ -17,3 +17,7 @@
 /backend/functions/requirements.txt @longwind48
 /frontend/package.json @longwind48
 /frontend/package-lock.json @longwind48
+/frontend/playwright.nightly.config.ts @longwind48
+/frontend/playwright.staging.config.ts @longwind48
+/frontend/src/test/nightly-browser-controls.test.ts @longwind48
+/frontend/staging-smoke/ @longwind48

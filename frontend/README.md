@@ -88,6 +88,8 @@ npm run test:watch        # watch mode
 npm run test:coverage     # coverage report with enforced 70/60 global floors
 npm run test:e2e:install  # install the Chromium browser once
 npm run test:e2e          # desktop and Pixel 10 Chromium journeys
+npm run test:e2e:nightly  # desktop Chromium, Firefox, and WebKit journeys
+npm run test:e2e:staging  # read-only smoke against deployed development hosting
 npm run test:e2e:update-snapshots # explicitly update reviewed visual baselines
 npm run test:e2e:report   # open the latest Playwright HTML report
 npm run typecheck         # TypeScript
@@ -102,7 +104,22 @@ No environment file, deployed service, or production data is used.
 
 On failure, Playwright writes screenshots and local traces to `test-results/`
 and an HTML report to `playwright-report/`. CI retries once and captures the
-first-retry trace for a future workflow to upload.
+first-retry trace. The scheduled/manual browser workflow uploads these outputs
+for seven days when a cross-browser or deployed-staging check fails.
+
+`npm run test:e2e:nightly` uses the same deterministic fixtures as the PR suite
+but runs every desktop journey in Chromium, Firefox, and WebKit. Firefox and
+WebKit skip screenshot assertions so the reviewed Chromium baselines stay
+unchanged. This broader suite runs only on the nightly schedule or manual
+dispatch.
+
+`npm run test:e2e:staging` is fixed to
+`https://schemessg-v3-dev.web.app`; it accepts no target override, credential,
+or secret. The availability/configuration project must pass before the product
+project checks the landing and catalog routes. The configuration gate verifies
+that deployed bundles point to the development Firebase project and API. The
+browser guard aborts every off-origin request and every method other than GET,
+HEAD, or OPTIONS, so the smoke cannot write development or production data.
 
 See [ADR 0001](docs/adr/0001-frontend-testing-foundation.md) for the accepted
 testing boundaries and deferred work.
