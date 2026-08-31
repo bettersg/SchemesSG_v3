@@ -17,6 +17,16 @@ assert_symlink() {
   fi
 }
 
+assert_line() {
+  path=$1
+  expected=$2
+  description=$3
+  if ! grep -Fqx -- "$expected" "$path"; then
+    printf 'FAIL: %s is missing from %s\n' "$description" "$path" >&2
+    exit 1
+  fi
+}
+
 for instructions in "$ROOT/AGENTS.md" "$ROOT/backend/AGENTS.md" "$ROOT/frontend/AGENTS.md"; do
   if [ ! -s "$instructions" ]; then
     printf 'FAIL: missing instruction source %s\n' "$instructions" >&2
@@ -28,6 +38,16 @@ for instructions in "$ROOT/AGENTS.md" "$ROOT/backend/AGENTS.md" "$ROOT/frontend/
     exit 1
   fi
 done
+
+assert_line "$ROOT/docs/verification.md" "## Test impact" "test-impact policy heading"
+assert_line "$ROOT/pull_request_template.md" "## Test impact" "test-impact PR heading"
+assert_line "$ROOT/pull_request_template.md" "- Observable behavior changes:" "observable-behavior field"
+assert_line "$ROOT/pull_request_template.md" "- Focused regression tests:" "focused-regression-test field"
+assert_line "$ROOT/pull_request_template.md" "- Red-before evidence (bug fixes, when practical):" "red-before field"
+assert_line "$ROOT/pull_request_template.md" "- Green-after evidence:" "green-after field"
+assert_line "$ROOT/pull_request_template.md" "- No-test reason (if applicable):" "no-test-reason field"
+assert_line "$ROOT/pull_request_template.md" "- Substitute evidence (if applicable):" "substitute-evidence field"
+assert_line "$ROOT/pull_request_template.md" "- [ ] Test impact accounts for every observable behavior change." "test-impact reviewer check"
 
 assert_symlink "$ROOT/CLAUDE.md" AGENTS.md
 assert_symlink "$ROOT/backend/CLAUDE.md" AGENTS.md

@@ -10,6 +10,7 @@ import {
   interceptChatStreamScenarios,
 } from "./fixtures/chat-resilience";
 import {
+  FOLLOW_UP,
   LANDING_ANSWER,
   LANDING_QUERY,
   LANDING_SCHEMES,
@@ -102,6 +103,24 @@ test("user can recover from a failed stream without losing prior results", async
       }),
     ).toBeVisible();
   }
+  const followUp = page.getByRole("button", {
+    name: `${FOLLOW_UP.label}: ${FOLLOW_UP.value}`,
+  });
+  await expect(followUp).toBeVisible();
+  const effectiveOpacity = await followUp.evaluate((element) => {
+    let opacity = 1;
+    for (
+      let current: Element | null = element;
+      current;
+      current = current.parentElement
+    ) {
+      opacity *= Number.parseFloat(window.getComputedStyle(current).opacity);
+    }
+    return opacity;
+  });
+  // The PR browser config requests reduced motion, so the control must render
+  // fully opaque instead of entering through a transient low-contrast state.
+  expect(effectiveOpacity).toBe(1);
   await expect(page.getByRole("textbox")).toHaveValue(FAILURE_QUERY);
   const accessibilityScan = await new AxeBuilder({ page })
     .include("main")

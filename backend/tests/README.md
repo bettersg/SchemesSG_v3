@@ -4,11 +4,19 @@ Run the canonical secretless suite from `backend/`:
 
 ```bash
 uv run --frozen pytest
+uv run --frozen coverage json -o - | uv run --frozen python scripts/check_coverage.py
 ```
 
 `pyproject.toml` is the single pytest configuration source. It controls
 discovery, import paths, strict marker registration, warning filters, the
-default smoke-test exclusion, and coverage.
+default smoke-test exclusion, and branch-aware coverage. The second command
+enforces the parent-approved no-regression floors independently: 52.50%
+statements and 33.24% branches. The long-term target remains 70% statements
+and 60% branches.
+
+Coverage floors move upward only. A reduction requires a separately recorded
+parent-level exception with evidence. The current ratchet was approved in
+[#358](https://github.com/bettersg/SchemesSG_v3/issues/358#issuecomment-5474089562).
 
 ## Test tiers
 
@@ -46,7 +54,21 @@ exist in the current handler, so those assertions were not recreated.
 Detailed stream-event ordering, terminal events, cancellation, and broader
 error contracts remain deferred to #371.
 
-## Baseline
+## Enforced coverage baseline
+
+Measured on 2026-08-31 from clean integrated `stg` commit `5163173` with
+CPython 3.12.11 and branch measurement enabled:
+
+| Metric | Covered / total | Measured | Enforced floor | Target |
+| --- | ---: | ---: | ---: | ---: |
+| Statements | 2,170 / 4,133 | 52.50% | 52.50% | 70% |
+| Branches | 383 / 1,152 | 33.25% | 33.24% | 60% |
+
+The measured branch value is 33.2465%; the approved two-decimal floor is
+33.24%. With the current totals, losing one covered statement or branch
+without an offsetting gain causes the checker to fail.
+
+### Historical pre-ratchet runtime
 
 Measured on 2026-08-29 on macOS arm64 with CPython 3.12.11, pytest 9.1.1,
 and no secret environment values. Wall time is from `/usr/bin/time -p`.
@@ -59,3 +81,6 @@ and no secret environment values. Wall time is from `/usr/bin/time -p`.
 
 The full baseline covers 4,117 statements with 2,101 missed. This is the
 starting point for later coverage-expansion tickets, not a target reduction.
+
+Exact #381 clean-checkout and CI timings are recorded in the pull request.
+Update the enforced table only when an integrated measurement raises a floor.
