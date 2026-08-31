@@ -1,7 +1,7 @@
 "use client";
 
 import { ScrollShadow, Tooltip } from "@heroui/react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {
   productButtonCompact,
@@ -48,6 +48,7 @@ export function FollowUpSuggestions({
   suggestions,
   onSelect,
 }: FollowUpSuggestionsProps) {
+  const reduceMotion = useReducedMotion();
   // Desktop gets standard hover tooltips. Touch/coarse-pointer devices get an
   // explicit hold preview that disappears as soon as the press is released.
   const [hoverCapable, setHoverCapable] = useState(false);
@@ -131,9 +132,15 @@ export function FollowUpSuggestions({
           <motion.div
             key={suggestion.label}
             className="shrink-0"
-            initial={motionPreset.fadeInUpXs.initial}
-            animate={motionPreset.fadeInUpXs.animate}
-            transition={{ ...transition.state, delay: index * stagger }}
+            initial={reduceMotion ? false : motionPreset.fadeInUpXs.initial}
+            animate={
+              reduceMotion ? undefined : motionPreset.fadeInUpXs.animate
+            }
+            transition={
+              reduceMotion
+                ? undefined
+                : { ...transition.state, delay: index * stagger }
+            }
           >
             <Tooltip
               closeDelay={0}

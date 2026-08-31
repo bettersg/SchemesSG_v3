@@ -86,6 +86,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
+branch = true
 omit = [
     "functions/__init__.py",
     "functions/main.py",

@@ -10,6 +10,7 @@ This document covers all utility scripts for the SchemesSG backend.
 | `test_vector_search.py` | `functions/scripts/` | Test vector search queries | Development/debugging |
 | `scan_duplicate_schemes.py` | `functions/scripts/` | Read-only duplicate cluster report | Human triage |
 | `run_link_check_and_reindex.py` | `functions/scripts/` | Manual link check + reindex | Ad-hoc maintenance |
+| `check_coverage.py` | `scripts/` | Enforce independent coverage floors | After canonical pytest |
 | `download_prod_data.py` | `scripts/` | Download production data | Refresh local data |
 | `download_dev_data.py` | `scripts/` | Download dev data | Refresh local data |
 | `load_local_data.py` | `scripts/` | Load data into emulator | After download |
@@ -159,6 +160,18 @@ uv run python scripts/normalize_and_export_to_sheets.py
 ---
 
 ## Complete Workflows
+
+### Backend coverage ratchet
+
+Run the canonical secretless suite before checking its coverage data:
+
+```bash
+uv run --frozen pytest
+uv run --frozen coverage json -o - | uv run --frozen python scripts/check_coverage.py
+```
+
+The checker fails independently below 52.50% statements or 33.24% branches.
+See `tests/README.md` for the parent approval and raise-only policy.
 
 ### Search and agent quality benchmarks
 
