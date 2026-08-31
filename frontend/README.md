@@ -85,9 +85,10 @@ npm test                  # all unit and integration tests once
 npm run test:unit         # unit tests
 npm run test:integration  # integrated provider/page tests
 npm run test:watch        # watch mode
-npm run test:coverage     # coverage report, without enforcement thresholds
+npm run test:coverage     # coverage report with enforced 70/60 global floors
 npm run test:e2e:install  # install the Chromium browser once
-npm run test:e2e          # Chromium landing-to-results browser journey
+npm run test:e2e          # desktop and Pixel 10 Chromium journeys
+npm run test:e2e:update-snapshots # explicitly update reviewed visual baselines
 npm run test:e2e:report   # open the latest Playwright HTML report
 npm run typecheck         # TypeScript
 npm run lint              # ESLint

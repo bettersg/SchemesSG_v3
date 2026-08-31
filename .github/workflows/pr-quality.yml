@@ -43,9 +43,25 @@ jobs:
         working-directory: frontend
         run: npm run typecheck
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage (120s budget)
         working-directory: frontend
-        run: timeout 120s npm run test:coverage
+        shell: bash
+        run: |
+          lane_started_at=$(date +%s)
+          set +e
+          timeout --kill-after=10s 120s npm run test:coverage
+          lane_status=$?
+          set -e
+          lane_duration=$(( $(date +%s) - lane_started_at ))
+          echo "Frontend unit/integration coverage: ${lane_duration}s / 120s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$lane_status" -eq 124 ] || [ "$lane_status" -eq 137 ]; then
+            echo "::error title=Frontend unit/integration runtime budget exceeded::Coverage tests reached the 120s limit. Run 'npm run test:coverage' in frontend and profile the slowest files."
+            exit 1
+          fi
+          if [ "$lane_status" -ne 0 ]; then
+            echo "::error title=Frontend unit/integration tests failed::Coverage tests failed after ${lane_duration}s. See the Vitest output above."
+            exit "$lane_status"
+          fi
 
       - name: Build for production
         working-directory: frontend
@@ -78,9 +94,25 @@ jobs:
         working-directory: frontend
         run: npm exec -- playwright install --with-deps chromium
 
-      - name: Run Chromium tests
+      - name: Run Chromium tests (120s budget)
         working-directory: frontend
-        run: npm run test:e2e -- --project=chromium
+        shell: bash
+        run: |
+          lane_started_at=$(date +%s)
+          set +e
+          timeout --kill-after=10s 120s npm run test:e2e -- --project=chromium --project=mobile-narrow-chromium
+          lane_status=$?
+          set -e
+          lane_duration=$(( $(date +%s) - lane_started_at ))
+          echo "Frontend Chromium E2E (desktop + Pixel 10): ${lane_duration}s / 120s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$lane_status" -eq 124 ] || [ "$lane_status" -eq 137 ]; then
+            echo "::error title=Frontend E2E runtime budget exceeded::Desktop and Pixel 10 Chromium tests reached the 120s limit. Run 'npm run test:e2e' in frontend and inspect the slowest tests and traces."
+            exit 1
+          fi
+          if [ "$lane_status" -ne 0 ]; then
+            echo "::error title=Frontend E2E tests failed::Desktop and Pixel 10 Chromium tests failed after ${lane_duration}s. See Playwright output and uploaded failure artifacts."
+            exit "$lane_status"
+          fi
 
       - name: Upload failure artifacts
         if: ${{ failure() }}
