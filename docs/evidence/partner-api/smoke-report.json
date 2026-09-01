@@ -1,7 +1,7 @@
 {
   "base": "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api",
   "project": "schemessg-v3-dev",
-  "generated_at": "2026-09-01T12:08:01.197738+00:00",
+  "generated_at": "2026-09-01T13:00:20.805863+00:00",
   "passed": 30,
   "total": 30,
   "checks": [

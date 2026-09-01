@@ -6,21 +6,24 @@ Firebase function name is part of the service root, so it carries no version.
 """
 
 from dataclasses import dataclass
+from typing import Literal
 
 
 API_VERSION = "v1"
 RESOURCE = "schemes"
 
-# Reserved leaf segments that are operations, not scheme IDs. Without this a
-# scheme whose document ID is literally "search" would shadow the search route.
-RESERVED_LEAVES = {"search"}
+# A leaf that is an operation, not a scheme ID. Without reserving it, a scheme whose
+# document ID is literally "search" would shadow the search route.
+SEARCH_LEAF = "search"
+
+RouteKind = Literal["list", "detail", "search"]
 
 
 @dataclass(frozen=True)
 class Route:
     """A resolved partner API operation."""
 
-    kind: str  # "list" | "detail" | "search"
+    kind: RouteKind
     scheme_id: str | None = None
 
 
@@ -73,10 +76,10 @@ def resolve_route(method: str, path: str) -> Route | RouteError:
 
     leaf = tail[0]
 
-    if leaf in RESERVED_LEAVES:
+    if leaf == SEARCH_LEAF:
         if method != "POST":
             return _method_not_allowed(method, "POST")
-        return Route(kind=leaf)
+        return Route(kind="search")
 
     if method != "GET":
         return _method_not_allowed(method, "GET")

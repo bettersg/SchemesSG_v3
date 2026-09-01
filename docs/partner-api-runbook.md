@@ -63,10 +63,13 @@ them — spending it on `/v1/schemes` also exhausts `/v1/schemes/search`.
 **Production only, for real traffic.** There are two deployments, and both run
 `partner_api`, but they serve different purposes:
 
-| | Project | Base URL | Who uses it |
-|---|---|---|---|
-| **Production** | `schemessg` | `https://asia-southeast1-schemessg.cloudfunctions.net/partner_api` | The partner's live product. This is the integration that matters. |
-| **Development** | `schemessg-v3-dev` | `https://asia-southeast1-schemessg-v3-dev.cloudfunctions.net/partner_api` | Sandbox during onboarding, and our own smoke tests. |
+Both bases follow the one `{base}` pattern above — substitute the project id, and
+never paste a full URL into partner-facing material:
+
+| | `<project>` | Who uses it |
+|---|---|---|
+| **Production** | `schemessg` | The partner's live product. This is the integration that matters. |
+| **Development** | `schemessg-v3-dev` | Sandbox during onboarding, and our own smoke tests. |
 
 A partner is given **two keys over the course of onboarding**, not one: a sandbox
 key on dev to build and test against, then a production key once that works. The

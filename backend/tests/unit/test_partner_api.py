@@ -5,6 +5,7 @@ from partner.routing import Route, RouteError, resolve_route
 from partner.serializers import PUBLIC_FIELDS, error_body, to_public_scheme
 from utils.partner_auth import (
     DEFAULT_RATE_LIMIT_PER_MIN,
+    AuthError,
     check_and_increment_rate_limit,
     hash_key,
     verify_partner_key,
@@ -212,24 +213,28 @@ def _db_with_key(**overrides):
 
 
 def test_valid_key_resolves_to_its_consumer():
-    ok, consumer, limit = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key())
-    assert (ok, consumer, limit) == (True, "carecompass", 5)
+    identity = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key())
+    assert (identity.consumer, identity.rate_limit_per_min) == ("carecompass", 5)
 
 
 def test_missing_key_is_rejected():
-    ok, error, _ = verify_partner_key(FakeRequest(), _db_with_key())
-    assert (ok, error) == (False, "missing_key")
+    error = verify_partner_key(FakeRequest(), _db_with_key())
+    assert isinstance(error, AuthError)
+    assert (error.code, error.status) == ("missing_key", 401)
 
 
 def test_unknown_key_is_rejected():
-    ok, error, _ = verify_partner_key(FakeRequest({"X-API-Key": "nope"}), _db_with_key())
-    assert (ok, error) == (False, "invalid_key")
+    error = verify_partner_key(FakeRequest({"X-API-Key": "nope"}), _db_with_key())
+    assert isinstance(error, AuthError)
+    assert (error.code, error.status) == ("invalid_key", 401)
 
 
 def test_revoked_key_is_rejected_distinctly():
     """A revoked key is 403, not 401 — the partner needs to know it existed."""
-    ok, error, _ = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(active=False))
-    assert (ok, error) == (False, "revoked_key")
+    error = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(active=False))
+    assert isinstance(error, AuthError)
+    # 403, not 401: the partner needs to know the key existed and was turned off.
+    assert (error.code, error.status) == ("revoked_key", 403)
 
 
 @pytest.mark.parametrize("active", ["false", "true", 1, 0, "", None, "yes"])
@@ -239,44 +244,43 @@ def test_only_a_real_boolean_true_authenticates(active):
     Anything other than boolean True must fail closed — the string "false" is
     truthy, and a truthiness check would have kept a revoked key working.
     """
-    ok, error, _ = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(active=active))
-    assert (ok, error) == (False, "revoked_key")
+    error = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(active=active))
+    assert isinstance(error, AuthError)
+    assert error.code == "revoked_key"
 
 
 def test_zero_rate_limit_is_honoured_not_defaulted():
     """0 means "throttled to a standstill", a softer option than revoking."""
-    ok, consumer, limit = verify_partner_key(
-        FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(rate_limit_per_min=0)
-    )
-    assert (ok, consumer, limit) == (True, "carecompass", 0)
-    assert check_and_increment_rate_limit(FakeFirestore(), consumer, limit) == (False, 0)
+    identity = verify_partner_key(FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(rate_limit_per_min=0))
+    assert (identity.consumer, identity.rate_limit_per_min) == ("carecompass", 0)
+    assert check_and_increment_rate_limit(FakeFirestore(), identity.consumer, 0) == (False, 0)
 
 
 def test_missing_rate_limit_falls_back_to_the_default():
-    _, _, limit = verify_partner_key(
+    limit = verify_partner_key(
         FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(rate_limit_per_min=None)
-    )
+    ).rate_limit_per_min
     assert limit == DEFAULT_RATE_LIMIT_PER_MIN
 
 
 def test_unparseable_rate_limit_falls_back_instead_of_raising():
     """A hand-typed value must not turn every partner request into a 500."""
-    _, _, limit = verify_partner_key(
+    limit = verify_partner_key(
         FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(rate_limit_per_min="lots")
-    )
+    ).rate_limit_per_min
     assert limit == DEFAULT_RATE_LIMIT_PER_MIN
 
 
 def test_negative_rate_limit_clamps_to_zero():
-    _, _, limit = verify_partner_key(
+    limit = verify_partner_key(
         FakeRequest({"X-API-Key": RAW_KEY}), _db_with_key(rate_limit_per_min=-5)
-    )
+    ).rate_limit_per_min
     assert limit == 0
 
 
 def test_header_lookup_is_case_insensitive():
-    ok, consumer, _ = verify_partner_key(FakeRequest({"x-api-key": RAW_KEY}), _db_with_key())
-    assert (ok, consumer) == (True, "carecompass")
+    identity = verify_partner_key(FakeRequest({"x-api-key": RAW_KEY}), _db_with_key())
+    assert identity.consumer == "carecompass"
 
 
 def test_raw_key_is_never_the_document_id():

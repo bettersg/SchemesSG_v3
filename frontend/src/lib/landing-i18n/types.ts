@@ -121,6 +121,8 @@ export interface Translations {
     items: Array<{
       question: string;
       answer: string;
+      /** Optional trailing link. Only set where an answer points somewhere. */
+      answerLink?: { href: string; label: string };
     }>;
     sidebar: {
       title: string;

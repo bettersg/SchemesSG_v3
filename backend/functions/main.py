@@ -19,8 +19,8 @@ The following endpoints are available:
      - GET  /partner_api/v1/schemes/{scheme_id}  scheme detail
      - POST /partner_api/v1/schemes/search       semantic search
      Requires an X-API-Key header matching an active `partner_keys` document.
-     Not warmed by keep_endpoints_warm and has no is_warmup bypass — see
-     partner/api.py for why.
+     Warmed by keep_endpoints_warm using a dedicated `warmup` consumer key, so
+     the is_warmup short-circuit sits behind auth — see partner/api.py.
 
 4. Slack Integration:
    - slack_trigger_message: Trigger a Slack review message for a specific document
@@ -39,9 +39,10 @@ The following endpoints are available:
    - health: Health check endpoint
    - keep_endpoints_warm: Scheduled task to reduce cold starts
 
-All endpoints (except health and partner_api) support warmup requests:
+All endpoints (except health) support warmup requests:
 - GET endpoints: Add ?is_warmup=true as URL parameter
 - POST endpoints: Include {"is_warmup": true} in request body
+- partner_api additionally requires its X-API-Key, since warmup runs after auth
 
 When is_warmup=true, endpoints return 200 immediately without database operations.
 

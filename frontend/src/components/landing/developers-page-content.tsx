@@ -24,6 +24,7 @@
  */
 
 import Link from "next/link";
+import StatusBanner from "@/components/feedback/status-banner";
 import { Body, Headline, Title } from "@/components/ui/typography";
 import { useLanguage } from "@/lib/landing-i18n";
 import {
@@ -119,9 +120,9 @@ export default function DevelopersPageContent() {
 
           <Row id="access" heading={s.access.heading}>
             <Body className={cn(BODY, PROSE)}>{s.access.body}</Body>
-            <Callout tone="info" className="mt-4">
+            <StatusBanner variant="info" className="mt-4 max-w-[62ch]">
               {s.access.gate}
-            </Callout>
+            </StatusBanner>
           </Row>
 
           <Row
@@ -157,9 +158,9 @@ export default function DevelopersPageContent() {
               {s.auth.body} Send it as{" "}
               <InlineCode>{API_KEY_HEADER}</InlineCode>.
             </Body>
-            <Callout tone="alert" className="mt-4">
+            <StatusBanner variant="alert" className="mt-4 max-w-[62ch]">
               {s.auth.warning}
-            </Callout>
+            </StatusBanner>
           </Row>
 
           <Row
@@ -420,40 +421,6 @@ function OperationRow({
         </div>
       </div>
     </section>
-  );
-}
-
-function Callout({
-  tone,
-  children,
-  className,
-}: {
-  tone: "info" | "alert";
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const isInfo = tone === "info";
-  return (
-    <div
-      className={cn(
-        "max-w-[62ch] rounded-md border px-4 py-3",
-        isInfo
-          ? "border-(--schemes-status-info-border) bg-(--schemes-status-info-bg)"
-          : "border-(--schemes-status-alert-border) bg-(--schemes-status-alert-bg)",
-        className,
-      )}
-    >
-      <p
-        className={cn(
-          "text-[14px] leading-[1.6]",
-          isInfo
-            ? "text-(--schemes-status-info-text)"
-            : "text-(--schemes-status-alert-text)",
-        )}
-      >
-        {children}
-      </p>
-    </div>
   );
 }
 

@@ -33,29 +33,22 @@ from typing import Any
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
-from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
-from schemes.catalog import (
-    DEFAULT_LIMIT,
-    FILTER_SPECS,
-    _filter_scheme_types_for_category,
-    _get_listed_paginated_results,
-)
+from schemes.catalog import DEFAULT_LIMIT, FILTER_SPECS, InvalidFilterValue, fetch_listed_page
 from utils.json_utils import safe_json_dumps
-from utils.partner_auth import (
-    ERROR_STATUS,
-    check_and_increment_rate_limit,
-    verify_partner_key,
-)
+from utils.partner_auth import AuthError, check_and_increment_rate_limit, verify_partner_key
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES, RETIRED_STATUS
 
-from .errors import PartnerRequestError
 from .routing import Route, RouteError, resolve_route
-from .serializers import error_body, to_public_scheme
+from .serializers import (
+    PartnerRequestError,
+    clamp_limit,
+    error_body,
+    to_public_scheme,
+)
 
 
 SCHEMES_COLLECTION = "schemes"
-MAX_LIMIT = 50
 
 # Partner list params: the shared catalog filters plus pagination, and `is_warmup`
 # so the warmer's ping isn't rejected as an unknown parameter. Notably no `sort`,
@@ -94,24 +87,32 @@ def partner_api(req: https_fn.Request) -> https_fn.Response:
     try:
         db = create_firebase_manager().firestore_client
 
-        is_valid, consumer_or_error, rate_limit = verify_partner_key(req, db)
-        if not is_valid:
-            return _error(consumer_or_error, _AUTH_MESSAGES[consumer_or_error], ERROR_STATUS[consumer_or_error])
+        identity = verify_partner_key(req, db)
+        if isinstance(identity, AuthError):
+            # No consumer was identified, so there is no budget to report. Rate-limit
+            # headers are deliberately absent here rather than guessed at.
+            return _error(identity.code, identity.message, identity.status)
 
         # Warmup runs *after* auth, matching every other endpoint in this codebase
         # (see schemes/catalog.py), so this is not an unauthenticated code path —
         # keep_endpoints_warm holds a real key for the `warmup` consumer. Placed
         # before the rate limiter so the 4-minutely ping neither spends a budget nor
-        # writes a counter document.
+        # writes a counter document. Still reports the budget it did not spend.
         if req.args.get("is_warmup", "").lower() == "true":
-            return _json({"message": "Warmup request received"})
+            return _json(
+                {"message": "Warmup request received"},
+                headers=_limit_headers(identity.rate_limit_per_min, identity.rate_limit_per_min),
+            )
 
-        allowed, remaining = check_and_increment_rate_limit(db, consumer_or_error, rate_limit)
+        allowed, remaining = check_and_increment_rate_limit(
+            db, identity.consumer, identity.rate_limit_per_min
+        )
     except Exception:  # noqa: BLE001 - partner-facing 5xx must not leak internals
         logger.exception("partner_api auth/rate-limit failed")
         return _error("internal_error", "Internal server error", 500)
 
-    rate_headers = {"X-RateLimit-Remaining": str(remaining), "X-RateLimit-Limit": str(rate_limit)}
+    rate_limit = identity.rate_limit_per_min
+    rate_headers = _limit_headers(remaining, rate_limit)
     if not allowed:
         return _error(
             "rate_limited",
@@ -132,15 +133,8 @@ def partner_api(req: https_fn.Request) -> https_fn.Response:
         # Firestore, pandas or the shared catalog helpers.
         return _error("invalid_request", exc.client_message, 400, headers=rate_headers)
     except Exception:  # noqa: BLE001 - partner-facing 5xx must not leak internals
-        logger.exception(f"partner_api failed for consumer={consumer_or_error} path={req.path}")
+        logger.exception(f"partner_api failed for consumer={identity.consumer} path={req.path}")
         return _error("internal_error", "Internal server error", 500, headers=rate_headers)
-
-
-_AUTH_MESSAGES = {
-    "missing_key": "Missing X-API-Key header",
-    "invalid_key": "Unrecognised API key",
-    "revoked_key": "This API key has been revoked",
-}
 
 
 def _dispatch(route: Route, req: https_fn.Request, db: Any, headers: dict[str, str]) -> https_fn.Response:
@@ -176,39 +170,25 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     if len(selected) > 1:
         raise PartnerRequestError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
 
-    limit = _clamp_limit(args.get("limit"))
-    cursor = args.get("cursor") or None
-    collection = db.collection(SCHEMES_COLLECTION)
-
-    base_query = None
     filter_name = selected[0] if selected else None
-    filter_value = None
-    if filter_name:
-        spec = FILTER_SPECS[filter_name]
-        raw_value = args.get(filter_name).strip()
-        try:
-            filter_value = spec.normalize(raw_value)
-        except ValueError as exc:
-            # normalize() lives in the shared catalog module and rejects e.g. an
-            # unknown category. That is a real 400, but the message is theirs, not
-            # ours — restate it here rather than forwarding it to a partner.
-            raise PartnerRequestError(f"Invalid value for {filter_name!r}: {raw_value!r}") from exc
-        base_query = collection.where(
-            filter=FieldFilter(spec.firestore_field, spec.operator, filter_value)
-        )
+    raw_value = args.get(filter_name) if filter_name else None
 
     # Partners never see retired *or* inactive. Passing the set down rather than
     # filtering the returned page keeps pages full and total_count honest.
-    results = _get_listed_paginated_results(
-        collection_ref=collection,
-        base_query=base_query,
-        cursor=cursor,
-        limit=limit,
-        exclude_statuses=NON_SEARCHABLE_STATUSES,
-    )
-
-    if filter_name == "category" and isinstance(filter_value, list):
-        results = _filter_scheme_types_for_category(results, filter_value)
+    try:
+        results = fetch_listed_page(
+            db.collection(SCHEMES_COLLECTION),
+            filter_name=filter_name,
+            filter_raw_value=raw_value,
+            cursor=args.get("cursor") or None,
+            limit=clamp_limit(args.get("limit"), default=DEFAULT_LIMIT),
+            exclude_statuses=NON_SEARCHABLE_STATUSES,
+        )
+    except InvalidFilterValue as exc:
+        # Precisely this exception, not bare ValueError: a ValueError from inside
+        # pagination must stay a logged 500 rather than have its internal message
+        # restated to a partner. The message here is ours, not the catalog's.
+        raise PartnerRequestError(f"Invalid value for {filter_name!r}: {str(raw_value)!r}") from exc
 
     return {
         "data": [to_public_scheme(item.get("scheme_id"), item) for item in results.data],
@@ -245,15 +225,8 @@ def _handle_detail(db: Any, scheme_id: str) -> tuple[dict[str, Any], int]:
     return {"data": to_public_scheme(doc.id, data)}, 200
 
 
-def _clamp_limit(raw: Any) -> int:
-    """Clamp a requested page size into ``1..MAX_LIMIT``."""
-    if raw is None:
-        return DEFAULT_LIMIT
-    try:
-        limit = int(raw)
-    except (TypeError, ValueError):
-        raise PartnerRequestError("'limit' must be an integer") from None
-    return max(1, min(limit, MAX_LIMIT))
+def _limit_headers(remaining: int, limit: int) -> dict[str, str]:
+    return {"X-RateLimit-Remaining": str(remaining), "X-RateLimit-Limit": str(limit)}
 
 
 def _json(body: dict[str, Any], status: int = 200, headers: dict[str, str] | None = None) -> https_fn.Response:

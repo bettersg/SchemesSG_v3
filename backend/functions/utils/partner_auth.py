@@ -8,6 +8,7 @@ own gate.
 """
 
 import hashlib
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -29,14 +30,32 @@ DEFAULT_RATE_LIMIT_PER_MIN = 600
 # field reaps them; see docs/partner-api-runbook.md.
 COUNTER_TTL = timedelta(minutes=10)
 
-# Error codes returned by verify_partner_key, mapped to their HTTP status. A
-# revoked key is 403 rather than 401 so a partner can tell "you were turned off"
+@dataclass(frozen=True)
+class AuthError:
+    """A rejected key, already carrying its code, message and HTTP status.
+
+    One object rather than parallel code→status and code→message maps, and it
+    mirrors ``partner.routing.RouteError`` so both gates answer the same shape.
+    """
+
+    code: str
+    message: str
+    status: int
+
+
+@dataclass(frozen=True)
+class PartnerIdentity:
+    """A verified partner and the budget their key grants."""
+
+    consumer: str
+    rate_limit_per_min: int
+
+
+# A revoked key is 403 rather than 401 so a partner can tell "you were turned off"
 # from "we've never seen this key".
-ERROR_STATUS = {
-    "missing_key": 401,
-    "invalid_key": 401,
-    "revoked_key": 403,
-}
+MISSING_KEY = AuthError("missing_key", f"Missing {API_KEY_HEADER} header", 401)
+INVALID_KEY = AuthError("invalid_key", "Unrecognised API key", 401)
+REVOKED_KEY = AuthError("revoked_key", "This API key has been revoked", 403)
 
 
 def hash_key(raw_key: str) -> str:
@@ -53,7 +72,7 @@ def _header(req: Any, name: str) -> str | None:
     return req.headers.get(name) or req.headers.get(name.lower())
 
 
-def verify_partner_key(req: Any, db: Any) -> tuple[bool, str, int]:
+def verify_partner_key(req: Any, db: Any) -> PartnerIdentity | AuthError:
     """Verify the ``X-API-Key`` header against the ``partner_keys`` collection.
 
     Args:
@@ -61,23 +80,23 @@ def verify_partner_key(req: Any, db: Any) -> tuple[bool, str, int]:
         db: Firestore client.
 
     Returns:
-        ``(ok, consumer_or_error_code, rate_limit_per_min)``. On failure the
-        second element is a key of ``ERROR_STATUS``.
+        A ``PartnerIdentity`` when the key is good, otherwise an ``AuthError``
+        carrying the code, message and status to return.
     """
     raw_key = _header(req, API_KEY_HEADER)
     if not raw_key:
-        return False, "missing_key", 0
+        return MISSING_KEY
 
     doc = db.collection(PARTNER_KEYS_COLLECTION).document(hash_key(raw_key)).get()
     if not doc.exists:
-        return False, "invalid_key", 0
+        return INVALID_KEY
 
     data = doc.to_dict() or {}
     # Strict `is True`, not truthiness: revocation is done by hand in the Firestore
     # console (see the runbook), where `active` can end up as the *string*
     # "false" — which is truthy and would keep a revoked key working.
     if data.get("active") is not True:
-        return False, "revoked_key", 0
+        return REVOKED_KEY
 
     # `or` would turn a deliberate 0 into the default, un-throttling a partner
     # that was throttled to zero as a softer alternative to revoking.
@@ -87,7 +106,7 @@ def verify_partner_key(req: Any, db: Any) -> tuple[bool, str, int]:
     except (TypeError, ValueError):
         # Hand-edited junk in the console shouldn't 500 the partner's request.
         limit = DEFAULT_RATE_LIMIT_PER_MIN
-    return True, data.get("consumer", ""), max(limit, 0)
+    return PartnerIdentity(consumer=data.get("consumer", ""), rate_limit_per_min=max(limit, 0))
 
 
 def check_and_increment_rate_limit(db: Any, consumer: str, limit_per_min: int) -> tuple[bool, int]:

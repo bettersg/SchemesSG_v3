@@ -114,7 +114,8 @@ Revoke and issue a new one; that is the only option, by design.
 They read `/developers` and send the key as a header on every request:
 
 ```bash
-curl "https://asia-southeast1-schemessg.cloudfunctions.net/partner_api/v1/schemes?limit=5" \
+# $BASE is the {base} from the runbook; never hardcode it per example.
+curl "$BASE/v1/schemes?limit=5" \
   -H "X-API-Key: $SCHEMES_API_KEY"
 ```
 

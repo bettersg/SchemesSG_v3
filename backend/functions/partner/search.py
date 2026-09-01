@@ -1,8 +1,8 @@
 """Partner search handler.
 
 Imported lazily by ``partner/api.py`` — only inside the search branch — because
-this module pulls in the embeddings/ranking stack. A list or detail request must
-never pay that import cost.
+importing this module pulls in the embeddings/ranking stack at module scope. A list
+or detail request must never pay that import cost.
 
 Built on ``search.retriever.SearchModel`` rather than ``ml_logic``: the ml_logic
 path still calls the removed ``BM25Retriever.get_relevant_documents()`` and 500s
@@ -18,15 +18,14 @@ polluted with partner traffic; and its ``aggregate_and_rank_results`` call passe
 
 from typing import Any
 
+from search.retriever import SearchModel
 from utils.pagination import get_paginated_results
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
-from .errors import PartnerRequestError
-from .serializers import to_public_scheme
+from .serializers import PartnerRequestError, clamp_limit, to_public_scheme
 
 
 DEFAULT_LIMIT = 20
-MAX_LIMIT = 50
 
 
 def handle_search(firebase_manager: Any, body: dict[str, Any]) -> dict[str, Any]:
@@ -40,17 +39,14 @@ def handle_search(firebase_manager: Any, body: dict[str, Any]) -> dict[str, Any]
         ``{"data": [...], "next_cursor": ..., "has_more": ..., "total_count": ...}``
 
     Raises:
-        ValueError: If ``query`` is missing, empty, or ``limit`` is not an integer.
+        PartnerRequestError: If ``query`` is missing or empty, or ``limit`` is not
+            an integer.
     """
-    # Imported here rather than at module scope so that importing this module is
-    # cheap for callers that only want the constants.
-    from search.retriever import SearchModel
-
     query = str(body.get("query") or "").strip()
     if not query:
         raise PartnerRequestError("'query' is required and must be a non-empty string")
 
-    limit = _clamp_limit(body.get("limit"))
+    limit = clamp_limit(body.get("limit"), default=DEFAULT_LIMIT)
     cursor = body.get("cursor") or None
 
     ranked = SearchModel(firebase_manager).aggregate_and_rank_results(query)
@@ -67,14 +63,3 @@ def handle_search(firebase_manager: Any, body: dict[str, Any]) -> dict[str, Any]
         "has_more": has_more,
         "total_count": total_count,
     }
-
-
-def _clamp_limit(raw: Any) -> int:
-    """Clamp a requested page size into ``1..MAX_LIMIT``."""
-    if raw is None:
-        return DEFAULT_LIMIT
-    try:
-        limit = int(raw)
-    except (TypeError, ValueError):
-        raise PartnerRequestError("'limit' must be an integer") from None
-    return max(1, min(limit, MAX_LIMIT))

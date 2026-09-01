@@ -6,10 +6,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from partner.api import _clamp_limit, _dispatch, _handle_detail, _handle_list
-from partner.errors import PartnerRequestError
+from partner.api import _dispatch, _handle_detail, _handle_list
 from partner.routing import Route
-from partner.serializers import PUBLIC_FIELDS
+from partner.serializers import PUBLIC_FIELDS, PartnerRequestError, clamp_limit
+from schemes.catalog import InvalidFilterValue
 from utils.catalog_pagination import PaginationResult
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
@@ -128,12 +128,17 @@ def test_retired_without_merge_gives_no_pointer():
     [(None, 10), ("5", 5), (5, 5), ("0", 1), ("-3", 1), ("9999", 50), (50, 50)],
 )
 def test_limit_is_clamped(raw, expected):
-    assert _clamp_limit(raw) == expected
+    assert clamp_limit(raw, default=10) == expected
+
+
+def test_clamp_limit_honours_the_callers_default():
+    """list and search have different page sizes, so the default is passed in."""
+    assert clamp_limit(None, default=20) == 20
 
 
 def test_non_numeric_limit_is_rejected():
     with pytest.raises(PartnerRequestError):
-        _clamp_limit("many")
+        clamp_limit("many", default=10)
 
 
 # --------------------------------------------------------------------------
@@ -223,7 +228,8 @@ def test_foreign_value_error_is_not_echoed_to_the_partner(mocker):
 def test_invalid_filter_value_is_restated_not_forwarded(mocker):
     """An unknown category is still a 400, but with a message authored here."""
     spec = MagicMock()
-    spec.normalize.side_effect = ValueError("Unknown category: 'healthcare'")
+    spec.normalize.side_effect = InvalidFilterValue("Unknown category: 'healthcare'")
+    mocker.patch("schemes.catalog.FILTER_SPECS", {"category": spec})
     mocker.patch("partner.api.FILTER_SPECS", {"category": spec})
 
     with pytest.raises(PartnerRequestError) as excinfo:
@@ -233,6 +239,24 @@ def test_invalid_filter_value_is_restated_not_forwarded(mocker):
     assert "category" in message and "healthcare" in message
     # The shared module's own wording is not forwarded.
     assert "Unknown category" not in message
+
+
+def test_plain_value_error_from_a_filter_is_not_a_client_error(mocker):
+    """Only InvalidFilterValue means "the client sent something bad".
+
+    A bare ValueError from inside the filter path is a bug on our side, so it must
+    escape as a 500 rather than have its message restated into a 400 body.
+    """
+    spec = MagicMock()
+    spec.normalize.side_effect = ValueError("internal: /srv/secret mismatch")
+    mocker.patch("schemes.catalog.FILTER_SPECS", {"category": spec})
+    mocker.patch("partner.api.FILTER_SPECS", {"category": spec})
+
+    with pytest.raises(ValueError) as excinfo:
+        _handle_list(MagicMock(), _Args({"category": "healthcare"}))
+
+    assert not isinstance(excinfo.value, PartnerRequestError)
+    assert "/srv/secret" in str(excinfo.value)
 
 
 def test_list_rejects_unknown_query_parameters():
@@ -388,13 +412,34 @@ def test_importing_the_api_does_not_load_the_search_stack():
     Run in a subprocess so the assertion is about a clean interpreter, not about
     whatever the rest of the test session happens to have imported already.
     """
+    # Acceptance criterion 7 wants sys.modules checked *after* a list/detail call,
+    # not merely after import, so the probe exercises both handlers first.
     probe = (
-        "import partner.api, sys;"
-        "heavy = [m for m in ('search.retriever', 'torch', 'sentence_transformers')"
+        "import sys;"
+        "import partner.api as api;"
+        "from partner.serializers import clamp_limit;"
+        "clamp_limit('5', default=10);"
+        "api._handle_detail(_Db(), 'nope');"
+        "heavy = [m for m in"
+        " ('search.retriever', 'search', 'torch', 'sentence_transformers', 'faiss', 'ml_logic')"
         " if m in sys.modules];"
         "assert not heavy, heavy;"
         "print('clean')"
     )
+    # _handle_detail needs the smallest possible Firestore stand-in.
+    preamble = (
+        "class _Doc:\n"
+        "    exists = False\n"
+        "    id = 'nope'\n"
+        "    def to_dict(self): return None\n"
+        "class _Ref:\n"
+        "    def get(self): return _Doc()\n"
+        "class _Col:\n"
+        "    def document(self, _id): return _Ref()\n"
+        "class _Db:\n"
+        "    def collection(self, _name): return _Col()\n"
+    )
+    probe = preamble + probe
     result = subprocess.run(
         [sys.executable, "-c", probe],
         cwd=FUNCTIONS_DIR,
