@@ -23,6 +23,40 @@ If a custom domain is later pointed at the function, `{base}` becomes
 `https://api.schemes.sg` and partner URLs read `https://api.schemes.sg/v1/schemes`
 with no change on the partner's side beyond the base URL.
 
+### Why a subdomain, and not a path under schemes.sg
+
+To correct a claim made earlier in this work: there is **no path collision** with
+the website. `frontend/firebase.json` rewrites `/schemes/**` to the Next SSR
+function, but every partner path is `/partner_api/v1/…`, which that pattern does
+not match. Serving the API under `schemes.sg` would not clash with the scheme
+detail pages.
+
+The reason to prefer `api.schemes.sg` is different, and the first one is the reason
+that actually matters:
+
+1. **Never put an authenticated API behind Firebase Hosting's CDN.** Hosting caches
+   on URL, and `X-API-Key` is a header. If a response were ever cached, one
+   partner's data could be served to another caller — or to an unauthenticated one —
+   from the edge. Getting this right depends on cache headers being exactly correct
+   forever. A separate origin that does not go through Hosting removes the class of
+   bug rather than managing it.
+2. **Origin isolation.** On `schemes.sg`, browser requests to the API would carry
+   the site's own cookies. This API is not meant to be called from a browser at all
+   (see [CORS](#cors-why-there-is-none-and-why-that-is-correct)); keeping it off the
+   site origin means no ambient credentials are ever in play.
+3. **Decoupling from frontend deploys.** Hosting rewrites ship with the frontend, so
+   routing the API through them would make partner availability depend on web app
+   deploys and on `frameworksBackend` behaviour.
+4. **Cleaner versioned URLs.** `api.schemes.sg/v1/schemes` beats
+   `schemes.sg/partner_api/v1/schemes`, and drops the function name from the public
+   contract so the implementation can move later.
+
+None of this is urgent: `cloudfunctions.net` is a distinct origin already and has
+none of the Hosting problems above. It is a pre-public-launch nicety, and a DNS and
+Firebase console task rather than a code change. **If it is ever done, map it
+directly to the function — do not route it through Hosting rewrites**, which would
+reintroduce reason 1.
+
 One key covers all three operations, and one rate-limit budget is shared across
 them — spending it on `/v1/schemes` also exhausts `/v1/schemes/search`.
 
