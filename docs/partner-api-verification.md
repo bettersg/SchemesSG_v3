@@ -111,10 +111,17 @@ Screenshots captured over CDP against the dev server, not asserted from markup:
 
 | Shot | What it shows |
 | --- | --- |
-| [`01-developers-desktop.jpg`](evidence/partner-api/01-developers-desktop.jpg) | Full `/developers` page at 1440px — all 11 sections, pinned sidebar, dark code panels |
-| [`02-privacy-full.jpg`](evidence/partner-api/02-privacy-full.jpg) | `/privacy` |
-| [`03-terms-full.jpg`](evidence/partner-api/03-terms-full.jpg) | `/terms` |
+| [`01-developers-desktop.jpg`](evidence/partner-api/01-developers-desktop.jpg) | `/developers` at 1440px — header, pinned sidebar, first sections |
+| [`02-developers-operations.jpg`](evidence/partner-api/02-developers-operations.jpg) | The operations reference: params left, request and response panels right |
+| [`03-developers-errors-and-fields.jpg`](evidence/partner-api/03-developers-errors-and-fields.jpg) | Field table, error table and rate-limit headers |
 | [`04-developers-mobile.jpg`](evidence/partner-api/04-developers-mobile.jpg) | `/developers` at mobile width, after both layout fixes below |
+| [`05-privacy.jpg`](evidence/partner-api/05-privacy.jpg) | `/privacy` |
+| [`06-terms.jpg`](evidence/partner-api/06-terms.jpg) | `/terms` |
+
+Captured at native retina (2880px) and resampled to 1760px wide — twice GitHub's
+render column, so text stays sharp. An earlier pass used `sips -Z`, which caps the
+*longest* side and therefore squashed a tall full-page capture to 293px wide and
+unreadable; width-constrained resampling is the fix.
 
 Console on `/developers`: no errors or warnings from page code.
 
@@ -124,6 +131,8 @@ Schemes.sg palette: pinned section sidebar with method badges, prose left, dark
 
 ![/developers desktop](evidence/partner-api/01-developers-desktop.jpg)
 
+![/developers operations](evidence/partner-api/02-developers-operations.jpg)
+
 **`/developers`, mobile** — horizontally-scrolling section strip sitting below the
 navbar, after both layout fixes below.
 
@@ -131,9 +140,9 @@ navbar, after both layout fixes below.
 
 **`/privacy` and `/terms`** — interim pages, honest about being drafts.
 
-![privacy](evidence/partner-api/02-privacy-full.jpg)
+![privacy](evidence/partner-api/05-privacy.jpg)
 
-![terms](evidence/partner-api/03-terms-full.jpg)
+![terms](evidence/partner-api/06-terms.jpg)
 
 ### Two mobile layout bugs found this way and fixed
 
