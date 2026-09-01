@@ -23,7 +23,13 @@ import NewChatButton from "./new-chat-button";
 
 const initialChatRequestKeys = new Set<string>();
 
-export default function ChatPage() {
+type ChatPageProps = {
+  // Clears ChatHome's "chat started" latch so "New Chat" returns to the
+  // landing screen instead of leaving an empty chat view mounted.
+  onReset: () => void;
+};
+
+export default function ChatPage({ onReset }: ChatPageProps) {
   const {
     messages,
     setMessages,
@@ -37,12 +43,19 @@ export default function ChatPage() {
     setShowQuickReplies,
     draftMessage,
     setDraftMessage,
-    setHasStartedChat,
   } = useChat();
 
-  const [isGenerating, setIsGenerating] = useState(
-    messages[messages.length - 1]?.type == "user",
-  );
+  const startsGenerating = messages[messages.length - 1]?.type === "user";
+  const [isGenerating, setIsGenerating] = useState(startsGenerating);
+  // Mirrors `isGenerating` for synchronous reads. handleSend has to reject a
+  // second send before React commits the state update, otherwise two sends can
+  // race in the window between submit and the first stream byte: the later one
+  // aborts the earlier and strands its user message with no reply.
+  const isGeneratingRef = useRef(startsGenerating);
+  const setGenerating = useCallback((value: boolean) => {
+    isGeneratingRef.current = value;
+    setIsGenerating(value);
+  }, []);
   const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
   const statusStepsRef = useRef<StatusStep[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
@@ -87,7 +100,7 @@ export default function ChatPage() {
 
   const handleSend = async (input: string) => {
     const trimmed = input.trim();
-    if (!trimmed || isGenerating) return;
+    if (!trimmed || isGeneratingRef.current) return;
     setMessages((prev) => [...prev, { type: "user", text: trimmed }]);
     setDraftMessage("");
     setShowQuickReplies(false);
@@ -135,6 +148,9 @@ export default function ChatPage() {
     abortControllerRef.current = controller;
     const requestId = activeRequestIdRef.current + 1;
     activeRequestIdRef.current = requestId;
+    // Claim the in-flight slot before the first await, not on the stream's
+    // onStart — response headers can be seconds away on a slow connection.
+    setGenerating(true);
     schemesBeforeActiveRequestRef.current = schemes;
     quickRepliesBeforeActiveRequestRef.current = quickReplies;
     showQuickRepliesBeforeActiveRequestRef.current = showQuickReplies;
@@ -147,7 +163,6 @@ export default function ChatPage() {
     await streamChat(
       userMessage,
       {
-        onStart: handleStreamStart,
         onEvent: (event) => handleStreamEvent(event, requestId),
         onError: (err) => {
           console.error(err);
@@ -175,10 +190,6 @@ export default function ChatPage() {
     setPendingSchemesTabPulse(false);
     setStreamError(null);
   }, []);
-
-  const handleStreamStart = () => {
-    setIsGenerating(true);
-  };
 
   const handleStreamEvent = (event: ChatStreamEvent, requestId: number) => {
     if (activeRequestIdRef.current !== requestId) return;
@@ -253,7 +264,7 @@ export default function ChatPage() {
       case "done": {
         commitStreamingBlocks(true);
         setStatusSteps([]);
-        setIsGenerating(false);
+        setGenerating(false);
         setShowQuickReplies(true);
         break;
       }
@@ -351,7 +362,7 @@ export default function ChatPage() {
   const handleStreamEnd = () => {
     commitStreamingBlocks(true);
     setStatusSteps([]);
-    setIsGenerating(false);
+    setGenerating(false);
   };
 
   const rollbackActiveRequest = useCallback(
@@ -383,7 +394,7 @@ export default function ChatPage() {
       setStreamingBlocks([]);
       statusStepsRef.current = [];
       setStatusSteps([]);
-      setIsGenerating(false);
+      setGenerating(false);
       schemesFoundCountRef.current = 0;
       setPendingSchemesTabPulse(false);
       setStreamError(errorMessage ?? null);
@@ -394,6 +405,7 @@ export default function ChatPage() {
       setQuickReplies,
       setDraftMessage,
       setShowQuickReplies,
+      setGenerating,
     ],
   );
 
@@ -410,12 +422,12 @@ export default function ChatPage() {
     setSchemes([]);
     setMessages([]);
     setSessionId("");
-    setHasStartedChat(false);
+    onReset();
     abortControllerRef.current?.abort();
     resetStreamUi();
     setQuickReplies([]);
     setDraftMessage("");
-    setIsGenerating(false);
+    setGenerating(false);
     setShowQuickReplies(false);
   };
 
