@@ -337,18 +337,49 @@ per consumer.
 | `partner_keys` | Document ID is `sha256(key)`. Fields: `consumer`, `active`, `created_at`, `rate_limit_per_min`. | Raw keys are never stored. |
 | `partner_rate_limits` | Document ID is `<consumer>:<YYYYMMDDHHMM>`. Fields: `count`, `consumer`, `expires_at`. | One doc per partner per minute. |
 
-**Set a Firestore TTL policy on `partner_rate_limits.expires_at`** so counter
-documents are reaped automatically. Without it they accumulate one document per
-partner per active minute. This is a console/infra step, not code.
+**The Firestore TTL policy on `partner_rate_limits.expires_at` is enabled** in both
+projects — `state: ACTIVE` on `schemessg` and `schemessg-v3-dev`. Counter documents
+are reaped automatically 10 minutes after creation; without it they accumulate one
+document per partner per active minute forever.
+
+If it ever needs re-applying (new project, or someone disables it):
+
+```bash
+gcloud firestore fields ttls update expires_at \
+  --collection-group=partner_rate_limits --project=<project> --enable-ttl
+gcloud firestore fields ttls list \
+  --collection-group=partner_rate_limits --project=<project>   # expect state: ACTIVE
+```
+
+Expect it to take several minutes — the command starts a Firestore field-index
+operation and polls until it completes. It is not hung.
 
 ## Monitoring
 
-Set a log-based alert on the `partner_api` 5xx rate.
+A log-based metric and alert policy exist on production:
 
-This is not optional bookkeeping: the `schemes_search` warmup job has been
-failing every four minutes with nothing watching it. A partner-facing outage
-failing the same silent way is the same mistake with a partner relationship
-attached.
+| Resource | Name |
+|---|---|
+| Log-based metric | `partner_api_5xx` — counts `httpRequest.status>=500` on the `partner_api` service |
+| Alert policy | `partner_api 5xx rate` — fires on count `> 0` over 5 minutes, auto-closes after 7 days |
+
+**Open item: the alert has no notification channel, so it is currently silent.**
+It records incidents in the Monitoring console but sends nothing, because the
+project has no notification channels at all. Until one is attached, someone has to
+go and look.
+
+To finish it, create a channel (Slack incoming-webhook, or an email alias — email
+requires the recipient to click a verification link) and attach it to the policy:
+
+```bash
+# list channels; attach one to projects/schemessg/alertPolicies/4380231572188813607
+gcloud beta monitoring channels list --project=schemessg
+```
+
+This matters more than it looks: the `schemes_search` warmup job has been failing
+every four minutes with nothing watching it. A partner-facing outage failing the
+same silent way is the same mistake with a partner relationship attached — and a
+policy with no channel is still that mistake, just better documented.
 
 ## Local verification
 
