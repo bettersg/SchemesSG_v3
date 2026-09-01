@@ -1,0 +1,79 @@
+
+Seeding smoke keys on project 'schemessg-v3-dev'
+/Users/tracilim/Projects/schemessg-partner-api/backend/.venv/lib/python3.10/site-packages/google/cloud/firestore_v1/base_collection.py:315: UserWarning: Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.
+  return query.where(field_path, op_string, value)
+Target: http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api
+
+AUTHENTICATION
+  PASS  missing key is 401
+        401 missing_key
+  PASS  unknown key is 401
+        401 invalid_key
+  PASS  revoked key is 403
+        403 revoked_key
+
+ROUTING AND VERSIONING
+  PASS  missing version is 404 unsupported_version
+        404 unsupported_version
+  PASS  unknown version is 404 unsupported_version
+        404 unsupported_version
+  PASS  unknown resource is 404 not_found
+        404 not_found
+  PASS  POST on the collection is 405
+        405 method_not_allowed
+  PASS  GET on /v1/schemes/search is 405, not a detail lookup
+        405 method_not_allowed
+  PASS  unsupported query param is 400
+        400 invalid_request
+
+LIST
+  PASS  GET /v1/schemes returns 200 with data
+        200, 5 schemes, total_count=450, has_more=True
+  PASS  list response carries X-RateLimit-Remaining
+        X-RateLimit-Remaining=193, X-RateLimit-Limit=200
+  PASS  no internal fields in list payload
+        none of approved_by, scraped_text, source_entry_id, search_booster present in 5 record(s)
+  PASS  list fields are exactly the allowlist
+        exactly 17 allowlisted fields
+  PASS  no retired or inactive schemes in list
+        no inactive/retired schemes present
+  PASS  category filter returns 200 (category='Financial Assistance')
+        200, 3 schemes, total_count=169, has_more=True
+  PASS  unknown category is 400
+        400 invalid_request
+
+DETAIL
+  PASS  GET /v1/schemes/5VYXSODNu5FoZb2eCftd returns 200
+        200, scheme='Family Justice Support Scheme (FJSS)'
+  PASS  detail fields are exactly the allowlist
+        exactly 17 allowlisted fields
+  PASS  no internal fields in detail payload
+        none of approved_by, scraped_text, source_entry_id, search_booster present in 1 record(s)
+  PASS  unknown scheme id is 404
+        404 not_found
+
+SEARCH
+  PASS  POST /v1/schemes/search returns 200 with data
+        200, 5 schemes, total_count=83, has_more=True
+  PASS  no internal fields in search payload
+        none of approved_by, scraped_text, source_entry_id, search_booster present in 5 record(s)
+  PASS  search fields are exactly the allowlist
+        exactly 17 allowlisted fields
+  PASS  no retired or inactive schemes in search
+        no inactive/retired schemes present
+  PASS  empty query is 400
+        400 invalid_request
+  PASS  non-object JSON body is 400, not 500
+        400 invalid_request
+
+RATE LIMITING (own key, so it cannot starve the checks above)
+  PASS  rate limit eventually returns 429 with Retry-After
+        429 rate_limited, Retry-After=60
+
+==============================================================
+  27/27 checks passed
+==============================================================
+
+JSON report: /tmp/partner-api-evidence/smoke.json
+
+Cleaned up seeded keys.

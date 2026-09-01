@@ -16,11 +16,11 @@ because seeding writes real `partner_keys` documents.
 Prerequisites:
     cd backend && docker compose -f docker-compose-firebase.yml up --build
 
-Usage:
+Usage — run as a module, so `functions/` is on the import path:
     cd backend/functions
-    uv run python scripts/smoke_partner_api.py
-    uv run python scripts/smoke_partner_api.py --json ../../.evidence/smoke.json
-    uv run python scripts/smoke_partner_api.py --keep-key   # leave the keys for manual poking
+    uv run python -m scripts.smoke_partner_api
+    uv run python -m scripts.smoke_partner_api --json ../../.evidence/smoke.json
+    uv run python -m scripts.smoke_partner_api --keep-key   # leave the keys for manual poking
 """
 
 import argparse
@@ -34,6 +34,7 @@ from typing import Any, Callable
 import requests
 from dotenv import load_dotenv
 from firebase_admin import credentials, firestore, initialize_app
+from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from partner.serializers import PUBLIC_FIELDS
 from utils.partner_auth import PARTNER_KEYS_COLLECTION, RATE_LIMIT_COLLECTION, hash_key
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
@@ -232,9 +233,32 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, args
     check("list fields are exactly the allowlist", lambda: _expect_allowlist(listing))
     check("no retired or inactive schemes in list", lambda: _expect_listed_only(listing))
 
+    # Taken from the mapping rather than hardcoded, so renaming a category makes
+    # this check follow along instead of silently asserting a 400.
+    category = next(iter(SCHEME_CATEGORY_MAPPING))
     check(
-        "category filter returns 200",
-        lambda: _expect_list(requests.get(f"{base}/v1/schemes?category=healthcare&limit=3", headers=auth, timeout=120)),
+        f"category filter returns 200 (category={category!r})",
+        lambda: _expect_list(
+            requests.get(
+                f"{base}/v1/schemes",
+                params={"category": category, "limit": 3},
+                headers=auth,
+                timeout=120,
+            )
+        ),
+    )
+    check(
+        "unknown category is 400",
+        lambda: _expect_error(
+            requests.get(
+                f"{base}/v1/schemes",
+                params={"category": "not-a-real-category"},
+                headers=auth,
+                timeout=60,
+            ),
+            400,
+            "invalid_request",
+        ),
     )
 
     print("\nDETAIL")

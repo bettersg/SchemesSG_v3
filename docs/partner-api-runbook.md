@@ -36,7 +36,7 @@ does not require it; issuing a key to a real consumer does.
 
 ```bash
 cd backend/functions
-uv run python scripts/issue_partner_key.py --dev issue --consumer <name> --rate-limit 60
+uv run python -m scripts.issue_partner_key --dev issue --consumer <name> --rate-limit 60
 ```
 
 This writes a `partner_keys` document to `schemessg-v3-dev`, keyed by
@@ -62,7 +62,7 @@ paste request shapes into email; they go stale.
 Only once sandbox is verified:
 
 ```bash
-uv run python scripts/issue_partner_key.py --prod issue --consumer <name> --rate-limit 60
+uv run python -m scripts.issue_partner_key --prod issue --consumer <name> --rate-limit 60
 ```
 
 The script requires you to type the project ID to confirm before it writes to
@@ -72,7 +72,7 @@ production.
 
 ```bash
 cd backend/functions
-uv run python scripts/issue_partner_key.py --prod revoke --consumer <name>
+uv run python -m scripts.issue_partner_key --prod revoke --consumer <name>
 ```
 
 Or flip `active: false` on the `partner_keys` document in the Firestore console.
@@ -92,8 +92,8 @@ permanent — it stamps `revoked_at` and returns a clearer `403` to the partner.
 ## Auditing issued keys
 
 ```bash
-uv run python scripts/issue_partner_key.py --dev  list
-uv run python scripts/issue_partner_key.py --prod list
+uv run python -m scripts.issue_partner_key --dev  list
+uv run python -m scripts.issue_partner_key --prod list
 ```
 
 Lists consumer, active flag, rate limit, creation time and a hash prefix.
@@ -135,7 +135,7 @@ docker compose -f docker-compose-firebase.yml up --build
 
 # In a second shell: seed a key, exercise every operation and failure mode
 cd backend/functions
-uv run python scripts/smoke_partner_api.py
+uv run python -m scripts.smoke_partner_api
 ```
 
 `scripts/smoke_partner_api.py` writes a temporary `smoke-test` key to whichever

@@ -9,13 +9,13 @@ Usage:
     cd backend/functions
 
     # Sandbox first, always (see docs/partner-api-runbook.md)
-    uv run python scripts/issue_partner_key.py --dev  issue --consumer carecompass --rate-limit 60
+    uv run python -m scripts.issue_partner_key --dev  issue --consumer carecompass --rate-limit 60
 
     # Production, only after the partner has verified against sandbox
-    uv run python scripts/issue_partner_key.py --prod issue --consumer carecompass --rate-limit 60
+    uv run python -m scripts.issue_partner_key --prod issue --consumer carecompass --rate-limit 60
 
-    uv run python scripts/issue_partner_key.py --dev list
-    uv run python scripts/issue_partner_key.py --dev revoke --consumer carecompass
+    uv run python -m scripts.issue_partner_key --dev list
+    uv run python -m scripts.issue_partner_key --dev revoke --consumer carecompass
 """
 
 import argparse

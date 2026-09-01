@@ -1,0 +1,144 @@
+{
+  "base": "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api",
+  "project": "schemessg-v3-dev",
+  "generated_at": "2026-09-01T06:05:24.950571+00:00",
+  "passed": 27,
+  "total": 27,
+  "checks": [
+    {
+      "check": "missing key is 401",
+      "ok": true,
+      "detail": "401 missing_key"
+    },
+    {
+      "check": "unknown key is 401",
+      "ok": true,
+      "detail": "401 invalid_key"
+    },
+    {
+      "check": "revoked key is 403",
+      "ok": true,
+      "detail": "403 revoked_key"
+    },
+    {
+      "check": "missing version is 404 unsupported_version",
+      "ok": true,
+      "detail": "404 unsupported_version"
+    },
+    {
+      "check": "unknown version is 404 unsupported_version",
+      "ok": true,
+      "detail": "404 unsupported_version"
+    },
+    {
+      "check": "unknown resource is 404 not_found",
+      "ok": true,
+      "detail": "404 not_found"
+    },
+    {
+      "check": "POST on the collection is 405",
+      "ok": true,
+      "detail": "405 method_not_allowed"
+    },
+    {
+      "check": "GET on /v1/schemes/search is 405, not a detail lookup",
+      "ok": true,
+      "detail": "405 method_not_allowed"
+    },
+    {
+      "check": "unsupported query param is 400",
+      "ok": true,
+      "detail": "400 invalid_request"
+    },
+    {
+      "check": "GET /v1/schemes returns 200 with data",
+      "ok": true,
+      "detail": "200, 5 schemes, total_count=450, has_more=True"
+    },
+    {
+      "check": "list response carries X-RateLimit-Remaining",
+      "ok": true,
+      "detail": "X-RateLimit-Remaining=193, X-RateLimit-Limit=200"
+    },
+    {
+      "check": "no internal fields in list payload",
+      "ok": true,
+      "detail": "none of approved_by, scraped_text, source_entry_id, search_booster present in 5 record(s)"
+    },
+    {
+      "check": "list fields are exactly the allowlist",
+      "ok": true,
+      "detail": "exactly 17 allowlisted fields"
+    },
+    {
+      "check": "no retired or inactive schemes in list",
+      "ok": true,
+      "detail": "no inactive/retired schemes present"
+    },
+    {
+      "check": "category filter returns 200 (category='Financial Assistance')",
+      "ok": true,
+      "detail": "200, 3 schemes, total_count=169, has_more=True"
+    },
+    {
+      "check": "unknown category is 400",
+      "ok": true,
+      "detail": "400 invalid_request"
+    },
+    {
+      "check": "GET /v1/schemes/5VYXSODNu5FoZb2eCftd returns 200",
+      "ok": true,
+      "detail": "200, scheme='Family Justice Support Scheme (FJSS)'"
+    },
+    {
+      "check": "detail fields are exactly the allowlist",
+      "ok": true,
+      "detail": "exactly 17 allowlisted fields"
+    },
+    {
+      "check": "no internal fields in detail payload",
+      "ok": true,
+      "detail": "none of approved_by, scraped_text, source_entry_id, search_booster present in 1 record(s)"
+    },
+    {
+      "check": "unknown scheme id is 404",
+      "ok": true,
+      "detail": "404 not_found"
+    },
+    {
+      "check": "POST /v1/schemes/search returns 200 with data",
+      "ok": true,
+      "detail": "200, 5 schemes, total_count=83, has_more=True"
+    },
+    {
+      "check": "no internal fields in search payload",
+      "ok": true,
+      "detail": "none of approved_by, scraped_text, source_entry_id, search_booster present in 5 record(s)"
+    },
+    {
+      "check": "search fields are exactly the allowlist",
+      "ok": true,
+      "detail": "exactly 17 allowlisted fields"
+    },
+    {
+      "check": "no retired or inactive schemes in search",
+      "ok": true,
+      "detail": "no inactive/retired schemes present"
+    },
+    {
+      "check": "empty query is 400",
+      "ok": true,
+      "detail": "400 invalid_request"
+    },
+    {
+      "check": "non-object JSON body is 400, not 500",
+      "ok": true,
+      "detail": "400 invalid_request"
+    },
+    {
+      "check": "rate limit eventually returns 429 with Retry-After",
+      "ok": true,
+      "detail": "429 rate_limited, Retry-After=60"
+    }
+  ]
+}

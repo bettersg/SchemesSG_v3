@@ -19,7 +19,7 @@ below was executed, not asserted. Commands are runnable from a clean checkout.
 | Frontend lint | 0 findings in new files (29 pre-existing warnings unchanged) |
 | Ruff on changed backend files | clean |
 | Adversarial code review (45 agents, 7 dimensions) | 19 raised → 4 confirmed → **all 4 fixed** |
-| Docker compose smoke | **NOT RUN** — see "Not verified" below |
+| Docker compose smoke (real HTTP + dev Firestore) | **27/27 checks passed** |
 
 ## Backend tests
 
@@ -182,23 +182,56 @@ a revocation gate, and the runbook tells operators to hand-edit these fields):
 - Auth and rate-limiting are wrapped, so a Firestore blip answers in the
   documented error envelope rather than a bare 500.
 
-## Not verified
+## End-to-end smoke test
 
-**The docker compose smoke test has not been run.** The Docker daemon on this
-machine stopped responding — the build stalled at "load local bake definitions"
-and both `docker version` and `docker ps` hung indefinitely. Nothing about the
-branch was implicated; the daemon was already wedged.
-
-This is the one gate that exercises the API over real HTTP against Firestore, so
-it is the last thing to run before merge:
+Run against the docker compose emulator serving the real function, backed by the
+`schemessg-v3-dev` cloud Firestore (vector search needs real Firestore, so
+`FIRESTORE_EMULATOR_HOST` stays commented out).
 
 ```bash
 cd backend && docker compose -f docker-compose-firebase.yml up --build
-# then, in another shell:
-cd backend/functions && uv run python scripts/smoke_partner_api.py --json ../../.evidence/smoke.json
+# second shell:
+cd backend/functions && uv run python -m scripts.smoke_partner_api --json ../../.evidence/smoke.json
 ```
 
-It checks every operation and every documented failure mode, asserts no internal
-field appears in any payload, asserts the response fields are exactly the
-allowlist, and confirms the 429 carries `Retry-After`. It refuses to run outside
-the dev project unless `--allow-project` names the target.
+```
+27/27 checks passed
+```
+
+Full transcript in [`evidence/partner-api/smoke-run.txt`](evidence/partner-api/smoke-run.txt),
+machine-readable report in [`evidence/partner-api/smoke-report.json`](evidence/partner-api/smoke-report.json).
+
+What it proved over real HTTP, beyond what unit tests can reach:
+
+| Area | Evidence from the run |
+| --- | --- |
+| Auth | missing key → `401 missing_key`; unknown → `401 invalid_key`; revoked → `403 revoked_key` |
+| Versioning | `/schemes` and `/v2/schemes` → `404 unsupported_version`; never falls through to an implicit v1 |
+| Method + reserved path | `POST /v1/schemes` → 405; `GET /v1/schemes/search` → 405, not a detail lookup for a scheme named "search" |
+| List | 200 with 5 schemes, `total_count=450`, `has_more=true` |
+| Filtering | `category='Financial Assistance'` → 200, `total_count=169`; unknown category → `400` |
+| Detail | real id → 200 (`Family Justice Support Scheme (FJSS)`); unknown id → `404 not_found` |
+| Search | 200 with 5 results, `total_count=83`; empty query → `400` |
+| **No data leakage** | `approved_by`, `scraped_text`, `source_entry_id`, `search_booster` absent from list, detail *and* search payloads |
+| **Allowlist is exact** | every payload carried exactly the 17 allowlisted fields — no extras |
+| Lifecycle | no `retired` or `inactive` scheme in any list or search response |
+| **Blocker fix** | `non-object JSON body is 400, not 500` — the bug the review found, confirmed fixed over the wire |
+| **Rate-limit fix** | `X-RateLimit-Limit=200` on the functional key, so the run no longer starves itself; throttle key → `429 rate_limited` with `Retry-After=60` |
+
+Cleanup verified afterwards: `partner_keys` back to 0 documents, no leftover
+rate-limit buckets.
+
+### One thing this run itself caught
+
+The first run scored 26/27. The failure was in the smoke script, not the API: it
+filtered on `category=healthcare`, which is not a real category, and the API
+correctly answered `400 invalid_request: Unknown category: 'healthcare'`. The
+check now derives a category from `SCHEME_CATEGORY_MAPPING` instead of hardcoding
+one, so renaming a category updates the check instead of silently asserting a 400,
+and an explicit unknown-category check was added alongside it.
+
+Separately, the documented invocation `python scripts/smoke_partner_api.py` failed
+with `ModuleNotFoundError: No module named 'partner'` — a standalone script does
+not get `functions/` on `sys.path`. Both scripts and all docs now use the repo's
+existing convention, `python -m scripts.<name>` (as `run_link_check_and_reindex.py`
+already did).
