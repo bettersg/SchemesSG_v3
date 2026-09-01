@@ -75,7 +75,12 @@ def get_endpoint_url(function_name: str) -> str:
     return f"http://127.0.0.1:5001/schemessg-v3-dev/{region}/{function_name}"
 
 
-def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict] = None) -> bool:
+def make_warmup_request(
+    url: str,
+    method: str = "GET",
+    json_data: Optional[Dict] = None,
+    extra_headers: Optional[Dict[str, str]] = None,
+) -> bool:
     """
     Make a warmup request to the specified endpoint.
 
@@ -83,6 +88,9 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
         url (str): The endpoint URL
         method (str): HTTP method (GET or POST)
         json_data (Optional[Dict]): JSON data for POST requests
+        extra_headers (Optional[Dict[str, str]]): Extra headers to merge in. Used by
+            ``partner_api``, which authenticates on ``X-API-Key`` rather than on the
+            Firebase ID token the other endpoints accept.
 
     Returns:
         bool: True if request was successful (should always be 200 for warmup requests), False otherwise
@@ -111,7 +119,11 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
             method=method,
             url=url,
             json=json_data,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {id_token}"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {id_token}",
+                **(extra_headers or {}),
+            },
             timeout=30,
         )
 
@@ -237,9 +249,31 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
             },
         ]
 
+        # partner_api authenticates on X-API-Key, not the Firebase ID token the
+        # others use, so it needs a dedicated warmup key. Skipped rather than
+        # failing the whole run when the key isn't configured — see the runbook.
+        warmup_api_key = os.getenv("PARTNER_WARMUP_API_KEY")
+        if warmup_api_key:
+            endpoints.append(
+                {
+                    "name": "partner_api",
+                    "method": "GET",
+                    "url": f"{get_endpoint_url('partner_api')}/v1/schemes?is_warmup=true",
+                    "data": None,
+                    "headers": {"X-API-Key": warmup_api_key},
+                }
+            )
+        else:
+            logger.warning("PARTNER_WARMUP_API_KEY not set; skipping partner_api warmup")
+
         # Make warmup requests to all endpoints
         results = [
-            make_warmup_request(url=endpoint["url"], method=endpoint["method"], json_data=endpoint["data"])
+            make_warmup_request(
+                url=endpoint["url"],
+                method=endpoint["method"],
+                json_data=endpoint["data"],
+                extra_headers=endpoint.get("headers"),
+            )
             for endpoint in endpoints
         ]
 

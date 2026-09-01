@@ -44,6 +44,7 @@ DEFAULT_BASE = "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_a
 SMOKE_CONSUMER = "smoke-test"
 THROTTLE_CONSUMER = f"{SMOKE_CONSUMER}-throttle"
 REVOKED_CONSUMER = f"{SMOKE_CONSUMER}-revoked"
+WARMUP_CONSUMER = f"{SMOKE_CONSUMER}-warmup"
 
 # The per-minute budget is shared across operations and is spent by 4xx routing
 # checks too, so the functional key needs enough headroom for the whole run.
@@ -124,7 +125,7 @@ def cleanup(db, raw_keys: list[str]) -> None:
     """Delete every document this run created. Safe to call twice."""
     for raw_key in raw_keys:
         db.collection(PARTNER_KEYS_COLLECTION).document(hash_key(raw_key)).delete()
-    for consumer in (SMOKE_CONSUMER, THROTTLE_CONSUMER, REVOKED_CONSUMER):
+    for consumer in (SMOKE_CONSUMER, THROTTLE_CONSUMER, REVOKED_CONSUMER, WARMUP_CONSUMER):
         _clear_buckets(db, consumer)
 
 
@@ -157,11 +158,13 @@ def main() -> int:
     raw_key = seed_key(db, SMOKE_CONSUMER, FUNCTIONAL_RATE_LIMIT)
     throttle_key = seed_key(db, THROTTLE_CONSUMER, THROTTLE_RATE_LIMIT)
     revoked_key = seed_key(db, REVOKED_CONSUMER, 10, active=False)
-    seeded = [raw_key, throttle_key, revoked_key]
+    # Mirrors the runbook's warmup key: rate limit 0, so it can warm but not fetch.
+    warmup_key = seed_key(db, WARMUP_CONSUMER, 0)
+    seeded = [raw_key, throttle_key, revoked_key, warmup_key]
     auth = {"X-API-Key": raw_key}
 
     try:
-        return _run_checks(base, auth, throttle_key, revoked_key, args)
+        return _run_checks(base, auth, throttle_key, revoked_key, warmup_key, args)
     finally:
         # finally, so an unwrapped HTTP error (emulator down, timeout) still
         # removes the key documents this run created.
@@ -172,7 +175,7 @@ def main() -> int:
             print("\nCleaned up seeded keys.")
 
 
-def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, args) -> int:
+def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, warmup_key: str, args) -> int:
     print(f"Target: {base}\n")
     print("AUTHENTICATION")
 
@@ -220,8 +223,12 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, args
     check(
         "unsupported query param is 400",
         lambda: _expect_error(
-            requests.get(f"{base}/v1/schemes?is_warmup=true", headers=auth, timeout=60), 400, "invalid_request"
+            requests.get(f"{base}/v1/schemes?sort=name", headers=auth, timeout=60), 400, "invalid_request"
         ),
+    )
+    check(
+        "is_warmup short-circuits to 200 without returning data",
+        lambda: _expect_warmup(requests.get(f"{base}/v1/schemes?is_warmup=true", headers=auth, timeout=120)),
     )
 
     print("\nLIST")
@@ -302,6 +309,20 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, args
             requests.post(f"{base}/v1/schemes/search", headers=auth, json=["not", "an", "object"], timeout=60),
             400,
             "invalid_request",
+        ),
+    )
+
+    print("\nWARMUP KEY (rate limit 0: warms, but cannot fetch)")
+
+    warm_auth = {"X-API-Key": warmup_key}
+    check(
+        "zero-budget key still warms",
+        lambda: _expect_warmup(requests.get(f"{base}/v1/schemes?is_warmup=true", headers=warm_auth, timeout=120)),
+    )
+    check(
+        "zero-budget key cannot fetch data",
+        lambda: _expect_error(
+            requests.get(f"{base}/v1/schemes?limit=1", headers=warm_auth, timeout=60), 429, "rate_limited"
         ),
     )
 
@@ -400,6 +421,14 @@ def _expect_listed_only(response) -> str:
         status = record.get("status")
         assert status not in NON_SEARCHABLE_STATUSES, f"non-searchable status '{status}' returned"
     return f"no {'/'.join(sorted(NON_SEARCHABLE_STATUSES))} schemes present"
+
+
+def _expect_warmup(response) -> str:
+    """Warmup must be a cheap 200 that leaks no scheme data."""
+    body = _body(response)
+    assert response.status_code == 200, f"expected 200, got {response.status_code}: {body}"
+    assert "data" not in body, f"warmup response carried data: {body}"
+    return f"200 {body.get('message', body)}"
 
 
 def _expect_rate_header(response) -> str:

@@ -9,10 +9,10 @@ Usage:
     cd backend/functions
 
     # Sandbox first, always (see docs/partner-api-runbook.md)
-    uv run python -m scripts.issue_partner_key --dev  issue --consumer carecompass --rate-limit 60
+    uv run python -m scripts.issue_partner_key --dev  issue --consumer carecompass
 
     # Production, only after the partner has verified against sandbox
-    uv run python -m scripts.issue_partner_key --prod issue --consumer carecompass --rate-limit 60
+    uv run python -m scripts.issue_partner_key --prod issue --consumer carecompass
 
     uv run python -m scripts.issue_partner_key --dev list
     uv run python -m scripts.issue_partner_key --dev revoke --consumer carecompass
@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from firebase_admin import credentials, firestore, initialize_app
 from loguru import logger
-from utils.partner_auth import PARTNER_KEYS_COLLECTION, hash_key
+from utils.partner_auth import DEFAULT_RATE_LIMIT_PER_MIN, PARTNER_KEYS_COLLECTION, hash_key
 
 
 KEY_PREFIX = "sk_schemes_"
@@ -53,7 +53,12 @@ def parse_args():
 
     issue = sub.add_parser("issue", help="Issue a new key for a consumer")
     issue.add_argument("--consumer", required=True, help="Partner identifier, e.g. carecompass")
-    issue.add_argument("--rate-limit", type=int, default=60, help="Requests per minute (default: 60)")
+    issue.add_argument(
+        "--rate-limit",
+        type=int,
+        default=DEFAULT_RATE_LIMIT_PER_MIN,
+        help=f"Requests per minute, shared across all operations (default: {DEFAULT_RATE_LIMIT_PER_MIN})",
+    )
 
     sub.add_parser("list", help="List issued keys (hashes only)")
 

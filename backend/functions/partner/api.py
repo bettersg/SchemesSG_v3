@@ -11,14 +11,22 @@ the *service root* and everything after it arrives as ``req.path`` to route.
 Local testing:
     http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api/v1/schemes
 
+Warmup: kept warm by ``keep_endpoints_warm`` like the rest of the API. The
+``is_warmup`` short-circuit sits *after* key verification and *before* the rate
+limiter, so it is not an unauthenticated path — the warmer holds a real key issued
+to the ``warmup`` consumer — and the 4-minutely ping neither spends a partner's
+budget nor writes a counter document. Requires ``PARTNER_WARMUP_API_KEY``; see
+docs/partner-api-runbook.md.
+
 Deliberately absent:
 
 * **No CORS.** ``utils/cors_config.ALLOWED_ORIGINS`` is a browser-``Origin``
-  allowlist; a server-to-server partner sends no ``Origin`` and needs no entry.
-* **No ``is_warmup`` bypass, and this function is not in ``keep_endpoints_warm``.**
-  Warmup exists to spare interactive site users a cold start; a partner server is
-  latency-tolerant. A bypass would add an unauthenticated, publicly reachable code
-  path purely to save a cold start nobody is waiting on. Do not "fix" the omission.
+  allowlist, and CORS is enforced by browsers, not by servers — a partner's backend
+  ignores it entirely. Omitting it is the security control: the only way a partner
+  could use this from browser JavaScript is by shipping their secret key to every
+  end user, so the absent headers make that mistake fail in development instead of
+  leaking the key in production. A partner needing browser access should proxy
+  through their own backend. **Do not add partner domains to ALLOWED_ORIGINS.**
 """
 
 from typing import Any
@@ -49,9 +57,10 @@ from .serializers import error_body, to_public_scheme
 SCHEMES_COLLECTION = "schemes"
 MAX_LIMIT = 50
 
-# Partner list params: the shared catalog filters plus pagination. Notably no
-# `is_warmup` and no `sort`, unlike the frontend's /catalog.
-LIST_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor"}
+# Partner list params: the shared catalog filters plus pagination, and `is_warmup`
+# so the warmer's ping isn't rejected as an unknown parameter. Notably no `sort`,
+# unlike the frontend's /catalog.
+LIST_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor", "is_warmup"}
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -88,6 +97,14 @@ def partner_api(req: https_fn.Request) -> https_fn.Response:
         is_valid, consumer_or_error, rate_limit = verify_partner_key(req, db)
         if not is_valid:
             return _error(consumer_or_error, _AUTH_MESSAGES[consumer_or_error], ERROR_STATUS[consumer_or_error])
+
+        # Warmup runs *after* auth, matching every other endpoint in this codebase
+        # (see schemes/catalog.py), so this is not an unauthenticated code path —
+        # keep_endpoints_warm holds a real key for the `warmup` consumer. Placed
+        # before the rate limiter so the 4-minutely ping neither spends a budget nor
+        # writes a counter document.
+        if req.args.get("is_warmup", "").lower() == "true":
+            return _json({"message": "Warmup request received"})
 
         allowed, remaining = check_and_increment_rate_limit(db, consumer_or_error, rate_limit)
     except Exception:  # noqa: BLE001 - partner-facing 5xx must not leak internals

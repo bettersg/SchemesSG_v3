@@ -254,7 +254,7 @@ export const API_ERRORS: ApiError[] = [
 export const ERROR_ENVELOPE = `{
   "error": {
     "code": "rate_limited",
-    "message": "Rate limit of 60 requests/minute exceeded"
+    "message": "Rate limit of 600 requests/minute exceeded"
   }
 }`;
 

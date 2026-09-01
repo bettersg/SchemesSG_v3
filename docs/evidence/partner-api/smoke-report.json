@@ -1,9 +1,9 @@
 {
   "base": "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api",
   "project": "schemessg-v3-dev",
-  "generated_at": "2026-09-01T11:51:20.428367+00:00",
-  "passed": 27,
-  "total": 27,
+  "generated_at": "2026-09-01T12:08:01.197738+00:00",
+  "passed": 30,
+  "total": 30,
   "checks": [
     {
       "check": "missing key is 401",
@@ -49,6 +49,11 @@
       "check": "unsupported query param is 400",
       "ok": true,
       "detail": "400 invalid_request"
+    },
+    {
+      "check": "is_warmup short-circuits to 200 without returning data",
+      "ok": true,
+      "detail": "200 Warmup request received"
     },
     {
       "check": "GET /v1/schemes returns 200 with data",
@@ -134,6 +139,16 @@
       "check": "non-object JSON body is 400, not 500",
       "ok": true,
       "detail": "400 invalid_request"
+    },
+    {
+      "check": "zero-budget key still warms",
+      "ok": true,
+      "detail": "200 Warmup request received"
+    },
+    {
+      "check": "zero-budget key cannot fetch data",
+      "ok": true,
+      "detail": "429 rate_limited"
     },
     {
       "check": "rate limit eventually returns 429 with Retry-After",

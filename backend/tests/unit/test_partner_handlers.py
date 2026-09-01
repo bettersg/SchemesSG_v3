@@ -236,8 +236,25 @@ def test_invalid_filter_value_is_restated_not_forwarded(mocker):
 
 
 def test_list_rejects_unknown_query_parameters():
-    with pytest.raises(PartnerRequestError, match="is_warmup"):
-        _handle_list(MagicMock(), _Args({"is_warmup": "true"}))
+    with pytest.raises(PartnerRequestError, match="sort"):
+        _handle_list(MagicMock(), _Args({"sort": "name"}))
+
+
+def test_list_accepts_is_warmup_as_a_known_parameter(mocker):
+    """The warmer pings /v1/schemes?is_warmup=true, so it must not be 'unknown'.
+
+    partner_api short-circuits is_warmup=true before reaching here, but a
+    non-'true' value falls through and must behave like an ordinary request.
+    """
+    mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        return_value=PaginationResult(data=[], has_more=False, total_count=0),
+    )
+    mocker.patch("schemes.catalog._count_excluded_schemes", return_value=0)
+
+    body = _handle_list(MagicMock(), _Args({"is_warmup": "false"}))
+
+    assert body["data"] == []
 
 
 def test_list_rejects_combining_filters():

@@ -25,6 +25,8 @@ ROUTING AND VERSIONING
         405 method_not_allowed
   PASS  unsupported query param is 400
         400 invalid_request
+  PASS  is_warmup short-circuits to 200 without returning data
+        200 Warmup request received
 
 LIST
   PASS  GET /v1/schemes returns 200 with data
@@ -66,12 +68,18 @@ SEARCH
   PASS  non-object JSON body is 400, not 500
         400 invalid_request
 
+WARMUP KEY (rate limit 0: warms, but cannot fetch)
+  PASS  zero-budget key still warms
+        200 Warmup request received
+  PASS  zero-budget key cannot fetch data
+        429 rate_limited
+
 RATE LIMITING (own key, so it cannot starve the checks above)
   PASS  rate limit eventually returns 429 with Retry-After
         429 rate_limited, Retry-After=60
 
 ==============================================================
-  27/27 checks passed
+  30/30 checks passed
 ==============================================================
 
 JSON report: /tmp/partner-api-evidence/smoke.json

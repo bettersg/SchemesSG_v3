@@ -192,7 +192,7 @@ a revocation gate, and the runbook tells operators to hand-edit these fields):
 
 - Only a real boolean `true` authenticates. A hand-typed `"false"` is truthy and
   would previously have kept a revoked key working.
-- `rate_limit_per_min: 0` is honoured instead of collapsing to the 60/min default
+- `rate_limit_per_min: 0` is honoured instead of collapsing to the default
   via `or`. Documented in the runbook as the pause-without-revoking control.
 - A non-numeric `rate_limit_per_min` falls back to the default instead of raising
   a 500 on every request.

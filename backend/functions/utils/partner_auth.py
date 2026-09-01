@@ -18,7 +18,12 @@ PARTNER_KEYS_COLLECTION = "partner_keys"
 RATE_LIMIT_COLLECTION = "partner_rate_limits"
 
 API_KEY_HEADER = "X-API-Key"
-DEFAULT_RATE_LIMIT_PER_MIN = 60
+# 600/min (10 req/s). Partners are hand-vetted and each key is issued by a
+# maintainer, so this is not an abuse control — it is a blast-radius guard so a
+# buggy retry loop on a partner's side can't quietly run up Firestore reads and
+# 2GB function instances. Generous enough that a page fanning out several scheme
+# lookups per view never notices it.
+DEFAULT_RATE_LIMIT_PER_MIN = 600
 
 # Counter docs are only meaningful for their own minute. Firestore TTL on this
 # field reaps them; see docs/partner-api-runbook.md.

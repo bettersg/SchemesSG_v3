@@ -15,6 +15,11 @@ This document is the process between them.
 - They get exactly one string, once. We cannot retrieve it again afterwards, and
   neither can they.
 
+Partners integrate against **production** (`schemessg`). They also get a sandbox
+key on the dev project (`schemessg-v3-dev`) to build against first; the two keys
+are not interchangeable, and dev carries no availability promise. See the runbook's
+[environments section](partner-api-runbook.md#which-environment-do-partners-actually-get).
+
 ## Actors
 
 | Actor | Role |
@@ -67,7 +72,7 @@ skippable.
 
 ```bash
 cd backend/functions
-uv run python -m scripts.issue_partner_key --dev issue --consumer carecompass --rate-limit 60
+uv run python -m scripts.issue_partner_key --dev issue --consumer carecompass
 ```
 
 This requires Firebase service-account credentials, so only a maintainer can do
@@ -79,7 +84,7 @@ it. It writes one document to the `partner_keys` collection:
 | `consumer` | `carecompass` |
 | `active` | `true` |
 | `created_at` | timestamp |
-| `rate_limit_per_min` | `60` |
+| `rate_limit_per_min` | `600` |
 
 The key itself is `sk_schemes_` + 32 random bytes (`secrets.token_urlsafe`), 256
 bits of entropy, 54 characters:
@@ -204,7 +209,7 @@ the function logs.
 | A dashboard or usage portal | Nothing to log into. Ask us and we'll read the counters. |
 | OAuth / JWT / short-lived tokens | A single long-lived key is proportionate to read-only access to already-public scheme data by a handful of named partners. |
 | Write access of any kind | The API is read-only. There is no endpoint that mutates anything. |
-| CORS headers | This is server-to-server. A browser calling it directly would expose the partner's own key to end users. `ALLOWED_ORIGINS` is a browser `Origin` allowlist and **partner domains must not be added to it** — that list gates browsers and widening it protects nothing here. |
+| CORS headers | CORS is enforced by browsers, not servers, so a partner's backend ignores it and needs none. Its absence is the control: browser use would require shipping their secret key to end users, and the missing headers make that fail in development rather than leak in production. **Partner domains must not be added to `ALLOWED_ORIGINS`.** Frontend access belongs behind the partner's own backend — see the runbook's CORS section. |
 | An SLA, status page or OpenAPI spec | Real concerns for a mature public API; not proportionate to the current partner count. |
 | Key expiry | Keys don't auto-expire. Revocation is manual and immediate. Worth revisiting if the partner count grows. |
 
