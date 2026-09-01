@@ -10,6 +10,8 @@ This document covers all utility scripts for the SchemesSG backend.
 | `test_vector_search.py` | `functions/scripts/` | Test vector search queries | Development/debugging |
 | `scan_duplicate_schemes.py` | `functions/scripts/` | Read-only duplicate cluster report | Human triage |
 | `run_link_check_and_reindex.py` | `functions/scripts/` | Manual link check + reindex | Ad-hoc maintenance |
+| `issue_partner_key.py` | `functions/scripts/` | Issue / list / revoke partner API keys | Onboarding or cutting off a partner |
+| `smoke_partner_api.py` | `functions/scripts/` | End-to-end partner API smoke run | Before shipping partner API changes |
 | `check_coverage.py` | `scripts/` | Enforce independent coverage floors | After canonical pytest |
 | `download_prod_data.py` | `scripts/` | Download production data | Refresh local data |
 | `download_dev_data.py` | `scripts/` | Download dev data | Refresh local data |

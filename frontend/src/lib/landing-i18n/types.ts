@@ -136,6 +136,67 @@ export interface Translations {
     note: string;
   };
 
+  /**
+   * Developer docs (`/developers`). Narrative copy only: paths, field names,
+   * types and error codes are identifiers and live untranslated in
+   * `lib/partner-api-reference.ts`.
+   */
+  developers: {
+    heading: string;
+    subtitle: string;
+    accessBadge: string;
+    requestAccess: string;
+    contentsHeading: string;
+    sections: {
+      access: { heading: string; body: string; gate: string };
+      quickStart: { heading: string; body: string };
+      auth: { heading: string; body: string; warning: string };
+      baseUrl: { heading: string; body: string; versionNote: string };
+      operations: { heading: string; body: string };
+      fields: { heading: string; body: string; omitted: string };
+      errors: { heading: string; body: string };
+      rateLimits: { heading: string; body: string };
+      retired: { heading: string; body: string };
+    };
+    labels: {
+      required: string;
+      optional: string;
+      example: string;
+      queryParams: string;
+      pathParams: string;
+      bodyParams: string;
+      exampleRequest: string;
+      exampleResponse: string;
+      copy: string;
+      copied: string;
+      field: string;
+      type: string;
+      status: string;
+      code: string;
+      meaning: string;
+      header: string;
+    };
+    errorMeanings: Record<string, string>;
+    rateLimitHeaderNotes: Record<string, string>;
+  };
+
+  /**
+   * Privacy and terms pages. Both currently carry a drafting notice rather than
+   * policy text: the pages exist so the footer links resolve, and the real
+   * content is slotted in when it is ready.
+   */
+  legal: {
+    privacyHeading: string;
+    termsHeading: string;
+    noticeTitle: string;
+    noticeBody: string;
+    interimHeading: string;
+    interimBody: string;
+    partnerHeading: string;
+    partnerBody: string;
+    contactCta: string;
+  };
+
   footer: {
     tagline: string;
     schemesHeading: string;

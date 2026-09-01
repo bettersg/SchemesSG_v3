@@ -90,21 +90,40 @@ def _filter_scheme_types_for_category(
     )
 
 
-def _keep_listed_schemes(results: PaginationResult) -> PaginationResult:
-    """Remove terminally retired schemes from catalog responses."""
+# What /catalog has always hidden. Callers that must hide more (the partner API
+# also hides `inactive`) pass their own set.
+_CATALOG_EXCLUDED_STATUSES: frozenset[str] = frozenset({RETIRED_STATUS})
+
+
+def _keep_listed_schemes(
+    results: PaginationResult,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> PaginationResult:
+    """Remove schemes whose lifecycle status must not appear in a listing."""
     return PaginationResult(
-        data=[item for item in results.data if item.get("status") != RETIRED_STATUS],
+        data=[item for item in results.data if item.get("status") not in exclude_statuses],
         next_cursor=results.next_cursor,
         has_more=results.has_more,
         total_count=results.total_count,
     )
 
 
-def _count_retired_schemes(collection_ref, base_query: Any = None) -> int | None:
-    """Count retired documents matching the unpaginated catalog query."""
+def _count_excluded_schemes(
+    collection_ref,
+    base_query: Any = None,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> int | None:
+    """Count documents matching the unpaginated query whose status is excluded.
+
+    One ``==`` count per status rather than a single ``in``: it keeps the query
+    shape the catalog has always issued, so no new composite index is needed.
+    """
     source = base_query if base_query is not None else collection_ref
-    retired_query = source.where("status", "==", RETIRED_STATUS)
-    return _count_total(collection_ref, retired_query)
+    counts = [
+        _count_total(collection_ref, source.where("status", "==", status))
+        for status in exclude_statuses
+    ]
+    return None if None in counts else sum(counts)
 
 
 def _get_listed_paginated_results(
@@ -113,8 +132,14 @@ def _get_listed_paginated_results(
     base_query: Any = None,
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
 ) -> PaginationResult:
-    """Fill a catalog page while skipping terminally retired documents."""
+    """Fill a page to ``limit``, skipping documents with an excluded status.
+
+    The refill loop and the ``total_count`` adjustment both honour
+    ``exclude_statuses``, so a caller that hides more statuses still gets full
+    pages and a count that matches what it actually returns.
+    """
     data = []
     current_cursor = cursor
     seen_cursors = {cursor} if cursor else set()
@@ -128,7 +153,7 @@ def _get_listed_paginated_results(
             cursor=current_cursor,
             limit=limit - len(data),
         )
-        data.extend(_keep_listed_schemes(last_result).data)
+        data.extend(_keep_listed_schemes(last_result, exclude_statuses).data)
 
         next_cursor = last_result.next_cursor
         if not last_result.has_more or not next_cursor:
@@ -139,10 +164,10 @@ def _get_listed_paginated_results(
         seen_cursors.add(next_cursor)
         current_cursor = next_cursor
 
-    retired_count = _count_retired_schemes(collection_ref, base_query)
+    excluded_count = _count_excluded_schemes(collection_ref, base_query, exclude_statuses)
     listed_total = (
-        last_result.total_count - retired_count
-        if last_result.total_count is not None and retired_count is not None
+        last_result.total_count - excluded_count
+        if last_result.total_count is not None and excluded_count is not None
         else None
     )
 

@@ -13,24 +13,32 @@ The following endpoints are available:
    - feedback: Submit user feedback
    - update_scheme: Submit new schemes or request edits
 
-3. Slack Integration:
+3. Partner API (API-key gated, server-to-server):
+   - partner_api: versioned partner surface, routed on the request path
+     - GET  /partner_api/v1/schemes              list + filter
+     - GET  /partner_api/v1/schemes/{scheme_id}  scheme detail
+     - POST /partner_api/v1/schemes/search       semantic search
+     Requires an X-API-Key header matching an active `partner_keys` document.
+     Deliberately NOT warmed and has no is_warmup bypass — see partner/api.py.
+
+4. Slack Integration:
    - slack_trigger_message: Trigger a Slack review message for a specific document
    - slack_scan_and_notify: Scan source documents and post review messages for new items
    - slack_interactive: Handle Slack interactive component events (buttons, modals)
 
-4. New Scheme Processing (Firestore Triggers):
+5. New Scheme Processing (Firestore Triggers):
    - on_new_scheme_entry: Triggered on schemeEntries document creation, runs pipeline steps 1-4
      (scraping, LLM extraction, planning area), then posts to Slack for human review
 
-5. Batch Jobs:
+6. Batch Jobs:
    - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
 
-6. System:
+7. System:
    - health: Health check endpoint
    - keep_endpoints_warm: Scheduled task to reduce cold starts
 
-All endpoints (except health) support warmup requests:
+All endpoints (except health and partner_api) support warmup requests:
 - GET endpoints: Add ?is_warmup=true as URL parameter
 - POST endpoints: Include {"is_warmup": true} in request body
 
@@ -52,6 +60,7 @@ from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
 from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: F401
+from partner.api import partner_api  # noqa: F401
 from schemes.catalog import catalog  # noqa: F401
 from schemes.schemes import schemes  # noqa: F401
 from schemes.search import schemes_search  # noqa: F401

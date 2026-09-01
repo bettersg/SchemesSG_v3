@@ -276,6 +276,11 @@ export const en: Translations = {
         answer:
           "Our database is regularly updated to reflect the latest scheme details, eligibility criteria, and application procedures. We work to ensure all information is current and accurate.",
       },
+      {
+        question: "Can I access Schemes.sg data through an API?",
+        answer:
+          "We share scheme data programmatically with a small number of partner organisations, on request. It is not a self-serve public API. See the developer docs at /developers for what is available, and get in touch if your organisation wants to integrate.",
+      },
     ],
     sidebar: {
       title: "Suggest a New Scheme",
@@ -291,6 +296,112 @@ export const en: Translations = {
       "Stop spending hours searching across normal web search. Let our AI match you with the right schemes in seconds.",
     button: "Search Schemes Now",
     note: "Free to use. No sign-up required.",
+  },
+
+  developers: {
+    heading: "Partner API",
+    subtitle:
+      "Read access to the Schemes.sg catalogue, so partner organisations can surface the right scheme inside their own product.",
+    accessBadge: "By request",
+    requestAccess: "Request access",
+    contentsHeading: "On this page",
+    sections: {
+      access: {
+        heading: "Getting access",
+        body: "This is not a self-serve API. We work with a small number of partner organisations, and each key is issued by hand so we know who is using the data and can reach them if something changes.",
+        gate: "Before a key is issued, we confirm our terms of use and privacy policy cover sharing scheme data with your organisation. You will get a sandbox key first, pointed at our development data, so you can build and test before touching anything live.",
+      },
+      quickStart: {
+        heading: "Quick start",
+        body: "One request, to check your key works and see the shape of a scheme.",
+      },
+      auth: {
+        heading: "Authentication",
+        body: "Every request carries your key in a header. There is no token exchange, no OAuth dance, and no expiry.",
+        warning:
+          "Keep the key on your server. It is not safe in a browser, a mobile app, or anything a user can read, because it grants your whole quota to whoever holds it.",
+      },
+      baseUrl: {
+        heading: "Base URL and versioning",
+        body: "The version is a path segment, so a future version can ship alongside this one without changing any URL you have already built against.",
+        versionNote:
+          "There is one version today. A request with no version, or an unknown one, returns 404 rather than quietly falling back to v1.",
+      },
+      operations: {
+        heading: "Operations",
+        body: "Three read operations. One key covers all of them.",
+      },
+      fields: {
+        heading: "Scheme fields",
+        body: "Every scheme we return carries exactly these fields, whether it came from list, retrieve, or search. A field with no value is null rather than absent, so you can rely on the shape.",
+        omitted:
+          "We hold other fields internally, for review workflow and ranking. Those are deliberately not part of this contract, so our internal changes cannot break your integration.",
+      },
+      errors: {
+        heading: "Errors",
+        body: "Every failure returns the same envelope, so you can branch on error.code and never parse a message.",
+      },
+      rateLimits: {
+        heading: "Rate limits",
+        body: "Each partner gets a per-minute budget, shared across all three operations: spending it on list also spends it for search. Every response tells you where you stand, so you never have to discover the limit by hitting it.",
+      },
+      retired: {
+        heading: "When a scheme goes away",
+        body: "Schemes close, and some are folded into a replacement. If you store scheme ids, handle this case: a retired scheme that was merged returns 404 with the id that replaced it, so you can follow the change instead of silently dropping the record.",
+      },
+    },
+    labels: {
+      required: "required",
+      optional: "optional",
+      example: "For example",
+      queryParams: "Query parameters",
+      pathParams: "Path parameters",
+      bodyParams: "Body parameters",
+      exampleRequest: "Request",
+      exampleResponse: "Response",
+      copy: "Copy",
+      copied: "Copied",
+      field: "Field",
+      type: "Type",
+      status: "Status",
+      code: "Code",
+      meaning: "What it means",
+      header: "Header",
+    },
+    errorMeanings: {
+      invalid_request:
+        "The parameters are wrong. The message names which one.",
+      missing_key: "No X-API-Key header was sent.",
+      invalid_key: "The key is not one we issued.",
+      revoked_key: "The key was valid and has been turned off. Talk to us.",
+      not_found: "No such scheme, or it is no longer published.",
+      scheme_retired:
+        "The scheme was retired and merged. The body carries merged_into.",
+      unsupported_version: "The version segment is missing or unknown.",
+      method_not_allowed: "Right path, wrong HTTP method.",
+      rate_limited: "Your per-minute budget is spent. Retry-After says when.",
+      internal_error: "Something broke on our side. Safe to retry.",
+    },
+    rateLimitHeaderNotes: {
+      "X-RateLimit-Limit": "Your budget, in requests per minute.",
+      "X-RateLimit-Remaining": "What is left in the current minute.",
+      "Retry-After": "Seconds to wait. Only sent with a 429.",
+    },
+  },
+
+  legal: {
+    privacyHeading: "Privacy Policy",
+    termsHeading: "Terms of Service",
+    noticeTitle: "This policy is being written",
+    noticeBody:
+      "We are drafting it properly rather than posting boilerplate. This page exists so the link works and so you can see where we have got to.",
+    interimHeading: "What holds in the meantime",
+    interimBody:
+      "Schemes.sg is a free search tool over publicly published government and community scheme information. You can search and browse without an account. We do not sell your data. Search queries are stored so we can improve results, and the feedback you choose to send is stored with it.",
+    partnerHeading: "Sharing scheme data with partners",
+    partnerBody:
+      "We share scheme catalogue and search data with a small number of named partner organisations through our partner API, so they can help people find schemes inside their own services. This covers scheme information, not anything you type into Schemes.sg.",
+    contactCta: "Ask us a question",
   },
 
   footer: {
@@ -314,12 +425,13 @@ export const en: Translations = {
       { label: "About", href: "/about" },
       { label: "Contribute", href: "/contribute" },
       { label: "Feedback", href: "/feedback" },
+      { label: "Developers", href: "/developers" },
       { label: "Sitemap", href: "/sitemap.xml" },
       { label: "Contact", href: "#", comingSoon: true },
     ],
     legalLinks: [
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
     ],
     copyright: "\u00A9 {year} Schemes.sg. All rights reserved.",
     madeIn: "Made with care in Singapore",
