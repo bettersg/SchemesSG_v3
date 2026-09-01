@@ -43,7 +43,13 @@ test("user can stop a streaming response with the question ready to retry", asyn
 
   await expect(partialAnswer).toBeHidden();
   await expect(page.getByRole("textbox")).toHaveValue(CANCELLATION_QUERY);
-  await expect(page.getByRole("button", { name: "Search" })).toBeEnabled();
+  // Stopping the first response keeps the chat view: the composer holds the
+  // question and Send is live again. It used to drop back to the landing
+  // screen, because rollback removes the sole message and ChatHome switched on
+  // `messages.length` alone — the same teardown that hid the error banner on a
+  // failed first send.
+  await expect(page.getByRole("button", { name: "Send message" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Search" })).toHaveCount(0);
   await expect(page.getByText("Unable to finish response")).toHaveCount(0);
 });
 
