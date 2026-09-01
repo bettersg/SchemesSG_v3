@@ -5,8 +5,10 @@
  * translated, because they are literals a partner sends and receives. Narrative
  * copy lives in the landing i18n dictionaries under `developers`.
  *
- * Kept in one module so the base URL appears exactly once. When a custom domain
- * is pointed at the function, only PARTNER_API_BASE changes.
+ * Kept in one module so the base URL appears exactly once. The cloudfunctions.net
+ * host is deliberate and long-term, not a placeholder for api.schemes.sg — see
+ * docs/partner-api-runbook.md for why every prettier option is worse. If it ever
+ * does move, only PARTNER_API_BASE changes.
  */
 
 export const PARTNER_API_BASE =

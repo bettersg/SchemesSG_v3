@@ -19,43 +19,41 @@ POST  {base}/v1/schemes/search       semantic search
 ```
 
 `{base}` is currently `https://asia-southeast1-<project>.cloudfunctions.net/partner_api`.
-If a custom domain is later pointed at the function, `{base}` becomes
-`https://api.schemes.sg` and partner URLs read `https://api.schemes.sg/v1/schemes`
-with no change on the partner's side beyond the base URL.
+That is the intended long-term base too, not a placeholder — see
+[below](#why-we-stay-on-cloudfunctionsnet-and-do-not-use-apischemessg). If it ever
+changes, only `PARTNER_API_BASE` in `frontend/src/lib/partner-api-reference.ts`
+moves, and partners change one constant.
 
-### Why a subdomain, and not a path under schemes.sg
+### Why we stay on cloudfunctions.net, and do not use api.schemes.sg
 
-To correct a claim made earlier in this work: there is **no path collision** with
-the website. `frontend/firebase.json` rewrites `/schemes/**` to the Next SSR
-function, but every partner path is `/partner_api/v1/…`, which that pattern does
-not match. Serving the API under `schemes.sg` would not clash with the scheme
-detail pages.
+Short version: **the ugly URL is the most reliable option available.** Every
+prettier alternative is worse in a specific, documented way. This was investigated
+properly because two earlier arguments for a subdomain turned out to be wrong.
 
-The reason to prefer `api.schemes.sg` is different, and the first one is the reason
-that actually matters:
+**There is no path collision with the website.** `frontend/firebase.json` rewrites
+`/schemes/**` to the Next SSR function, but partner paths are `/partner_api/v1/…`,
+which that pattern does not match. Serving under `schemes.sg` would not clash with
+the scheme detail pages. (An earlier note in this repo claimed otherwise.)
 
-1. **Never put an authenticated API behind Firebase Hosting's CDN.** Hosting caches
-   on URL, and `X-API-Key` is a header. If a response were ever cached, one
-   partner's data could be served to another caller — or to an unauthenticated one —
-   from the edge. Getting this right depends on cache headers being exactly correct
-   forever. A separate origin that does not go through Hosting removes the class of
-   bug rather than managing it.
-2. **Origin isolation.** On `schemes.sg`, browser requests to the API would carry
-   the site's own cookies. This API is not meant to be called from a browser at all
-   (see [CORS](#cors-why-there-is-none-and-why-that-is-correct)); keeping it off the
-   site origin means no ambient credentials are ever in play.
-3. **Decoupling from frontend deploys.** Hosting rewrites ship with the frontend, so
-   routing the API through them would make partner availability depend on web app
-   deploys and on `frameworksBackend` behaviour.
-4. **Cleaner versioned URLs.** `api.schemes.sg/v1/schemes` beats
-   `schemes.sg/partner_api/v1/schemes`, and drops the function name from the public
-   contract so the implementation can move later.
+**CDN caching is also not the problem.** Firebase Hosting sets dynamic content to
+`Cache-Control: private` by default, so function responses are not CDN-cached.
+(A second earlier claim, also overstated.)
 
-None of this is urgent: `cloudfunctions.net` is a distinct origin already and has
-none of the Hosting problems above. It is a pre-public-launch nicety, and a DNS and
-Firebase console task rather than a code change. **If it is ever done, map it
-directly to the function — do not route it through Hosting rewrites**, which would
-reintroduce reason 1.
+The real reasons, evidenced:
+
+| Option | Why not |
+|---|---|
+| **Firebase Hosting rewrite** | Hosting rewrites **drop request headers**, and this API authenticates on one. The `Range` header loss is a [Firebase-confirmed, escalated bug](https://stackoverflow.com/questions/70529601/how-to-preserve-headers-in-firebase-hosting-rewrites), and `Authorization` loss through Hosting → Cloud Run is [reported as intermittent](https://stackoverflow.com/questions/79570641/firebase-hosting-rewrites-to-gcp-cloud-run-but-lost-header-authorization) and unresolved. There is no documented header allowlist. Intermittently dropped `X-API-Key` means partners get random `401`s that look like our fault and cannot be reproduced. Also note an apex→www redirect strips headers by itself. |
+| **Cloud Run domain mapping** | Supported in `asia-southeast1`, but Google's own docs say it plainly: *"Due to latency issues, they are not production-ready and are not supported at General Availability. At the moment, this option is not recommended for production services."* Cannot disable TLS 1.0/1.1, cannot map to a path, no custom certificates. |
+| **Global external ALB + serverless NEG** | Works, and is Google's recommended option — but ~US$18/mo for the forwarding rule plus ~6 networking resources living outside version control, bought purely for a nicer hostname. No WAF, CDN or multi-backend need here to justify it. |
+
+What we have instead: `cloudfunctions.net` is already a distinct origin from
+`schemes.sg`, has no CDN in front of it, and **provably forwards `X-API-Key`** —
+the 30-check smoke suite passes against it on every run.
+
+If the hostname ever needs to be pretty enough to spend money on, the ALB is the
+only production-grade path. **Do not route this API through Hosting rewrites**
+regardless of how convenient the Firebase console makes it look.
 
 One key covers all three operations, and one rate-limit budget is shared across
 them — spending it on `/v1/schemes` also exhausts `/v1/schemes/search`.
@@ -85,8 +83,8 @@ Practical consequences:
   `401` caused by pointing a dev key at prod.
 - **The dev deployment carries no availability expectation.** It tracks the `stg`
   branch and can break at any time. Say so, so nobody builds a demo on it.
-- Long term the production base becomes `https://api.schemes.sg`; only the base
-  URL changes for the partner.
+- The `cloudfunctions.net` host is the long-term base, not a temporary one. Give
+  partners that URL with confidence rather than warning them it will move.
 
 ## CORS: why there is none, and why that is correct
 
