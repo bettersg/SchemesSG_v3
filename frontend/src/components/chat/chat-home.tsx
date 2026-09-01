@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useChat } from "@/providers";
 import ChatPage from "@/components/chat/chat-page";
 import ChatLanding from "@/components/chat/chat-landing";
@@ -16,11 +16,9 @@ export default function ChatHome() {
   // discards that banner anyway, so a later visit with an empty chat starts on
   // the landing screen rather than a blank chat view.
   const [hasStartedChat, setHasStartedChat] = useState(false);
-  useEffect(() => {
-    if (messages.length > 0) setHasStartedChat(true);
-  }, [messages.length]);
+  if (messages.length > 0 && !hasStartedChat) setHasStartedChat(true);
 
-  if (messages.length > 0 || hasStartedChat) {
+  if (hasStartedChat) {
     return <ChatPage onReset={() => setHasStartedChat(false)} />;
   }
 

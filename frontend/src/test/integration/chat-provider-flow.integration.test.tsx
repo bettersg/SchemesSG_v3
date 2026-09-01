@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ChatPage from "@/components/chat/chat-page";
 import { ChatProvider, useChat } from "@/providers";
 import { catalogScheme } from "@/test/fixtures/catalog";
+import { streamResponse } from "@/test/fixtures/chat-stream";
 import { TEST_API_URL } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 
@@ -23,7 +24,9 @@ function ChatJourney({
   const chat = useChat();
   const [started, setStarted] = useState(false);
 
-  if (started) return <ChatPage />;
+  // Mirrors ChatHome: it owns the "chat started" latch and ChatPage clears it
+  // through onReset.
+  if (started) return <ChatPage onReset={() => setStarted(false)} />;
 
   return (
     <button
@@ -41,22 +44,6 @@ function ChatJourney({
       Start chat
     </button>
   );
-}
-
-function streamResponse(events: unknown[]) {
-  const body = [
-    ...events.map((event) => `data: ${JSON.stringify(event)}\n\n`),
-    "data: [DONE]\n\n",
-  ].join("");
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(body));
-    },
-  });
-
-  return new HttpResponse(stream, {
-    headers: { "Content-Type": "text/event-stream" },
-  });
 }
 
 beforeEach(() => {
