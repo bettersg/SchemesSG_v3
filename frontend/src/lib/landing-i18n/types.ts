@@ -121,6 +121,8 @@ export interface Translations {
     items: Array<{
       question: string;
       answer: string;
+      /** Optional link rendered after the answer. Same shape as footer links. */
+      answerLink?: { label: string; href: string };
     }>;
     sidebar: {
       title: string;
