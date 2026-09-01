@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from partner.api import _clamp_limit, _dispatch, _handle_detail, _handle_list
+from partner.errors import PartnerRequestError
 from partner.routing import Route
 from partner.serializers import PUBLIC_FIELDS
 from utils.catalog_pagination import PaginationResult
@@ -131,7 +132,7 @@ def test_limit_is_clamped(raw, expected):
 
 
 def test_non_numeric_limit_is_rejected():
-    with pytest.raises(ValueError):
+    with pytest.raises(PartnerRequestError):
         _clamp_limit("many")
 
 
@@ -196,13 +197,51 @@ def test_list_total_count_excludes_what_the_list_hides(mocker):
     assert counted.call_args.args[2] == NON_SEARCHABLE_STATUSES
 
 
+def test_foreign_value_error_is_not_echoed_to_the_partner(mocker):
+    """A ValueError from shared/third-party code must not become a 400 body.
+
+    CodeQL flagged the old `except ValueError: str(exc)` handler as stack-trace
+    exposure. The risk was concrete: the partner call path runs Firestore, pandas
+    and the shared catalog helpers, so an internal message would have been handed
+    over verbatim. Only PartnerRequestError is client-facing now.
+    """
+    secret = "internal detail: /srv/functions/secret_field mismatch"
+    mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        side_effect=ValueError(secret),
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        _handle_list(MagicMock(), _Args({"limit": "5"}))
+
+    # It escapes as a plain ValueError, which partner_api turns into a logged 500,
+    # rather than as a PartnerRequestError that would be rendered into the body.
+    assert not isinstance(excinfo.value, PartnerRequestError)
+    assert secret in str(excinfo.value)
+
+
+def test_invalid_filter_value_is_restated_not_forwarded(mocker):
+    """An unknown category is still a 400, but with a message authored here."""
+    spec = MagicMock()
+    spec.normalize.side_effect = ValueError("Unknown category: 'healthcare'")
+    mocker.patch("partner.api.FILTER_SPECS", {"category": spec})
+
+    with pytest.raises(PartnerRequestError) as excinfo:
+        _handle_list(MagicMock(), _Args({"category": "healthcare"}))
+
+    message = excinfo.value.client_message
+    assert "category" in message and "healthcare" in message
+    # The shared module's own wording is not forwarded.
+    assert "Unknown category" not in message
+
+
 def test_list_rejects_unknown_query_parameters():
-    with pytest.raises(ValueError, match="is_warmup"):
+    with pytest.raises(PartnerRequestError, match="is_warmup"):
         _handle_list(MagicMock(), _Args({"is_warmup": "true"}))
 
 
 def test_list_rejects_combining_filters():
-    with pytest.raises(ValueError):
+    with pytest.raises(PartnerRequestError):
         _handle_list(MagicMock(), _Args({"agency": "MOH", "area": "BEDOK"}))
 
 
@@ -214,7 +253,7 @@ def test_non_object_search_body_is_a_client_error(body):
     search import — a bad body must not cost an embeddings load.
     """
     request = _SearchRequest(body)
-    with pytest.raises(ValueError, match="must be a JSON object"):
+    with pytest.raises(PartnerRequestError, match="must be a JSON object"):
         _dispatch(Route(kind="search"), request, _db(), {})
 
 
@@ -267,7 +306,7 @@ def test_search_requires_a_non_empty_query(mocker, query):
     _stub_search_model(mocker, [])
     from partner.search import handle_search
 
-    with pytest.raises(ValueError, match="query"):
+    with pytest.raises(PartnerRequestError, match="query"):
         handle_search(MagicMock(), {"query": query})
 
 
@@ -292,7 +331,7 @@ def test_search_rejects_a_non_numeric_limit(mocker):
     _stub_search_model(mocker, [])
     from partner.search import handle_search
 
-    with pytest.raises(ValueError, match="limit"):
+    with pytest.raises(PartnerRequestError, match="limit"):
         handle_search(MagicMock(), {"query": "eldercare", "limit": "many"})
 
 

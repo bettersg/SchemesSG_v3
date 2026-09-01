@@ -21,6 +21,7 @@ from typing import Any
 from utils.pagination import get_paginated_results
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
+from .errors import PartnerRequestError
 from .serializers import to_public_scheme
 
 
@@ -47,7 +48,7 @@ def handle_search(firebase_manager: Any, body: dict[str, Any]) -> dict[str, Any]
 
     query = str(body.get("query") or "").strip()
     if not query:
-        raise ValueError("'query' is required and must be a non-empty string")
+        raise PartnerRequestError("'query' is required and must be a non-empty string")
 
     limit = _clamp_limit(body.get("limit"))
     cursor = body.get("cursor") or None
@@ -75,5 +76,5 @@ def _clamp_limit(raw: Any) -> int:
     try:
         limit = int(raw)
     except (TypeError, ValueError):
-        raise ValueError("'limit' must be an integer") from None
+        raise PartnerRequestError("'limit' must be an integer") from None
     return max(1, min(limit, MAX_LIMIT))

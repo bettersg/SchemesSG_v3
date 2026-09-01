@@ -41,6 +41,7 @@ from utils.partner_auth import (
 )
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES, RETIRED_STATUS
 
+from .errors import PartnerRequestError
 from .routing import Route, RouteError, resolve_route
 from .serializers import error_body, to_public_scheme
 
@@ -108,10 +109,13 @@ def partner_api(req: https_fn.Request) -> https_fn.Response:
 
     try:
         return _dispatch(route, req, db, rate_headers)
-    except ValueError as exc:
-        return _error("invalid_request", str(exc), 400, headers=rate_headers)
-    except Exception as exc:  # noqa: BLE001 - partner-facing 5xx must not leak internals
-        logger.exception(f"partner_api failed for consumer={consumer_or_error} path={req.path}", exc)
+    except PartnerRequestError as exc:
+        # Only messages authored in this package reach a partner. A bare
+        # `except ValueError` here would also echo messages raised inside
+        # Firestore, pandas or the shared catalog helpers.
+        return _error("invalid_request", exc.client_message, 400, headers=rate_headers)
+    except Exception:  # noqa: BLE001 - partner-facing 5xx must not leak internals
+        logger.exception(f"partner_api failed for consumer={consumer_or_error} path={req.path}")
         return _error("internal_error", "Internal server error", 500, headers=rate_headers)
 
 
@@ -137,7 +141,7 @@ def _dispatch(route: Route, req: https_fn.Request, db: Any, headers: dict[str, s
     # blow up on .get() as a 500.
     payload = req.get_json(silent=True) or {}
     if not isinstance(payload, dict):
-        raise ValueError("Request body must be a JSON object")
+        raise PartnerRequestError("Request body must be a JSON object")
 
     # Lazy import: keeps the embeddings/ranking stack out of list and detail.
     from .search import handle_search
@@ -149,11 +153,11 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     """List schemes with optional single-filter pagination."""
     unknown = set(args.keys()) - LIST_QUERY_PARAMS
     if unknown:
-        raise ValueError(f"Unsupported query parameter(s): {', '.join(sorted(unknown))}")
+        raise PartnerRequestError(f"Unsupported query parameter(s): {', '.join(sorted(unknown))}")
 
     selected = [name for name in FILTER_SPECS if args.get(name)]
     if len(selected) > 1:
-        raise ValueError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
+        raise PartnerRequestError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
 
     limit = _clamp_limit(args.get("limit"))
     cursor = args.get("cursor") or None
@@ -164,7 +168,14 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     filter_value = None
     if filter_name:
         spec = FILTER_SPECS[filter_name]
-        filter_value = spec.normalize(args.get(filter_name).strip())
+        raw_value = args.get(filter_name).strip()
+        try:
+            filter_value = spec.normalize(raw_value)
+        except ValueError as exc:
+            # normalize() lives in the shared catalog module and rejects e.g. an
+            # unknown category. That is a real 400, but the message is theirs, not
+            # ours — restate it here rather than forwarding it to a partner.
+            raise PartnerRequestError(f"Invalid value for {filter_name!r}: {raw_value!r}") from exc
         base_query = collection.where(
             filter=FieldFilter(spec.firestore_field, spec.operator, filter_value)
         )
@@ -224,7 +235,7 @@ def _clamp_limit(raw: Any) -> int:
     try:
         limit = int(raw)
     except (TypeError, ValueError):
-        raise ValueError("'limit' must be an integer") from None
+        raise PartnerRequestError("'limit' must be an integer") from None
     return max(1, min(limit, MAX_LIMIT))
 
 
