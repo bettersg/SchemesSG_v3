@@ -121,8 +121,6 @@ export interface Translations {
     items: Array<{
       question: string;
       answer: string;
-      /** Optional trailing link. Only set where an answer points somewhere. */
-      answerLink?: { href: string; label: string };
     }>;
     sidebar: {
       title: string;
@@ -177,7 +175,6 @@ export interface Translations {
       code: string;
       meaning: string;
       header: string;
-      description: string;
     };
     errorMeanings: Record<string, string>;
     rateLimitHeaderNotes: Record<string, string>;

@@ -28,16 +28,6 @@ from werkzeug.datastructures import MultiDict
 DEFAULT_LIMIT = 10
 
 
-class InvalidFilterValue(ValueError):
-    """A supported filter was given a value it does not accept.
-
-    A ValueError subclass so existing ``except ValueError`` catalog paths behave
-    exactly as before, but a distinct type so a caller can tell "the client sent a
-    bad filter" from "something inside pagination blew up" — the partner API turns
-    the first into a 400 and the second into a logged 500.
-    """
-
-
 @dataclass(frozen=True)
 class CatalogFilterSpec:
     """Describes how a supported catalog query param maps to Firestore."""
@@ -65,7 +55,7 @@ _CATEGORY_LOOKUP = {
 def _expand_category(value: str) -> list[str]:
     types = _CATEGORY_LOOKUP.get(value.lower())
     if types is None:
-        raise InvalidFilterValue(f"Unknown category: '{value}'")
+        raise ValueError(f"Unknown category: '{value}'")
     return types
 
 
@@ -129,13 +119,11 @@ def _count_excluded_schemes(
     shape the catalog has always issued, so no new composite index is needed.
     """
     source = base_query if base_query is not None else collection_ref
-    total = 0
-    for status in exclude_statuses:
-        count = _count_total(collection_ref, source.where("status", "==", status))
-        if count is None:
-            return None
-        total += count
-    return total
+    counts = [
+        _count_total(collection_ref, source.where("status", "==", status))
+        for status in exclude_statuses
+    ]
+    return None if None in counts else sum(counts)
 
 
 def _get_listed_paginated_results(
@@ -209,53 +197,6 @@ FILTER_SPECS = {
     ),
 }
 ALLOWED_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor", "is_warmup", "sort"}
-
-
-def fetch_listed_page(
-    collection_ref,
-    *,
-    filter_name: str | None = None,
-    filter_raw_value: str | None = None,
-    cursor: str | None = None,
-    limit: int = DEFAULT_LIMIT,
-    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
-) -> PaginationResult:
-    """Fetch one page of listed schemes, applying at most one supported filter.
-
-    The public entry point for anyone who wants catalog paging semantics. Callers
-    pass the filter *name and raw value*; this module owns the mapping to a
-    Firestore query, so no caller needs ``FILTER_SPECS``' internals.
-
-    Raises:
-        InvalidFilterValue: If ``filter_name`` is unsupported, or its value is
-            invalid for that filter (an unknown category, say). Only raised for
-            client-caused problems, so callers can map it straight to a 400.
-    """
-    base_query = None
-    matched_types: list[str] | None = None
-
-    if filter_name:
-        if filter_name not in FILTER_SPECS:
-            raise InvalidFilterValue(f"Unsupported filter {filter_name!r}")
-        spec = FILTER_SPECS[filter_name]
-        filter_value = spec.normalize((filter_raw_value or "").strip())
-        if filter_name == "category" and isinstance(filter_value, list):
-            matched_types = filter_value
-        base_query = collection_ref.where(
-            filter=FieldFilter(spec.firestore_field, spec.operator, filter_value)
-        )
-
-    results = _get_listed_paginated_results(
-        collection_ref=collection_ref,
-        base_query=base_query,
-        cursor=cursor,
-        limit=limit,
-        exclude_statuses=exclude_statuses,
-    )
-
-    if matched_types is not None:
-        results = _filter_scheme_types_for_category(results, matched_types)
-    return results
 
 
 def create_firebase_manager() -> FirebaseManager:

@@ -1,7 +1,7 @@
 """
 End-to-end smoke test for the partner API against a running local emulator.
 
-Seeds three temporary partner keys, exercises every operation and every documented
+Seeds four temporary partner keys, exercises every operation and every documented
 failure mode over real HTTP, prints a pass/fail table, then deletes what it made.
 
 The keys are deliberately separate. The per-minute budget is shared across
@@ -19,12 +19,10 @@ Prerequisites:
 Usage — run as a module, so `functions/` is on the import path:
     cd backend/functions
     uv run python -m scripts.smoke_partner_api
-    uv run python -m scripts.smoke_partner_api --json ../../.evidence/smoke.json
-    uv run python -m scripts.smoke_partner_api --keep-key   # leave the keys for manual poking
+    uv run python -m scripts.smoke_partner_api | tee ../../smoke-run.txt
 """
 
 import argparse
-import json
 import os
 import secrets
 import sys
@@ -32,8 +30,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 import requests
-from dotenv import load_dotenv
-from firebase_admin import credentials, firestore, initialize_app
+from fb_manager.firebaseManager import get_firestore_client
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from partner.serializers import PUBLIC_FIELDS
 from utils.partner_auth import PARTNER_KEYS_COLLECTION, RATE_LIMIT_COLLECTION, hash_key
@@ -44,7 +41,7 @@ DEFAULT_BASE = "http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_a
 SMOKE_CONSUMER = "smoke-test"
 THROTTLE_CONSUMER = f"{SMOKE_CONSUMER}-throttle"
 REVOKED_CONSUMER = f"{SMOKE_CONSUMER}-revoked"
-WARMUP_CONSUMER = f"{SMOKE_CONSUMER}-warmup"
+ZERO_BUDGET_CONSUMER = f"{SMOKE_CONSUMER}-zero-budget"
 
 # The per-minute budget is shared across operations and is spent by 4xx routing
 # checks too, so the functional key needs enough headroom for the whole run.
@@ -76,31 +73,6 @@ def check(name: str, fn: Callable[[], str]) -> None:
         print(f"  ERROR {name}\n        {type(exc).__name__}: {exc}")
 
 
-def get_firestore_client():
-    """Initialise Firebase Admin from functions/.env under a named app."""
-    load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"), override=True)
-    private_key = os.getenv("FB_PRIVATE_KEY", "").replace("\\n", "\n")
-    cred = credentials.Certificate(
-        {
-            "type": os.getenv("FB_TYPE"),
-            "project_id": os.getenv("FB_PROJECT_ID"),
-            "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
-            "private_key": private_key,
-            "client_email": os.getenv("FB_CLIENT_EMAIL"),
-            "client_id": os.getenv("FB_CLIENT_ID"),
-            "auth_uri": os.getenv("FB_AUTH_URI"),
-            "token_uri": os.getenv("FB_TOKEN_URI"),
-            "auth_provider_x509_cert_url": os.getenv("FB_AUTH_PROVIDER_X509_CERT_URL"),
-            "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
-        }
-    )
-    try:
-        app = initialize_app(cred, name="partner-smoke")
-    except ValueError:
-        app = None
-    return firestore.client(app) if app else firestore.client()
-
-
 def seed_key(db, consumer: str, rate_limit: int, *, active: bool = True) -> str:
     """Create a temporary key and clear any stale rate-limit buckets for it."""
     raw_key = f"sk_smoke_{secrets.token_urlsafe(24)}"
@@ -125,15 +97,13 @@ def cleanup(db, raw_keys: list[str]) -> None:
     """Delete every document this run created. Safe to call twice."""
     for raw_key in raw_keys:
         db.collection(PARTNER_KEYS_COLLECTION).document(hash_key(raw_key)).delete()
-    for consumer in (SMOKE_CONSUMER, THROTTLE_CONSUMER, REVOKED_CONSUMER, WARMUP_CONSUMER):
+    for consumer in (SMOKE_CONSUMER, THROTTLE_CONSUMER, REVOKED_CONSUMER, ZERO_BUDGET_CONSUMER):
         _clear_buckets(db, consumer)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke test the partner API against a local emulator.")
     parser.add_argument("--base", default=DEFAULT_BASE, help=f"Function base URL (default: {DEFAULT_BASE})")
-    parser.add_argument("--json", dest="json_out", help="Write a JSON report to this path")
-    parser.add_argument("--keep-key", action="store_true", help="Do not delete the seeded key")
     parser.add_argument(
         "--allow-project",
         help="Permit seeding into this exact project id (required for anything outside the dev project)",
@@ -158,24 +128,21 @@ def main() -> int:
     raw_key = seed_key(db, SMOKE_CONSUMER, FUNCTIONAL_RATE_LIMIT)
     throttle_key = seed_key(db, THROTTLE_CONSUMER, THROTTLE_RATE_LIMIT)
     revoked_key = seed_key(db, REVOKED_CONSUMER, 10, active=False)
-    # Mirrors the runbook's warmup key: rate limit 0, so it can warm but not fetch.
-    warmup_key = seed_key(db, WARMUP_CONSUMER, 0)
-    seeded = [raw_key, throttle_key, revoked_key, warmup_key]
+    # rate_limit_per_min: 0 is the documented pause-without-revoking control.
+    zero_budget_key = seed_key(db, ZERO_BUDGET_CONSUMER, 0)
+    seeded = [raw_key, throttle_key, revoked_key, zero_budget_key]
     auth = {"X-API-Key": raw_key}
 
     try:
-        return _run_checks(base, auth, throttle_key, revoked_key, warmup_key, args)
+        return _run_checks(base, auth, throttle_key, revoked_key, zero_budget_key)
     finally:
         # finally, so an unwrapped HTTP error (emulator down, timeout) still
         # removes the key documents this run created.
-        if args.keep_key:
-            print(f"\nKept keys: {', '.join(seeded)}")
-        else:
-            cleanup(db, seeded)
-            print("\nCleaned up seeded keys.")
+        cleanup(db, seeded)
+        print("\nCleaned up seeded keys.")
 
 
-def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, warmup_key: str, args) -> int:
+def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, zero_budget_key: str) -> int:
     print(f"Target: {base}\n")
     print("AUTHENTICATION")
 
@@ -226,11 +193,6 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, warm
             requests.get(f"{base}/v1/schemes?sort=name", headers=auth, timeout=60), 400, "invalid_request"
         ),
     )
-    check(
-        "is_warmup short-circuits to 200 without returning data",
-        lambda: _expect_warmup(requests.get(f"{base}/v1/schemes?is_warmup=true", headers=auth, timeout=120)),
-    )
-
     print("\nLIST")
 
     listing = requests.get(f"{base}/v1/schemes?limit=5", headers=auth, timeout=120)
@@ -312,17 +274,16 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, warm
         ),
     )
 
-    print("\nWARMUP KEY (rate limit 0: warms, but cannot fetch)")
+    print("\nZERO-BUDGET KEY (rate_limit_per_min: 0 — pause without revoking)")
 
-    warm_auth = {"X-API-Key": warmup_key}
-    check(
-        "zero-budget key still warms",
-        lambda: _expect_warmup(requests.get(f"{base}/v1/schemes?is_warmup=true", headers=warm_auth, timeout=120)),
-    )
     check(
         "zero-budget key cannot fetch data",
         lambda: _expect_error(
-            requests.get(f"{base}/v1/schemes?limit=1", headers=warm_auth, timeout=60), 429, "rate_limited"
+            requests.get(
+                f"{base}/v1/schemes?limit=1", headers={"X-API-Key": zero_budget_key}, timeout=60
+            ),
+            429,
+            "rate_limited",
         ),
     )
 
@@ -336,23 +297,6 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, warm
     passed = sum(1 for r in results if r["ok"])
     total = len(results)
     print(f"\n{'=' * 62}\n  {passed}/{total} checks passed\n{'=' * 62}\n")
-
-    if args.json_out:
-        os.makedirs(os.path.dirname(os.path.abspath(args.json_out)), exist_ok=True)
-        with open(args.json_out, "w") as handle:
-            json.dump(
-                {
-                    "base": base,
-                    "project": os.getenv("FB_PROJECT_ID"),
-                    "generated_at": datetime.now(tz=timezone.utc).isoformat(),
-                    "passed": passed,
-                    "total": total,
-                    "checks": results,
-                },
-                handle,
-                indent=2,
-            )
-        print(f"JSON report: {args.json_out}")
 
     return 0 if passed == total else 1
 
@@ -421,14 +365,6 @@ def _expect_listed_only(response) -> str:
         status = record.get("status")
         assert status not in NON_SEARCHABLE_STATUSES, f"non-searchable status '{status}' returned"
     return f"no {'/'.join(sorted(NON_SEARCHABLE_STATUSES))} schemes present"
-
-
-def _expect_warmup(response) -> str:
-    """Warmup must be a cheap 200 that leaks no scheme data."""
-    body = _body(response)
-    assert response.status_code == 200, f"expected 200, got {response.status_code}: {body}"
-    assert "data" not in body, f"warmup response carried data: {body}"
-    return f"200 {body.get('message', body)}"
 
 
 def _expect_rate_header(response) -> str:

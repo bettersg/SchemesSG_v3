@@ -25,7 +25,7 @@ import sys
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from firebase_admin import credentials, firestore, initialize_app
+from fb_manager.firebaseManager import get_firestore_client
 from loguru import logger
 from utils.partner_auth import DEFAULT_RATE_LIMIT_PER_MIN, PARTNER_KEYS_COLLECTION, hash_key
 
@@ -77,30 +77,6 @@ def load_environment(is_prod: bool) -> None:
         sys.exit(1)
     load_dotenv(env_file, override=True)
     logger.info(f"Loaded environment ({name})")
-
-
-def get_firestore_client():
-    """Initialise the Firebase Admin SDK from the loaded environment."""
-    private_key = os.getenv("FB_PRIVATE_KEY", "").replace("\\n", "\n")
-    cred = credentials.Certificate(
-        {
-            "type": os.getenv("FB_TYPE"),
-            "project_id": os.getenv("FB_PROJECT_ID"),
-            "private_key_id": os.getenv("FB_PRIVATE_KEY_ID"),
-            "private_key": private_key,
-            "client_email": os.getenv("FB_CLIENT_EMAIL"),
-            "client_id": os.getenv("FB_CLIENT_ID"),
-            "auth_uri": os.getenv("FB_AUTH_URI"),
-            "token_uri": os.getenv("FB_TOKEN_URI"),
-            "auth_provider_x509_cert_url": os.getenv("FB_AUTH_PROVIDER_X509_CERT_URL"),
-            "client_x509_cert_url": os.getenv("FB_CLIENT_X509_CERT_URL"),
-        }
-    )
-    try:
-        initialize_app(cred)
-    except ValueError:
-        pass  # Already initialized
-    return firestore.client()
 
 
 def issue_key(db, consumer: str, rate_limit: int) -> None:

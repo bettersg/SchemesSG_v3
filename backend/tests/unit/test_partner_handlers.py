@@ -9,7 +9,6 @@ import pytest
 from partner.api import _dispatch, _handle_detail, _handle_list
 from partner.routing import Route
 from partner.serializers import PUBLIC_FIELDS, PartnerRequestError, clamp_limit
-from schemes.catalog import InvalidFilterValue
 from utils.catalog_pagination import PaginationResult
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
@@ -226,9 +225,16 @@ def test_foreign_value_error_is_not_echoed_to_the_partner(mocker):
 
 
 def test_invalid_filter_value_is_restated_not_forwarded(mocker):
-    """An unknown category is still a 400, but with a message authored here."""
+    """An unknown category is still a 400, but with a message authored here.
+
+    Only ``spec.normalize`` is inside the try, and the sole ValueError any
+    normalizer raises is ``_expand_category``'s unknown-category — a client
+    mistake. Whatever the wording, it is never forwarded: the 400 body carries the
+    message built here, so this stays safe even if a normalizer someday raises for
+    another reason.
+    """
     spec = MagicMock()
-    spec.normalize.side_effect = InvalidFilterValue("Unknown category: 'healthcare'")
+    spec.normalize.side_effect = ValueError("Unknown category: 'healthcare'")
     mocker.patch("schemes.catalog.FILTER_SPECS", {"category": spec})
     mocker.patch("partner.api.FILTER_SPECS", {"category": spec})
 
@@ -241,44 +247,9 @@ def test_invalid_filter_value_is_restated_not_forwarded(mocker):
     assert "Unknown category" not in message
 
 
-def test_plain_value_error_from_a_filter_is_not_a_client_error(mocker):
-    """Only InvalidFilterValue means "the client sent something bad".
-
-    A bare ValueError from inside the filter path is a bug on our side, so it must
-    escape as a 500 rather than have its message restated into a 400 body.
-    """
-    spec = MagicMock()
-    spec.normalize.side_effect = ValueError("internal: /srv/secret mismatch")
-    mocker.patch("schemes.catalog.FILTER_SPECS", {"category": spec})
-    mocker.patch("partner.api.FILTER_SPECS", {"category": spec})
-
-    with pytest.raises(ValueError) as excinfo:
-        _handle_list(MagicMock(), _Args({"category": "healthcare"}))
-
-    assert not isinstance(excinfo.value, PartnerRequestError)
-    assert "/srv/secret" in str(excinfo.value)
-
-
 def test_list_rejects_unknown_query_parameters():
     with pytest.raises(PartnerRequestError, match="sort"):
         _handle_list(MagicMock(), _Args({"sort": "name"}))
-
-
-def test_list_accepts_is_warmup_as_a_known_parameter(mocker):
-    """The warmer pings /v1/schemes?is_warmup=true, so it must not be 'unknown'.
-
-    partner_api short-circuits is_warmup=true before reaching here, but a
-    non-'true' value falls through and must behave like an ordinary request.
-    """
-    mocker.patch(
-        "schemes.catalog.get_paginated_results",
-        return_value=PaginationResult(data=[], has_more=False, total_count=0),
-    )
-    mocker.patch("schemes.catalog._count_excluded_schemes", return_value=0)
-
-    body = _handle_list(MagicMock(), _Args({"is_warmup": "false"}))
-
-    assert body["data"] == []
 
 
 def test_list_rejects_combining_filters():
@@ -412,21 +383,9 @@ def test_importing_the_api_does_not_load_the_search_stack():
     Run in a subprocess so the assertion is about a clean interpreter, not about
     whatever the rest of the test session happens to have imported already.
     """
-    # Acceptance criterion 7 wants sys.modules checked *after* a list/detail call,
-    # not merely after import, so the probe exercises both handlers first.
-    probe = (
-        "import sys;"
-        "import partner.api as api;"
-        "from partner.serializers import clamp_limit;"
-        "clamp_limit('5', default=10);"
-        "api._handle_detail(_Db(), 'nope');"
-        "heavy = [m for m in"
-        " ('search.retriever', 'search', 'torch', 'sentence_transformers', 'faiss', 'ml_logic')"
-        " if m in sys.modules];"
-        "assert not heavy, heavy;"
-        "print('clean')"
-    )
-    # _handle_detail needs the smallest possible Firestore stand-in.
+    # Acceptance criterion 7 names `GET /v1/schemes` specifically, so the probe
+    # goes through _dispatch on the *list* branch — the function that holds the
+    # lazy import — and through detail, rather than only calling a leaf handler.
     preamble = (
         "class _Doc:\n"
         "    exists = False\n"
@@ -438,6 +397,30 @@ def test_importing_the_api_does_not_load_the_search_stack():
         "    def document(self, _id): return _Ref()\n"
         "class _Db:\n"
         "    def collection(self, _name): return _Col()\n"
+        "class _Args(dict):\n"
+        "    pass\n"
+        "class _Req:\n"
+        "    method = 'GET'\n"
+        "    path = '/v1/schemes'\n"
+        "    args = _Args()\n"
+    )
+    probe = (
+        "import sys;"
+        "import partner.api as api;"
+        "from partner.routing import Route, resolve_route;"
+        "from utils.catalog_pagination import PaginationResult;"
+        # Patched at the catalog seam so the probe needs no Firestore fake for
+        # pagination. Everything between _dispatch and here is the real code.
+        "setattr(api, '_get_listed_paginated_results',"
+        " lambda **kw: PaginationResult(data=[], has_more=False, total_count=0));"
+        "assert resolve_route('GET', '/v1/schemes') == Route(kind='list');"
+        "api._dispatch(Route(kind='list'), _Req(), _Db(), {});"
+        "api._handle_detail(_Db(), 'nope');"
+        "heavy = [m for m in"
+        " ('search.retriever', 'search', 'torch', 'sentence_transformers', 'faiss', 'ml_logic')"
+        " if m in sys.modules];"
+        "assert not heavy, heavy;"
+        "print('clean')"
     )
     probe = preamble + probe
     result = subprocess.run(

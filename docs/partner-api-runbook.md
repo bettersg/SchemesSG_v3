@@ -4,10 +4,6 @@ Operational procedures for the partner API (`partner_api`). The request/response
 **contract** lives on [`/developers`](https://schemes.sg/developers) and is not
 duplicated here — this document covers issuing, rotating and revoking access.
 
-For *who does what and in what order* — how a partner authenticates, who mints
-the key, what they receive and what they deliberately don't get — see
-[`partner-api-access-flow.md`](partner-api-access-flow.md).
-
 ## What a partner gets
 
 One API key, granting three read operations against a versioned path:
@@ -372,44 +368,22 @@ Firestore the emulator is pointed at (by default the `schemessg-v3-dev` cloud
 project, since `FIRESTORE_EMULATOR_HOST` is commented out in
 `docker-compose-firebase.yml` — vector search needs real Firestore), exercises
 every operation and every documented error case, prints a pass/fail table, and
-deletes the key it created. Use `--keep-key` to leave it in place for manual
-poking, and `--json` to write a machine-readable report.
+deletes the keys it created. Pipe it through `tee` if you want the run on disk.
 
-## Keeping it warm
+## Cold starts: not warmed, deliberately
 
-`partner_api` is warmed by `keep_endpoints_warm` alongside the rest of the API,
-every 4 minutes. This matters more here than elsewhere: a cold start loads the
-embeddings stack into a 2GB instance, so an unwarmed partner request can wait tens
-of seconds.
+`partner_api` is **not** in `keep_endpoints_warm`, and has no `is_warmup` bypass.
+A cold start loads the embeddings stack into a 2GB instance, so the first partner
+request after an idle period can wait tens of seconds.
 
-The warmer authenticates like any other caller. Every other endpoint accepts the
-Firebase ID token `make_warmup_request` mints; `partner_api` does not, so it needs
-a real API key. The `is_warmup` short-circuit sits **after** key verification and
-**before** the rate limiter — so it is not an unauthenticated path, and the ping
-neither spends a partner's budget nor writes a counter document.
+That is accepted. Warmup exists to spare *interactive site users* a cold start; a
+server-to-server partner integration is latency-tolerant. Warming this endpoint
+would mean standing a live partner key up in function environment configuration,
+plus an environment variable whose absence fails silently forever — real
+operational surface, to save a wait nobody is sitting in front of.
 
-### One-time setup per project
-
-```bash
-cd backend/functions
-uv run python -m scripts.issue_partner_key --prod issue --consumer warmup --rate-limit 0
-```
-
-Then set the printed key as `PARTNER_WARMUP_API_KEY` in that project's function
-environment. Repeat with `--dev` for the dev project.
-
-`--rate-limit 0` is deliberate and safe here: the warmup path returns before the
-rate limiter runs, so a zero budget never blocks it, while ensuring the key is
-useless for fetching data if it ever leaks. Verify with:
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' \
-  "$BASE/v1/schemes?limit=1" -H "X-API-Key: $PARTNER_WARMUP_API_KEY"   # expect 429
-curl -s "$BASE/v1/schemes?is_warmup=true" -H "X-API-Key: $PARTNER_WARMUP_API_KEY"  # expect 200
-```
-
-If `PARTNER_WARMUP_API_KEY` is unset, `keep_endpoints_warm` logs a warning and
-skips `partner_api` rather than failing the whole warmup run.
+If a partner ever does report cold starts as a problem, the fix to reach for first
+is `minInstances` on this one function, which costs no new credential.
 
 ## Deliberate omissions
 

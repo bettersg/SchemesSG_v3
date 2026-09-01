@@ -40,26 +40,6 @@ export function InlineCode({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** A method plus path, the way a partner reads it in their own client. */
-export function EndpointLine({
-  method,
-  path,
-  className,
-}: {
-  method: HttpMethod;
-  path: string;
-  className?: string;
-}) {
-  return (
-    <p className={cn("flex flex-wrap items-center gap-2", className)}>
-      <MethodBadge method={method} />
-      <code className="font-mono text-[13px] break-all text-(--schemes-ink)">
-        {path}
-      </code>
-    </p>
-  );
-}
-
 /**
  * Parameter list, in the Stripe attribute-list arrangement: name, type and
  * requiredness on one line, description beneath, hairline between rows.

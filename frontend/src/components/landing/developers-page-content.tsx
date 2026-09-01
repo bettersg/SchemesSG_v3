@@ -1,26 +1,14 @@
 "use client";
 
 /**
- * THESIS: Partner API reference as a working console, not a marketing page for a
- * product nobody can buy. The page's first move is the request you actually send.
- * OWN-WORLD: the Stripe API reference arrangement (pinned dense sidebar, section
- * rows pairing prose with a dark code panel, hairline dividers) rendered entirely
- * in Schemes.sg's palette and type: Lexend headings, Open Sans prose at 62ch,
- * blue-600 as the one accent, and the code panel in `--schemes-blue-900` rather
- * than another product's slate. GET wears the info tokens, POST the alert tokens,
- * because method is meaning.
- * STORY: a partner engineer learns this is by-request, sees auth in one curl,
- * reads three operations with request and response side by side, and knows which
- * fields and errors to code against.
- * FIRST VIEWPORT: "Partner API" with "By request" beside it, one sentence of what
- * it is, the base URL as a copyable row, Request access as the single action, and
- * the section list already pinned at the left.
- * FORM: two-pane shell (sidebar, content), content built from rows that put prose
- * left and code right from xl, stacking below it. Wide reference tables take the
- * full row instead of being squeezed into the prose column.
- * DEVIATION: DESIGN.md keeps dark surfaces to the landing CTA fold. The pinned
- * reference makes a dark code panel the defining element, so it is used here and
- * kept in palette.
+ * Partner API reference: a two-pane shell (dense section sidebar, content rows
+ * pairing prose with a dark code panel), built from the existing landing
+ * primitives and palette.
+ *
+ * One deviation from DESIGN.md, which keeps dark surfaces to the landing CTA
+ * fold: the code panel is dark, because a reference page's defining element is
+ * the sample. It stays in palette via `--schemes-blue-900`. See
+ * docs/adr/0004-dark-code-panel-on-the-developers-reference.md.
  */
 
 import Link from "next/link";
@@ -44,7 +32,11 @@ import {
   productButtonSolidAmber,
 } from "@/lib/design-system/product-styles";
 import { cn } from "@/lib/utils";
-import { EndpointLine, InlineCode, ParamList } from "./developers/api-primitives";
+import {
+  InlineCode,
+  MethodBadge,
+  ParamList,
+} from "./developers/api-primitives";
 import { CodeBlock } from "./developers/code-block";
 import { DocsSidebar, type NavItem } from "./developers/docs-sidebar";
 
@@ -385,11 +377,12 @@ function OperationRow({
           <Title as="h2" className="text-xl">
             {operation.name}
           </Title>
-          <EndpointLine
-            method={operation.method}
-            path={operation.path}
-            className="mt-2"
-          />
+          <p className="mt-2 flex flex-wrap items-center gap-2">
+            <MethodBadge method={operation.method} />
+            <code className="font-mono text-[13px] break-all text-(--schemes-ink)">
+              {operation.path}
+            </code>
+          </p>
           <Body className={cn("mt-3", BODY, PROSE)}>{operation.summary}</Body>
 
           <h3 className="mt-6 mb-2 text-[10px] font-semibold tracking-widest text-(--schemes-muted) uppercase">

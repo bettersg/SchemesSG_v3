@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { Accordion } from "@heroui/react";
 import { Button } from "@/components/landing/ui/button";
 import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
@@ -60,17 +59,6 @@ export function FAQSection() {
                 <Accordion.Panel>
                   <Accordion.Body className="text-muted-foreground leading-relaxed text-[15px] pb-5">
                     {item.answer}
-                    {item.answerLink && (
-                      <>
-                        {" "}
-                        <Link
-                          href={item.answerLink.href}
-                          className="font-semibold text-(--schemes-blue-600) underline underline-offset-2 hover:no-underline"
-                        >
-                          {item.answerLink.label}
-                        </Link>
-                      </>
-                    )}
                   </Accordion.Body>
                 </Accordion.Panel>
               </Accordion.Item>

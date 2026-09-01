@@ -9,6 +9,12 @@
  * host is deliberate and long-term, not a placeholder for api.schemes.sg — see
  * docs/partner-api-runbook.md for why every prettier option is worse. If it ever
  * does move, only PARTNER_API_BASE changes.
+ *
+ * Deliberately NOT read from `NEXT_PUBLIC_API_BASE_URL`, unlike every real
+ * frontend→backend call (`lib/schemes.ts`). That var is whichever project is
+ * serving this page, so on a staging deploy it would print the dev URL into
+ * partner-facing documentation. Nothing here is ever fetched: it is prose about
+ * production, so it names production.
  */
 
 export const PARTNER_API_BASE =

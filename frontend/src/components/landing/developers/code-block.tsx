@@ -1,17 +1,16 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Dark code panel, in the Stripe API reference arrangement: a language pill and
- * copy control in a caption bar, gutter line numbers, and the sample itself.
+ * Dark code panel: a language pill and copy control in a caption bar, then the
+ * sample itself.
  *
  * The dark surface is a deliberate exception to the Flat-and-light product
- * register: this docs surface follows a pinned reference. It stays in palette by
- * using `--schemes-blue-900`, the deepest existing navy, rather than importing
- * another product's slate.
+ * register. It stays in palette by using `--schemes-blue-900`, the deepest
+ * existing navy, rather than importing another product's slate.
  */
 export function CodeBlock({
   code,
@@ -29,14 +28,13 @@ export function CodeBlock({
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const lines = useMemo(() => code.split("\n"), [code]);
 
-  const copy = useCallback(() => {
+  const copy = () => {
     void navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     });
-  }, [code]);
+  };
 
   return (
     <figure
@@ -69,22 +67,12 @@ export function CodeBlock({
         </div>
       </figcaption>
 
-      <div className="overflow-x-auto pb-3">
+      {/* thin-scrollbar, not no-scrollbar: samples run wider than the panel, so
+          the bar has to stay discoverable — it just idles invisible until hover. */}
+      <div className="thin-scrollbar overflow-x-auto px-3 pb-3">
         <pre className="min-w-full">
-          <code className="block font-mono text-[12.5px] leading-[1.7]">
-            {lines.map((line, index) => (
-              <span key={index} className="flex">
-                <span
-                  aria-hidden
-                  className="sticky left-0 w-10 shrink-0 bg-(--schemes-blue-900) pr-3 text-right text-(--schemes-blue-100)/50 select-none"
-                >
-                  {index + 1}
-                </span>
-                <span className="pr-4 whitespace-pre text-white">
-                  {highlight(line)}
-                </span>
-              </span>
-            ))}
+          <code className="block font-mono text-[12.5px] leading-[1.7] whitespace-pre text-white/70">
+            {highlight(code)}
           </code>
         </pre>
       </div>
@@ -93,22 +81,19 @@ export function CodeBlock({
 }
 
 /**
- * Minimal tokenizer: quoted strings and shell comments only.
+ * Minimal tokenizer: quoted strings only, brightened rather than coloured.
  *
- * ponytail: deliberately not a real highlighter. All-white JSON on a dark panel
- * reads flat, and these two rules recover most of the structure. Reach for a
- * proper grammar only if the samples grow beyond curl and JSON.
+ * ponytail: deliberately not a real highlighter. Monochrome by design — DESIGN.md
+ * reserves colour for wayfinding ("colour carries meaning or it doesn't appear"),
+ * and amber specifically for alerts, so a syntax palette has no licence here.
+ * Contrast does the same job: values sit at full white against dimmed scaffolding.
+ * Reach for a proper grammar only if the samples grow beyond curl and JSON.
  */
-function highlight(line: string) {
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith("#")) {
-    return <span className="text-(--schemes-blue-100)/70">{line}</span>;
-  }
-
-  const parts = line.split(/("(?:[^"\\]|\\.)*")/g);
+function highlight(code: string) {
+  const parts = code.split(/("(?:[^"\\]|\\.)*")/g);
   return parts.map((part, index) =>
     part.startsWith('"') && part.endsWith('"') && part.length > 1 ? (
-      <span key={index} className="text-(--schemes-amber-100)">
+      <span key={index} className="text-white">
         {part}
       </span>
     ) : (

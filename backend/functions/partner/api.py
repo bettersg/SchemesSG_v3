@@ -11,14 +11,14 @@ the *service root* and everything after it arrives as ``req.path`` to route.
 Local testing:
     http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api/v1/schemes
 
-Warmup: kept warm by ``keep_endpoints_warm`` like the rest of the API. The
-``is_warmup`` short-circuit sits *after* key verification and *before* the rate
-limiter, so it is not an unauthenticated path — the warmer holds a real key issued
-to the ``warmup`` consumer — and the 4-minutely ping neither spends a partner's
-budget nor writes a counter document. Requires ``PARTNER_WARMUP_API_KEY``; see
-docs/partner-api-runbook.md.
-
 Deliberately absent:
+
+* **No warmup, and no ``is_warmup`` bypass.** This function is not in
+  ``keep_endpoints_warm``. Warmup exists to spare *interactive site users* a cold
+  start; a server-to-server partner is latency-tolerant. Adding it would mean
+  standing a live partner key up in function environment config, and an env var
+  whose absence fails silently forever, to save a cold start nobody is waiting on.
+  Do not "fix" the omission.
 
 * **No CORS.** ``utils/cors_config.ALLOWED_ORIGINS`` is a browser-``Origin``
   allowlist, and CORS is enforced by browsers, not by servers — a partner's backend
@@ -33,8 +33,14 @@ from typing import Any
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
+from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
-from schemes.catalog import DEFAULT_LIMIT, FILTER_SPECS, InvalidFilterValue, fetch_listed_page
+from schemes.catalog import (
+    DEFAULT_LIMIT,
+    FILTER_SPECS,
+    _filter_scheme_types_for_category,
+    _get_listed_paginated_results,
+)
 from utils.json_utils import safe_json_dumps
 from utils.partner_auth import AuthError, check_and_increment_rate_limit, verify_partner_key
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES, RETIRED_STATUS
@@ -50,10 +56,9 @@ from .serializers import (
 
 SCHEMES_COLLECTION = "schemes"
 
-# Partner list params: the shared catalog filters plus pagination, and `is_warmup`
-# so the warmer's ping isn't rejected as an unknown parameter. Notably no `sort`,
-# unlike the frontend's /catalog.
-LIST_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor", "is_warmup"}
+# Partner list params: the shared catalog filters plus pagination. Notably no
+# `is_warmup` and no `sort`, unlike the frontend's /catalog.
+LIST_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor"}
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -92,17 +97,6 @@ def partner_api(req: https_fn.Request) -> https_fn.Response:
             # No consumer was identified, so there is no budget to report. Rate-limit
             # headers are deliberately absent here rather than guessed at.
             return _error(identity.code, identity.message, identity.status)
-
-        # Warmup runs *after* auth, matching every other endpoint in this codebase
-        # (see schemes/catalog.py), so this is not an unauthenticated code path —
-        # keep_endpoints_warm holds a real key for the `warmup` consumer. Placed
-        # before the rate limiter so the 4-minutely ping neither spends a budget nor
-        # writes a counter document. Still reports the budget it did not spend.
-        if req.args.get("is_warmup", "").lower() == "true":
-            return _json(
-                {"message": "Warmup request received"},
-                headers=_limit_headers(identity.rate_limit_per_min, identity.rate_limit_per_min),
-            )
 
         allowed, remaining = check_and_increment_rate_limit(
             db, identity.consumer, identity.rate_limit_per_min
@@ -171,24 +165,39 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
         raise PartnerRequestError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
 
     filter_name = selected[0] if selected else None
-    raw_value = args.get(filter_name) if filter_name else None
+    collection = db.collection(SCHEMES_COLLECTION)
+
+    base_query = None
+    matched_types: list[str] | None = None
+    if filter_name:
+        raw_value = args.get(filter_name).strip()
+        spec = FILTER_SPECS[filter_name]
+        # Only `normalize` is wrapped, because it is the only client-driven call
+        # here. A ValueError raised deeper — inside Firestore or pagination — must
+        # stay a logged 500 rather than have its internal message restated to a
+        # partner. The message below is ours, not the catalog's.
+        try:
+            filter_value = spec.normalize(raw_value)
+        except ValueError as exc:
+            raise PartnerRequestError(f"Invalid value for {filter_name!r}: {raw_value!r}") from exc
+        if filter_name == "category" and isinstance(filter_value, list):
+            matched_types = filter_value
+        base_query = collection.where(
+            filter=FieldFilter(spec.firestore_field, spec.operator, filter_value)
+        )
 
     # Partners never see retired *or* inactive. Passing the set down rather than
     # filtering the returned page keeps pages full and total_count honest.
-    try:
-        results = fetch_listed_page(
-            db.collection(SCHEMES_COLLECTION),
-            filter_name=filter_name,
-            filter_raw_value=raw_value,
-            cursor=args.get("cursor") or None,
-            limit=clamp_limit(args.get("limit"), default=DEFAULT_LIMIT),
-            exclude_statuses=NON_SEARCHABLE_STATUSES,
-        )
-    except InvalidFilterValue as exc:
-        # Precisely this exception, not bare ValueError: a ValueError from inside
-        # pagination must stay a logged 500 rather than have its internal message
-        # restated to a partner. The message here is ours, not the catalog's.
-        raise PartnerRequestError(f"Invalid value for {filter_name!r}: {str(raw_value)!r}") from exc
+    results = _get_listed_paginated_results(
+        collection_ref=collection,
+        base_query=base_query,
+        cursor=args.get("cursor") or None,
+        limit=clamp_limit(args.get("limit"), default=DEFAULT_LIMIT),
+        exclude_statuses=NON_SEARCHABLE_STATUSES,
+    )
+
+    if matched_types is not None:
+        results = _filter_scheme_types_for_category(results, matched_types)
 
     return {
         "data": [to_public_scheme(item.get("scheme_id"), item) for item in results.data],
