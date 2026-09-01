@@ -6,7 +6,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ChatPage from "@/components/chat/chat-page";
 import { ChatProvider, useChat } from "@/providers";
 import { catalogScheme } from "@/test/fixtures/catalog";
-import { streamResponse } from "@/test/fixtures/chat-stream";
+import {
+  stubChatEnvironment,
+  streamResponse,
+} from "@/test/fixtures/chat-stream";
 import { TEST_API_URL } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 
@@ -46,18 +49,7 @@ function ChatJourney({
   );
 }
 
-beforeEach(() => {
-  vi.spyOn(console, "error").mockImplementation(() => undefined);
-  Object.defineProperty(window, "matchMedia", {
-    configurable: true,
-    value: vi.fn((query: string) => ({
-      matches: query.includes("any-hover: hover"),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  });
-});
+beforeEach(stubChatEnvironment);
 
 describe("chat provider flow", () => {
   it("commits a streamed answer, schemes, follow-ups, and rating", async () => {

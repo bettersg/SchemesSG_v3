@@ -45,17 +45,9 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setDraftMessage,
   } = useChat();
 
-  const startsGenerating = messages[messages.length - 1]?.type === "user";
-  const [isGenerating, setIsGenerating] = useState(startsGenerating);
-  // Mirrors `isGenerating` for synchronous reads. handleSend has to reject a
-  // second send before React commits the state update, otherwise two sends can
-  // race in the window between submit and the first stream byte: the later one
-  // aborts the earlier and strands its user message with no reply.
-  const isGeneratingRef = useRef(startsGenerating);
-  const setGenerating = useCallback((value: boolean) => {
-    isGeneratingRef.current = value;
-    setIsGenerating(value);
-  }, []);
+  const [isGenerating, setIsGenerating] = useState(
+    messages[messages.length - 1]?.type == "user",
+  );
   const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
   const statusStepsRef = useRef<StatusStep[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
@@ -100,7 +92,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
 
   const handleSend = async (input: string) => {
     const trimmed = input.trim();
-    if (!trimmed || isGeneratingRef.current) return;
+    if (!trimmed || isGenerating) return;
     setMessages((prev) => [...prev, { type: "user", text: trimmed }]);
     setDraftMessage("");
     setShowQuickReplies(false);
@@ -149,8 +141,9 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     const requestId = activeRequestIdRef.current + 1;
     activeRequestIdRef.current = requestId;
     // Claim the in-flight slot before the first await, not on the stream's
-    // onStart — response headers can be seconds away on a slow connection.
-    setGenerating(true);
+    // onStart — response headers can be seconds away on a slow connection, and
+    // handleSend's guard is useless while it still reads false.
+    setIsGenerating(true);
     schemesBeforeActiveRequestRef.current = schemes;
     quickRepliesBeforeActiveRequestRef.current = quickReplies;
     showQuickRepliesBeforeActiveRequestRef.current = showQuickReplies;
@@ -264,7 +257,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
       case "done": {
         commitStreamingBlocks(true);
         setStatusSteps([]);
-        setGenerating(false);
+        setIsGenerating(false);
         setShowQuickReplies(true);
         break;
       }
@@ -362,7 +355,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
   const handleStreamEnd = () => {
     commitStreamingBlocks(true);
     setStatusSteps([]);
-    setGenerating(false);
+    setIsGenerating(false);
   };
 
   const rollbackActiveRequest = useCallback(
@@ -394,7 +387,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
       setStreamingBlocks([]);
       statusStepsRef.current = [];
       setStatusSteps([]);
-      setGenerating(false);
+      setIsGenerating(false);
       schemesFoundCountRef.current = 0;
       setPendingSchemesTabPulse(false);
       setStreamError(errorMessage ?? null);
@@ -405,7 +398,6 @@ export default function ChatPage({ onReset }: ChatPageProps) {
       setQuickReplies,
       setDraftMessage,
       setShowQuickReplies,
-      setGenerating,
     ],
   );
 
@@ -423,11 +415,14 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setMessages([]);
     setSessionId("");
     onReset();
+    // Supersede the in-flight request the abort below cancels, so its onEnd
+    // can't pass the requestId guard and run handleStreamEnd after the reset.
+    activeRequestIdRef.current += 1;
     abortControllerRef.current?.abort();
     resetStreamUi();
     setQuickReplies([]);
     setDraftMessage("");
-    setGenerating(false);
+    setIsGenerating(false);
     setShowQuickReplies(false);
   };
 

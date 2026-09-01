@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import ChatHome from "@/components/chat/chat-home";
 import { LanguageProvider } from "@/lib/landing-i18n";
 import { ChatProvider } from "@/providers";
-import { streamResponse } from "@/test/fixtures/chat-stream";
+import {
+  stubChatEnvironment,
+  streamResponse,
+} from "@/test/fixtures/chat-stream";
 import { TEST_API_URL } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 
@@ -30,18 +33,7 @@ async function submitFromLanding(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "Search" }));
 }
 
-beforeEach(() => {
-  vi.spyOn(console, "error").mockImplementation(() => undefined);
-  Object.defineProperty(window, "matchMedia", {
-    configurable: true,
-    value: vi.fn((query: string) => ({
-      matches: query.includes("any-hover: hover"),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  });
-});
+beforeEach(stubChatEnvironment);
 
 describe("chat home", () => {
   it("keeps the chat view and its error when the first send fails", async () => {
