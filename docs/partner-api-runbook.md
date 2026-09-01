@@ -4,6 +4,10 @@ Operational procedures for the partner API (`partner_api`). The request/response
 **contract** lives on [`/developers`](https://schemes.sg/developers) and is not
 duplicated here — this document covers issuing, rotating and revoking access.
 
+For *who does what and in what order* — how a partner authenticates, who mints
+the key, what they receive and what they deliberately don't get — see
+[`partner-api-access-flow.md`](partner-api-access-flow.md).
+
 ## What a partner gets
 
 One API key, granting three read operations against a versioned path:

@@ -118,6 +118,23 @@ Screenshots captured over CDP against the dev server, not asserted from markup:
 
 Console on `/developers`: no errors or warnings from page code.
 
+**`/developers`, desktop at 1440px** — Stripe-style reference arrangement in the
+Schemes.sg palette: pinned section sidebar with method badges, prose left, dark
+`--schemes-blue-900` code panels right.
+
+![/developers desktop](evidence/partner-api/01-developers-desktop.jpg)
+
+**`/developers`, mobile** — horizontally-scrolling section strip sitting below the
+navbar, after both layout fixes below.
+
+![/developers mobile](evidence/partner-api/04-developers-mobile.jpg)
+
+**`/privacy` and `/terms`** — interim pages, honest about being drafts.
+
+![privacy](evidence/partner-api/02-privacy-full.jpg)
+
+![terms](evidence/partner-api/03-terms-full.jpg)
+
 ### Two mobile layout bugs found this way and fixed
 
 Both were invisible to tests, typecheck, lint and the build. Measured in-page:
