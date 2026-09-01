@@ -1,6 +1,6 @@
 
 Seeding smoke keys on project 'schemessg-v3-dev'
-/Users/tracilim/Projects/schemessg-partner-api/backend/.venv/lib/python3.10/site-packages/google/cloud/firestore_v1/base_collection.py:315: UserWarning: Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.
+/Users/tracilim/Projects/schemessg-partner-api/backend/.venv/lib/python3.12/site-packages/google/cloud/firestore_v1/base_collection.py:315: UserWarning: Detected filter using positional arguments. Prefer using the 'filter' keyword argument instead.
   return query.where(field_path, op_string, value)
 Target: http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/partner_api
 
