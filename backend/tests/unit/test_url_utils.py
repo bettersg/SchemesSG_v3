@@ -24,7 +24,7 @@ def test_check_duplicate_scheme_finds_match(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc_a]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme("https://example.com/foo/")
     assert result is not None
@@ -39,7 +39,7 @@ def test_check_duplicate_scheme_excludes_target(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc_a]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme(
         "https://example.com/foo/", exclude_doc_id="scheme-a"
@@ -58,7 +58,7 @@ def test_check_duplicate_scheme_excludes_target_but_finds_other(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc_a, doc_b]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme(
         "https://example.com/foo/", exclude_doc_id="scheme-a"
@@ -84,7 +84,7 @@ def test_check_duplicate_scheme_ignores_retired_collision(mocker):
         target,
         retired_duplicate,
     ]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme(
         "https://example.com/foo/", exclude_doc_id="scheme-active"
@@ -99,6 +99,6 @@ def test_check_duplicate_scheme_no_match(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     assert check_duplicate_scheme("https://example.com/foo/") is None

@@ -13,14 +13,16 @@ from typing import Dict, List, Optional, Set
 from fb_manager.firebaseManager import FirebaseManager
 
 
-# Firestore client instance
-firebase_manager = FirebaseManager()
-
 # Collection and document names
 SOURCE_COLLECTION = "scrape_errors_source"
 EDITS_COLLECTION = "scrape_errors_edits"
 CONFIG_COLLECTION = "_config"
 NOTIFIED_STATE_DOC_ID = "slack_notified_state"
+
+
+def create_firebase_manager() -> FirebaseManager:
+    """Create the Firestore adapter when a storage operation needs it."""
+    return FirebaseManager()
 
 
 def read_source_rows() -> List[Dict[str, str]]:
@@ -30,7 +32,7 @@ def read_source_rows() -> List[Dict[str, str]]:
     Returns:
         List of dictionaries with document data, each includes 'id' field from document ID.
     """
-    collection = firebase_manager.firestore_client.collection(SOURCE_COLLECTION)
+    collection = create_firebase_manager().firestore_client.collection(SOURCE_COLLECTION)
     docs = collection.stream()
 
     result = []
@@ -52,7 +54,7 @@ def get_source_doc(doc_id: str) -> Optional[Dict[str, str]]:
     Returns:
         Dictionary with document data including 'id' field, or None if not found
     """
-    doc_ref = firebase_manager.firestore_client.collection(SOURCE_COLLECTION).document(doc_id)
+    doc_ref = create_firebase_manager().firestore_client.collection(SOURCE_COLLECTION).document(doc_id)
     doc = doc_ref.get()
 
     if doc.exists:
@@ -73,7 +75,7 @@ def upsert_source_doc(doc_id: str, data: Dict[str, str]) -> Dict[str, str]:
     Returns:
         Dictionary with merged document data including 'id' field
     """
-    doc_ref = firebase_manager.firestore_client.collection(SOURCE_COLLECTION).document(doc_id)
+    doc_ref = create_firebase_manager().firestore_client.collection(SOURCE_COLLECTION).document(doc_id)
 
     # Get existing document if it exists
     existing_doc = doc_ref.get()
@@ -118,7 +120,7 @@ def upsert_edit_doc(doc_id: str, data: Dict[str, str]) -> Dict[str, str]:
     Returns:
         Dictionary with merged document data including 'id' field
     """
-    doc_ref = firebase_manager.firestore_client.collection(EDITS_COLLECTION).document(doc_id)
+    doc_ref = create_firebase_manager().firestore_client.collection(EDITS_COLLECTION).document(doc_id)
 
     # Get existing document if it exists
     existing_doc = doc_ref.get()
@@ -142,7 +144,7 @@ def load_notified_ids() -> Set[str]:
     Returns:
         Set of document ID strings
     """
-    doc_ref = firebase_manager.firestore_client.collection(CONFIG_COLLECTION).document(NOTIFIED_STATE_DOC_ID)
+    doc_ref = create_firebase_manager().firestore_client.collection(CONFIG_COLLECTION).document(NOTIFIED_STATE_DOC_ID)
     doc = doc_ref.get()
 
     if doc.exists:
@@ -160,7 +162,7 @@ def save_notified_ids(ids: Set[str]) -> None:
     Args:
         ids: Set of document ID strings to save
     """
-    doc_ref = firebase_manager.firestore_client.collection(CONFIG_COLLECTION).document(NOTIFIED_STATE_DOC_ID)
+    doc_ref = create_firebase_manager().firestore_client.collection(CONFIG_COLLECTION).document(NOTIFIED_STATE_DOC_ID)
 
     # Convert set to sorted list for storage
     data = {"notified_ids": sorted(ids)}

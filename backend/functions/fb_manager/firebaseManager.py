@@ -28,7 +28,10 @@ class FirebaseManager:
 
         if not firebase_admin._apps:
             # Replace newlines in private key
-            private_key = os.getenv("FB_PRIVATE_KEY").replace("\\n", "\n")
+            private_key_value = os.getenv("FB_PRIVATE_KEY")
+            if not private_key_value:
+                raise ValueError("FB_PRIVATE_KEY environment variable not set")
+            private_key = private_key_value.replace("\\n", "\n")
             # path_to_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
             # if not path_to_creds or not os.path.exists(path_to_creds):
@@ -54,3 +57,8 @@ class FirebaseManager:
             initialize_app(cred)
 
         self.firestore_client = firestore.client()
+
+
+def get_firestore_client():
+    """Initialize Firebase at call time and return its Firestore client."""
+    return FirebaseManager().firestore_client

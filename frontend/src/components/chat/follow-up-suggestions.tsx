@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, ScrollShadow, Tooltip } from "@heroui/react";
-import { motion } from "framer-motion";
+import { ScrollShadow, Tooltip } from "@heroui/react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {
   productButtonCompact,
@@ -48,6 +48,7 @@ export function FollowUpSuggestions({
   suggestions,
   onSelect,
 }: FollowUpSuggestionsProps) {
+  const reduceMotion = useReducedMotion();
   // Desktop gets standard hover tooltips. Touch/coarse-pointer devices get an
   // explicit hold preview that disappears as soon as the press is released.
   const [hoverCapable, setHoverCapable] = useState(false);
@@ -119,40 +120,27 @@ export function FollowUpSuggestions({
     >
       {suggestions.map((suggestion, index) => {
         const id = `${suggestion.label}-${index}`;
-        const chip = (
-          <Button
-            variant="outline"
-            aria-label={`${suggestion.label}: ${suggestion.value}`}
-            onPress={() => {
-              if (didRevealHoldTooltipRef.current) {
-                didRevealHoldTooltipRef.current = false;
-                return;
-              }
-              onSelect(suggestion.value);
-            }}
-            onPointerDown={(event) => {
-              if (event.pointerType === "mouse") return;
-              showHoldTooltip(id);
-            }}
-            onPointerUp={hideHoldTooltip}
-            onPointerCancel={hideHoldTooltip}
-            onPointerLeave={hideHoldTooltip}
-            onContextMenu={(event) => {
-              if (controlledHoldTooltip) event.preventDefault();
-            }}
-            className={`${productButtonOutlineBlue} ${productButtonCompact} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full`}
-          >
-            {suggestion.label}
-          </Button>
-        );
+        const selectSuggestion = () => {
+          if (didRevealHoldTooltipRef.current) {
+            didRevealHoldTooltipRef.current = false;
+            return;
+          }
+          onSelect(suggestion.value);
+        };
 
         return (
           <motion.div
             key={suggestion.label}
             className="shrink-0"
-            initial={motionPreset.fadeInUpXs.initial}
-            animate={motionPreset.fadeInUpXs.animate}
-            transition={{ ...transition.state, delay: index * stagger }}
+            initial={reduceMotion ? false : motionPreset.fadeInUpXs.initial}
+            animate={
+              reduceMotion ? undefined : motionPreset.fadeInUpXs.animate
+            }
+            transition={
+              reduceMotion
+                ? undefined
+                : { ...transition.state, delay: index * stagger }
+            }
           >
             <Tooltip
               closeDelay={0}
@@ -164,7 +152,29 @@ export function FollowUpSuggestions({
                 controlledHoldTooltip ? openHoldTooltipId === id : undefined
               }
             >
-              <Tooltip.Trigger>{chip}</Tooltip.Trigger>
+              <Tooltip.Trigger
+                aria-label={`${suggestion.label}: ${suggestion.value}`}
+                onClick={selectSuggestion}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectSuggestion();
+                  }
+                }}
+                onPointerDown={(event) => {
+                  if (event.pointerType === "mouse") return;
+                  showHoldTooltip(id);
+                }}
+                onPointerUp={hideHoldTooltip}
+                onPointerCancel={hideHoldTooltip}
+                onPointerLeave={hideHoldTooltip}
+                onContextMenu={(event) => {
+                  if (controlledHoldTooltip) event.preventDefault();
+                }}
+                className={`${productButtonOutlineBlue} ${productButtonCompact} shrink-0 cursor-pointer touch-manipulation whitespace-nowrap rounded-full !text-(--schemes-blue-800) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)`}
+              >
+                {suggestion.label}
+              </Tooltip.Trigger>
               <Tooltip.Content
                 offset={8}
                 className="max-w-[min(360px,calc(100vw-32px))] rounded-xl border border-(--schemes-blue-100) bg-white px-3 py-2 text-xs font-medium leading-relaxed text-(--schemes-blue-900) shadow-[0_8px_24px_rgba(24,95,165,0.14)]"

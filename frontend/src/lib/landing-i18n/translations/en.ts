@@ -295,9 +295,16 @@ export const en: Translations = {
 
   footer: {
     tagline: "Making social assistance accessible for everyone.",
+    schemesHeading: "SCHEMES",
     productHeading: "PRODUCT",
     resourcesHeading: "RESOURCES",
     legalHeading: "LEGAL",
+    schemesLinks: [
+      { label: "Financial Assistance", href: "/catalog/financial-assistance" },
+      { label: "Health & Wellbeing", href: "/catalog/health-wellbeing" },
+      { label: "Housing & Food", href: "/catalog/housing-food" },
+      { label: "All Categories", href: "/catalog" },
+    ],
     productLinks: [
       { label: "Search", href: "/" },
       { label: "Features", href: "#features" },

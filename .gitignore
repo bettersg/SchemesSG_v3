@@ -56,6 +56,8 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+frontend/playwright-report/
+frontend/test-results/
 
 # Translations
 *.mo
@@ -164,6 +166,7 @@ tags
 
 # .lock
 *.lock
+!backend/uv.lock
 
 # DS_Store (MacOS)
 .DS_Store
@@ -174,6 +177,10 @@ tags
 # Firestore data exports (don't commit production/dev data)
 backend/prod_schemes_data.json
 backend/dev_schemes_data.json
+
+# Local benchmark artifacts may contain production-derived records.
+backend/scripts/benchmark_out/*
+!backend/scripts/benchmark_out/SEARCH_BENCHMARK_BRIEF.md
 backend/firestore-backup/
 backend/functions/reports/
 
@@ -283,3 +290,6 @@ repo_dump.md
 # local directories
 .claude/
 tmp/
+
+# Harness smoke diagnostics
+.smoke-logs/

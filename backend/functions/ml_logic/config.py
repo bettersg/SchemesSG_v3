@@ -1,11 +1,8 @@
 """Configuration for LLM chatbot parameters"""
 
-import os
 from dataclasses import dataclass
 
 
-# LLM Configuration Constants
-PROVIDER_MODEL_NAME = f"azure_openai:{os.environ['AZURE_OPENAI_DEPLOYMENT_NAME']}"
 CHATBOT_MAX_COMPLETION_TOKENS = 4096
 
 

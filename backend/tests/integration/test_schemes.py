@@ -59,7 +59,7 @@ def test_schemes_successful_fetch(mock_request, mock_https_response, mock_auth, 
     mock_doc = mocker.MagicMock()
     mock_doc.exists = True
     mock_doc.to_dict.return_value = {
-        "title": "Test Scheme",
+        "scheme_name": "Test Scheme",
         "description": "Test Description",
         "eligibility": ["Test Eligibility"],
     }
@@ -78,9 +78,15 @@ def test_schemes_successful_fetch(mock_request, mock_https_response, mock_auth, 
     response = schemes(request)
 
     assert response.status_code == 200
-    response_data = json.loads(response.get_data())
-    assert "data" in response_data
-    assert response_data["data"]["title"] == "Test Scheme"
+    assert response.content_type == "application/json"
+    assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
+    assert json.loads(response.get_data()) == {
+        "data": {
+            "scheme_name": "Test Scheme",
+            "description": "Test Description",
+            "eligibility": ["Test Eligibility"],
+        }
+    }
 
 
 def test_schemes_not_found(mock_request, mock_https_response, mock_auth, mocker):

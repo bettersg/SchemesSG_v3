@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Tuple
 
+from fb_manager.firebaseManager import get_firestore_client
 from firebase_admin import firestore
 from firebase_functions import options, scheduler_fn
 from loguru import logger
@@ -30,6 +31,7 @@ from batch_jobs.slack_blocks import (
     build_link_check_error_message,
     build_link_check_summary_message,
 )
+
 
 # Quarantine policy: a scheme is only flipped to ``inactive`` after this many
 # CONSECUTIVE weekly checks classify its link ``hard_dead`` (404/410/…). The
@@ -100,7 +102,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
 
     try:
         if db is None:
-            db = firestore.client()
+            db = get_firestore_client()
 
         # Step 1: Fetch all schemes (including inactive - to restore if alive)
         logger.info("Fetching schemes from Firestore...")
@@ -215,6 +217,7 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                     "last_link_check": now_iso,
                     "link_check_status_code": result.get("status_code", 200),
                     "link_check_fail_streak": firestore.DELETE_FIELD,
+                    "link_check_fail_class": firestore.DELETE_FIELD,
                     "link_suspect": firestore.DELETE_FIELD,
                 }
                 if was_inactive:
