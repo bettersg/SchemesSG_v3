@@ -10,15 +10,18 @@
  * docs/partner-api-runbook.md for why every prettier option is worse. If it ever
  * does move, only PARTNER_API_BASE changes.
  *
- * Deliberately NOT read from `NEXT_PUBLIC_API_BASE_URL`, unlike every real
- * frontend→backend call (`lib/schemes.ts`). That var is whichever project is
- * serving this page, so on a staging deploy it would print the dev URL into
- * partner-facing documentation. Nothing here is ever fetched: it is prose about
- * production, so it names production.
+ * The host follows the project this page was *built* for: production documents
+ * production, and the dev deployment documents dev. This replaces a hardcoded
+ * production URL, which made the dev page hand out curl commands that 401 against
+ * the dev key you were testing with. Baked in at build time, since /developers is
+ * statically prerendered.
  */
 
+const PARTNER_API_PROJECT_ID =
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "schemessg";
+
 export const PARTNER_API_BASE =
-  "https://asia-southeast1-schemessg.cloudfunctions.net/partner_api";
+  `https://asia-southeast1-${PARTNER_API_PROJECT_ID}.cloudfunctions.net/partner_api`;
 
 export const PARTNER_API_VERSION = "v1";
 

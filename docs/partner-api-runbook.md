@@ -79,7 +79,10 @@ Practical consequences:
 - **Dev data is not production data.** Scheme ids differ between projects, so a
   partner must not hardcode ids discovered in sandbox.
 - **Tell them which base URL goes with which key**, or they will burn a day on a
-  `401` caused by pointing a dev key at prod.
+  `401` caused by pointing a dev key at prod. The `/developers` page helps here:
+  it prints the base URL of whichever project served it, so
+  `schemessg-v3-dev.web.app/developers` documents the dev host and
+  `schemes.sg/developers` documents production.
 - **The dev deployment carries no availability expectation.** It tracks the `stg`
   branch and can break at any time. Say so, so nobody builds a demo on it.
 - The `cloudfunctions.net` host is the long-term base, not a temporary one. Give

@@ -279,7 +279,8 @@ export const en: Translations = {
       {
         question: "Can I access Schemes.sg data through an API?",
         answer:
-          "We share scheme data programmatically with a small number of partner organisations, on request. It is not a self-serve public API. See the developer docs at /developers for what is available, and get in touch if your organisation wants to integrate.",
+          "We share scheme data programmatically with a small number of partner organisations, on request. It is not a self-serve public API. Get in touch if your organisation wants to integrate.",
+        answerLink: { label: "Read the developer docs", href: "/developers" },
       },
     ],
     sidebar: {
