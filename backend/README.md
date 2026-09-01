@@ -144,6 +144,7 @@ Normal local development and search smoke use the shared development dataset. Do
 From `backend/` (canonical config in `pyproject.toml`):
 ```bash
 uv run --frozen pytest                              # Secretless suite with coverage
+uv run --frozen coverage json -o - | uv run --frozen python scripts/check_coverage.py
 uv run --frozen pytest -m unit --no-cov             # Unit tier
 uv run --frozen pytest -m "integration and not smoke" --no-cov
 uv run --frozen pytest -m smoke --no-cov            # Opt-in, non-production only

@@ -49,8 +49,8 @@ own git worktree on its own branch. Read-only research is exempt.
 
 ## Verification & Evidence
 
-- Scope-based required checks (backend-only, frontend-only, cross-boundary,
-  harness-only): `docs/verification.md`.
+- Authoritative scope-based checks and test-impact policy:
+  `docs/verification.md`.
 - Record the evidence contract (worktree/branch/base SHA, exact
   checks/scenarios run, results, acceptance criteria, unresolved risks) in
   the PR using `pull_request_template.md`.

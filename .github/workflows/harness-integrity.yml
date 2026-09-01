@@ -10,6 +10,8 @@ on:
       - "backend/CLAUDE.md"
       - "frontend/AGENTS.md"
       - "frontend/CLAUDE.md"
+      - "docs/verification.md"
+      - "pull_request_template.md"
       - "scripts/**"
       - "compose*.yml"
       - "compose*.yaml"

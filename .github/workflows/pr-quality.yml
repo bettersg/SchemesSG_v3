@@ -151,6 +151,8 @@ jobs:
         working-directory: backend
         run: uv sync --locked
 
-      - name: Run tests
+      - name: Run tests and enforce coverage ratchet
         working-directory: backend
-        run: uv run --frozen pytest
+        run: |
+          uv run --frozen pytest
+          uv run --frozen coverage json -o - | uv run --frozen python scripts/check_coverage.py
