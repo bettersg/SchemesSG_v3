@@ -45,7 +45,10 @@ export function StreamStatusSteps({
           placeholder copy rotates every ~2s, and piping 20 decorative phrases
           through a screen reader is worse than saying nothing; real step labels
           are meaningful and change rarely, so those are announced as they come. */}
-      <span className="sr-only" role="status" aria-live="polite">
+      {/* aria-live + aria-atomic rather than role="status", which is only sugar
+          for the same pair: the schemes panel already owns a role="status", and a
+          second one makes every bare getByRole("status") in the suite ambiguous. */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
         {latestStep ? latestStep.label : "Working on your answer"}
       </span>
       <div className={statusStepSummaryClass} aria-hidden="true">

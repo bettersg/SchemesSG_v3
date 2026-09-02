@@ -14,6 +14,14 @@ vi.mock("@lottiefiles/dotlottie-react", () => ({
 
 const userTurn = [{ type: "user" as const, text: "i need help with preschool fees" }];
 
+/**
+ * The row announces through a bare aria-live span, deliberately not role="status"
+ * — the schemes panel owns the page's only status role, and a second one makes
+ * every bare getByRole("status") in the e2e and dev-smoke suites ambiguous.
+ */
+const politeLiveRegion = () =>
+  document.querySelector('[aria-live="polite"][aria-atomic="true"]');
+
 describe("ChatMessageList", () => {
   it("shows the thinking indicator the moment generation starts, with no stream data yet", () => {
     // This is the regression guard for the original bug: the indicator used to
@@ -27,7 +35,7 @@ describe("ChatMessageList", () => {
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("Working on your answer");
+    expect(politeLiveRegion()).toHaveTextContent("Working on your answer");
     expect(screen.getByText(THINKING_PHRASES[0])).toBeInTheDocument();
     expect(screen.getByTestId("chat-spinner")).toBeInTheDocument();
   });
@@ -44,7 +52,7 @@ describe("ChatMessageList", () => {
       />,
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent("Searching schemes");
+    expect(politeLiveRegion()).toHaveTextContent("Searching schemes");
     expect(screen.queryByText(THINKING_PHRASES[0])).not.toBeInTheDocument();
   });
 

@@ -13,9 +13,11 @@ const REAL_STEP_LABEL = "Matching support schemes";
 // desktop viewport each match has a display:none twin. Same filter the rest of
 // the suite uses.
 
-// Scoped by .sr-only because the schemes panel owns a second role="status" live
-// region ("Finding the best schemes...") while a response is in flight.
-const LIVE_REGION = 'span[role="status"].sr-only';
+// A bare aria-live span, not role="status": the schemes panel owns the page's
+// only status role ("Finding the best schemes..."), and a second one makes every
+// bare getByRole("status") in this suite and in dev-smoke ambiguous while a
+// response is in flight.
+const LIVE_REGION = 'span[aria-live="polite"][aria-atomic="true"]';
 
 test("thinking indicator appears before the agent sends anything at all", async ({
   page,
