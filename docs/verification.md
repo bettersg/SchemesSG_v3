@@ -57,6 +57,7 @@ Every pull request records:
 - test-impact mapping, including red/green evidence or a no-test reason and substitute evidence;
 - exact checks and scenarios, results, and durations;
 - acceptance criteria demonstrated;
+- proof of fix: the failure reproduced, then the same command or request succeeding;
 - screenshots, traces, or concise logs for UI/runtime behavior;
 - checks not run and the reason;
 - unresolved risks and follow-up issues.

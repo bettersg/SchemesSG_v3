@@ -33,8 +33,17 @@ Describe the scoped change and why this approach was chosen.
 | Browser/UI proof, when applicable |  |  |  |
 
 - Acceptance criteria demonstrated:
-- Screenshots, traces, or logs:
 - Checks intentionally not run and why:
+
+### Proof of fix
+
+Artifacts showing the change working, not only checks passing. Say what each one
+proves and how it was captured.
+
+- Failure reproduced (before):
+- Same command or request succeeding (after):
+- Screenshots, traces, or logs:
+- Not capturable pre-deploy, and the signal to watch instead:
 
 ## Risks and follow-up
 
