@@ -47,6 +47,10 @@ assert_line "$ROOT/pull_request_template.md" "- Red-before evidence (bug fixes, 
 assert_line "$ROOT/pull_request_template.md" "- Green-after evidence:" "green-after field"
 assert_line "$ROOT/pull_request_template.md" "- No-test reason (if applicable):" "no-test-reason field"
 assert_line "$ROOT/pull_request_template.md" "- Substitute evidence (if applicable):" "substitute-evidence field"
+assert_line "$ROOT/pull_request_template.md" "### Proof of fix" "proof-of-fix heading"
+assert_line "$ROOT/pull_request_template.md" "- Failure reproduced (before):" "proof-of-fix before field"
+assert_line "$ROOT/pull_request_template.md" "- Same command or request succeeding (after):" "proof-of-fix after field"
+assert_line "$ROOT/pull_request_template.md" "- Screenshots, traces, or logs:" "proof-of-fix artifact field"
 assert_line "$ROOT/pull_request_template.md" "- [ ] Test impact accounts for every observable behavior change." "test-impact reviewer check"
 
 assert_symlink "$ROOT/CLAUDE.md" AGENTS.md
