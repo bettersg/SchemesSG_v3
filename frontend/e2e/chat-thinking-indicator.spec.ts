@@ -1,0 +1,94 @@
+import { expect, test } from "@playwright/test";
+import { interceptChatStreamScenarios } from "./fixtures/chat-resilience";
+import { LANDING_QUERY } from "./fixtures/landing-results";
+import { THINKING_PHRASES } from "../src/components/chat/thinking-phrases";
+
+// The first phrase always leads the rotation, so it is the one the user sees the
+// instant they send. See thinkingPhraseOrder.
+const [FIRST_PHRASE] = THINKING_PHRASES;
+const REAL_STEP_LABEL = "Matching support schemes";
+
+// Every locator below is filtered to visible matches: the chat page renders the
+// message list twice — desktop split layout and mobile tab panel — so on a
+// desktop viewport each match has a display:none twin. Same filter the rest of
+// the suite uses.
+
+// Scoped by .sr-only because the schemes panel owns a second role="status" live
+// region ("Finding the best schemes...") while a response is in flight.
+const LIVE_REGION = 'span[role="status"].sr-only';
+
+test("thinking indicator appears before the agent sends anything at all", async ({
+  page,
+}) => {
+  // No events, ever: the stream opens and stays silent. This is the window the
+  // indicator used to sit out — it was gated on a chunk or a status step
+  // arriving, and the agent's first status event only fires once it decides to
+  // call a tool.
+  await interceptChatStreamScenarios(page, [{ events: [], finish: "hold" }]);
+
+  await page.goto("/");
+  await page.getByRole("textbox").fill(LANDING_QUERY);
+  await page.getByRole("button", { name: "Search" }).click();
+
+  await expect(
+    page.getByText(FIRST_PHRASE).filter({ visible: true }),
+  ).toBeVisible();
+  // One stable announcement rather than 20 rotating decorative phrases.
+  await expect(
+    page.locator(LIVE_REGION).filter({ visible: true }),
+  ).toHaveText("Working on your answer");
+});
+
+// The suite runs reduced-motion by default, which pins the rotation to its first
+// phrase — correct behaviour, and what the test above exercises, but the index
+// can never advance, so the clamp below would pass with or without the fix. This
+// block is the one place motion has to be real.
+test.describe("with motion enabled", () => {
+  test.use({ contextOptions: { reducedMotion: "no-preference" } });
+
+  test("a real status step replaces the placeholder mid-rotation without blanking the row", async ({
+    page,
+  }) => {
+    await interceptChatStreamScenarios(page, [
+      {
+        events: [
+          {
+            type: "status",
+            data: { phase: "session_started", sessionID: "e2e-session" },
+          },
+          {
+            // Longer than the rotation's maximum dwell (3200ms), so the phrase
+            // index is guaranteed to have advanced past 0 before the real label
+            // arrives and the word list shrinks to a single entry.
+            delayMs: 4000,
+            type: "action_message",
+            data: {
+              label: REAL_STEP_LABEL,
+              message:
+                "Compared trusted schemes with the stated household need.",
+            },
+          },
+        ],
+        finish: "hold",
+      },
+    ]);
+
+    await page.goto("/");
+    await page.getByRole("textbox").fill(LANDING_QUERY);
+    await page.getByRole("button", { name: "Search" }).click();
+
+    await expect(
+      page.getByText(FIRST_PHRASE).filter({ visible: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator(LIVE_REGION).filter({ visible: true }),
+    ).toHaveText(REAL_STEP_LABEL, { timeout: 10_000 });
+
+    // Two nodes: the live region and the visible row. Without the index clamp
+    // in WordRotate the stale index reads past the end of the one-entry list,
+    // the row renders empty, and this count drops to 1.
+    await expect(
+      page.getByText(REAL_STEP_LABEL).filter({ visible: true }),
+    ).toHaveCount(2);
+  });
+});

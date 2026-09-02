@@ -75,8 +75,6 @@ export default function ChatMessageList({
     }
   }, [messages, streamingBlocks, statusSteps]);
 
-  const hasStreamActivity =
-    isGenerating && (streamingBlocks.some(Boolean) || statusSteps.length > 0);
   const nonEmptyStreamingBlocks = streamingBlocks.filter(
     (block) => block.trim().length > 0,
   );
@@ -142,8 +140,13 @@ export default function ChatMessageList({
 
       {/* Status steps, then streaming message. Full width to match a finished
           bot message — a narrower cap here would wrap the text mid-stream and
-          then visibly reflow wider once the message is finalized. */}
-      {hasStreamActivity && (
+          then visibly reflow wider once the message is finalized.
+
+          Gated on isGenerating alone: it is set synchronously before the
+          request's first await, while the first status event only arrives once
+          the agent decides to call a tool. Also requiring a chunk or a step
+          held the indicator hostage to the network. */}
+      {isGenerating && (
         <div className="flex items-end gap-2.5">
           <div className="flex w-full max-w-full flex-col items-start gap-2">
             <StreamStatusSteps steps={statusSteps} isActive={isGenerating} />

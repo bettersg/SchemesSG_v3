@@ -15,7 +15,10 @@ export const RECOVERY_ANSWER =
   "Apply for Household Essentials Support first because it covers urgent costs.";
 
 type ChatStreamScenario = {
-  events: Array<{ type: string; data: unknown }>;
+  // `delayMs` holds an event back by that long after the one before it, so a
+  // test can observe the UI in the window before the agent's first event.
+  // Omitted everywhere means every event is enqueued up front, as before.
+  events: Array<{ type: string; data: unknown; delayMs?: number }>;
   finish: "complete" | "controlled-error" | "hold";
 };
 
@@ -75,8 +78,13 @@ export async function interceptChatStreamScenarios(
 
         const encoder = new TextEncoder();
         const body = new ReadableStream<Uint8Array>({
-          start(controller) {
-            for (const event of scenario.events) {
+          async start(controller) {
+            for (const { delayMs, ...event } of scenario.events) {
+              // No delay anywhere means no await, so this loop still enqueues
+              // everything before returning, exactly as it did before.
+              if (delayMs) {
+                await new Promise((resolve) => setTimeout(resolve, delayMs));
+              }
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
               );
