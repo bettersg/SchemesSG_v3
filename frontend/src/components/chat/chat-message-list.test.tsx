@@ -22,6 +22,16 @@ const userTurn = [{ type: "user" as const, text: "i need help with preschool fee
 const politeLiveRegion = () =>
   document.querySelector('[aria-live="polite"][aria-atomic="true"]');
 
+/**
+ * Any of the 20 phrases can open the rotation, so the assertions match the set
+ * rather than a fixed index — see thinkingPhraseOrder.
+ */
+const ANY_PHRASE = new RegExp(
+  `^(${THINKING_PHRASES.map((phrase) =>
+    phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  ).join("|")})$`,
+);
+
 describe("ChatMessageList", () => {
   it("shows the thinking indicator the moment generation starts, with no stream data yet", () => {
     // This is the regression guard for the original bug: the indicator used to
@@ -36,7 +46,7 @@ describe("ChatMessageList", () => {
     );
 
     expect(politeLiveRegion()).toHaveTextContent("Working on your answer");
-    expect(screen.getByText(THINKING_PHRASES[0])).toBeInTheDocument();
+    expect(screen.getByText(ANY_PHRASE)).toBeInTheDocument();
     expect(screen.getByTestId("chat-spinner")).toBeInTheDocument();
   });
 
@@ -53,7 +63,7 @@ describe("ChatMessageList", () => {
     );
 
     expect(politeLiveRegion()).toHaveTextContent("Searching schemes");
-    expect(screen.queryByText(THINKING_PHRASES[0])).not.toBeInTheDocument();
+    expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
   });
 
   it("hides the indicator when nothing is generating", () => {
@@ -66,6 +76,6 @@ describe("ChatMessageList", () => {
     );
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.queryByText(THINKING_PHRASES[0])).not.toBeInTheDocument();
+    expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
   });
 });

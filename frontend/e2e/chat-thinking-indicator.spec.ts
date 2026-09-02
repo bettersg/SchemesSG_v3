@@ -3,9 +3,14 @@ import { interceptChatStreamScenarios } from "./fixtures/chat-resilience";
 import { LANDING_QUERY } from "./fixtures/landing-results";
 import { THINKING_PHRASES } from "../src/components/chat/thinking-phrases";
 
-// The first phrase always leads the rotation, so it is the one the user sees the
-// instant they send. See thinkingPhraseOrder.
-const [FIRST_PHRASE] = THINKING_PHRASES;
+// Any of the 20 can open the rotation, so match the set rather than an index.
+// See thinkingPhraseOrder: pinning an opener meant every send showed the same
+// words, because the dwell floor outlasts a healthy backend's first status step.
+const ANY_PHRASE = new RegExp(
+  `^(${THINKING_PHRASES.map((phrase) =>
+    phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  ).join("|")})$`,
+);
 const REAL_STEP_LABEL = "Matching support schemes";
 
 // Every locator below is filtered to visible matches: the chat page renders the
@@ -33,7 +38,7 @@ test("thinking indicator appears before the agent sends anything at all", async 
   await page.getByRole("button", { name: "Search" }).click();
 
   await expect(
-    page.getByText(FIRST_PHRASE).filter({ visible: true }),
+    page.getByText(ANY_PHRASE).filter({ visible: true }),
   ).toBeVisible();
   // One stable announcement rather than 20 rotating decorative phrases.
   await expect(
@@ -80,7 +85,7 @@ test.describe("with motion enabled", () => {
     await page.getByRole("button", { name: "Search" }).click();
 
     await expect(
-      page.getByText(FIRST_PHRASE).filter({ visible: true }),
+      page.getByText(ANY_PHRASE).filter({ visible: true }),
     ).toBeVisible();
     await expect(
       page.locator(LIVE_REGION).filter({ visible: true }),

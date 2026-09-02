@@ -12,9 +12,12 @@
  *   that lies is worse than a silent one.
  * - No jokes. Users here are often in financial hardship, or are the social
  *   workers helping them.
- * - The tail must be wait-tolerant. Those phrases surface ~45s in, when the
- *   user's real question is "did this break?", so they acknowledge the wait
- *   rather than promising an ending.
+ * - Any phrase except the last must read as true one second after a send. On a
+ *   healthy backend the opener is the only phrase a user ever sees, and every
+ *   one of them can open — see thinkingPhraseOrder.
+ * - The LAST entry is the wait-tolerant one, and order matters: it is pinned to
+ *   the end so it cannot fire early. It answers "did this break?", which is not
+ *   yet the user's question two seconds in.
  */
 export const THINKING_PHRASES = [
   "Reading your question",
@@ -40,19 +43,25 @@ export const THINKING_PHRASES = [
 ] as const;
 
 /**
- * The first phrase always leads — it is the one statement unconditionally true
- * the instant a message is sent. The rest are shuffled so a user sending
- * several messages in a row doesn't watch the same reel each time.
+ * Shuffles the whole list so any phrase can open, because the opener is usually
+ * the only phrase anyone reads: the dwell floor in stream-status-steps is
+ * 1800ms and a healthy backend replaces this list with a real step label sooner
+ * than that, so the rotation never ticks. Pinning an opener meant every send
+ * showed the same words.
+ *
+ * The wait-tolerant closer is held at the end — at those dwell bounds it lands
+ * ~45s in, so only a genuinely slow request ever reaches it.
  */
 export function thinkingPhraseOrder(
   random: () => number = Math.random,
 ): string[] {
-  const [first, ...rest] = THINKING_PHRASES;
+  const closerIndex = THINKING_PHRASES.length - 1;
+  const pool = THINKING_PHRASES.slice(0, closerIndex);
 
-  for (let i = rest.length - 1; i > 0; i -= 1) {
+  for (let i = pool.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
-    [rest[i], rest[j]] = [rest[j], rest[i]];
+    [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  return [first, ...rest];
+  return [...pool, THINKING_PHRASES[closerIndex]];
 }
