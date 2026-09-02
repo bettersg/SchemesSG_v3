@@ -1,5 +1,6 @@
 """Unit tests for partner API handlers and the lazy-import boundary."""
 
+import base64
 import subprocess
 import sys
 from pathlib import Path
@@ -9,7 +10,8 @@ import pytest
 from partner.api import _dispatch, _handle_detail, _handle_list
 from partner.routing import Route
 from partner.serializers import PUBLIC_FIELDS, PartnerRequestError, clamp_limit
-from utils.catalog_pagination import PaginationResult
+from utils.catalog_pagination import PaginationResult, _encode_cursor
+from utils.pagination import encode_cursor as encode_search_cursor
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
 
@@ -257,6 +259,81 @@ def test_list_rejects_combining_filters():
         _handle_list(MagicMock(), _Args({"agency": "MOH", "area": "BEDOK"}))
 
 
+@pytest.mark.parametrize(
+    "cursor",
+    [
+        "!!!not-base64!!!",
+        base64.urlsafe_b64encode(b'{"data": {"doc_id": "x"}}').decode(),  # no signature
+        base64.urlsafe_b64encode(b'{"data": {"doc_id": "x"}, "signature": "bad"}').decode(),
+        base64.urlsafe_b64encode(b"not json at all").decode(),
+    ],
+    ids=["malformed", "unsigned", "wrong-signature", "not-json"],
+)
+def test_list_rejects_a_cursor_we_did_not_issue(cursor, mocker):
+    """A bad cursor must 400, not silently rewind to page one.
+
+    `_get_paginated_query` falls back to the first page for any cursor it cannot
+    verify. For /catalog that is fine. For a partner it means page one comes back
+    with 200 and a fresh next_cursor, so a client whose cursor got truncated
+    re-reads page one indefinitely and never sees an error.
+
+    Patched so a leaked-through cursor would still not reach Firestore.
+    """
+    paginate = mocker.patch(
+        # partner.api imported the name directly, so patch it there. Patching
+        # schemes.catalog leaves partner.api's reference bound to the real function.
+        "partner.api._get_listed_paginated_results",
+        return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
+    )
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        _handle_list(MagicMock(), _Args({"cursor": cursor}))
+    paginate.assert_not_called()
+
+
+def test_list_accepts_a_cursor_we_issued(mocker):
+    """The guard must not reject our own tokens — the round trip has to hold."""
+    mocker.patch(
+        # partner.api imported the name directly, so patch it there. Patching
+        # schemes.catalog leaves partner.api's reference bound to the real function.
+        "partner.api._get_listed_paginated_results",
+        return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
+    )
+    _handle_list(MagicMock(), _Args({"cursor": _encode_cursor("some-doc-id")}))
+
+
+def test_an_empty_cursor_parameter_is_rejected_not_ignored(mocker):
+    """`?cursor=` is a cursor truncated to nothing, and the docs promise a 400.
+
+    A `cursor` that is absent still means "first page"; only a present-but-empty
+    value is an error. Otherwise the one truncation a partner is most likely to hit
+    is the one case that silently rewinds.
+    """
+    paginate = mocker.patch("partner.api._get_listed_paginated_results")
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        _handle_list(MagicMock(), _Args({"cursor": ""}))
+    paginate.assert_not_called()
+
+
+def test_an_absent_cursor_still_means_the_first_page(mocker):
+    """The counterpart: omitting the parameter must not become an error."""
+    paginate = mocker.patch(
+        "partner.api._get_listed_paginated_results",
+        return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
+    )
+    _handle_list(MagicMock(), _Args({"limit": "5"}))
+    assert paginate.call_args.kwargs["cursor"] is None
+
+
+def test_list_cursor_guard_runs_after_the_cheaper_checks():
+    """Ordering matters: an unknown parameter is reported even with a bad cursor.
+
+    Otherwise a partner sending both gets told only about the cursor, fixes it, and
+    then discovers the parameter problem on the next round trip.
+    """
+    with pytest.raises(PartnerRequestError, match="sort"):
+        _handle_list(MagicMock(), _Args({"sort": "name", "cursor": "!!!bogus!!!"}))
+
+
 @pytest.mark.parametrize("body", [["not", "an", "object"], "a string", 42, True])
 def test_non_object_search_body_is_a_client_error(body):
     """A valid-JSON non-object body must be a 400, not an AttributeError 500.
@@ -345,6 +422,65 @@ def test_search_rejects_a_non_numeric_limit(mocker):
 
     with pytest.raises(PartnerRequestError, match="limit"):
         handle_search(MagicMock(), {"query": "eldercare", "limit": "many"})
+
+
+def test_search_rejects_a_list_cursor(mocker):
+    """A cursor from the other operation must 400, not quietly serve page one.
+
+    Both codecs sign with the same CURSOR_SECRET, so a list cursor passes the
+    *signature* check on the search path. `get_paginated_results` then finds no
+    scheme_id/similarity_score and falls back to the first page with a 200 — the
+    original defect, reached by the plausible mistake of pasting a list next_cursor
+    into a search request. So the guard checks the payload, not just the signature.
+    """
+    model = _stub_search_model(mocker, [{"scheme_id": "live", "status": "active"}])
+    from partner.search import handle_search
+
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        handle_search(MagicMock(), {"query": "eldercare", "cursor": _encode_cursor("a-doc-id")})
+
+    model.return_value.aggregate_and_rank_results.assert_not_called()
+
+
+def test_list_rejects_a_search_cursor():
+    """The mirror case. Guarded already, because the doc_id lookup returns None."""
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        _handle_list(MagicMock(), _Args({"cursor": encode_search_cursor("s1", 0.9, "sess")}))
+
+
+def test_both_operations_agree_on_cursor_versus_limit_precedence(mocker):
+    """A request with a bad cursor *and* a bad limit must name the same field.
+
+    The two operations validate independently, so without this they can disagree —
+    a partner fixing what list told them then hits a different error from search.
+    """
+    _stub_search_model(mocker, [])
+    mocker.patch("partner.api._get_listed_paginated_results")
+    from partner.search import handle_search
+
+    both_wrong = {"cursor": "!!!bogus!!!", "limit": "many"}
+
+    with pytest.raises(PartnerRequestError, match="Invalid cursor") as from_list:
+        _handle_list(MagicMock(), _Args(both_wrong))
+    with pytest.raises(PartnerRequestError, match="Invalid cursor") as from_search:
+        handle_search(MagicMock(), {"query": "eldercare", **both_wrong})
+
+    assert from_list.value.client_message == from_search.value.client_message
+
+
+def test_search_rejects_a_bad_cursor_before_it_ranks(mocker):
+    """A bad cursor must 400, and must not cost a ranking pass to find out.
+
+    `get_paginated_results` ignores a cursor it cannot verify and returns page one,
+    so without this guard a partner re-reads page one forever with 200s.
+    """
+    model = _stub_search_model(mocker, [{"scheme_id": "live", "status": "active"}])
+    from partner.search import handle_search
+
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        handle_search(MagicMock(), {"query": "elderly medical bills", "cursor": "!!!bogus!!!"})
+
+    model.return_value.aggregate_and_rank_results.assert_not_called()
 
 
 def test_search_never_leaks_internal_fields(mocker):

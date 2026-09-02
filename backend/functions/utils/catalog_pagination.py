@@ -96,6 +96,24 @@ def _decode_cursor(cursor: str) -> Optional[str]:
         return None
 
 
+def is_valid_cursor(cursor: str) -> bool:
+    """Report whether a cursor is one we issued and can still be trusted.
+
+    Exists so a caller can reject a bad cursor *before* pagination runs.
+    `_get_paginated_query` deliberately falls back to the first page instead
+    (three separate branches), which suits `/catalog` — a person clicks again and
+    sees results. It does not suit a machine consumer: the partner API would
+    return page one with `200` and a fresh `next_cursor`, so a client whose cursor
+    got truncated re-reads page one forever and never learns why.
+
+    Only covers signature and format. A validly signed cursor whose document has
+    since been deleted still falls back to page one inside
+    `_get_paginated_query`; schemes are retired rather than deleted, so that path
+    is rare and needs a Firestore read to detect.
+    """
+    return _decode_cursor(cursor) is not None
+
+
 def _get_paginated_query(
     collection_ref: CollectionReference,
     base_query: Optional[Query] = None,

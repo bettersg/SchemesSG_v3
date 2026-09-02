@@ -41,12 +41,14 @@ from schemes.catalog import (
     _filter_scheme_types_for_category,
     _get_listed_paginated_results,
 )
+from utils.catalog_pagination import is_valid_cursor
 from utils.json_utils import safe_json_dumps
 from utils.partner_auth import AuthError, check_and_increment_rate_limit, verify_partner_key
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES, RETIRED_STATUS
 
 from .routing import Route, RouteError, resolve_route
 from .serializers import (
+    CURSOR_ERROR_MESSAGE,
     PartnerRequestError,
     clamp_limit,
     error_body,
@@ -164,6 +166,13 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     if len(selected) > 1:
         raise PartnerRequestError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
 
+    # No `or None`: `?cursor=` present but empty is a cursor truncated to nothing,
+    # and the docs promise a 400 for a truncated cursor. Only an absent parameter
+    # means "start at the first page".
+    cursor = args.get("cursor")
+    if cursor is not None and not is_valid_cursor(cursor):
+        raise PartnerRequestError(CURSOR_ERROR_MESSAGE)
+
     filter_name = selected[0] if selected else None
     collection = db.collection(SCHEMES_COLLECTION)
 
@@ -191,7 +200,7 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     results = _get_listed_paginated_results(
         collection_ref=collection,
         base_query=base_query,
-        cursor=args.get("cursor") or None,
+        cursor=cursor,
         limit=clamp_limit(args.get("limit"), default=DEFAULT_LIMIT),
         exclude_statuses=NON_SEARCHABLE_STATUSES,
     )
