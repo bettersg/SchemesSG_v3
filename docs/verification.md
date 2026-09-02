@@ -67,4 +67,34 @@ Every pull request records:
 
 “Container started,” “tests pass,” or an agent’s assertion is not proof by itself. Readiness comes from health checks. UI behavior comes from exercising the actual page. Failures must return non-zero and retain enough diagnostics to reproduce them.
 
+### Where screenshots live
+
+Drag-and-drop upload into a comment is the normal route, but it needs a browser —
+there is no API for it, so an agent cannot do it. Rather than commit the files or
+leave a UI change unevidenced, push them to a **gist** and link them:
+
+```sh
+gh gist create notes.md                      # gh cannot take binaries; seed with any text file
+git clone https://gist.github.com/<id>.git   # a gist is a git repo, so push images through git
+cd <id> && cp /path/to/*.png . && git add -A && git commit -m "evidence" && git push
+```
+
+Embed with the URL pinned to the pushed commit, so the image cannot change under a
+reviewer after approval:
+
+```
+![what it shows](https://gist.githubusercontent.com/<user>/<id>/raw/<sha>/shot.png)
+```
+
+Two details that are easy to get wrong. The unpinned `raw/<file>` form returns 404
+for a binary, so the SHA is required, not optional. And gist URLs render directly
+rather than through GitHub's image proxy, so a missing image means a bad URL, not a
+proxy failure — `gh api -H "Accept: application/vnd.github.full+json" …` and grep
+the returned `body_html` for `<img` to confirm, because `body_html` is null without
+that header.
+
+A gist is deliberately impermanent: delete it and the images 404. That suits review
+evidence, which stops being true the moment the page changes. Anything that needs to
+stay true belongs in a test instead.
+
 Deterministic secretless tests remain the PR gate. Real Firestore vector-search and environment wiring use the separate credentialed development smoke tier; never use production credentials or production data.
