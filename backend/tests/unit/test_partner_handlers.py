@@ -11,6 +11,7 @@ from partner.api import _dispatch, _handle_detail, _handle_list
 from partner.routing import Route
 from partner.serializers import PUBLIC_FIELDS, PartnerRequestError, clamp_limit
 from utils.catalog_pagination import PaginationResult, _encode_cursor
+from utils.pagination import encode_cursor as encode_search_cursor
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
 
@@ -279,7 +280,9 @@ def test_list_rejects_a_cursor_we_did_not_issue(cursor, mocker):
     Patched so a leaked-through cursor would still not reach Firestore.
     """
     paginate = mocker.patch(
-        "schemes.catalog._get_listed_paginated_results",
+        # partner.api imported the name directly, so patch it there. Patching
+        # schemes.catalog leaves partner.api's reference bound to the real function.
+        "partner.api._get_listed_paginated_results",
         return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
     )
     with pytest.raises(PartnerRequestError, match="Invalid cursor"):
@@ -290,7 +293,9 @@ def test_list_rejects_a_cursor_we_did_not_issue(cursor, mocker):
 def test_list_accepts_a_cursor_we_issued(mocker):
     """The guard must not reject our own tokens — the round trip has to hold."""
     mocker.patch(
-        "schemes.catalog._get_listed_paginated_results",
+        # partner.api imported the name directly, so patch it there. Patching
+        # schemes.catalog leaves partner.api's reference bound to the real function.
+        "partner.api._get_listed_paginated_results",
         return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
     )
     _handle_list(MagicMock(), _Args({"cursor": _encode_cursor("some-doc-id")}))
@@ -394,6 +399,30 @@ def test_search_rejects_a_non_numeric_limit(mocker):
 
     with pytest.raises(PartnerRequestError, match="limit"):
         handle_search(MagicMock(), {"query": "eldercare", "limit": "many"})
+
+
+def test_search_rejects_a_list_cursor(mocker):
+    """A cursor from the other operation must 400, not quietly serve page one.
+
+    Both codecs sign with the same CURSOR_SECRET, so a list cursor passes the
+    *signature* check on the search path. `get_paginated_results` then finds no
+    scheme_id/similarity_score and falls back to the first page with a 200 — the
+    original defect, reached by the plausible mistake of pasting a list next_cursor
+    into a search request. So the guard checks the payload, not just the signature.
+    """
+    model = _stub_search_model(mocker, [{"scheme_id": "live", "status": "active"}])
+    from partner.search import handle_search
+
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        handle_search(MagicMock(), {"query": "eldercare", "cursor": _encode_cursor("a-doc-id")})
+
+    model.return_value.aggregate_and_rank_results.assert_not_called()
+
+
+def test_list_rejects_a_search_cursor():
+    """The mirror case. Guarded already, because the doc_id lookup returns None."""
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        _handle_list(MagicMock(), _Args({"cursor": encode_search_cursor("s1", 0.9, "sess")}))
 
 
 def test_search_rejects_a_bad_cursor_before_it_ranks(mocker):
