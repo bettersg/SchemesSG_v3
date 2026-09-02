@@ -12,10 +12,10 @@ expects ``threshold``.
 from typing import Any
 
 from search.retriever import SearchModel
-from utils.pagination import get_paginated_results
+from utils.pagination import get_paginated_results, is_valid_cursor
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
-from .serializers import PartnerRequestError, clamp_limit, to_public_scheme
+from .serializers import CURSOR_ERROR_MESSAGE, PartnerRequestError, clamp_limit, to_public_scheme
 
 
 DEFAULT_LIMIT = 20
@@ -39,8 +39,20 @@ def handle_search(firebase_manager: Any, body: dict[str, Any]) -> dict[str, Any]
     if not query:
         raise PartnerRequestError("'query' is required and must be a non-empty string")
 
+    # Cursor before limit, matching the order in `_handle_list`, so a request with
+    # both wrong reports the same field whichever operation it hits.
+    #
+    # `body.get("cursor")` without `or None`: a key present but empty is a truncated
+    # cursor, and the docs promise a 400 for that. Only an absent key means "first
+    # page". Checked before the ranking run below, so a bad cursor does not cost a
+    # full embeddings pass. `get_paginated_results` would otherwise ignore it and
+    # serve page one with a 200 — see `is_valid_cursor` for why this checks the
+    # payload and not only the signature.
+    cursor = body.get("cursor")
+    if cursor is not None and not is_valid_cursor(cursor):
+        raise PartnerRequestError(CURSOR_ERROR_MESSAGE)
+
     limit = clamp_limit(body.get("limit"), default=DEFAULT_LIMIT)
-    cursor = body.get("cursor") or None
 
     ranked = SearchModel(firebase_manager).aggregate_and_rank_results(query)
     records = [] if ranked.empty else ranked.to_dict(orient="records")

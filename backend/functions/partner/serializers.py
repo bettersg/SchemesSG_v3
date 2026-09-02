@@ -18,6 +18,15 @@ from typing import Any
 
 MAX_LIMIT = 50
 
+# One message for both list and search, so a partner debugging pagination sees the
+# same wording whichever operation they hit. Says what to do, not what went wrong
+# internally: we cannot tell a truncated cursor from a forged one, and a partner
+# cannot act on the difference anyway.
+CURSOR_ERROR_MESSAGE = (
+    "Invalid cursor. Pass the next_cursor value from a previous response exactly as "
+    "received, or omit it to start from the first page."
+)
+
 
 class PartnerRequestError(Exception):
     """A client mistake whose message was written here and is safe to return.
