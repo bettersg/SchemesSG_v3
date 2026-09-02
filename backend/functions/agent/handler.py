@@ -85,7 +85,7 @@ def agent_chat_message(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
-    # Match schemes_search behavior: generate a sessionID for fresh requests.
+    # Generate a sessionID for fresh requests.
     if not session_id:
         session_id = str(uuid1())
 

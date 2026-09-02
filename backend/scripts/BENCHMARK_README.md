@@ -57,8 +57,8 @@ preserves the reviewed retrieval baseline.
 The agent harness does not write checkpoints, `llmQuery` documents, or rerank
 documents to production Firestore.
 
-The retrieval runner mirrors the legacy REST search path in
-`functions/ml_logic/searchModelManager.py`. Agent-search quality is evaluated
+The retrieval runner mirrors the live search path in `functions/search/retriever.py`
+and `functions/search/scorers.py`. Agent-search quality is evaluated
 end to end by `run_agent_eval.py`; it is not measured by the legacy retrieval runner.
 
 ## File map
@@ -67,7 +67,7 @@ end to end by `run_agent_eval.py`; it is not measured by the legacy retrieval ru
 |---|---|
 | `benchmark_queries.py` | Curated retrieval queries and relevance sets |
 | `run_search_benchmark.py` | Current REST retrieval benchmark |
-| `run_search_benchmark_legacy.py` | Historical FAISS comparator used by the A/B table |
+| `run_search_benchmark_legacy.py` | Historical FAISS comparator used by the A/B table; reads torch/FAISS artifacts from `functions/ml_logic/`, which are untracked and survive the package's removal only in checkouts that already had them |
 | `agent_eval_queries.py` | Agent tool-use and response test cases |
 | `run_agent_eval.py` | Phase 1: run the agent and save in-memory-backed traces |
 | `score_ragas_from_traces.py` | Phase 2: score faithfulness and response relevancy |
@@ -75,7 +75,7 @@ end to end by `run_agent_eval.py`; it is not measured by the legacy retrieval ru
 
 ## What it measures
 
-Reproduces the exact production search path from `ml_logic/searchModelManager.py`:
+Reproduces the production search path from `search/retriever.py` and `search/scorers.py`:
 
 ```
 query -> Azure text-embedding-3-large (2048d)

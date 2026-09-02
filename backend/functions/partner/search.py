@@ -4,16 +4,9 @@ Imported lazily by ``partner/api.py`` — only inside the search branch — beca
 importing this module pulls in the embeddings/ranking stack at module scope. A list
 or detail request must never pay that import cost.
 
-Built on ``search.retriever.SearchModel`` rather than ``ml_logic``: the ml_logic
-path still calls the removed ``BM25Retriever.get_relevant_documents()`` and 500s
-on real queries, while ``search/`` uses the current ``.invoke()`` API and already
-serves the chat agent in production.
-
-``SearchModel`` is called directly rather than through ``QueryHandler`` for two
-reasons: ``QueryHandler.predict_paginated`` persists every query into the
-``userQuery`` collection, which is the site's own analytics and should not be
-polluted with partner traffic; and its ``aggregate_and_rank_results`` call passes
-``top_k`` where the signature expects ``threshold``.
+``SearchModel`` is called directly rather than through ``QueryHandler`` because the
+handler's ``aggregate_and_rank_results`` call passes ``top_k`` where the signature
+expects ``threshold``.
 """
 
 from typing import Any
