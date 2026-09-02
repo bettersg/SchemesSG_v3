@@ -301,6 +301,29 @@ def test_list_accepts_a_cursor_we_issued(mocker):
     _handle_list(MagicMock(), _Args({"cursor": _encode_cursor("some-doc-id")}))
 
 
+def test_an_empty_cursor_parameter_is_rejected_not_ignored(mocker):
+    """`?cursor=` is a cursor truncated to nothing, and the docs promise a 400.
+
+    A `cursor` that is absent still means "first page"; only a present-but-empty
+    value is an error. Otherwise the one truncation a partner is most likely to hit
+    is the one case that silently rewinds.
+    """
+    paginate = mocker.patch("partner.api._get_listed_paginated_results")
+    with pytest.raises(PartnerRequestError, match="Invalid cursor"):
+        _handle_list(MagicMock(), _Args({"cursor": ""}))
+    paginate.assert_not_called()
+
+
+def test_an_absent_cursor_still_means_the_first_page(mocker):
+    """The counterpart: omitting the parameter must not become an error."""
+    paginate = mocker.patch(
+        "partner.api._get_listed_paginated_results",
+        return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
+    )
+    _handle_list(MagicMock(), _Args({"limit": "5"}))
+    assert paginate.call_args.kwargs["cursor"] is None
+
+
 def test_list_cursor_guard_runs_after_the_cheaper_checks():
     """Ordering matters: an unknown parameter is reported even with a bad cursor.
 
@@ -423,6 +446,26 @@ def test_list_rejects_a_search_cursor():
     """The mirror case. Guarded already, because the doc_id lookup returns None."""
     with pytest.raises(PartnerRequestError, match="Invalid cursor"):
         _handle_list(MagicMock(), _Args({"cursor": encode_search_cursor("s1", 0.9, "sess")}))
+
+
+def test_both_operations_agree_on_cursor_versus_limit_precedence(mocker):
+    """A request with a bad cursor *and* a bad limit must name the same field.
+
+    The two operations validate independently, so without this they can disagree —
+    a partner fixing what list told them then hits a different error from search.
+    """
+    _stub_search_model(mocker, [])
+    mocker.patch("partner.api._get_listed_paginated_results")
+    from partner.search import handle_search
+
+    both_wrong = {"cursor": "!!!bogus!!!", "limit": "many"}
+
+    with pytest.raises(PartnerRequestError, match="Invalid cursor") as from_list:
+        _handle_list(MagicMock(), _Args(both_wrong))
+    with pytest.raises(PartnerRequestError, match="Invalid cursor") as from_search:
+        handle_search(MagicMock(), {"query": "eldercare", **both_wrong})
+
+    assert from_list.value.client_message == from_search.value.client_message
 
 
 def test_search_rejects_a_bad_cursor_before_it_ranks(mocker):

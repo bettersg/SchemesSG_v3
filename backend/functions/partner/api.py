@@ -166,7 +166,10 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     if len(selected) > 1:
         raise PartnerRequestError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
 
-    cursor = args.get("cursor") or None
+    # No `or None`: `?cursor=` present but empty is a cursor truncated to nothing,
+    # and the docs promise a 400 for a truncated cursor. Only an absent parameter
+    # means "start at the first page".
+    cursor = args.get("cursor")
     if cursor is not None and not is_valid_cursor(cursor):
         raise PartnerRequestError(CURSOR_ERROR_MESSAGE)
 
