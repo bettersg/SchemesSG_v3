@@ -293,3 +293,7 @@ tmp/
 
 # Harness smoke diagnostics
 .smoke-logs/
+
+# Review evidence belongs on the pull request, not in git history.
+# See docs/verification.md — attach screenshots and traces to the PR instead.
+docs/evidence/
