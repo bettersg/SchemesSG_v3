@@ -19,10 +19,10 @@ polluted with partner traffic; and its ``aggregate_and_rank_results`` call passe
 from typing import Any
 
 from search.retriever import SearchModel
-from utils.pagination import get_paginated_results
+from utils.pagination import decode_cursor, get_paginated_results
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
-from .serializers import PartnerRequestError, clamp_limit, to_public_scheme
+from .serializers import CURSOR_ERROR_MESSAGE, PartnerRequestError, clamp_limit, to_public_scheme
 
 
 DEFAULT_LIMIT = 20
@@ -48,6 +48,12 @@ def handle_search(firebase_manager: Any, body: dict[str, Any]) -> dict[str, Any]
 
     limit = clamp_limit(body.get("limit"), default=DEFAULT_LIMIT)
     cursor = body.get("cursor") or None
+    # Checked before the ranking run below, so a bad cursor costs a signature check
+    # rather than a full embeddings pass. `get_paginated_results` would otherwise
+    # ignore it and silently serve page one — see is_valid_cursor for why that is
+    # wrong for a machine consumer.
+    if cursor is not None and decode_cursor(cursor) is None:
+        raise PartnerRequestError(CURSOR_ERROR_MESSAGE)
 
     ranked = SearchModel(firebase_manager).aggregate_and_rank_results(query)
     records = [] if ranked.empty else ranked.to_dict(orient="records")

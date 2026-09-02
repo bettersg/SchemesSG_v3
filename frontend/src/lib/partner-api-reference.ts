@@ -120,7 +120,7 @@ export const OPERATIONS: ApiOperation[] = [
         type: "string",
         required: false,
         description:
-          "Opaque cursor from a previous response's next_cursor. Omit for the first page.",
+          "Opaque cursor from a previous response's next_cursor. Pass it back exactly as received; a modified or truncated cursor returns 400 rather than silently restarting from the first page. Omit for the first page.",
       },
     ],
     request: `curl "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes?category=Financial%20Assistance&limit=2" \\
@@ -213,7 +213,7 @@ ${AUTH_HEADER_LINE}`,
         type: "string",
         required: false,
         description:
-          "Opaque cursor from a previous response's next_cursor. Omit for the first page.",
+          "Opaque cursor from a previous response's next_cursor. Pass it back exactly as received; a modified or truncated cursor returns 400 rather than silently restarting from the first page. Omit for the first page.",
       },
     ],
     request: `curl -X POST "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes/search" \\
