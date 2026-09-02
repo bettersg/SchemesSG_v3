@@ -79,7 +79,6 @@ def _search_schemes_sync(
     params = PredictParams(
         query=query,
         requested_target=requested_target,
-        is_warmup=False,
         session_id=session_id,  # Passes the extracted session_id here
     )
     results = model.predict_for_agent(params)

@@ -5,13 +5,7 @@ const fetchWithAuth = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api", () => ({ fetchWithAuth }));
 
-import {
-  getSchemeById,
-  getSchemes,
-  getSchemesCategory,
-  searchSchemes,
-  streamChat,
-} from "./schemes";
+import { getSchemeById, getSchemesCategory, streamChat } from "./schemes";
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -68,47 +62,6 @@ describe("scheme API", () => {
     );
   });
 
-  it("maps paginated search results and sends the cursor contract", async () => {
-    fetchWithAuth.mockResolvedValue(
-      Response.json({
-        data: catalogScheme,
-        sessionID: "session-123",
-        total_count: 7,
-        has_more: true,
-        next_cursor: "cursor-2",
-      }),
-    );
-
-    await expect(getSchemes("housing support", "cursor-1")).resolves.toEqual({
-      schemesRes: [
-        expect.objectContaining({ schemeId: "test-support-scheme" }),
-      ],
-      sessionId: "session-123",
-      totalCount: 7,
-      nextCursor: "cursor-2",
-    });
-    expect(JSON.parse(fetchWithAuth.mock.calls[0][1].body)).toMatchObject({
-      query: "housing support",
-      cursor: "cursor-1",
-      limit: 20,
-    });
-  });
-
-  it("uses the default query and maps a search result list", async () => {
-    fetchWithAuth.mockResolvedValue(
-      Response.json({ data: [catalogScheme], total_count: 1 }),
-    );
-
-    await expect(searchSchemes("")).resolves.toEqual({
-      schemes: [expect.objectContaining({ schemeName: "Test Support Scheme" })],
-      nextCursor: "",
-      total: 1,
-    });
-    expect(JSON.parse(fetchWithAuth.mock.calls[0][1].body).query).toBe(
-      "social assistance",
-    );
-  });
-
   it("normalizes category and cursor parameters for catalog loading", async () => {
     fetchWithAuth.mockResolvedValue(
       Response.json({
@@ -131,17 +84,13 @@ describe("scheme API", () => {
     );
   });
 
-  it("returns stable empty states when search and catalog requests fail", async () => {
-    fetchWithAuth
-      .mockRejectedValueOnce(new Error("search unavailable"))
-      .mockResolvedValueOnce(new Response(null, { status: 404 }));
+  it("returns a stable empty state when a catalog request fails", async () => {
+    fetchWithAuth.mockResolvedValueOnce(new Response(null, { status: 404 }));
 
-    const searchResult = await searchSchemes("support");
-    const catalogResult = await getSchemesCategory("Support");
-
-    expect({ searchResult, catalogResult }).toEqual({
-      searchResult: { schemes: [], nextCursor: "", total: 0 },
-      catalogResult: { schemes: [], nextCursor: "", total: 0 },
+    await expect(getSchemesCategory("Support")).resolves.toEqual({
+      schemes: [],
+      nextCursor: "",
+      total: 0,
     });
   });
 });

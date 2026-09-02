@@ -4,7 +4,6 @@ This is the main file for the Firebase Functions.
 The following endpoints are available:
 
 1. Search and Retrieval:
-   - schemes_search: Search for schemes based on user query with pagination support
    - schemes: Get details of a specific scheme
    - retrieve_search_queries: Get search history for a session
 
@@ -63,7 +62,6 @@ from new_scheme.trigger_new_scheme_pipeline import on_new_scheme_entry  # noqa: 
 from partner.api import partner_api  # noqa: F401
 from schemes.catalog import catalog  # noqa: F401
 from schemes.schemes import schemes  # noqa: F401
-from schemes.search import schemes_search  # noqa: F401
 from schemes.search_queries import retrieve_search_queries  # noqa: F401
 from slack_integration.slack import (  # noqa: F401
     slack_interactive,

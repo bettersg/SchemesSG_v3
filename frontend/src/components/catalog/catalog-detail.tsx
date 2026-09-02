@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
+import { getSchemesCategory } from "@/lib/schemes";
 import { Scheme } from "@/types/types";
 import { ScrollShadow, Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
@@ -192,25 +192,6 @@ export default function CatalogPageClient({
   }, [activeCategory, hasSelectedCategory]);
 
   // search feature (tbc)
-  // const handleSearch = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const requestId = requestIdRef.current + 1;
-  //   requestIdRef.current = requestId;
-  //   hasUserScrolledRef.current = false;
-  //   cursorRef.current = "";
-  //   scrollRef.current?.scrollTo({ top: 0 });
-  //   setActiveCategory("All");
-  //   setHasSelectedCategory(true);
-  //   setLoadState("loadingInitial");
-  //   searchSchemes(inputValue).then((r) => {
-  //     if (requestIdRef.current !== requestId) return;
-  //     setSchemes(r.schemes);
-  //     cursorRef.current = r.nextCursor;
-  //     setSearchQuery(inputValue);
-  //     setLoadState(r.nextCursor ? "ready" : "exhausted");
-  //   });
-  // };
-
   if (!hasSelectedCategory) {
     return (
       <PageShell>
