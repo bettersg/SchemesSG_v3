@@ -58,7 +58,10 @@ Every pull request records:
 - exact checks and scenarios, results, and durations;
 - acceptance criteria demonstrated;
 - proof of fix: the failure reproduced, then the same command or request succeeding;
-- screenshots, traces, or concise logs for UI/runtime behavior;
+- screenshots, traces, or concise logs for UI/runtime behavior, attached to the
+  pull request rather than committed — image and trace files do not belong in the
+  repository, where they outlive the review that needed them and are never read
+  again;
 - checks not run and the reason;
 - unresolved risks and follow-up issues.
 
