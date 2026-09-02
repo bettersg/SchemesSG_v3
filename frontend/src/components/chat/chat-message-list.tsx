@@ -149,7 +149,11 @@ export default function ChatMessageList({
       {isGenerating && (
         <div className="flex items-end gap-2.5">
           <div className="flex w-full max-w-full flex-col items-start gap-2">
-            <StreamStatusSteps steps={statusSteps} isActive={isGenerating} />
+            <StreamStatusSteps
+              steps={statusSteps}
+              isActive={isGenerating}
+              hasStreamedContent={nonEmptyStreamingBlocks.length > 0}
+            />
             {displayedStreamingBlocks.map((block, index) => (
               <StreamingAssistantMessage key={index} text={block} />
             ))}

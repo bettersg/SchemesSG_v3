@@ -66,6 +66,28 @@ describe("ChatMessageList", () => {
     expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
   });
 
+  it("does not bring the placeholder back once the answer is streaming", () => {
+    // The reported bug: the first chunk clears statusSteps upstream but
+    // isGenerating stays true until the `done` event, so the placeholder
+    // reappeared above the streamed text and sat there until the quick replies
+    // showed up. This is that exact state — text on screen, no steps, still
+    // generating.
+    render(
+      <ChatMessageList
+        messages={userTurn}
+        streamingBlocks={["Here are some schemes that may help."]}
+        statusSteps={[]}
+        isGenerating
+      />,
+    );
+
+    expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("chat-spinner")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Here are some schemes that may help."),
+    ).toBeInTheDocument();
+  });
+
   it("hides the indicator when nothing is generating", () => {
     render(
       <ChatMessageList

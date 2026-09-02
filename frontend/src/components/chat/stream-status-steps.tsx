@@ -15,6 +15,11 @@ import { StatusStep } from "@/providers/chat-provider";
 type StreamStatusStepsProps = {
   steps: StatusStep[];
   isActive?: boolean;
+  /**
+   * Whether the answer has started arriving. Suppresses the placeholder only —
+   * a real status step still renders. See the early return below.
+   */
+  hasStreamedContent?: boolean;
 };
 
 // Dwell bounds for the placeholder rotation. Averages near the 2500ms the row
@@ -25,6 +30,7 @@ const PHRASE_MAX_DWELL_MS = 3200;
 export function StreamStatusSteps({
   steps,
   isActive = false,
+  hasStreamedContent = false,
 }: StreamStatusStepsProps) {
   // Lazy initializer, so the shuffle happens once per mount rather than on
   // every render — a re-rolled array identity would reset the rotation timer
@@ -36,6 +42,14 @@ export function StreamStatusSteps({
   // Deliberately not gated on having a step: the whole point is to fill the
   // window before the agent's first status event arrives over the network.
   if (!isActive) return null;
+
+  // ...but that window closes the moment the answer starts arriving. The first
+  // chunk clears statusSteps upstream (appendStreamingChunk) while isGenerating
+  // stays true until the `done` event, so without this the placeholder returns
+  // above the streamed text and lingers after it finishes, until the quick
+  // replies appear. "Reading your question" is false once the answer is on
+  // screen.
+  if (!latestStep && hasStreamedContent) return null;
 
   const words = latestStep ? [latestStep.label] : phrases;
 
