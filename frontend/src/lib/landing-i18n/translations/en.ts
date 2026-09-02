@@ -334,7 +334,7 @@ export const en: Translations = {
       },
       fields: {
         heading: "Scheme fields",
-        body: "Every scheme we return carries exactly these fields, whether it came from list, retrieve, or search. A field with no value is null rather than absent, so you can rely on the shape.",
+        body: "Every scheme we return carries exactly these fields, whether it came from list, retrieve, or search. A field with no value is null rather than absent, so the set of keys never changes. A few fields hold either a single string or an array of strings, depending on the scheme — check the type column and handle both.",
         omitted:
           "We hold other fields internally, for review workflow and ranking. Those are deliberately not part of this contract, so our internal changes cannot break your integration.",
       },

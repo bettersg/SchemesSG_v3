@@ -27,6 +27,29 @@ export const PARTNER_API_VERSION = "v1";
 
 export const API_KEY_HEADER = "X-API-Key";
 
+/**
+ * Accepted `category` values, mirroring the keys of `SCHEME_CATEGORY_MAPPING` in
+ * `backend/functions/new_scheme/constants.py`.
+ *
+ * The backend matches these case-insensitively but demands the exact name, so a
+ * slug does not work. This list previously said "healthcare" and
+ * "financial-assistance", neither of which is a category — the documented
+ * quick-start request returned 400. `test_partner_docs_contract.py` now pins this
+ * array to the backend mapping so the two cannot drift again.
+ */
+export const CATEGORIES = [
+  "Financial Assistance",
+  "Family & Children",
+  "Health & Wellbeing",
+  "Housing & Food",
+  "Education",
+  "Employment & Training",
+  "Seniors & Caregiving",
+  "Disability & Transport",
+  "Legal & Safety",
+  "Community Support",
+];
+
 export type HttpMethod = "GET" | "POST";
 
 export type ApiParam = {
@@ -66,8 +89,8 @@ export const OPERATIONS: ApiOperation[] = [
         type: "string",
         required: false,
         description:
-          "Filter by scheme category, for example healthcare or financial-assistance. Cannot be combined with agency or area.",
-        example: "healthcare",
+          `One of: ${CATEGORIES.join(", ")}. Case-insensitive, but the name must match exactly — a slug such as "financial-assistance" is rejected. Cannot be combined with agency or area.`,
+        example: "Financial Assistance",
       },
       {
         name: "agency",
@@ -100,7 +123,7 @@ export const OPERATIONS: ApiOperation[] = [
           "Opaque cursor from a previous response's next_cursor. Omit for the first page.",
       },
     ],
-    request: `curl "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes?category=healthcare&limit=2" \\
+    request: `curl "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes?category=Financial%20Assistance&limit=2" \\
 ${AUTH_HEADER_LINE}`,
     response: `{
   "data": [
@@ -118,7 +141,7 @@ ${AUTH_HEADER_LINE}`,
       "address": "512 Thomson Road",
       "phone": "1800 222 0000",
       "email": "enquiries@msf.gov.sg",
-      "service_area": ["Nationwide"],
+      "service_area": "Nationwide",
       "planning_area": ["BEDOK", "TAMPINES"],
       "image": "https://.../comcare.png",
       "status": "active"
@@ -223,7 +246,19 @@ export type SchemeField = {
   type: string;
 };
 
-/** The complete response allowlist. Nothing outside this list is ever returned. */
+/**
+ * The complete response allowlist. Nothing outside this list is ever returned.
+ *
+ * Types are what the API actually sends, measured against all 704 production
+ * schemes — not what the shape ought to be. Five of them were wrong until now:
+ * `service_area` was published as an array and is a plain string in every single
+ * document, while `planning_area`, `address`, `phone` and `email` vary per
+ * document because they were written by different ingestion vintages. A partner
+ * generating a typed client from the old list broke on the first page.
+ *
+ * Keys are always all 17 — `to_public_scheme` fills a missing value with null
+ * rather than dropping the key — so only the value types vary.
+ */
 export const SCHEME_FIELDS: SchemeField[] = [
   { name: "scheme_id", type: "string" },
   { name: "scheme", type: "string" },
@@ -235,11 +270,11 @@ export const SCHEME_FIELDS: SchemeField[] = [
   { name: "scheme_type", type: "string[]" },
   { name: "agency", type: "string" },
   { name: "link", type: "string" },
-  { name: "address", type: "string" },
-  { name: "phone", type: "string" },
-  { name: "email", type: "string" },
-  { name: "service_area", type: "string[]" },
-  { name: "planning_area", type: "string[]" },
+  { name: "address", type: "string | string[]" },
+  { name: "phone", type: "string | string[]" },
+  { name: "email", type: "string | string[]" },
+  { name: "service_area", type: "string" },
+  { name: "planning_area", type: "string | string[]" },
   { name: "image", type: "string" },
   { name: "status", type: "string" },
 ];
