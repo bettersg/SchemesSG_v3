@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 
 import pytest
+from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from partner.serializers import PUBLIC_FIELDS
 from utils.partner_auth import API_KEY_HEADER, DEFAULT_RATE_LIMIT_PER_MIN
 
@@ -63,6 +64,33 @@ def test_documented_scheme_fields_match_the_allowlist(reference_source):
         f"  documented but not served: {sorted(documented - set(PUBLIC_FIELDS))}\n"
         f"  served but undocumented:   {sorted(set(PUBLIC_FIELDS) - documented)}"
     )
+
+
+def test_documented_categories_match_the_backend_mapping(reference_source):
+    """The docs shipped `category=healthcare`, which 400s — nothing tied the two.
+
+    `_expand_category` accepts only these exact names, case-insensitively, so a
+    documented value outside the mapping is a copy-pasteable request that fails.
+    """
+    # Scoped to the array literal, not _block: the next `export const` is far
+    # below, past several `export type` declarations that would match too.
+    literal = re.search(r"export const CATEGORIES = \[(.*?)\];", reference_source, re.DOTALL)
+    assert literal, "CATEGORIES array not found in the reference"
+    documented = set(re.findall(r'"([^"]+)"', literal.group(1)))
+    assert documented == set(SCHEME_CATEGORY_MAPPING), (
+        "The /developers category list has drifted from SCHEME_CATEGORY_MAPPING.\n"
+        f"  documented but invalid: {sorted(documented - set(SCHEME_CATEGORY_MAPPING))}\n"
+        f"  valid but undocumented: {sorted(set(SCHEME_CATEGORY_MAPPING) - documented)}"
+    )
+
+
+def test_documented_example_requests_use_a_real_category(reference_source):
+    """Guards the curl samples, not just the list — the 400 came from a sample."""
+    for raw in re.findall(r"[?&]category=([^&\"\s]+)", reference_source):
+        value = raw.replace("%20", " ").replace("%26", "&")
+        assert value.lower() in {name.lower() for name in SCHEME_CATEGORY_MAPPING}, (
+            f"example request uses category={raw!r}, which the backend rejects with 400"
+        )
 
 
 def test_documented_error_codes_are_ones_the_backend_returns(reference_source):
