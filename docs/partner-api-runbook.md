@@ -379,8 +379,8 @@ requires the recipient to click a verification link) and attach it to the policy
 gcloud beta monitoring channels list --project=schemessg
 ```
 
-This matters more than it looks: the `schemes_search` warmup job has been failing
-every four minutes with nothing watching it. A partner-facing outage failing the
+This matters more than it looks: the `schemes_search` warmup job failed every four
+minutes for months with nothing watching it, which is how #410 stayed invisible. A partner-facing outage failing the
 same silent way is the same mistake with a partner relationship attached — and a
 policy with no channel is still that mistake, just better documented.
 
