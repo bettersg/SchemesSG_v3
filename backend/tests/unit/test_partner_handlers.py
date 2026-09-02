@@ -417,7 +417,7 @@ def test_importing_the_api_does_not_load_the_search_stack():
         "api._dispatch(Route(kind='list'), _Req(), _Db(), {});"
         "api._handle_detail(_Db(), 'nope');"
         "heavy = [m for m in"
-        " ('search.retriever', 'search', 'torch', 'sentence_transformers', 'faiss', 'ml_logic')"
+        " ('search.retriever', 'search', 'torch', 'sentence_transformers', 'faiss')"
         " if m in sys.modules];"
         "assert not heavy, heavy;"
         "print('clean')"

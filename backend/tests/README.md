@@ -47,10 +47,11 @@ same handler-level intent against `agent_chat_message`: warmup, method and
 payload validation, authentication, generated sessions, successful text,
 streaming response type, runtime failure, and CORS preflight.
 
-The old `Chatbot` singleton and response behavior remains covered in
-`tests/unit/test_chatbot_manager.py`. The removed endpoint's direct
-`userQuery` Firestore lookup and agency/planning-area filtering no longer
-exist in the current handler, so those assertions were not recreated.
+The old `Chatbot` singleton was removed with the `ml_logic` package, and
+`tests/unit/test_chatbot_manager.py` went with it; the agent handler is the only
+chat implementation left. The removed endpoint's direct `userQuery` Firestore
+lookup and agency/planning-area filtering no longer exist in the current
+handler, so those assertions were not recreated.
 Detailed stream-event ordering, terminal events, cancellation, and broader
 error contracts remain deferred to #371.
 
@@ -65,8 +66,14 @@ CPython 3.12.11 and branch measurement enabled:
 | Branches | 383 / 1,152 | 33.25% | 33.24% | 60% |
 
 The measured branch value is 33.2465%; the approved two-decimal floor is
-33.24%. With the current totals, losing one covered statement or branch
-without an offsetting gain causes the checker to fail.
+33.24%. That snapshot was taken when the totals were tight enough that losing
+one covered statement or branch without an offsetting gain failed the checker.
+
+Removing `schemes_search` and the `ml_logic` package deleted far more uncovered
+code than covered code, so the totals dropped to 3,736 statements and 1,022
+branches and the measured values rose to 55.70% and 39.73%. The floors are
+unchanged, so there is now headroom; re-baseline them in a dedicated change
+rather than silently absorbing the slack.
 
 ### Historical pre-ratchet runtime
 

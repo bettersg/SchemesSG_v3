@@ -63,7 +63,6 @@ User submits scheme (/contribute)
 |-----------|-------------|
 | `functions/` | Firebase Functions (Python 3.10) - API endpoints, Firestore triggers, Slack handlers |
 | `functions/batch_jobs/` | Scheduled jobs (monthly link check & embedding reindex) |
-| `functions/ml_logic/` | Search model using Firestore Vector Search |
 | `functions/new_scheme/` | Firestore trigger + Slack approval workflow for new submissions |
 | `functions/scripts/` | Setup scripts (populate embeddings, test vector search) |
 | `functions/.env` | Local development (uses local scheme-processor) |
@@ -79,7 +78,6 @@ User submits scheme (/contribute)
 backend/
 ├── functions/                   # Firebase Functions (Python 3.10)
 │   ├── batch_jobs/              # Scheduled link check and reindex
-│   ├── ml_logic/                # Search model (Firestore Vector Search)
 │   ├── new_scheme/              # Firestore trigger + Slack approval
 │   ├── scripts/                 # Setup scripts (embeddings, testing)
 │   ├── .env                     # Dev credentials (schemessg-v3-dev)
@@ -160,7 +158,6 @@ Base URL (local): `http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1`
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/schemes_search` | POST | Search schemes with vector search |
 | `/schemes/{id}` | GET | Get scheme by ID |
 | `/chat_message` | POST | Chat interface for recommendations |
 | `/update_scheme` | POST | Submit new scheme or request edit |

@@ -146,7 +146,7 @@ def run_search(db, emb, meta, query_text, top_k):
     docs = [Document(page_content=meta.get(i, {}).get("search_booster", ""), metadata={"id": i}) for i in ids]
     retriever = BM25Retriever.from_documents(docs)
     retriever.k = len(docs)
-    ranked = retriever.invoke(query_text)
+    ranked = retriever.invoke(query_text)  # prod uses .get_relevant_documents; identical result, current API
     bm25_map = {doc.metadata["id"]: 1.0 - (n / retriever.k) for n, doc in enumerate(ranked)}
 
     combined = [(i, VEC_WEIGHT * vec_map[i] + BM25_WEIGHT * bm25_map.get(i, 0.0)) for i in ids]

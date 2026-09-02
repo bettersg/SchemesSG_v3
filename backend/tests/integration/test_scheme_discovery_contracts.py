@@ -6,12 +6,10 @@ import pytest
 from agent.handler import agent_chat_message
 from schemes.catalog import catalog
 from schemes.schemes import schemes
-from schemes.search import schemes_search
 
 
 DISCOVERY_ENDPOINTS = [
     pytest.param(catalog, "GET", {}, "/", id="catalog"),
-    pytest.param(schemes_search, "POST", {"query": "support"}, "/", id="search"),
     pytest.param(schemes, "GET", {}, "/scheme-1", id="scheme-detail"),
     pytest.param(
         agent_chat_message,
@@ -24,7 +22,6 @@ DISCOVERY_ENDPOINTS = [
 
 DISCOVERY_PREFLIGHT_ENDPOINTS = [
     pytest.param(catalog, "/", id="catalog"),
-    pytest.param(schemes_search, "/", id="search"),
     pytest.param(schemes, "/scheme-1", id="scheme-detail"),
     pytest.param(agent_chat_message, "/", id="agent-stream"),
 ]

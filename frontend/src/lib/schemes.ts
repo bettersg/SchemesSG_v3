@@ -50,6 +50,15 @@ export const getSchemeById = cache(
   },
 );
 
+// `/catalog` hides only retired schemes, while the search this replaced hid inactive
+// ones too (backend NON_SEARCHABLE_STATUSES). Keep the stricter rule so the sitemap
+// does not start publishing scheme pages that were deliberately unlisted.
+const SITEMAP_EXCLUDED_STATUSES = new Set(["inactive", "retired"]);
+const SITEMAP_PAGE_SIZE = 200;
+// A pagination bug must not spin forever during a build. 50 pages covers far more
+// schemes than exist; raise it before the corpus reaches SITEMAP_PAGE_SIZE * 50.
+const SITEMAP_MAX_PAGES = 50;
+
 export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -57,103 +66,69 @@ export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
     return [];
   }
 
-  const response = await fetchWithAuth(`${baseUrl}/schemes_search`, {
-    method: "POST",
-    body: JSON.stringify({
-      query:
-        "financial assistance healthcare housing employment education family eldercare disability mental health food support social assistance",
-      limit: 1000,
-      top_k: 1000,
-      similarity_threshold: 0,
-      cursor: null,
-    }),
-    next: { revalidate: 86_400 },
-  });
-
-  if (!response.ok) {
-    return [];
-  }
-
-  const payload = (await response.json()) as SearchResponse;
-  const rawSchemes = payload.data
-    ? Array.isArray(payload.data)
-      ? payload.data
-      : [payload.data]
-    : [];
-
+  const schemes: Scheme[] = [];
   const seen = new Set<string>();
-  return rawSchemes
-    .map((raw) => mapToFullScheme(raw as RawScheme))
-    .filter((scheme) => {
+  let cursor = "";
+
+  // The catalog enumerates the corpus directly, so page it rather than
+  // approximating "everything" with one broad search query, which could only ever
+  // return schemes that have an embedding.
+  for (let page = 0; page < SITEMAP_MAX_PAGES; page += 1) {
+    const url = new URL(`${baseUrl}/catalog`);
+    url.searchParams.set("limit", String(SITEMAP_PAGE_SIZE));
+    if (cursor) {
+      url.searchParams.set("cursor", cursor);
+    }
+
+    // Keep the pages already collected; a partial sitemap beats no sitemap, and a
+    // build-time network failure must not take the static routes down with it.
+    let payload: SearchResponse;
+    try {
+      const response = await fetchWithAuth(url.toString(), {
+        next: { revalidate: 86_400 },
+      });
+      if (!response.ok) {
+        break;
+      }
+      payload = (await response.json()) as SearchResponse;
+    } catch (error) {
+      console.error("Sitemap catalog page failed", error);
+      break;
+    }
+
+    const rawSchemes = payload.data
+      ? Array.isArray(payload.data)
+        ? payload.data
+        : [payload.data]
+      : [];
+
+    for (const raw of rawSchemes) {
+      const scheme = mapToFullScheme(raw as RawScheme);
+      if (scheme.status && SITEMAP_EXCLUDED_STATUSES.has(scheme.status)) {
+        continue;
+      }
       if (!scheme.schemeId || seen.has(scheme.schemeId)) {
-        return false;
+        continue;
       }
       seen.add(scheme.schemeId);
-      return true;
-    });
-});
-
-export const getSchemes = async (
-  userQuery: string,
-  nextCursor = "",
-): Promise<{
-  schemesRes: Scheme[];
-  sessionId: string;
-  totalCount: number;
-  nextCursor: string;
-}> => {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
-
-  const requestBody = {
-    query: userQuery,
-    limit: 20,
-    top_k: 50,
-    similarity_threshold: 0,
-    cursor: nextCursor || null, // Send null instead of empty string
-  };
-
-  try {
-    const response = await fetchWithAuth(url, {
-      method: "POST",
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      schemes.push(scheme);
     }
 
-    const res = (await response.json()) as SearchResponse;
-    console.log("Search response:", res); // Debug
-
-    const sessionId: string = res.sessionID || "";
-    const totalCount: number = res.total_count || 0;
-    const hasMore: boolean = res.has_more || false;
-    const nextCursor: string =
-      res.next_cursor && hasMore ? res.next_cursor : "";
-
-    // Check if data exists in the response
-    if (res.data) {
-      let schemesData;
-      // Handle both array and single object responses
-      if (Array.isArray(res.data)) {
-        schemesData = res.data;
-      } else {
-        // If it's a single object, convert to array
-        schemesData = [res.data];
-      }
-
-      const schemesRes: Scheme[] = schemesData.map(mapToScheme);
-      console.log("Mapped schemes:", schemesRes); // Debug
-      return { schemesRes, sessionId, totalCount, nextCursor };
-    } else {
-      console.error("Unexpected response format:", res);
-      return { schemesRes: [], sessionId, totalCount, nextCursor };
+    if (!payload.has_more || !payload.next_cursor) {
+      break;
     }
-  } catch (error) {
-    console.error("Error making POST request:", error);
-    return { schemesRes: [], sessionId: "", totalCount: 0, nextCursor: "" };
+    cursor = payload.next_cursor;
+
+    // Hitting the cap means the sitemap is silently short. Say so in the build log.
+    if (page === SITEMAP_MAX_PAGES - 1) {
+      console.warn(
+        `Sitemap stopped at the ${SITEMAP_MAX_PAGES}-page cap with more schemes available; raise SITEMAP_MAX_PAGES.`,
+      );
+    }
   }
-};
+
+  return schemes;
+});
 
 type StreamCallbacks = {
   onStart?: () => void;
@@ -223,40 +198,6 @@ export async function streamChat(
     callbacks.onError(e);
   } finally {
     callbacks.onEnd?.();
-  }
-}
-
-export async function searchSchemes(
-  query: string,
-  cursor = "",
-): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
-  try {
-    const res = await fetchWithAuth(url, {
-      method: "POST",
-      body: JSON.stringify({
-        query: query || "social assistance",
-        limit: 20,
-        top_k: 50,
-        similarity_threshold: 0,
-        cursor: cursor || null,
-      }),
-    });
-    if (!res.ok) throw new Error("fetch failed");
-    const data = (await res.json()) as SearchResponse;
-    console.log(data);
-    const raw = data.data
-      ? Array.isArray(data.data)
-        ? data.data
-        : [data.data]
-      : [];
-    return {
-      schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
-      nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
-      total: data.total_count || 0,
-    };
-  } catch {
-    return { schemes: [], nextCursor: "", total: 0 };
   }
 }
 
