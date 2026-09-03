@@ -9,11 +9,13 @@ import { WordRotate } from "./word-rotate";
 // e2e/chat-thinking-indicator.spec.ts.
 let setTimeoutSpy: ReturnType<typeof vi.spyOn>;
 
-/** Dwell delays this component asked for, filtered clear of framer/React noise. */
+/**
+ * Every dwell this component asked for. Deliberately unfiltered: under fake
+ * timers neither React nor framer-motion schedules a timeout here, so a
+ * threshold filter would only hide a wrong delay instead of failing on it.
+ */
 const scheduledDwells = (): number[] =>
-  setTimeoutSpy.mock.calls
-    .map((call: unknown[]) => Number(call[1] ?? 0))
-    .filter((delay: number) => delay >= 500);
+  setTimeoutSpy.mock.calls.map((call: unknown[]) => Number(call[1] ?? 0));
 
 beforeEach(() => {
   vi.useFakeTimers();

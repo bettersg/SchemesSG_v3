@@ -49,7 +49,6 @@ export default defineConfig({
         "src/components/animations/shiny-text.tsx",
         "src/components/animations/text-shimmer-wave.tsx",
         "src/components/animations/typing-animation.tsx",
-        "src/components/animations/word-rotate.tsx",
         // Landing presentation and demos do not own product or domain state.
         "src/components/landing/about-page-content.tsx",
         "src/components/landing/sections/agencies-section.tsx",
