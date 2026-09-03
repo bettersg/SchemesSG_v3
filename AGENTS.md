@@ -21,9 +21,11 @@ own git worktree on its own branch. Read-only research is exempt.
 - Never commit or push from the user's shared checkout.
 - Run preflight before editing; it fails fast on the wrong worktree, branch,
   upstream, or base ancestry.
-- After merge or abandonment, use `scripts/worktree-lifecycle.sh remove <path>`
-  from another checkout. Use `doctor` after interrupted/moved worktrees; it is
-  diagnostic and never force-removes, prunes, repairs, or deletes branches.
+- When the PR merges or closes, remove its worktree before the session ends:
+  `scripts/worktree-lifecycle.sh remove <path>` from another checkout. `doctor`
+  names every task worktree whose PR is already merged or closed, and is the
+  check to run after an interrupted or moved worktree; it is diagnostic and
+  never force-removes, prunes, repairs, or deletes branches.
 
 ## Git Workflow
 
