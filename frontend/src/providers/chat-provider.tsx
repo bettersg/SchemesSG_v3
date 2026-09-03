@@ -1,6 +1,10 @@
 "use client";
 
-import { Scheme } from "@/types/types";
+import type {
+  Message,
+  QuickReplySuggestion,
+} from "@/types/chat";
+import type { Scheme } from "@/types/types";
 import React, {
   createContext,
   ReactNode,
@@ -8,33 +12,19 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import {
+  CHAT_STORAGE_KEYS,
+  deserializeChatState,
+  serializeChatState,
+} from "@/lib/chat-storage";
 
-export type UserMessage = {
-  type: "user";
-  text: string;
-};
-
-export type StatusStep = {
-  id: string;
-  label: string;
-  message: string;
-  phase?: string;
-};
-
-export type BotMessage = {
-  type: "bot";
-  text: string;
-  schemeUpdateCount?: number;
-  statusSteps?: StatusStep[];
-  rating?: "up" | "down";
-};
-
-export type Message = UserMessage | BotMessage;
-
-export type QuickReplySuggestion = {
-  label: string;
-  value: string;
-};
+export type {
+  BotMessage,
+  Message,
+  QuickReplySuggestion,
+  StatusStep,
+  UserMessage,
+} from "@/types/chat";
 
 type ChatContextType = {
   messages: Message[];
@@ -52,26 +42,6 @@ type ChatContextType = {
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
-const QUICK_REPLIES_STORAGE_KEY = "quickReplies";
-
-function parseQuickReplies(value: string | null): QuickReplySuggestion[] {
-  if (!value) return [];
-
-  try {
-    const parsed = JSON.parse(value);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (reply): reply is QuickReplySuggestion =>
-        reply &&
-        typeof reply.label === "string" &&
-        typeof reply.value === "string",
-    );
-  } catch (error) {
-    console.error("Error loading quick replies from sessionStorage:", error);
-    return [];
-  }
-}
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -85,88 +55,59 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!isInitialized) {
       try {
-        const storedSchemes = sessionStorage.getItem("schemes");
-        const storedMessages = sessionStorage.getItem("userMessages");
-        const storedSessionId = sessionStorage.getItem("sessionID");
-        const storedQuickReplies = parseQuickReplies(
-          sessionStorage.getItem(QUICK_REPLIES_STORAGE_KEY),
-        );
+        const stored = deserializeChatState({
+          schemes: sessionStorage.getItem(CHAT_STORAGE_KEYS.schemes),
+          messages: sessionStorage.getItem(CHAT_STORAGE_KEYS.messages),
+          sessionId: sessionStorage.getItem(CHAT_STORAGE_KEYS.sessionId),
+          quickReplies: sessionStorage.getItem(
+            CHAT_STORAGE_KEYS.quickReplies,
+          ),
+        });
 
-        if (storedSchemes) {
-          const parsedSchemes = JSON.parse(storedSchemes);
-          setSchemes(parsedSchemes);
-        }
-        if (storedMessages) {
-          const parsedMessages = JSON.parse(storedMessages);
-          setMessages(parsedMessages);
-        }
-        if (storedSessionId && storedSessionId.trim() !== "") {
-          const parsedSessionId = JSON.parse(storedSessionId);
-          if (
-            parsedSessionId &&
-            typeof parsedSessionId === "string" &&
-            parsedSessionId.length > 10
-          ) {
-            setSessionId(parsedSessionId);
-          }
-        }
-        if (storedQuickReplies.length > 0) {
-          setQuickReplies(storedQuickReplies);
+        setSchemes(stored.schemes);
+        setMessages(stored.messages);
+        setSessionId(stored.sessionId);
+        setQuickReplies(stored.quickReplies);
+        if (stored.quickReplies.length > 0) {
           setShowQuickReplies(true);
         }
-        setIsInitialized(true);
       } catch (error) {
         console.error("Error loading from sessionStorage:", error);
+      } finally {
+        setIsInitialized(true);
       }
     }
   }, [isInitialized]);
 
   useEffect(() => {
-    if (isInitialized) {
-      try {
-        sessionStorage.setItem("schemes", JSON.stringify(schemes));
-      } catch (error) {
-        console.error("Error saving schemes to sessionStorage:", error);
-      }
-    }
-  }, [schemes, isInitialized]);
-
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-        sessionStorage.setItem("userMessages", JSON.stringify(messages));
-      } catch (error) {
-        console.error("Error saving messages to sessionStorage:", error);
-      }
-    }
-  }, [messages, isInitialized]);
-
-  useEffect(() => {
-    if (isInitialized && sessionId) {
-      try {
-        sessionStorage.setItem("sessionID", JSON.stringify(sessionId));
-      } catch (error) {
-        console.error("Error saving sessionId to sessionStorage:", error);
-      }
-    }
-  }, [sessionId, isInitialized]);
-
-  useEffect(() => {
     if (!isInitialized) return;
 
     try {
-      if (quickReplies.length > 0) {
-        sessionStorage.setItem(
-          QUICK_REPLIES_STORAGE_KEY,
-          JSON.stringify(quickReplies),
-        );
-      } else {
-        sessionStorage.removeItem(QUICK_REPLIES_STORAGE_KEY);
-      }
+      const stored = serializeChatState({
+        schemes,
+        messages,
+        sessionId,
+        quickReplies,
+      });
+
+      const entries = [
+        [CHAT_STORAGE_KEYS.schemes, stored.schemes],
+        [CHAT_STORAGE_KEYS.messages, stored.messages],
+        [CHAT_STORAGE_KEYS.sessionId, stored.sessionId],
+        [CHAT_STORAGE_KEYS.quickReplies, stored.quickReplies],
+      ] as const;
+      entries.forEach(([key, value]) => {
+        try {
+          if (value === null) sessionStorage.removeItem(key);
+          else sessionStorage.setItem(key, value);
+        } catch (error) {
+          console.error(`Error saving ${key} to sessionStorage:`, error);
+        }
+      });
     } catch (error) {
-      console.error("Error saving quick replies to sessionStorage:", error);
+      console.error("Error saving to sessionStorage:", error);
     }
-  }, [quickReplies, isInitialized]);
+  }, [isInitialized, messages, quickReplies, schemes, sessionId]);
 
   return (
     <ChatContext.Provider

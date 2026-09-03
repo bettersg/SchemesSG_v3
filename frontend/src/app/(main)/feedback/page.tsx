@@ -23,10 +23,13 @@ function getFeedbackContext(searchParams: URLSearchParams) {
   const source = searchParams.get("source");
 
   if (source === "chat") {
-    const wasHelpful = searchParams.get("sentiment") === "positive";
+    const sentiment = searchParams.get("sentiment");
+    let sentimentContext = "";
+    if (sentiment === "positive") sentimentContext = " (helpful)";
+    if (sentiment === "negative") sentimentContext = " (not helpful)";
     return {
       label: "Feedback about a chat response",
-      draft: `Chat response feedback (${wasHelpful ? "helpful" : "not helpful"}):\n\n`,
+      draft: `Chat response feedback${sentimentContext}:\n\n`,
     };
   }
 
@@ -171,6 +174,7 @@ export default function FeedbackPage() {
             </TextField>
             {submitStatus && (
               <div
+                role={submitStatus.type === "success" ? "status" : "alert"}
                 className={clsx(
                   "leading-5",
                   submitStatus.type === "success"

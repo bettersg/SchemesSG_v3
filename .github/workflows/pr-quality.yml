@@ -1,0 +1,158 @@
+name: PR Quality
+
+on:
+  pull_request:
+    branches:
+      - stg
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-quality:
+    name: Frontend quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Run tests with coverage (120s budget)
+        working-directory: frontend
+        shell: bash
+        run: |
+          lane_started_at=$(date +%s)
+          set +e
+          timeout --kill-after=10s 120s npm run test:coverage
+          lane_status=$?
+          set -e
+          lane_duration=$(( $(date +%s) - lane_started_at ))
+          echo "Frontend unit/integration coverage: ${lane_duration}s / 120s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$lane_status" -eq 124 ] || [ "$lane_status" -eq 137 ]; then
+            echo "::error title=Frontend unit/integration runtime budget exceeded::Coverage tests reached the 120s limit. Run 'npm run test:coverage' in frontend and profile the slowest files."
+            exit 1
+          fi
+          if [ "$lane_status" -ne 0 ]; then
+            echo "::error title=Frontend unit/integration tests failed::Coverage tests failed after ${lane_duration}s. See the Vitest output above."
+            exit "$lane_status"
+          fi
+
+      - name: Build for production
+        working-directory: frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build:prod
+
+  frontend-e2e:
+    name: Frontend E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Run Chromium tests (120s budget)
+        working-directory: frontend
+        shell: bash
+        run: |
+          lane_started_at=$(date +%s)
+          set +e
+          timeout --kill-after=10s 120s npm run test:e2e -- --project=chromium --project=mobile-narrow-chromium
+          lane_status=$?
+          set -e
+          lane_duration=$(( $(date +%s) - lane_started_at ))
+          echo "Frontend Chromium E2E (desktop + Pixel 10): ${lane_duration}s / 120s" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$lane_status" -eq 124 ] || [ "$lane_status" -eq 137 ]; then
+            echo "::error title=Frontend E2E runtime budget exceeded::Desktop and Pixel 10 Chromium tests reached the 120s limit. Run 'npm run test:e2e' in frontend and inspect the slowest tests and traces."
+            exit 1
+          fi
+          if [ "$lane_status" -ne 0 ]; then
+            echo "::error title=Frontend E2E tests failed::Desktop and Pixel 10 Chromium tests failed after ${lane_duration}s. See Playwright output and uploaded failure artifacts."
+            exit "$lane_status"
+          fi
+
+      - name: Upload failure artifacts
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-${{ github.event.pull_request.number }}-chromium-failure-${{ github.run_attempt }}
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: warn
+          retention-days: 7
+
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Sync dependencies
+        working-directory: backend
+        run: uv sync --locked
+
+      - name: Run tests and enforce coverage ratchet
+        working-directory: backend
+        run: |
+          uv run --frozen pytest
+          uv run --frozen coverage json -o - | uv run --frozen python scripts/check_coverage.py

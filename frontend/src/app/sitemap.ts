@@ -17,6 +17,10 @@ const getStaticRoutePriority = (route: string) => {
   if (route === "") return 1;
   if (route === "/about") return 0.9;
   if (route.startsWith("/catalog")) return 0.75;
+  // Legal and developer pages are reference material, not discovery surfaces.
+  if (route === "/privacy" || route === "/terms" || route === "/developers") {
+    return 0.3;
+  }
   return 0.7;
 };
 
@@ -26,6 +30,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/about",
     "/contribute",
     "/feedback",
+    "/developers",
+    "/privacy",
+    "/terms",
     ...CATALOG_ROUTE_PATHS,
   ].map((route) => ({
     url: `${SITE_URL}${route}`,

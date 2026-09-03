@@ -1,0 +1,10 @@
+FROM node:20-alpine
+WORKDIR /app
+# scripts/ lands before npm ci because postinstall runs copy-lottie-wasm.mjs.
+# This does cost cache: editing any script now invalidates the npm ci layer.
+COPY package.json package-lock.json ./
+COPY scripts ./scripts
+RUN npm ci
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]

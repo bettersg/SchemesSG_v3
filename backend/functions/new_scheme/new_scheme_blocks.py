@@ -678,3 +678,181 @@ def build_scheme_update_rejected_message(
         flavor="update",
         target_scheme_id=target_scheme_id,
     )
+
+
+def build_scheme_retirement_review_message(
+    doc_id: str,
+    submission_data: Dict[str, Any],
+    target_data: Dict[str, Any],
+    merge_target_data: Optional[Dict[str, Any]] = None,
+) -> dict:
+    """Build a Slack message for a terminal scheme-retirement request."""
+    target_scheme_id = submission_data.get("targetSchemeId", "")
+    merged_into = submission_data.get("mergedInto")
+    reason = submission_data.get("retiredReason", "")
+    scheme_name = target_data.get("scheme", submission_data.get("Scheme", "Unknown"))
+    scheme_url = target_data.get("link", submission_data.get("Link", ""))
+
+    merge_text = "*Merge target:* None — show the no-longer-listed state"
+    if merged_into:
+        merge_name = (merge_target_data or {}).get("scheme", "Unknown")
+        merge_url = (merge_target_data or {}).get("link", "")
+        merge_text = f"*Merge target:* *{merge_name}* (`{merged_into}`)\n<{merge_url}|View canonical scheme>"
+
+    return {
+        "text": f"Scheme retirement request: {scheme_name} ({target_scheme_id})",
+        "blocks": [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Scheme Retirement Request",
+                    "emoji": True,
+                },
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (f"*Retire:* *{scheme_name}* (`{target_scheme_id}`)\n<{scheme_url}|View current scheme>"),
+                },
+            },
+            {"type": "section", "text": {"type": "mrkdwn", "text": merge_text}},
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*Reason:*\n{reason}"},
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                    {
+                        "type": "mrkdwn",
+                        "text": f"Requested by: {submission_data.get('userEmail') or submission_data.get('userName') or 'unknown'}",
+                    },
+                ],
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Approve Retirement",
+                            "emoji": True,
+                        },
+                        "style": "danger",
+                        "action_id": "approve_scheme_retirement",
+                        "value": doc_id,
+                        "confirm": {
+                            "title": {"type": "plain_text", "text": "Retire scheme?"},
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "This is terminal and the weekly link check will stop probing it.",
+                            },
+                            "confirm": {"type": "plain_text", "text": "Retire"},
+                            "deny": {"type": "plain_text", "text": "Cancel"},
+                        },
+                    },
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "Reject", "emoji": True},
+                        "action_id": "reject_scheme_retirement",
+                        "value": doc_id,
+                    },
+                ],
+            },
+        ],
+        "unfurl_links": False,
+        "unfurl_media": False,
+    }
+
+
+def build_scheme_retirement_rejection_modal(metadata: str) -> dict:
+    """Build a modal that requires a reason for rejecting retirement."""
+    return {
+        "type": "modal",
+        "callback_id": "scheme_retirement_rejection_submit",
+        "title": {"type": "plain_text", "text": "Reject Retirement"},
+        "submit": {"type": "plain_text", "text": "Reject"},
+        "close": {"type": "plain_text", "text": "Cancel"},
+        "private_metadata": metadata,
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "retirement_rejection_reason_block",
+                "label": {"type": "plain_text", "text": "Reason for rejection"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "retirement_rejection_reason",
+                    "multiline": True,
+                },
+            }
+        ],
+    }
+
+
+def build_scheme_retirement_approved_message(
+    doc_id: str,
+    scheme_name: str,
+    target_scheme_id: str,
+    merged_into: Optional[str],
+    reviewer_id: str,
+    reviewed_at: str,
+) -> dict:
+    """Build the terminal Slack state after a retirement is approved."""
+    merge_text = f" and merged into `{merged_into}`" if merged_into else ""
+    return {
+        "text": f"Scheme retired: {scheme_name} ({target_scheme_id})",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f":white_check_mark: *RETIREMENT APPROVED* — *{scheme_name}* "
+                        f"(`{target_scheme_id}`){merge_text}"
+                    ),
+                },
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Approved by <@{reviewer_id}>"},
+                    {"type": "mrkdwn", "text": f"At: {reviewed_at}"},
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                ],
+            },
+        ],
+    }
+
+
+def build_scheme_retirement_rejected_message(
+    doc_id: str,
+    scheme_name: str,
+    target_scheme_id: str,
+    reviewer_id: str,
+    reason: Optional[str] = None,
+) -> dict:
+    """Build the terminal Slack state after a retirement is rejected."""
+    reason_text = f"\nReason: {reason}" if reason else ""
+    return {
+        "text": f"Scheme retirement rejected: {scheme_name} ({target_scheme_id})",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (f":x: *RETIREMENT REJECTED* — *{scheme_name}* (`{target_scheme_id}`){reason_text}"),
+                },
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Rejected by <@{reviewer_id}>"},
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                ],
+            },
+        ],
+    }

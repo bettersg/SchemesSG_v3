@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import SchemeDetail from "@/components/schemes/scheme-detail";
 import { getSchemeById } from "@/lib/schemes";
 import {
@@ -42,6 +42,18 @@ export async function generateMetadata({
         index: false,
         follow: false,
       },
+    };
+  }
+
+  if (scheme.status === "retired") {
+    return {
+      title: scheme.mergedInto
+        ? "Scheme moved | Schemes.sg"
+        : "Scheme no longer listed | Schemes.sg",
+      alternates: scheme.mergedInto
+        ? { canonical: SITE_URL + "/schemes/" + scheme.mergedInto }
+        : undefined,
+      robots: { index: false, follow: Boolean(scheme.mergedInto) },
     };
   }
 
@@ -90,6 +102,26 @@ export default async function SchemePage({ params }: SchemePageProps) {
 
   if (!scheme) {
     notFound();
+  }
+
+  if (scheme.status === "retired" && scheme.mergedInto) {
+    permanentRedirect("/schemes/" + scheme.mergedInto);
+  }
+
+  if (scheme.status === "retired") {
+    return (
+      <section className="mx-auto flex min-h-full max-w-3xl items-center px-6 py-16">
+        <div className="w-full rounded-2xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-8 text-center">
+          <h1 className="mb-3 text-2xl font-semibold text-(--schemes-status-info-text)">
+            This scheme is no longer listed
+          </h1>
+          <p className="text-sm leading-relaxed text-(--schemes-status-info-text)">
+            This page has been kept so existing links do not break. Browse the
+            catalog to find currently listed support schemes.
+          </p>
+        </div>
+      </section>
+    );
   }
 
   const canonicalUrl = `${SITE_URL}/schemes/${schemeId}`;

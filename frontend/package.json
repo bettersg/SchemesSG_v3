@@ -2,12 +2,35 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=20.19.0",
+      "onFail": "error"
+    }
+  },
   "scripts": {
+    "postinstall": "node scripts/copy-lottie-wasm.mjs",
     "dev": "cross-env NODE_ENV=development next dev",
-    "build": "npm run clean && npm install && next build",
+    "build": "next build",
     "start": "cross-env NODE_ENV=production next start",
     "start:staging": "cross-env NODE_ENV=staging next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run --exclude=src/test/integration/**",
+    "test:integration": "vitest run src/test/integration",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:nightly": "playwright test --config=playwright.nightly.config.ts",
+    "test:e2e:staging": "playwright test --config=playwright.staging.config.ts",
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:update-snapshots": "playwright test --update-snapshots=changed",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
@@ -33,18 +56,28 @@
     "tailwind-variants": "^3.2.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.2.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/lodash": "^4.17.24",
     "@types/matter-js": "^0.20.2",
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18",
+    "@vitest/coverage-v8": "^4.1.11",
     "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "^16.2.3",
+    "jsdom": "^29.1.1",
+    "msw": "^2.15.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

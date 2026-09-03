@@ -8,7 +8,11 @@ This document covers all utility scripts for the SchemesSG backend.
 |--------|----------|---------|-------------|
 | `populate_embeddings.py` | `functions/scripts/` | Initial vector embeddings setup | **One-time** per environment |
 | `test_vector_search.py` | `functions/scripts/` | Test vector search queries | Development/debugging |
+| `scan_duplicate_schemes.py` | `functions/scripts/` | Read-only duplicate cluster report | Human triage |
 | `run_link_check_and_reindex.py` | `functions/scripts/` | Manual link check + reindex | Ad-hoc maintenance |
+| `issue_partner_key.py` | `functions/scripts/` | Issue / list / revoke partner API keys | Onboarding or cutting off a partner |
+| `smoke_partner_api.py` | `functions/scripts/` | End-to-end partner API smoke run | Before shipping partner API changes |
+| `check_coverage.py` | `scripts/` | Enforce independent coverage floors | After canonical pytest |
 | `download_prod_data.py` | `scripts/` | Download production data | Refresh local data |
 | `download_dev_data.py` | `scripts/` | Download dev data | Refresh local data |
 | `load_local_data.py` | `scripts/` | Load data into emulator | After download |
@@ -49,7 +53,7 @@ uv run python scripts/populate_embeddings.py --prod
 
 **Scheduled Function:** `scheduled_link_check_and_reindex`
 
-Runs automatically on the **1st of every month at 9am SGT**. This function:
+Runs automatically **every Monday at 9am SGT**. This function:
 1. Checks all scheme links for dead URLs
 2. Marks dead links as `status='inactive'`
 3. Restores previously inactive schemes if links are alive again
@@ -73,6 +77,18 @@ Or via Python:
 ```bash
 uv run python -c "from batch_jobs.run_link_check_and_reindex import run_link_check_and_reindex_core; run_link_check_and_reindex_core()"
 ```
+
+### Duplicate Cluster Scan
+
+```bash
+cd backend/functions
+uv run --script scripts/scan_duplicate_schemes.py --dev --output reports/duplicate-clusters-dev.json
+uv run --script scripts/scan_duplicate_schemes.py --prod --output reports/duplicate-clusters-prod.json
+```
+
+The scanner is read-only and writes both JSON and Markdown reports. URL clusters
+use `normalize_url`; same-name clusters are conservative candidates for human
+review and are never changed automatically.
 
 ### Testing Vector Search
 
@@ -146,6 +162,26 @@ uv run python scripts/normalize_and_export_to_sheets.py
 ---
 
 ## Complete Workflows
+
+### Backend coverage ratchet
+
+Run the canonical secretless suite before checking its coverage data:
+
+```bash
+uv run --frozen pytest
+uv run --frozen coverage json -o - | uv run --frozen python scripts/check_coverage.py
+```
+
+The checker fails independently below 52.50% statements or 33.24% branches.
+See `tests/README.md` for the parent approval and raise-only policy.
+
+### Search and agent quality benchmarks
+
+Benchmark scripts live in `backend/scripts/`. Run instructions and metric
+definitions are in `BENCHMARK_README.md`.
+
+Raw JSON/CSV artifacts are written to `backend/scripts/benchmark_out/` and are
+gitignored. Only the reviewed `SEARCH_BENCHMARK_BRIEF.md` summary is committed.
 
 ### Initial Environment Setup
 

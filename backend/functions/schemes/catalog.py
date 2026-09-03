@@ -10,7 +10,7 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?category=<categor
 
 import json
 from dataclasses import asdict, dataclass
-from typing import Callable
+from typing import Any, Callable
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
@@ -18,10 +18,12 @@ from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from utils.auth import verify_auth_token
-from utils.catalog_pagination import PaginationResult, get_paginated_results
+from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
+from utils.scheme_lifecycle import RETIRED_STATUS
 from werkzeug.datastructures import MultiDict
+
 
 DEFAULT_LIMIT = 10
 
@@ -85,6 +87,95 @@ def _filter_scheme_types_for_category(
         next_cursor=results.next_cursor,
         has_more=results.has_more,
         total_count=results.total_count,
+    )
+
+
+# What /catalog has always hidden. Callers that must hide more (the partner API
+# also hides `inactive`) pass their own set.
+_CATALOG_EXCLUDED_STATUSES: frozenset[str] = frozenset({RETIRED_STATUS})
+
+
+def _keep_listed_schemes(
+    results: PaginationResult,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> PaginationResult:
+    """Remove schemes whose lifecycle status must not appear in a listing."""
+    return PaginationResult(
+        data=[item for item in results.data if item.get("status") not in exclude_statuses],
+        next_cursor=results.next_cursor,
+        has_more=results.has_more,
+        total_count=results.total_count,
+    )
+
+
+def _count_excluded_schemes(
+    collection_ref,
+    base_query: Any = None,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> int | None:
+    """Count documents matching the unpaginated query whose status is excluded.
+
+    One ``==`` count per status rather than a single ``in``: it keeps the query
+    shape the catalog has always issued, so no new composite index is needed.
+    """
+    source = base_query if base_query is not None else collection_ref
+    counts = [
+        _count_total(collection_ref, source.where("status", "==", status))
+        for status in exclude_statuses
+    ]
+    return None if None in counts else sum(counts)
+
+
+def _get_listed_paginated_results(
+    collection_ref,
+    *,
+    base_query: Any = None,
+    cursor: str | None = None,
+    limit: int = DEFAULT_LIMIT,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> PaginationResult:
+    """Fill a page to ``limit``, skipping documents with an excluded status.
+
+    The refill loop and the ``total_count`` adjustment both honour
+    ``exclude_statuses``, so a caller that hides more statuses still gets full
+    pages and a count that matches what it actually returns.
+    """
+    data = []
+    current_cursor = cursor
+    seen_cursors = {cursor} if cursor else set()
+    last_result = PaginationResult(data=[])
+    repeated_cursor = False
+
+    while len(data) < limit:
+        last_result = get_paginated_results(
+            collection_ref=collection_ref,
+            base_query=base_query,
+            cursor=current_cursor,
+            limit=limit - len(data),
+        )
+        data.extend(_keep_listed_schemes(last_result, exclude_statuses).data)
+
+        next_cursor = last_result.next_cursor
+        if not last_result.has_more or not next_cursor:
+            break
+        if next_cursor in seen_cursors:
+            repeated_cursor = True
+            break
+        seen_cursors.add(next_cursor)
+        current_cursor = next_cursor
+
+    excluded_count = _count_excluded_schemes(collection_ref, base_query, exclude_statuses)
+    listed_total = (
+        last_result.total_count - excluded_count
+        if last_result.total_count is not None and excluded_count is not None
+        else None
+    )
+
+    return PaginationResult(
+        data=data[:limit],
+        next_cursor=None if repeated_cursor else last_result.next_cursor,
+        has_more=False if repeated_cursor else last_result.has_more,
+        total_count=listed_total,
     )
 
 
@@ -284,7 +375,7 @@ def _handle_catalog_request(
     col = firebase_manager.firestore_client.collection("schemes")
 
     if not query_params.filter_name or query_params.filter_value is None:
-        return get_paginated_results(
+        return _get_listed_paginated_results(
             collection_ref=col,
             cursor=query_params.cursor,
             limit=query_params.limit,
@@ -297,7 +388,7 @@ def _handle_catalog_request(
         )
     )
 
-    results = get_paginated_results(
+    results = _get_listed_paginated_results(
         collection_ref=col,
         base_query=query,
         cursor=query_params.cursor,

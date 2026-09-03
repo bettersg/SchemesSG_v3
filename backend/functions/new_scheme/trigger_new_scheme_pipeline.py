@@ -13,15 +13,16 @@ import google.auth
 import google.auth.compute_engine
 import google.auth.transport.requests
 import requests
-from firebase_admin import firestore
+from fb_manager.firebaseManager import get_firestore_client
 from firebase_functions import firestore_fn, options
 from google.cloud.firestore_v1.base_document import DocumentSnapshot
 from google.oauth2 import service_account
 from loguru import logger
 from slack_sdk.web import WebClient
 from utils.json_utils import safe_json_dumps
+from utils.scheme_lifecycle import retirement_validation_error
 
-from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message
+from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message, build_scheme_retirement_review_message
 from new_scheme.url_utils import check_duplicate_scheme
 
 
@@ -70,6 +71,71 @@ def get_slack_channel() -> str:
     return channel
 
 
+def process_scheme_retirement_entry(doc_id: str, data: dict) -> None:
+    """Validate a retirement request and send it directly to Slack review."""
+    db = get_firestore_client()
+    entry_ref = db.collection("schemeEntries").document(doc_id)
+    target_scheme_id = data.get("targetSchemeId")
+    reason = data.get("retiredReason")
+    merged_into = data.get("mergedInto")
+
+    try:
+        if not target_scheme_id or not isinstance(target_scheme_id, str):
+            raise ValueError("Retirement request requires targetSchemeId")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("Retirement request requires retiredReason")
+        target_snap = db.collection("schemes").document(target_scheme_id).get()
+        if not target_snap.exists:
+            raise ValueError(f"Target scheme {target_scheme_id!r} does not exist")
+        target_data = target_snap.to_dict() or {}
+
+        validation_error = retirement_validation_error(target_scheme_id, merged_into)
+        if validation_error:
+            raise ValueError(validation_error)
+
+        merge_target_data = None
+        merge_target_exists = True
+        if merged_into:
+            merge_snap = db.collection("schemes").document(merged_into).get()
+            merge_target_data = merge_snap.to_dict() if merge_snap.exists else {}
+            merge_target_exists = merge_snap.exists
+
+        validation_error = retirement_validation_error(
+            target_scheme_id,
+            merged_into,
+            merge_target_exists=merge_target_exists,
+            merge_target_data=merge_target_data,
+        )
+        if validation_error:
+            raise ValueError(validation_error)
+
+        entry_ref.update(
+            {
+                "pipeline_status": "awaiting_approval",
+                "pipeline_completed_at": datetime.now(timezone.utc).isoformat(),
+                "Scheme": target_data.get("scheme", data.get("Scheme")),
+                "Link": target_data.get("link", data.get("Link")),
+            }
+        )
+
+        slack_client = get_slack_client()
+        channel = get_slack_channel()
+        message = build_scheme_retirement_review_message(doc_id, data, target_data, merge_target_data)
+        response = slack_client.chat_postMessage(channel=channel, **message)
+        if response.get("ok"):
+            entry_ref.update(
+                {
+                    "slack_channel": channel,
+                    "slack_message_ts": response.get("ts"),
+                    "slack_notified_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+        logger.info(f"Posted retirement request to Slack for {doc_id}")
+    except Exception as e:
+        logger.error(f"Failed to process retirement request {doc_id}: {e}")
+        _update_error_status(doc_id, str(e))
+
+
 def process_new_scheme_entry(doc_id: str, data: dict) -> None:
     """
     Process a new scheme entry by calling Cloud Run service.
@@ -97,8 +163,13 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         logger.info(f"Skipping warmup/test entry: {doc_id}")
         return
 
-    # Only process new scheme submissions and update-in-place requests
+    # Retirement is terminal and does not need scraping or LLM processing.
     type_of_request = (data.get("typeOfRequest") or "").lower()
+    if type_of_request == "retire":
+        process_scheme_retirement_entry(doc_id, data)
+        return
+
+    # Only process new scheme submissions and update-in-place requests.
     if type_of_request not in ("new", "update"):
         logger.info(f"Skipping non-new/update entry (type={type_of_request}): {doc_id}")
         return
@@ -117,7 +188,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         logger.warning(f"Duplicate URL detected for {doc_id}: {duplicate}")
 
         # Update schemeEntries with duplicate status
-        db = firestore.client()
+        db = get_firestore_client()
         entry_ref = db.collection("schemeEntries").document(doc_id)
         entry_ref.update(
             {
@@ -186,7 +257,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
 def _update_error_status(doc_id: str, error_msg: str) -> None:
     """Update schemeEntries with error status."""
     try:
-        db = firestore.client()
+        db = get_firestore_client()
         entry_ref = db.collection("schemeEntries").document(doc_id)
         entry_ref.update(
             {
