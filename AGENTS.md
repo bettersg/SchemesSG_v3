@@ -51,9 +51,10 @@ own git worktree on its own branch. Read-only research is exempt.
 
 - Authoritative scope-based checks and test-impact policy:
   `docs/verification.md`.
-- Record the evidence contract (worktree/branch/base SHA, exact
-  checks/scenarios run, results, acceptance criteria, unresolved risks) in
-  the PR using `pull_request_template.md`.
+- Fill in every section of `pull_request_template.md`: TLDR, the before/after
+  User Flow written from the user's seat, task isolation (worktree/branch/base
+  SHA), test impact, verification evidence, before/after Proof of Fix at named
+  commit hashes, and severity-graded caveats.
 - Cross-boundary changes (API contracts, auth, streaming, env/runtime
   wiring, Compose, or a journey spanning frontend and backend) additionally
   require the development search smoke when they affect real Firebase/search
