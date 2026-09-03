@@ -40,6 +40,7 @@ for instructions in "$ROOT/AGENTS.md" "$ROOT/backend/AGENTS.md" "$ROOT/frontend/
 done
 
 assert_line "$ROOT/docs/verification.md" "## Test impact" "test-impact policy heading"
+assert_line "$ROOT/AGENTS.md" "- When the PR merges or closes, remove its worktree before the session ends:" "worktree cleanup obligation"
 assert_line "$ROOT/pull_request_template.md" "## Test impact" "test-impact PR heading"
 assert_line "$ROOT/pull_request_template.md" "- Observable behavior changes:" "observable-behavior field"
 assert_line "$ROOT/pull_request_template.md" "- Focused regression tests:" "focused-regression-test field"

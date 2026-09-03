@@ -48,6 +48,19 @@ assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-preflight.sh'"
 assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' remove '$TASK'"
 rm "$TASK/dirty.txt"
 sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' doctor >/dev/null"
+
+# doctor's finished-worktree report, with gh stubbed: the fake remote here has no
+# pull requests, and the real gh is what the silent path already exercises above.
+mkdir -p "$TMP/bin"
+printf '#!/bin/sh\necho "MERGED #1"\n' > "$TMP/bin/gh"
+chmod +x "$TMP/bin/gh"
+PATH="$TMP/bin:$PATH" sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' doctor" > "$TMP/doctor.out"
+grep -q "Finished: feat/test is MERGED #1" "$TMP/doctor.out" ||
+  { echo "doctor did not flag the merged worktree" >&2; cat "$TMP/doctor.out" >&2; exit 1; }
+grep -q "remove $TASK" "$TMP/doctor.out" ||
+  { echo "doctor did not print the removal command" >&2; exit 1; }
+grep -q "stg" "$TMP/doctor.out" && ! grep -q "Finished: stg" "$TMP/doctor.out" ||
+  { echo "doctor should skip the stg checkout" >&2; exit 1; }
 sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-lifecycle.sh' remove '$TASK' >/dev/null"
 [ ! -e "$TASK" ] || { echo "Clean worktree was not removed" >&2; exit 1; }
 assert_fails sh -c "cd '$PRIMARY' && '$ROOT/scripts/worktree-create.sh' feat/test '$TMP/reused'"
