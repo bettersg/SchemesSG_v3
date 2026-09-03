@@ -13,6 +13,7 @@
     }
   },
   "scripts": {
+    "postinstall": "node scripts/copy-lottie-wasm.mjs",
     "dev": "cross-env NODE_ENV=development next dev",
     "build": "next build",
     "start": "cross-env NODE_ENV=production next start",
