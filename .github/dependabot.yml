@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "stg"
+    open-pull-requests-limit: 3
+    groups:
+      gha-deps:
+        patterns:
+          - "*"
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "stg"
+    open-pull-requests-limit: 3
+    groups:
+      npm-deps:
+        patterns:
+          - "*"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "stg"
+    open-pull-requests-limit: 3
+    groups:
+      python-deps:
+        patterns:
+          - "*"
