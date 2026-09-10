@@ -39,6 +39,8 @@ type ChatContextType = {
   setShowQuickReplies: React.Dispatch<React.SetStateAction<boolean>>;
   draftMessage: string;
   setDraftMessage: React.Dispatch<React.SetStateAction<string>>;
+  resetModalIsOpen: boolean;
+  setResetModalIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -50,6 +52,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [quickReplies, setQuickReplies] = useState<QuickReplySuggestion[]>([]);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [draftMessage, setDraftMessage] = useState("");
+  const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -124,6 +127,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setShowQuickReplies,
         draftMessage,
         setDraftMessage,
+        resetModalIsOpen,
+        setResetModalIsOpen,
       }}
     >
       {children}

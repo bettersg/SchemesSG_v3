@@ -43,6 +43,8 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setShowQuickReplies,
     draftMessage,
     setDraftMessage,
+    resetModalIsOpen,
+    setResetModalIsOpen,
   } = useChat();
 
   const [isGenerating, setIsGenerating] = useState(
@@ -51,7 +53,6 @@ export default function ChatPage({ onReset }: ChatPageProps) {
   const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
   const statusStepsRef = useRef<StatusStep[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
-  const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
   const streamingBlocksRef = useRef<string[]>([]);
   // Mobile-only Tabs selection (desktop shows chat + schemes side by side).

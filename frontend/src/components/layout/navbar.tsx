@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { Tabs } from "@heroui/react";
 import Image from "next/image";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import { useChat } from "@/providers";
 import {
   cssTransition,
   motionPreset,
@@ -27,7 +28,22 @@ type NavLink = {
 export function Navbar() {
   const { t } = useLanguage();
   const pathname = usePathname();
+  const { messages, setResetModalIsOpen } = useChat();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // On the base route with an active chat, the logo / "Search Schemes" are the
+  // natural "back to search" actions — but they'd silently wipe the session.
+  // Intercept them and open the reset confirmation instead. Off-route, let the
+  // link navigate to "/" as normal.
+  const handleSearchSchemesPress = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    setMobileOpen(false);
+    if (pathname === "/" && messages.length > 0) {
+      event.preventDefault();
+      setResetModalIsOpen(true);
+    }
+  };
   const { isHidden: mobileHidden, isScrolled: scrolled } = useHideOnScroll({
     disabled: mobileOpen,
     resetKey: pathname,
@@ -78,6 +94,7 @@ export function Navbar() {
         {/* Logo */}
         <a
           href="/"
+          onClick={handleSearchSchemesPress}
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
           <Image
@@ -113,7 +130,14 @@ export function Navbar() {
                       "aria-disabled:text-neutral-300 aria-disabled:cursor-default",
                     )}
                   >
-                    <Link href={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={
+                        link.href === "/"
+                          ? handleSearchSchemesPress
+                          : undefined
+                      }
+                    >
                       {link.label}
                       {link.href === "/" && (
                         <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
@@ -184,7 +208,7 @@ export function Navbar() {
               <LanguageToggle />
             </div>
             <div className="mt-3 flex justify-center">
-              <Link href="/">
+              <Link href="/" onClick={handleSearchSchemesPress}>
                 <Button
                   size="sm"
                   className={cn(
