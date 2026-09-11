@@ -20,6 +20,7 @@ export interface RawSchemeData {
   who_is_it_for?: string[];
   agency?: string;
   description?: string;
+  llm_description?: string;
   what_it_gives?: string[];
   link?: string;
   image?: string;
@@ -106,6 +107,12 @@ export interface Scheme {
   additionalInfo?: AdditionalInfoType;
   serviceArea: string;
 }
+
+export type CatalogPageData = {
+  schemes: Scheme[];
+  total: number;
+  nextCursor: string;
+};
 
 export type BranchContact = {
   planningArea?: string;

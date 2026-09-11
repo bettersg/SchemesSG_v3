@@ -21,16 +21,13 @@ export async function getAuthToken(): Promise<string> {
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   try {
-    const token = await getAuthToken();
-    
-    // Merge the authorization header with existing headers
-    const headers = {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
+    const headers = new Headers(options.headers);
+    headers.set("Authorization", `Bearer ${await getAuthToken()}`);
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
 
-    return fetch(url, {
+    return await fetch(url, {
       ...options,
       headers,
     });

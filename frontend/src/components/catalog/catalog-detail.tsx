@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
-import { Scheme } from "@/types/types";
+import type { CatalogPageData, Scheme } from "@/types/types";
 import { ScrollShadow, Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -33,9 +33,7 @@ type CatalogLoadState =
 
 type CatalogPageClientProps = {
   initialCategory?: CatalogCategory;
-  initialSchemes?: Scheme[];
-  initialTotal?: number;
-  initialCursor?: string;
+  initialData?: CatalogPageData;
 };
 
 function CatalogGridSkeleton() {
@@ -72,27 +70,28 @@ function CatalogGridSkeleton() {
 
 export default function CatalogPageClient({
   initialCategory,
-  initialSchemes,
-  initialTotal,
-  initialCursor = "",
+  initialData,
 }: CatalogPageClientProps) {
-  const hasInitialData = initialSchemes !== undefined;
-  const initialLoadState: CatalogLoadState = !initialCategory
-    ? "idle"
-    : !hasInitialData
-      ? "loadingInitial"
-      : initialCursor
-        ? "ready"
-        : "exhausted";
   const [activeCategory, setActiveCategory] = useState(
     initialCategory ?? "All",
   );
+  const hasMatchingInitialData =
+    initialData !== undefined && initialCategory === activeCategory;
+  const initialLoadState: CatalogLoadState = !initialCategory
+    ? "idle"
+    : !hasMatchingInitialData
+      ? "loadingInitial"
+      : initialData?.nextCursor
+        ? "ready"
+        : "exhausted";
   const [hasSelectedCategory, setHasSelectedCategory] = useState(
     Boolean(initialCategory),
   );
-  const [schemes, setSchemes] = useState<Scheme[]>(initialSchemes ?? []);
+  const [schemes, setSchemes] = useState<Scheme[]>(
+    hasMatchingInitialData ? (initialData?.schemes ?? []) : [],
+  );
   const [totalCount, setTotalCount] = useState<number | null>(
-    initialTotal ?? null,
+    hasMatchingInitialData ? (initialData?.total ?? null) : null,
   );
   const [loadState, setLoadState] = useState<CatalogLoadState>(
     initialLoadState,
@@ -105,7 +104,9 @@ export default function CatalogPageClient({
   // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const cursorRef = useRef(initialCursor);
+  const cursorRef = useRef(
+    hasMatchingInitialData ? (initialData?.nextCursor ?? "") : "",
+  );
   const requestIdRef = useRef(0);
   const hasUserScrolledRef = useRef(false);
   const isLoadingInitial = loadState === "loadingInitial";
@@ -189,12 +190,20 @@ export default function CatalogPageClient({
   // Initial load
   useEffect(() => {
     if (!hasSelectedCategory) return;
-    if (hasInitialData) return;
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     hasUserScrolledRef.current = false;
-    cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
+
+    if (hasMatchingInitialData && initialData) {
+      setSchemes(initialData.schemes);
+      setTotalCount(initialData.total);
+      cursorRef.current = initialData.nextCursor;
+      setLoadState(initialData.nextCursor ? "ready" : "exhausted");
+      return;
+    }
+
+    cursorRef.current = "";
     setLoadState("loadingInitial");
     setTotalCount(null);
     getSchemesCategory(
@@ -209,7 +218,8 @@ export default function CatalogPageClient({
   }, [
     activeCategory,
     hasSelectedCategory,
-    hasInitialData,
+    hasMatchingInitialData,
+    initialData,
   ]);
 
   // search feature (tbc)
@@ -373,7 +383,7 @@ export default function CatalogPageClient({
         {/* Results */}
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
           <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-3 pt-2">
-            <p className="text-sm font-semibold text-(--schemes-ink-soft)">
+            <h1 className="text-sm font-semibold text-(--schemes-ink-soft)">
               {isLoadingInitial ? (
                 <StatusTextShimmer>
                   {activeCategory === "All"
@@ -390,7 +400,7 @@ export default function CatalogPageClient({
                   </span>
                 </>
               )}
-            </p>
+            </h1>
           </div>
           {isLoadingInitial ? (
             <CatalogGridSkeleton />

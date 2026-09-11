@@ -119,11 +119,10 @@ def _get_paginated_query(
 ) -> Query:
     """Build a Firestore query with ordering, limit, and optional cursor.
 
-    The query always orders by `last_scraped_update` from newest to oldest and
-    uses `__name__` as an ascending tie-breaker. It requests `limit + 1`
-    documents so the caller can determine whether another page exists. When a
-    cursor is provided, the corresponding document snapshot is fetched and used
-    with `start_at(...)`.
+    The query orders by `last_scraped_update` from newest to oldest and requests
+    `limit + 1` documents so the caller can determine whether another page
+    exists. When a cursor is provided, the corresponding document snapshot is
+    fetched and used with `start_at(...)`.
 
     Args:
         collection_ref: Base Firestore collection for the catalog.

@@ -17,7 +17,6 @@ from firebase_functions import https_fn, options
 from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING
-from utils.auth import verify_auth_token
 from utils.catalog_pagination import PaginationResult, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
@@ -142,18 +141,6 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
     # Get standard CORS headers for all other requests
     headers = get_cors_headers(req)
 
-    # Verify authentication
-    is_valid, auth_message = verify_auth_token(req)
-    if not is_valid:
-        return https_fn.Response(
-            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
-            status=401,
-            mimetype="application/json",
-            headers=headers,
-        )
-
-    firebase_manager = create_firebase_manager()
-
     if not req.method == "GET":
         return https_fn.Response(
             response=json.dumps(
@@ -174,6 +161,10 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
             mimetype="application/json",
             headers=headers,
         )
+
+    # Catalog data is intentionally public. It contains the same scheme
+    # information shown to all visitors and is required during static builds.
+    firebase_manager = create_firebase_manager()
 
     try:
         query_params = _parse_query_params(req.args)

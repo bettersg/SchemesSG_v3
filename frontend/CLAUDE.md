@@ -5,6 +5,7 @@ Next.js + TypeScript app.
 ## Commands
 
 - `npm run dev` — local dev (APP_ENV=development)
+- `npm run build:local` — production build using installed dependencies
 - `npm run build:staging` — staging build
 - `npm run build:prod` — production build
 

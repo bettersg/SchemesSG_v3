@@ -2,18 +2,16 @@ import "server-only";
 
 import { cache } from "react";
 import type { CatalogCategory } from "./design-system/categories";
-import type { RawScheme, Scheme } from "../types/types";
-import { serverFetchWithAuth } from "./firebase-auth.server";
-import { mapToFullScheme } from "./scheme-mappers";
-
-export type CatalogPageData = {
-  schemes: Scheme[];
-  total: number;
-  nextCursor: string;
-};
+import type {
+  CatalogPageData,
+  RawScheme,
+  RawSchemeData,
+  Scheme,
+} from "../types/types";
+import { mapCatalogScheme, mapToFullScheme } from "./scheme-mappers";
 
 type CatalogResponse = {
-  data?: RawScheme[] | RawScheme;
+  data?: RawSchemeData[] | RawSchemeData;
   total_count?: number;
   next_cursor?: string;
   has_more?: boolean;
@@ -30,17 +28,20 @@ export async function getCatalogData(
   cursor = "",
 ): Promise<CatalogPageData> {
   const url = new URL(`${getApiBaseUrl()}/catalog`);
-  url.searchParams.set("limit", "20");
+  url.searchParams.set("limit", String(CATALOG_PAGE_SIZE));
   if (category && category !== "All") {
     url.searchParams.set("category", category);
   }
   if (cursor) url.searchParams.set("cursor", cursor);
 
-  const response = await serverFetchWithAuth(url, {
+  const response = await fetch(url, {
     method: "GET",
     next: { revalidate: 86_400 },
   });
   if (response.status === 404) {
+    if (cursor) {
+      throw new Error("Catalog continuation returned 404");
+    }
     return { schemes: [], total: 0, nextCursor: "" };
   }
   if (!response.ok) {
@@ -55,8 +56,8 @@ export async function getCatalogData(
     ? payload.data
     : [payload.data];
   if (
-    payload.total_count !== undefined &&
-    (!Number.isFinite(payload.total_count) || payload.total_count < 0)
+    !Number.isInteger(payload.total_count) ||
+    (payload.total_count as number) < 0
   ) {
     throw new Error("Catalog response has invalid total_count");
   }
@@ -68,8 +69,8 @@ export async function getCatalogData(
   }
 
   return {
-    schemes: rawSchemes.map(mapToFullScheme),
-    total: payload.total_count ?? rawSchemes.length,
+    schemes: rawSchemes.map(mapCatalogScheme),
+    total: payload.total_count as number,
     nextCursor:
       payload.has_more === true && payload.next_cursor
         ? payload.next_cursor
@@ -77,16 +78,48 @@ export async function getCatalogData(
   };
 }
 
-const MAX_CATALOG_PAGES = 10_000;
+const CATALOG_PAGE_SIZE = 20;
+const MAX_CATALOG_PAGES = 500;
 
+/**
+ * Fetch every catalog page so Next.js can generate all scheme detail routes.
+ *
+ * The enumeration validates that:
+ * - the reported total remains unchanged across pages;
+ * - the total fits within the hard page-count safety cap;
+ * - every row has a scheme ID and duplicate IDs are ignored;
+ * - continuation pages add at least one new scheme;
+ * - cursors do not repeat;
+ * - pagination does not continue beyond the expected number of pages; and
+ * - the final number of unique schemes matches the reported total.
+ *
+ * Any inconsistent or non-progressing response fails the build instead of
+ * silently generating an incomplete set of scheme pages.
+ */
 async function getAllCatalogSchemesUncached(): Promise<Scheme[]> {
   const schemes: Scheme[] = [];
   const seenIds = new Set<string>();
   const seenCursors = new Set<string>();
   let cursor = "";
+  let expectedTotal: number | null = null;
+  let expectedPages: number | null = null;
 
   for (let page = 0; page < MAX_CATALOG_PAGES; page += 1) {
     const result = await getCatalogData(undefined, cursor);
+    if (expectedTotal === null) {
+      expectedTotal = result.total;
+      expectedPages = Math.ceil(expectedTotal / CATALOG_PAGE_SIZE);
+      if (expectedPages > MAX_CATALOG_PAGES) {
+        throw new Error(
+          `Catalog enumeration requires ${expectedPages} pages, above the ${MAX_CATALOG_PAGES}-page safety cap`,
+        );
+      }
+    } else if (result.total !== expectedTotal) {
+      throw new Error(
+        `Catalog total changed during enumeration (${expectedTotal} to ${result.total})`,
+      );
+    }
+
     let added = 0;
     for (const scheme of result.schemes) {
       if (!scheme.schemeId) throw new Error("Catalog row is missing scheme id");
@@ -100,7 +133,20 @@ async function getAllCatalogSchemesUncached(): Promise<Scheme[]> {
       if (schemes.length === 0) {
         throw new Error("Catalog enumeration returned no schemes");
       }
+      if (schemes.length !== expectedTotal) {
+        throw new Error(
+          `Catalog enumeration ended with ${schemes.length} unique schemes; expected ${expectedTotal}`,
+        );
+      }
       return schemes;
+    }
+    if (schemes.length >= expectedTotal) {
+      throw new Error("Catalog returned a cursor after reaching total_count");
+    }
+    if (expectedPages !== null && page + 1 >= expectedPages) {
+      throw new Error(
+        `Catalog pagination continued beyond ${expectedPages} expected pages`,
+      );
     }
     if (seenCursors.has(result.nextCursor)) {
       throw new Error(`Repeated catalog cursor: ${result.nextCursor}`);
@@ -118,7 +164,7 @@ export const getAllCatalogSchemes = cache(getAllCatalogSchemesUncached);
 
 export const getSchemeById = cache(
   async (schemeId: string): Promise<Scheme | null> => {
-    const response = await serverFetchWithAuth(
+    const response = await fetch(
       `${getApiBaseUrl()}/schemes/${encodeURIComponent(schemeId)}`,
       { next: { revalidate: 86_400 } },
     );

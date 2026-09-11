@@ -73,9 +73,7 @@ export default async function CatalogCategoryPage({
       <CatalogPageClient
         key={slug}
         initialCategory={category}
-        initialSchemes={initialData.schemes}
-        initialTotal={initialData.total}
-        initialCursor={initialData.nextCursor}
+        initialData={initialData}
       />
     </>
   );

@@ -1,6 +1,6 @@
 import { fetchWithAuth } from "@/lib/api";
 import type { RawSchemeData, SearchResponse, Scheme } from "../types/types";
-import { mapToScheme } from "./scheme-mappers";
+import { mapCatalogScheme, mapToScheme } from "./scheme-mappers";
 export const getSchemes = async (
   userQuery: string,
   nextCursor = "",
@@ -263,7 +263,7 @@ export async function getSchemesCategory(
   }
 
   try {
-    const res = await fetchWithAuth(url.toString(), {
+    const res = await fetch(url, {
       method: "GET",
     });
 
@@ -282,7 +282,7 @@ export async function getSchemesCategory(
       : [];
 
     return {
-      schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
+      schemes: raw.map((r: RawSchemeData) => mapCatalogScheme(r)),
       nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
       total: data.total_count ?? 0,
     };

@@ -5,12 +5,35 @@ import type {
   Scheme,
 } from "../types/types";
 
+export const mapCatalogScheme = (rawData: RawSchemeData): Scheme => ({
+  schemeType: rawData.scheme_type || [],
+  schemeName: rawData.scheme || "",
+  targetAudience: rawData.who_is_it_for || [],
+  agency: rawData.agency || "",
+  description: rawData.llm_description || rawData.description || "",
+  scrapedText: "",
+  benefits: rawData.what_it_gives || [],
+  link: rawData.link || "",
+  image: rawData.image || "",
+  searchBooster: "",
+  schemeId: rawData.scheme_id || "",
+  query: "",
+  planningArea: rawData.planning_area || "",
+  summary: rawData.summary || "",
+  contact: [],
+  howToApply: "",
+  eligibilityText: "",
+  lastUpdated: "",
+  serviceArea: "",
+});
+
 export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
   schemeType: rawData.scheme_type || rawData["Scheme Type"] || [],
   schemeName: rawData.scheme || rawData.Scheme || "",
   targetAudience: rawData.who_is_it_for || rawData["Who's it for"] || [],
   agency: rawData.agency || rawData.Agency || "",
-  description: rawData.description || rawData.Description || "",
+  description:
+    rawData.llm_description || rawData.description || rawData.Description || "",
   scrapedText: rawData.scraped_text || "",
   benefits: rawData.what_it_gives || rawData["What it gives"] || [],
   link: rawData.link || rawData.Link || "",
@@ -49,9 +72,12 @@ const splitCsv = (value?: string | null): string[] | undefined => {
   return parts.length ? parts : undefined;
 };
 
+// The ingestion pipeline uses this sentinel when no real location was found.
 const cleanPlanningArea = (value?: string): string | undefined =>
   value && value !== "No Location" ? value : undefined;
 
+// Joomla/CleanTalk can emit scraper-obfuscated placeholder emails; retain only
+// syntactically usable contact addresses.
 const isRealEmail = (value: string): boolean =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 

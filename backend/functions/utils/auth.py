@@ -14,7 +14,7 @@ def verify_auth_token(req: https_fn.Request) -> Tuple[bool, str]:
     try:
         token = auth_header.split("Bearer ")[1]
         # Verify the Firebase ID token
-        decoded_token = auth.verify_id_token(token)
+        decoded_token = auth.verify_id_token(token, clock_skew_seconds=5)
         return True, decoded_token["uid"]
     except Exception as e:
         logger.error(f"Token verification failed: {e}")

@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Keep SSR/SEO content mounted; auth-dependent consumers gate locally on loading.
   return (
     <AuthContext.Provider value={{ user, loading }}>
       {children}
