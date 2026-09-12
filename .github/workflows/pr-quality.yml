@@ -65,9 +65,9 @@ jobs:
 
       - name: Build for production
         working-directory: frontend
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-        run: npm run build:prod
+        run: |
+          node --test scripts/public-build-fixture.test.mjs
+          node scripts/run-public-build.mjs
 
   frontend-e2e:
     name: Frontend E2E

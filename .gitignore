@@ -298,6 +298,9 @@ tmp/
 # See docs/verification.md — attach screenshots and traces to the PR instead.
 docs/evidence/
 
+# Agent planning artifacts are scratch notes for one task, not project docs.
+docs/superpowers/
+
 # Local PR evidence captures (screenshots, videos) — generated, never committed.
 frontend/.pr-shots/
 

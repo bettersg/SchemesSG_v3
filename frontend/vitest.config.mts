@@ -5,16 +5,16 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "server-only": fileURLToPath(
+        new URL("./src/test/server-only.ts", import.meta.url),
+      ),
     },
   },
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    include: [
-      "src/**/*.test.{ts,tsx}",
-      "staging-smoke/**/*.test.ts",
-    ],
+    include: ["src/**/*.test.{ts,tsx}", "staging-smoke/**/*.test.ts"],
     clearMocks: true,
     restoreMocks: true,
     coverage: {
@@ -71,7 +71,6 @@ export default defineConfig({
         "src/components/ui/typography.tsx",
         // Static placeholders have no domain/state decisions.
         "src/components/feedback/empty-state.tsx",
-        "src/components/schemes/scheme-skeleton.tsx",
       ],
       thresholds: {
         statements: 70,

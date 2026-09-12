@@ -8,7 +8,8 @@ import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
 import { Tabs } from "@heroui/react";
 import NewChatModal from "@/components/chat/new-chat-modal";
-import { ChatStreamEvent, mapToScheme, streamChat } from "@/lib/schemes";
+import { mapToScheme } from "@/lib/scheme-mappers";
+import { ChatStreamEvent, streamChat } from "@/lib/schemes";
 import { fetchWithAuth } from "@/lib/api";
 import {
   productSegmentedIndicator,

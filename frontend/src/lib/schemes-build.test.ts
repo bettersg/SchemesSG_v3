@@ -1,78 +1,128 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { catalogScheme } from "@/test/fixtures/catalog";
+import type { RawSchemeData } from "@/types/types";
 
-const fetchWithAuth = vi.hoisted(() => vi.fn());
+vi.mock("server-only", () => ({}));
 
-vi.mock("@/lib/api", () => ({ fetchWithAuth }));
-
-import { getSchemesForSitemap } from "./schemes";
+import {
+  getAllCatalogSchemes,
+  getCatalogData,
+  getSchemeById,
+  getSchemesForSitemap,
+} from "./schemes.server";
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const catalogPage = (
-  schemes: Array<Record<string, unknown>>,
-  nextCursor?: string,
+  schemes: RawSchemeData[],
+  options: { total?: number; nextCursor?: string } = {},
 ) =>
   Response.json({
     data: schemes,
-    total_count: schemes.length,
-    has_more: Boolean(nextCursor),
-    next_cursor: nextCursor,
+    total_count: options.total ?? schemes.length,
+    has_more: Boolean(options.nextCursor),
+    next_cursor: options.nextCursor,
   });
 
 beforeEach(() => {
-  fetchWithAuth.mockReset();
+  process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
+  vi.stubGlobal("fetch", vi.fn());
 });
 
 afterEach(() => {
   process.env.NEXT_PUBLIC_API_BASE_URL = configuredApiUrl;
+  vi.unstubAllGlobals();
 });
 
-describe("sitemap scheme loading", () => {
-  it("skips remote loading when the API URL is not configured", async () => {
+describe("public build-time scheme loading", () => {
+  it("fails visibly when the public API URL is not configured", async () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    await expect(getSchemesForSitemap()).resolves.toEqual([]);
-    expect(fetchWithAuth).not.toHaveBeenCalled();
+    await expect(getCatalogData()).rejects.toThrow(
+      "Missing NEXT_PUBLIC_API_BASE_URL",
+    );
+    expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("follows the catalog cursor until the last page and de-duplicates", async () => {
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
-    fetchWithAuth
+  it("loads catalog data without a Firebase authorization header", async () => {
+    vi.mocked(fetch).mockResolvedValue(catalogPage([catalogScheme]));
+
+    await expect(getCatalogData("Financial Assistance")).resolves.toMatchObject(
+      {
+        schemes: [expect.objectContaining({ schemeId: "test-support-scheme" })],
+        total: 1,
+        nextCursor: "",
+      },
+    );
+
+    const [url, init] = vi.mocked(fetch).mock.calls[0];
+    expect(String(url)).toBe(
+      "https://api.test/catalog?limit=20&category=Financial+Assistance",
+    );
+    expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+  });
+
+  it("loads full scheme details without a Firebase authorization header", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      Response.json({ data: { ...catalogScheme, scheme_id: "detail/id" } }),
+    );
+
+    await expect(getSchemeById("detail/id")).resolves.toMatchObject({
+      schemeId: "detail/id",
+    });
+
+    const [url, init] = vi.mocked(fetch).mock.calls[0];
+    expect(String(url)).toBe("https://api.test/schemes/detail%2Fid");
+    expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+  });
+
+  it("surfaces an actionable public scheme-detail API error", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response("upstream unavailable", { status: 503 }),
+    );
+
+    await expect(getSchemeById("failed-scheme")).rejects.toThrow(
+      "Unable to fetch scheme failed-scheme (503): upstream unavailable",
+    );
+  });
+
+  it("enumerates every catalog page and de-duplicates scheme ids", async () => {
+    const firstPage = Array.from({ length: 20 }, (_, index) => ({
+      ...catalogScheme,
+      scheme_id: `page-1-scheme-${index + 1}`,
+    }));
+    vi.mocked(fetch)
       .mockResolvedValueOnce(
-        catalogPage(
-          [{ ...catalogScheme, scheme_id: "page-1-scheme" }],
-          "cursor-2",
-        ),
+        catalogPage(firstPage, { total: 21, nextCursor: "cursor-2" }),
       )
       .mockResolvedValueOnce(
-        catalogPage([
-          { ...catalogScheme, scheme_id: "page-2-scheme" },
-          // The same scheme reappearing across pages must not be emitted twice.
-          { ...catalogScheme, scheme_id: "page-1-scheme" },
-        ]),
+        catalogPage(
+          [firstPage[0], { ...catalogScheme, scheme_id: "page-2-scheme-21" }],
+          { total: 21 },
+        ),
       );
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getAllCatalogSchemes();
 
-    expect(schemes.map((scheme) => scheme.schemeId)).toEqual([
-      "page-1-scheme",
-      "page-2-scheme",
-    ]);
-    expect(fetchWithAuth).toHaveBeenCalledTimes(2);
-    expect(fetchWithAuth.mock.calls[0][0]).toBe(
-      "https://api.test/catalog?limit=200",
+    expect(schemes).toHaveLength(21);
+    expect(schemes.at(-1)?.schemeId).toBe("page-2-scheme-21");
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails rather than publishing an incomplete catalog", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      catalogPage([{ ...catalogScheme, scheme_id: "only-scheme" }], {
+        total: 2,
+      }),
     );
-    expect(fetchWithAuth.mock.calls[1][0]).toBe(
-      "https://api.test/catalog?limit=200&cursor=cursor-2",
+
+    await expect(getAllCatalogSchemes()).rejects.toThrow(
+      "ended with 1 unique schemes; expected 2",
     );
   });
 
-  it("omits schemes the search path kept unlisted", async () => {
-    // /catalog only filters retired schemes; the sitemap must also drop inactive
-    // ones, as the search it replaced did.
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
-    fetchWithAuth.mockResolvedValueOnce(
+  it("omits inactive and retired schemes from sitemap routes", async () => {
+    vi.mocked(fetch).mockResolvedValue(
       catalogPage([
         { ...catalogScheme, scheme_id: "listed-scheme", status: "active" },
         { ...catalogScheme, scheme_id: "unlisted-scheme", status: "inactive" },
@@ -83,44 +133,5 @@ describe("sitemap scheme loading", () => {
     const schemes = await getSchemesForSitemap();
 
     expect(schemes.map((scheme) => scheme.schemeId)).toEqual(["listed-scheme"]);
-  });
-
-  it("keeps the pages already collected when a later page fails", async () => {
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
-    fetchWithAuth
-      .mockResolvedValueOnce(
-        catalogPage([{ ...catalogScheme, scheme_id: "kept-scheme" }], "cursor-2"),
-      )
-      .mockResolvedValueOnce(new Response(null, { status: 500 }));
-
-    const schemes = await getSchemesForSitemap();
-
-    expect(schemes.map((scheme) => scheme.schemeId)).toEqual(["kept-scheme"]);
-  });
-
-  it("keeps the pages already collected when a page throws", async () => {
-    // A build-time network failure must not take the static sitemap routes down.
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    fetchWithAuth
-      .mockResolvedValueOnce(
-        catalogPage(
-          [{ ...catalogScheme, scheme_id: "kept-scheme" }],
-          "cursor-2",
-        ),
-      )
-      .mockRejectedValueOnce(new Error("getaddrinfo ENOTFOUND api.test"));
-
-    const schemes = await getSchemesForSitemap();
-
-    expect(schemes.map((scheme) => scheme.schemeId)).toEqual(["kept-scheme"]);
-    vi.restoreAllMocks();
-  });
-
-  it("returns no schemes when the first page fails", async () => {
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
-    fetchWithAuth.mockResolvedValueOnce(new Response(null, { status: 500 }));
-
-    await expect(getSchemesForSitemap()).resolves.toEqual([]);
   });
 });

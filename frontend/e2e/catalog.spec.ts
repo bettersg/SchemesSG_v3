@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "next/experimental/testmode/playwright";
+import { expect, test } from "@playwright/test";
 import path from "node:path";
 import {
   CATALOG_SCHEMES,
@@ -10,23 +10,13 @@ test("user can choose a catalog category and see matching schemes", async ({
   page,
 }) => {
   test.setTimeout(60_000);
-  const network = await interceptCatalogSchemeJourney(page, {
-    holdInitialCatalog: true,
-  });
+  const network = await interceptCatalogSchemeJourney(page);
   await page.goto("/catalog");
 
   await expect(
     page.getByRole("heading", { name: "Explore our schemes collection" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Financial Assistance" }).click();
-  try {
-    await expect(page.getByLabel("Loading schemes")).toBeVisible({
-      timeout: 20_000,
-    });
-  } finally {
-    network.releaseInitialCatalog();
-  }
-
+  await page.goto("/catalog/financial-assistance");
   const firstScheme = page.getByRole("link", {
     name: `${CATALOG_SCHEMES[0].scheme}, ${CATALOG_SCHEMES[0].agency} (opens in new tab)`,
   });
@@ -43,18 +33,30 @@ test("user can choose a catalog category and see matching schemes", async ({
     scale: "css",
     stylePath: path.join(__dirname, "fixtures/visual-baseline.css"),
   });
-  expect(network.catalogRequests).toEqual(
+  // The category page is server-rendered, so the public catalog read must
+  // reach the API anonymously and with the shared page size.
+  const catalogRequests = (await network.readPublicFixtureRequests()).filter(
+    (request) => request.resource === "catalog",
+  );
+  expect(catalogRequests).toEqual(
     expect.arrayContaining([
       {
-        authorization: expect.stringMatching(/^Bearer /),
-        category: "financial assistance",
+        resource: "catalog",
+        authorization: null,
+        category: "Financial Assistance",
+        cursor: null,
         limit: "20",
         method: "GET",
       },
     ]),
   );
+  expect(
+    catalogRequests.every((request) => request.authorization === null),
+  ).toBe(true);
 
-  await page.getByRole("link", { name: "Education", exact: true }).click();
-  await expect(page.getByText("No schemes found", { exact: true })).toBeVisible();
+  await page.goto("/catalog/education");
+  await expect(
+    page.getByText("No schemes found", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByText("(0)", { exact: true })).toBeVisible();
 });

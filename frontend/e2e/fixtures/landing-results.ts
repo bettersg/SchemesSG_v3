@@ -1,7 +1,7 @@
 import type { Page, Request } from "@playwright/test";
 import type { RawSchemeData } from "../../src/types/types";
 
-export const E2E_API_ORIGIN = "https://api.e2e.test";
+export const E2E_API_ORIGIN = "http://127.0.0.1:4174";
 export const E2E_FIREBASE_CONFIG = {
   apiKey: "e2e-api-key",
   appId: "1:123456789012:web:e2e000000000000000000",
@@ -95,9 +95,9 @@ export const LANDING_RESULT_EVENTS: Array<{
   { type: "done", data: {} },
 ];
 
-const LANDING_RESULTS_SSE = LANDING_RESULT_EVENTS
-  .map((event) => `data: ${JSON.stringify(event)}\n\n`)
-  .join("");
+const LANDING_RESULTS_SSE = LANDING_RESULT_EVENTS.map(
+  (event) => `data: ${JSON.stringify(event)}\n\n`,
+).join("");
 
 type AuthRequest = {
   apiKey: string | null;
@@ -125,8 +125,7 @@ function isAuthEndpoint(url: URL): boolean {
 
 function isChatEndpoint(url: URL): boolean {
   return (
-    url.origin === E2E_API_ORIGIN &&
-    url.pathname === "/agent_chat_message"
+    url.origin === E2E_API_ORIGIN && url.pathname === "/agent_chat_message"
   );
 }
 

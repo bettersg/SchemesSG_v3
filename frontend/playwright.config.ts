@@ -53,22 +53,33 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command:
-      "npm run dev -- --webpack --hostname 127.0.0.1 --port 3100",
-    env: {
-      NEXT_PUBLIC_API_BASE_URL: E2E_API_ORIGIN,
-      NEXT_PUBLIC_FB_API_KEY: E2E_FIREBASE_CONFIG.apiKey,
-      NEXT_PUBLIC_FIREBASE_APP_ID: E2E_FIREBASE_CONFIG.appId,
-      NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID:
-        E2E_FIREBASE_CONFIG.measurementId,
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: E2E_FIREBASE_CONFIG.projectId,
-      NEXT_TELEMETRY_DISABLED: "1",
+  webServer: [
+    {
+      command: "node scripts/public-build-fixture.mjs",
+      env: { PUBLIC_BUILD_FIXTURE_PORT: "4174" },
+      // A stale fixture process would serve the wrong schemes and swallow the
+      // per-test request reset, so always start a fresh one.
+      reuseExistingServer: false,
+      stderr: "pipe",
+      stdout: "pipe",
+      timeout: 30_000,
+      url: `${E2E_API_ORIGIN}/health`,
     },
-    reuseExistingServer: false,
-    stderr: "pipe",
-    stdout: "ignore",
-    timeout: 120_000,
-    url: baseURL,
-  },
+    {
+      command: "npm run dev -- --webpack --hostname 127.0.0.1 --port 3100",
+      env: {
+        NEXT_PUBLIC_API_BASE_URL: E2E_API_ORIGIN,
+        NEXT_PUBLIC_FB_API_KEY: E2E_FIREBASE_CONFIG.apiKey,
+        NEXT_PUBLIC_FIREBASE_APP_ID: E2E_FIREBASE_CONFIG.appId,
+        NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: E2E_FIREBASE_CONFIG.measurementId,
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: E2E_FIREBASE_CONFIG.projectId,
+        NEXT_TELEMETRY_DISABLED: "1",
+      },
+      reuseExistingServer: false,
+      stderr: "pipe",
+      stdout: "ignore",
+      timeout: 120_000,
+      url: baseURL,
+    },
+  ],
 });

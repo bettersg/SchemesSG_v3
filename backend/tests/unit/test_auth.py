@@ -13,14 +13,16 @@ def test_valid_token_initializes_firebase_before_verification(mocker):
     )
     mocker.patch(
         "utils.auth.auth.verify_id_token",
-        side_effect=lambda token: events.append(("verify", token)) or {"uid": "user-123"},
+        side_effect=lambda token, *, clock_skew_seconds: (
+            events.append(("verify", token, clock_skew_seconds)) or {"uid": "user-123"}
+        ),
     )
     request = SimpleNamespace(headers={"Authorization": "Bearer valid-token"})
 
     result = verify_auth_token(request)
 
     assert result == (True, "user-123")
-    assert events == ["initialize", ("verify", "valid-token")]
+    assert events == ["initialize", ("verify", "valid-token", 5)]
 
 
 def test_missing_authorization_header_does_not_initialize_firebase(mocker):
@@ -47,4 +49,4 @@ def test_invalid_token_keeps_verification_failure_response(mocker):
 
     assert result == (False, "Token verification failed")
     initialize.assert_called_once_with()
-    verify.assert_called_once_with("invalid-token")
+    verify.assert_called_once_with("invalid-token", clock_skew_seconds=5)

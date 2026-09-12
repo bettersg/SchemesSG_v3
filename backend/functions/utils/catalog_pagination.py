@@ -15,6 +15,23 @@ from loguru import logger
 # or a secure configuration system
 CURSOR_SECRET = os.environ.get("CURSOR_SECRET", "schemes_pagination_secret_key")
 
+CATALOG_FIELDS = (
+    "scheme",
+    "agency",
+    "summary",
+    "description",
+    "llm_description",
+    "scheme_type",
+    "who_is_it_for",
+    "what_it_gives",
+    "link",
+    "image",
+    "planning_area",
+    "last_scraped_update",
+    "status",
+    "merged_into",
+)
+
 
 @dataclass
 class PaginationResult:
@@ -41,9 +58,7 @@ def _encode_cursor(doc_id: str) -> str:
     cursor_json = json.dumps(cursor_data)
 
     # Create signature for verification
-    signature = hmac.new(
-        CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256
-    ).hexdigest()
+    signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
 
     # Combine cursor data and signature
     cursor_token = {"data": cursor_data, "signature": signature}
@@ -82,9 +97,7 @@ def _decode_cursor(cursor: str) -> Optional[str]:
 
         # Verify signature
         cursor_json = json.dumps(received_cursor_data)
-        expected_signature = hmac.new(
-            CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256
-        ).hexdigest()
+        expected_signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
 
         if not hmac.compare_digest(received_signature, expected_signature):
             logger.warning("Cursor signature verification failed")
@@ -122,11 +135,11 @@ def _get_paginated_query(
 ) -> Query:
     """Build a Firestore query with ordering, limit, and optional cursor.
 
-    The query always orders by `last_scraped_update` from newest to oldest and
-    uses `__name__` as an ascending tie-breaker. It requests `limit + 1`
-    documents so the caller can determine whether another page exists. When a
-    cursor is provided, the corresponding document snapshot is fetched and used
-    with `start_at(...)`.
+    The query projects onto `CATALOG_FIELDS`, orders by `last_scraped_update`
+    from newest to oldest with `__name__` as an ascending tie-breaker, and
+    requests `limit + 1` documents so the caller can determine whether another
+    page exists. When a cursor is provided, the corresponding document snapshot
+    is fetched and used with `start_at(...)`.
 
     Args:
         collection_ref: Base Firestore collection for the catalog.
@@ -139,16 +152,14 @@ def _get_paginated_query(
     Returns:
         A Firestore query ready to execute.
     """
-    # Order by newest updates first and add __name__ as a deterministic
-    # ascending secondary sort key for documents sharing the same timestamp.
+    # Catalog pages only need card and routing data. Project at the Firestore
+    # query so large detail-only fields such as scraped_text are never fetched.
+    source = base_query if base_query is not None else collection_ref
     q = (
-        base_query.order_by("last_scraped_update", direction=Query.DESCENDING).limit(
-            limit + 1
-        )
-        if base_query
-        else collection_ref.order_by(
-            "last_scraped_update", direction=Query.DESCENDING
-        ).limit(limit + 1)
+        source.select(*CATALOG_FIELDS)
+        .order_by("last_scraped_update", direction=Query.DESCENDING)
+        .order_by("__name__", direction=Query.ASCENDING)
+        .limit(limit + 1)
     )
 
     if not cursor:

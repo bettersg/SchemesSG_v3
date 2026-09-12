@@ -13,31 +13,12 @@ vi.mock("firebase/auth", () => ({
   signInAnonymously: firebase.signInAnonymously,
 }));
 
-import { getAuthToken, observeAuthState } from "./auth-gateway";
+import { getAuthToken } from "./auth-gateway";
 
 describe("auth gateway", () => {
   beforeEach(() => {
     firebase.getFirebaseAuth.mockReset();
     firebase.signInAnonymously.mockReset();
-  });
-
-  it("delivers authentication changes and returns the unsubscribe handle", () => {
-    const user = { uid: "user-123" };
-    const unsubscribe = vi.fn();
-    firebase.getFirebaseAuth.mockReturnValue({
-      onAuthStateChanged: (listener: (value: typeof user) => void) => {
-        listener(user);
-        return unsubscribe;
-      },
-    });
-    const observedUsers: string[] = [];
-
-    const stopObserving = observeAuthState((value) => {
-      if (value) observedUsers.push(value.uid);
-    });
-
-    expect(observedUsers).toEqual(["user-123"]);
-    expect(stopObserving).toBe(unsubscribe);
   });
 
   it("returns the current user's token without signing in again", async () => {

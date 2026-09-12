@@ -1,9 +1,6 @@
 import CatalogDetail from "@/components/catalog/catalog-detail";
 import { getCatalogJsonLd, getCatalogMetadata } from "@/lib/catalog-seo";
-import {
-  CATALOG_CATEGORY_ROUTES,
-  type CatalogCategory,
-} from "@/lib/design-system/categories";
+import { CATALOG_CATEGORY_ROUTES } from "@/lib/design-system/categories";
 
 export const metadata = getCatalogMetadata({
   path: "/catalog",
