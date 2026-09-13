@@ -20,6 +20,7 @@ export interface RawSchemeData {
   who_is_it_for?: string[];
   agency?: string;
   description?: string;
+  llm_description?: string;
   what_it_gives?: string[];
   link?: string;
   image?: string;
@@ -28,6 +29,9 @@ export interface RawSchemeData {
   quintile?: number;
   summary?: string;
   planning_area?: string;
+  last_scraped_update?: FirestoreTimestamp;
+  status?: "active" | "inactive" | "retired";
+  merged_into?: string;
 }
 
 export interface EligibilityType {
@@ -108,6 +112,12 @@ export interface Scheme {
   status?: "active" | "inactive" | "retired";
   mergedInto?: string;
 }
+
+export type CatalogPageData = {
+  schemes: Scheme[];
+  total: number;
+  nextCursor: string;
+};
 
 export type BranchContact = {
   planningArea?: string;

@@ -1,13 +1,15 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const configDirectory = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  outputFileTracingRoot: configDirectory,
+
   env: {
     APP_ENV: process.env.APP_ENV || "development",
-  },
-  // Lets next.onFetch intercept async Server Component requests only in E2E.
-  experimental: {
-    testProxy:
-      process.env.NEXT_PUBLIC_API_BASE_URL === "https://api.e2e.test",
   },
   images: {
     remotePatterns: [
@@ -16,13 +18,6 @@ const nextConfig = {
       },
     ],
   },
-  // You can add environment-specific configurations here if needed
-  // For example:
-  // publicRuntimeConfig: {
-  //   apiUrl: process.env.APP_ENV === 'production'
-  //     ? 'https://api.example.com'
-  //     : 'https://staging-api.example.com',
-  // },
 };
 
 export default nextConfig;

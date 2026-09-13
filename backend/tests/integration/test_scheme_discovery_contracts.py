@@ -8,9 +8,7 @@ from schemes.catalog import catalog
 from schemes.schemes import schemes
 
 
-DISCOVERY_ENDPOINTS = [
-    pytest.param(catalog, "GET", {}, "/", id="catalog"),
-    pytest.param(schemes, "GET", {}, "/scheme-1", id="scheme-detail"),
+PROTECTED_DISCOVERY_ENDPOINTS = [
     pytest.param(
         agent_chat_message,
         "POST",
@@ -27,7 +25,7 @@ DISCOVERY_PREFLIGHT_ENDPOINTS = [
 ]
 
 
-@pytest.mark.parametrize("handler,method,body,path", DISCOVERY_ENDPOINTS)
+@pytest.mark.parametrize("handler,method,body,path", PROTECTED_DISCOVERY_ENDPOINTS)
 def test_discovery_endpoints_require_authentication(
     handler, method, body, path, mock_request
 ):

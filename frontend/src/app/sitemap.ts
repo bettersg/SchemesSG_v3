@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSchemesForSitemap } from "@/lib/schemes";
+import { getSchemesForSitemap } from "@/lib/schemes.server";
 import { CATALOG_ROUTE_PATHS } from "@/lib/catalog-seo";
 
 const SITE_URL = "https://schemes.sg";

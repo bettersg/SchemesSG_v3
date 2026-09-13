@@ -8,7 +8,7 @@ export const handlers = [
   http.get(`${TEST_API_URL}/catalog`, ({ request }) => {
     const url = new URL(request.url);
     const isExpectedRequest =
-      request.headers.get("authorization") === `Bearer ${TEST_AUTH_TOKEN}` &&
+      request.headers.get("authorization") === null &&
       url.searchParams.get("category") === "financial assistance" &&
       url.searchParams.get("limit") === "20";
 

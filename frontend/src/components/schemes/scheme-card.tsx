@@ -9,9 +9,10 @@ import { getSchemeCategory } from "@/lib/design-system/categories";
 interface SchemeCardProps {
   scheme: Scheme;
   className?: string;
+  headingLevel?: 2 | 3;
 }
 
-function SchemeCard({ scheme, className }: SchemeCardProps) {
+function SchemeCard({ scheme, className, headingLevel = 3 }: SchemeCardProps) {
   // sort scheme types, putting any of the 10 scheme categories in the front
   // slice to the first 2 types
   const hasCategory = (type: string) => getSchemeCategory(type) !== undefined;
@@ -21,6 +22,7 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
   // One wayfinding chip: the top category carries "what kind of help this is"
   // without turning a dense grid into a field of coloured pills.
   const topType = sortedTypes[0];
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   return (
     <Link
       href={`/schemes/${scheme.schemeId}`}
@@ -36,12 +38,12 @@ function SchemeCard({ scheme, className }: SchemeCardProps) {
       <div className="mb-3 flex items-start gap-3">
         <SchemeLogo agency={scheme.agency} image={scheme.image} />
         <div className="min-w-0 flex-1">
-          <h3
+          <Heading
             title={scheme.schemeName}
             className="font-(--font-head) text-[0.95rem] font-semibold leading-snug text-(--schemes-blue-900) line-clamp-2"
           >
             {scheme.schemeName}
-          </h3>
+          </Heading>
           <p
             title={scheme.agency}
             className="mt-1 truncate text-xs text-(--schemes-muted)"

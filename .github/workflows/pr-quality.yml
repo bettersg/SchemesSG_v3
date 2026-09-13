@@ -63,11 +63,11 @@ jobs:
             exit "$lane_status"
           fi
 
-      - name: Build for production
+      - name: Build against the public fixture API
         working-directory: frontend
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-        run: npm run build:prod
+        run: |
+          npm run test:build-fixture
+          npm run build:public
 
   frontend-e2e:
     name: Frontend E2E

@@ -33,6 +33,8 @@
     "test:e2e:update-snapshots": "playwright test --update-snapshots=changed",
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
+    "build:public": "node scripts/run-public-build.mjs",
+    "test:build-fixture": "node --test scripts/public-build-fixture.test.mjs",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
     "test-build:prod": "npm run build:prod && npx serve@latest out",
     "clean": "rm -rf node_modules .next out dist"

@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "next/experimental/testmode/playwright";
+import { expect, test } from "@playwright/test";
 import path from "node:path";
 import {
   SCHEME_DETAIL,
@@ -9,10 +9,9 @@ import {
 
 test("mobile scheme details remain accessible and actionable", async ({
   context,
-  next,
   page,
 }) => {
-  await interceptSchemeDetailJourney(next, context);
+  await interceptSchemeDetailJourney(context);
   await page.goto(`/schemes/${SCHEME_DETAIL_ID}`);
 
   await expect(

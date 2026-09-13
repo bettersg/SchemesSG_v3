@@ -17,7 +17,6 @@ from firebase_functions import https_fn, options
 from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING
-from utils.auth import verify_auth_token
 from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
@@ -47,9 +46,7 @@ class CatalogRequestParams:
     filter_value: str | list[str] | None = None
 
 
-_CATEGORY_LOOKUP = {
-    cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()
-}
+_CATEGORY_LOOKUP = {cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()}
 
 
 def _expand_category(value: str) -> list[str]:
@@ -59,9 +56,7 @@ def _expand_category(value: str) -> list[str]:
     return types
 
 
-def _filter_scheme_types_for_category(
-    results: PaginationResult, category_scheme_types: list[str]
-) -> PaginationResult:
+def _filter_scheme_types_for_category(results: PaginationResult, category_scheme_types: list[str]) -> PaginationResult:
     """Trim scheme_type values in category catalog responses to the matched category."""
 
     category_scheme_type_set = set(category_scheme_types)
@@ -76,9 +71,7 @@ def _filter_scheme_types_for_category(
         filtered_data.append(
             {
                 **item,
-                "scheme_type": [
-                    value for value in scheme_type if value in category_scheme_type_set
-                ],
+                "scheme_type": [value for value in scheme_type if value in category_scheme_type_set],
             }
         )
 
@@ -119,10 +112,7 @@ def _count_excluded_schemes(
     shape the catalog has always issued, so no new composite index is needed.
     """
     source = base_query if base_query is not None else collection_ref
-    counts = [
-        _count_total(collection_ref, source.where("status", "==", status))
-        for status in exclude_statuses
-    ]
+    counts = [_count_total(collection_ref, source.where("status", "==", status)) for status in exclude_statuses]
     return None if None in counts else sum(counts)
 
 
@@ -233,23 +223,9 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
     # Get standard CORS headers for all other requests
     headers = get_cors_headers(req)
 
-    # Verify authentication
-    is_valid, auth_message = verify_auth_token(req)
-    if not is_valid:
-        return https_fn.Response(
-            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
-            status=401,
-            mimetype="application/json",
-            headers=headers,
-        )
-
-    firebase_manager = create_firebase_manager()
-
     if not req.method == "GET":
         return https_fn.Response(
-            response=json.dumps(
-                {"error": "Invalid request method; only GET is supported"}
-            ),
+            response=json.dumps({"error": "Invalid request method; only GET is supported"}),
             status=405,
             mimetype="application/json",
             headers=headers,
@@ -265,6 +241,10 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
             mimetype="application/json",
             headers=headers,
         )
+
+    # Catalog data is intentionally public. It contains the same scheme
+    # information shown to all visitors and is required during static builds.
+    firebase_manager = create_firebase_manager()
 
     try:
         query_params = _parse_query_params(req.args)
@@ -282,11 +262,7 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         logger.exception("Unable to fetch scheme from firestore", e)
         return https_fn.Response(
-            response=json.dumps(
-                {
-                    "error": "Internal server error, unable to fetch scheme from firestore"
-                }
-            ),
+            response=json.dumps({"error": "Internal server error, unable to fetch scheme from firestore"}),
             status=500,
             mimetype="application/json",
             headers=headers,
@@ -325,9 +301,7 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
     # Validate unknown query parameters
     unknown_params = set(query_params.keys()) - ALLOWED_QUERY_PARAMS
     if unknown_params:
-        raise ValueError(
-            f"Unsupported query parameter(s): {', '.join(sorted(unknown_params))}"
-        )
+        raise ValueError(f"Unsupported query parameter(s): {', '.join(sorted(unknown_params))}")
 
     selected_filters = [name for name in FILTER_SPECS if query_params.get(name)]
     if len(selected_filters) > 1:
@@ -382,11 +356,7 @@ def _handle_catalog_request(
         )
 
     spec = FILTER_SPECS[query_params.filter_name]
-    query = col.where(
-        filter=FieldFilter(
-            spec.firestore_field, spec.operator, query_params.filter_value
-        )
-    )
+    query = col.where(filter=FieldFilter(spec.firestore_field, spec.operator, query_params.filter_value))
 
     results = _get_listed_paginated_results(
         collection_ref=col,
@@ -395,9 +365,7 @@ def _handle_catalog_request(
         limit=query_params.limit,
     )
 
-    if query_params.filter_name == "category" and isinstance(
-        query_params.filter_value, list
-    ):
+    if query_params.filter_name == "category" and isinstance(query_params.filter_value, list):
         return _filter_scheme_types_for_category(results, query_params.filter_value)
 
     return results

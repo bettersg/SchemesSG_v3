@@ -5,13 +5,14 @@ const fetchWithAuth = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api", () => ({ fetchWithAuth }));
 
-import { getSchemeById, getSchemesCategory, streamChat } from "./schemes";
+import { getSchemesCategory, streamChat } from "./schemes";
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 beforeEach(() => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.test";
   fetchWithAuth.mockReset();
+  vi.stubGlobal("fetch", vi.fn());
   vi.spyOn(console, "error").mockImplementation(() => undefined);
   vi.spyOn(console, "log").mockImplementation(() => undefined);
 });
@@ -19,51 +20,12 @@ beforeEach(() => {
 afterEach(() => {
   process.env.NEXT_PUBLIC_API_BASE_URL = configuredApiUrl;
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("scheme API", () => {
-  it("returns a mapped scheme detail from the public detail endpoint", async () => {
-    fetchWithAuth.mockResolvedValue(
-      Response.json({
-        data: {
-          scheme_id: "detail-scheme",
-          scheme: "Detail Scheme",
-          agency: "Support Agency",
-          scheme_type: ["Financial Assistance"],
-        },
-      }),
-    );
-
-    await expect(getSchemeById("detail-scheme")).resolves.toMatchObject({
-      schemeId: "detail-scheme",
-      schemeName: "Detail Scheme",
-      agency: "Support Agency",
-      schemeType: ["Financial Assistance"],
-    });
-    expect(fetchWithAuth).toHaveBeenCalledWith(
-      "https://api.test/schemes/detail-scheme",
-      { next: { revalidate: 300 } },
-    );
-  });
-
-  it("returns null when a scheme detail is absent", async () => {
-    fetchWithAuth.mockResolvedValue(new Response(null, { status: 404 }));
-
-    await expect(getSchemeById("missing-scheme")).resolves.toBeNull();
-  });
-
-  it("surfaces an actionable scheme-detail API error", async () => {
-    fetchWithAuth.mockResolvedValue(
-      new Response("upstream unavailable", { status: 503 }),
-    );
-
-    await expect(getSchemeById("failed-scheme")).rejects.toThrow(
-      "Unable to fetch scheme failed-scheme (503): upstream unavailable",
-    );
-  });
-
   it("normalizes category and cursor parameters for catalog loading", async () => {
-    fetchWithAuth.mockResolvedValue(
+    vi.mocked(fetch).mockResolvedValue(
       Response.json({
         data: [catalogScheme],
         total_count: 1,
@@ -79,13 +41,13 @@ describe("scheme API", () => {
       nextCursor: "catalog-cursor-2",
       total: 1,
     });
-    expect(fetchWithAuth.mock.calls[0][0]).toBe(
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
       "https://api.test/catalog?limit=20&category=Financial+Assistance&cursor=catalog-cursor-1",
     );
   });
 
   it("returns a stable empty state when a catalog request fails", async () => {
-    fetchWithAuth.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 404 }));
 
     await expect(getSchemesCategory("Support")).resolves.toEqual({
       schemes: [],

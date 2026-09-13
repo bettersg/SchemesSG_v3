@@ -1,4 +1,4 @@
-import { expect, test } from "next/experimental/testmode/playwright";
+import { expect, test } from "@playwright/test";
 import {
   CATALOG_SCHEMES,
   EXTERNAL_SCHEME_URL,
@@ -10,20 +10,24 @@ import {
 
 test("user can open a catalog scheme and continue to its official website", async ({
   context,
-  next,
   page,
 }) => {
-  await interceptCatalogSchemeJourney(page);
-  const serverNetwork = await interceptSchemeDetailJourney(next, context);
+  const network = await interceptCatalogSchemeJourney(page);
+  await interceptSchemeDetailJourney(context);
   await page.goto("/catalog");
   await page.getByRole("link", { name: "Financial Assistance" }).click();
 
+  const schemeLink = page.getByRole("link", {
+    name: `${CATALOG_SCHEMES[0].scheme}, ${CATALOG_SCHEMES[0].agency} (opens in new tab)`,
+  });
+  await expect(schemeLink).toHaveAttribute(
+    "href",
+    `/schemes/${SCHEME_DETAIL_ID}`,
+  );
+  await expect(schemeLink).toHaveAttribute("target", "_blank");
+
   const schemePopupPromise = page.waitForEvent("popup");
-  await page
-    .getByRole("link", {
-      name: `${CATALOG_SCHEMES[0].scheme}, ${CATALOG_SCHEMES[0].agency} (opens in new tab)`,
-    })
-    .click();
+  await schemeLink.click();
   const schemePage = await schemePopupPromise;
 
   await expect(schemePage).toHaveURL(`/schemes/${SCHEME_DETAIL_ID}`);
@@ -45,10 +49,18 @@ test("user can open a catalog scheme and continue to its official website", asyn
   await expect(
     externalPage.getByRole("heading", { name: "Bright Start application" }),
   ).toBeVisible();
-  expect(serverNetwork.schemeRequests).toEqual(
+
+  // The detail route is a public build-time read: it must reach the API from the
+  // server and anonymously, exactly like the static export does.
+  const schemeRequests = (await network.readPublicFixtureRequests()).filter(
+    (request) => request.resource === "scheme",
+  );
+  expect(schemeRequests).toEqual(
     expect.arrayContaining([
       {
-        authorization: expect.stringMatching(/^Bearer /),
+        resource: "scheme",
+        authorization: null,
+        initiator: "server",
         method: "GET",
         schemeId: SCHEME_DETAIL_ID,
       },
