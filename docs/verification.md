@@ -69,32 +69,17 @@ Every pull request records:
 
 ### Where screenshots live
 
-Drag-and-drop upload into a comment is the normal route, but it needs a browser —
-there is no API for it, so an agent cannot do it. Rather than commit the files or
-leave a UI change unevidenced, push them to a **gist** and link them:
+Attach them to the pull request with `gh`, which uploads the file and rewrites the
+matching local path in the body in place, keeping its alt text:
 
 ```sh
-gh gist create notes.md                      # gh cannot take binaries; seed with any text file
-git clone https://gist.github.com/<id>.git   # a gist is a git repo, so push images through git
-cd <id> && cp /path/to/*.png . && git add -A && git commit -m "evidence" && git push
+gh pr edit <number> --body-file body.md \
+  --attach './frontend/.pr-shots/before.gif#Empty chat column twelve seconds after send'
 ```
 
-Embed with the URL pinned to the pushed commit, so the image cannot change under a
-reviewer after approval:
-
-```
-![what it shows](https://gist.githubusercontent.com/<user>/<id>/raw/<sha>/shot.png)
-```
-
-Two details that are easy to get wrong. The unpinned `raw/<file>` form returns 404
-for a binary, so the SHA is required, not optional. And gist URLs render directly
-rather than through GitHub's image proxy, so a missing image means a bad URL, not a
-proxy failure — `gh api -H "Accept: application/vnd.github.full+json" …` and grep
-the returned `body_html` for `<img` to confirm, because `body_html` is null without
-that header.
-
-A gist is deliberately impermanent: delete it and the images 404. That suits review
-evidence, which stops being true the moment the page changes. Anything that needs to
-stay true belongs in a test instead.
+Reference the same local path in the body as `![alt](./frontend/.pr-shots/before.gif)`
+and it becomes a `user-attachments` URL. Repeat `--attach` per file, 50 per command,
+10MB per image or GIF. Never commit the files: they outlive the review that needed
+them and are never read again.
 
 Deterministic secretless tests remain the PR gate. Real Firestore vector-search and environment wiring use the separate credentialed development smoke tier; never use production credentials or production data.
