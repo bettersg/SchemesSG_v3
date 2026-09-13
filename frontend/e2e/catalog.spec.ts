@@ -16,7 +16,12 @@ test("user can choose a catalog category and see matching schemes", async ({
   await expect(
     page.getByRole("heading", { name: "Explore our schemes collection" }),
   ).toBeVisible();
-  await page.goto("/catalog/financial-assistance");
+  await page.getByRole("link", { name: "Financial Assistance" }).click();
+  // `next dev` compiles `/catalog/[category]` on the first navigation to it, and
+  // the router holds the URL until that payload arrives.
+  await expect(page).toHaveURL("/catalog/financial-assistance", {
+    timeout: 20_000,
+  });
   const firstScheme = page.getByRole("link", {
     name: `${CATALOG_SCHEMES[0].scheme}, ${CATALOG_SCHEMES[0].agency} (opens in new tab)`,
   });
@@ -33,26 +38,23 @@ test("user can choose a catalog category and see matching schemes", async ({
     scale: "css",
     stylePath: path.join(__dirname, "fixtures/visual-baseline.css"),
   });
-  // The category page is server-rendered, so the public catalog read must
-  // reach the API anonymously and with the shared page size.
+  // The category page is server-rendered, so its public catalog read must reach
+  // the API anonymously, with the shared page size, and exactly once. A
+  // "browser" entry here would be the page refetching after hydration.
   const catalogRequests = (await network.readPublicFixtureRequests()).filter(
     (request) => request.resource === "catalog",
   );
-  expect(catalogRequests).toEqual(
-    expect.arrayContaining([
-      {
-        resource: "catalog",
-        authorization: null,
-        category: "Financial Assistance",
-        cursor: null,
-        limit: "20",
-        method: "GET",
-      },
-    ]),
-  );
-  expect(
-    catalogRequests.every((request) => request.authorization === null),
-  ).toBe(true);
+  expect(catalogRequests).toEqual([
+    {
+      resource: "catalog",
+      authorization: null,
+      initiator: "server",
+      category: "Financial Assistance",
+      cursor: null,
+      limit: "20",
+      method: "GET",
+    },
+  ]);
 
   await page.goto("/catalog/education");
   await expect(

@@ -76,6 +76,16 @@ const sendJson = (response, status, payload) => {
   response.end(JSON.stringify(payload));
 };
 
+/**
+ * Label who made a request, so a spec can tell a server render apart from a
+ * refetch in the page. Both arrive anonymously, and the User-Agent is the only
+ * header that separates them: browsers send `Mozilla/5.0`, Node sends `node`.
+ */
+const initiatorOf = (request) =>
+  /^mozilla\//i.test(request.headers["user-agent"] ?? "")
+    ? "browser"
+    : "server";
+
 export function createPublicBuildFixtureServer() {
   // Every public request is recorded so E2E specs can assert the anonymous
   // contract on the requests Next.js actually made, rather than on requests a
@@ -104,6 +114,7 @@ export function createPublicBuildFixtureServer() {
         resource: "catalog",
         method: request.method,
         authorization: request.headers.authorization ?? null,
+        initiator: initiatorOf(request),
         category: url.searchParams.get("category"),
         cursor: url.searchParams.get("cursor"),
         limit: url.searchParams.get("limit"),
@@ -134,6 +145,7 @@ export function createPublicBuildFixtureServer() {
         resource: "scheme",
         method: request.method,
         authorization: request.headers.authorization ?? null,
+        initiator: initiatorOf(request),
         schemeId,
       });
       if (request.headers.authorization) {

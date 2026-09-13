@@ -136,10 +136,14 @@ def _get_paginated_query(
     """Build a Firestore query with ordering, limit, and optional cursor.
 
     The query projects onto `CATALOG_FIELDS`, orders by `last_scraped_update`
-    from newest to oldest with `__name__` as an ascending tie-breaker, and
-    requests `limit + 1` documents so the caller can determine whether another
-    page exists. When a cursor is provided, the corresponding document snapshot
-    is fetched and used with `start_at(...)`.
+    from newest to oldest, and requests `limit + 1` documents so the caller can
+    determine whether another page exists. When a cursor is provided, the
+    corresponding document snapshot is fetched and used with `start_at(...)`.
+
+    The `__name__` tie-break stays implicit: Firestore appends it in the last
+    explicit ordering's direction, matching the composite indexes in
+    `firestore.indexes.json`. An explicit `__name__ ASCENDING` would need three
+    new mixed-direction indexes deployed first.
 
     Args:
         collection_ref: Base Firestore collection for the catalog.
@@ -155,12 +159,7 @@ def _get_paginated_query(
     # Catalog pages only need card and routing data. Project at the Firestore
     # query so large detail-only fields such as scraped_text are never fetched.
     source = base_query if base_query is not None else collection_ref
-    q = (
-        source.select(*CATALOG_FIELDS)
-        .order_by("last_scraped_update", direction=Query.DESCENDING)
-        .order_by("__name__", direction=Query.ASCENDING)
-        .limit(limit + 1)
-    )
+    q = source.select(*CATALOG_FIELDS).order_by("last_scraped_update", direction=Query.DESCENDING).limit(limit + 1)
 
     if not cursor:
         return q
@@ -191,10 +190,14 @@ def _count_total(
     read per 1000 matched documents) rather than reading every document. Counts
     the filtered base_query when present, else the whole collection. Returns
     None on failure so the caller can degrade gracefully.
+
+    Repeats the page query's `order_by` so the count inherits the same implicit
+    constraint — Firestore omits documents that lack the sort field — and never
+    counts schemes pagination cannot return.
     """
     try:
         source = base_query if base_query is not None else collection_ref
-        aggregate = source.count()
+        aggregate = source.order_by("last_scraped_update", direction=Query.DESCENDING).count()
         result = aggregate.get()
         # google-cloud-firestore returns a list of aggregation-result rows.
         return int(result[0][0].value)

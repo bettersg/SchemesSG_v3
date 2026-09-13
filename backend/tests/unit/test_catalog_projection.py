@@ -1,6 +1,6 @@
 """Catalog projection contracts for public static rendering."""
 
-from utils.catalog_pagination import _get_paginated_query
+from utils.catalog_pagination import _count_total, _get_paginated_query
 
 
 def test_catalog_projection_keeps_routing_and_lifecycle_fields(mocker):
@@ -8,7 +8,6 @@ def test_catalog_projection_keeps_routing_and_lifecycle_fields(mocker):
     collection = mocker.MagicMock()
     projected = collection.select.return_value
     updated_order = projected.order_by.return_value
-    stable_order = updated_order.order_by.return_value
 
     _get_paginated_query(collection, limit=20)
 
@@ -16,5 +15,26 @@ def test_catalog_projection_keeps_routing_and_lifecycle_fields(mocker):
     assert {"scheme", "scheme_type", "status", "merged_into"} <= selected_fields
     assert "scraped_text" not in selected_fields
     projected.order_by.assert_called_once_with("last_scraped_update", direction="DESCENDING")
-    updated_order.order_by.assert_called_once_with("__name__", direction="ASCENDING")
-    stable_order.limit.assert_called_once_with(21)
+    updated_order.limit.assert_called_once_with(21)
+
+
+def test_catalog_query_leaves_the_document_tie_break_implicit(mocker):
+    """An explicit `__name__` order would need composite indexes we do not deploy."""
+    collection = mocker.MagicMock()
+    updated_order = collection.select.return_value.order_by.return_value
+
+    _get_paginated_query(collection, limit=20)
+
+    updated_order.order_by.assert_not_called()
+
+
+def test_catalog_total_count_matches_the_page_query_ordering(mocker):
+    """Counting without the sort field would report unreachable schemes."""
+    collection = mocker.MagicMock()
+    ordered = collection.order_by.return_value
+    ordered.count.return_value.get.return_value = [[mocker.MagicMock(value=7)]]
+
+    assert _count_total(collection) == 7
+
+    collection.order_by.assert_called_once_with("last_scraped_update", direction="DESCENDING")
+    collection.count.assert_not_called()

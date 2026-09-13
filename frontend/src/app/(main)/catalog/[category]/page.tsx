@@ -10,7 +10,7 @@ import {
   getCatalogJsonLd,
   getCatalogMetadata,
 } from "@/lib/catalog-seo";
-import { getCatalogData } from "@/lib/schemes.server";
+import { getCatalogData, isPublicApiConfigured } from "@/lib/schemes.server";
 
 type CatalogCategoryPageProps = {
   params: Promise<{ category: string }>;
@@ -60,7 +60,12 @@ export default async function CatalogCategoryPage({
     category,
     path: getCatalogCategoryPath(category),
   });
-  const initialData = await getCatalogData(category);
+  // Every category route is prerendered, so a secretless build reaches this read
+  // with no API behind it. Without initial data the client fetches the first page
+  // after hydration instead.
+  const initialData = isPublicApiConfigured()
+    ? await getCatalogData(category)
+    : undefined;
 
   return (
     <>

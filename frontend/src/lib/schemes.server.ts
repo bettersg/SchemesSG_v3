@@ -23,6 +23,14 @@ const getApiBaseUrl = () => {
   return baseUrl;
 };
 
+/**
+ * Whether a build can read the public API at all. Secretless validation builds
+ * (`npm run build` with no env vars) cannot, so prerenders that read the catalog
+ * degrade instead of failing the build.
+ */
+export const isPublicApiConfigured = () =>
+  Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
+
 export async function getCatalogData(
   category?: CatalogCategory,
   cursor = "",
@@ -97,6 +105,10 @@ const MAX_CATALOG_PAGES = 500;
  * silently generating an incomplete set of scheme pages.
  */
 async function getAllCatalogSchemesUncached(): Promise<Scheme[]> {
+  // No API to enumerate, so publish zero scheme routes rather than failing a
+  // secretless build.
+  if (!isPublicApiConfigured()) return [];
+
   const schemes: Scheme[] = [];
   const seenIds = new Set<string>();
   const seenCursors = new Set<string>();
@@ -135,7 +147,8 @@ async function getAllCatalogSchemesUncached(): Promise<Scheme[]> {
       }
       if (schemes.length !== expectedTotal) {
         throw new Error(
-          `Catalog enumeration ended with ${schemes.length} unique schemes; expected ${expectedTotal}`,
+          `Catalog enumeration ended with ${schemes.length} unique schemes; expected ${expectedTotal}. ` +
+            "The API's total_count and paginated reads disagree — check for schemes missing last_scraped_update.",
         );
       }
       return schemes;
@@ -176,6 +189,9 @@ export const getSchemeById = cache(
   async (schemeId: string): Promise<Scheme | null> => {
     const response = await fetch(
       `${getApiBaseUrl()}/schemes/${encodeURIComponent(schemeId)}`,
+      // These pages are prerendered, so this window is how long a retirement
+      // keeps serving its old page. Retirements that must be visible sooner
+      // should trigger on-demand revalidation on write.
       { next: { revalidate: 86_400 } },
     );
     if (response.status === 404) return null;

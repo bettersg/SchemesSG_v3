@@ -16,6 +16,7 @@ Install from lockfiles before validating a clean checkout: `npm ci` in
 | Backend canonical | Secretless unit/integration suite with independent coverage ratchets | `cd backend && uv run --frozen pytest && uv run --frozen coverage json -o - \| uv run --frozen python scripts/check_coverage.py` |
 | Frontend unit/integration | Vitest, Testing Library, and enforced coverage | `cd frontend && npm run test:coverage` |
 | Frontend static/build | Lint, types, and validation build | `cd frontend && npm run lint && npm run typecheck && npm run build` |
+| Frontend public build | Anonymous static generation of catalog and scheme routes against a local fixture API | `cd frontend && npm run test:build-fixture && npm run build:public` |
 | PR browser | Deterministic desktop and mobile Chromium journeys | `cd frontend && npm run test:e2e -- --project=chromium --project=mobile-narrow-chromium` |
 | Broader browser | Nightly Chromium, Firefox, and WebKit journeys | `cd frontend && npm run test:e2e:nightly` |
 | Deployed staging | Read-only development-host smoke | `cd frontend && npm run test:e2e:staging` |

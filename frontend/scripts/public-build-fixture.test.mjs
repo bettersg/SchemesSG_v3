@@ -94,6 +94,7 @@ test("records public reads so E2E specs can assert the anonymous contract", asyn
       resource: "catalog",
       method: "GET",
       authorization: null,
+      initiator: "server",
       category: "Financial Assistance",
       cursor: null,
       limit: "20",
@@ -102,6 +103,7 @@ test("records public reads so E2E specs can assert the anonymous contract", asyn
       resource: "scheme",
       method: "GET",
       authorization: null,
+      initiator: "server",
       schemeId: "bright-start-support",
     },
     // Rejected reads are still recorded, so a leaked token is visible rather
@@ -110,9 +112,31 @@ test("records public reads so E2E specs can assert the anonymous contract", asyn
       resource: "catalog",
       method: "GET",
       authorization: "Bearer should-not-be-sent",
+      initiator: "server",
       category: null,
       cursor: null,
       limit: "20",
     },
   ]);
+});
+
+test("separates page reads from server reads so hydration refetches are visible", async () => {
+  await fetch(`${baseUrl}/__fixture/requests`, { method: "DELETE" });
+
+  await fetch(`${baseUrl}/catalog?limit=20`, {
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+    },
+  });
+  await fetch(`${baseUrl}/catalog?limit=20`);
+
+  const { requests } = await (
+    await fetch(`${baseUrl}/__fixture/requests`)
+  ).json();
+
+  assert.deepEqual(
+    requests.map((entry) => entry.initiator),
+    ["browser", "server"],
+  );
 });

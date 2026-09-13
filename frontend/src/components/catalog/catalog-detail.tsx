@@ -73,21 +73,23 @@ export default function CatalogPageClient({
   initialData,
 }: CatalogPageClientProps) {
   const activeCategory = initialCategory ?? "All";
-  const hasMatchingInitialData =
-    initialData !== undefined && initialCategory === activeCategory;
+  // The category page hands over its server read, so hydration can render the
+  // first page without fetching it again.
+  const hasInitialData =
+    initialData !== undefined && initialCategory !== undefined;
   const initialLoadState: CatalogLoadState = !initialCategory
     ? "idle"
-    : !hasMatchingInitialData
+    : !hasInitialData
       ? "loadingInitial"
       : initialData?.nextCursor
         ? "ready"
         : "exhausted";
   const hasSelectedCategory = Boolean(initialCategory);
   const [schemes, setSchemes] = useState<Scheme[]>(
-    hasMatchingInitialData ? (initialData?.schemes ?? []) : [],
+    hasInitialData ? (initialData?.schemes ?? []) : [],
   );
   const [totalCount, setTotalCount] = useState<number | null>(
-    hasMatchingInitialData ? (initialData?.total ?? null) : null,
+    hasInitialData ? (initialData?.total ?? null) : null,
   );
   const [loadState, setLoadState] =
     useState<CatalogLoadState>(initialLoadState);
@@ -100,7 +102,7 @@ export default function CatalogPageClient({
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(
-    hasMatchingInitialData ? (initialData?.nextCursor ?? "") : "",
+    hasInitialData ? (initialData?.nextCursor ?? "") : "",
   );
   const requestIdRef = useRef(0);
   const hasUserScrolledRef = useRef(false);
@@ -190,7 +192,7 @@ export default function CatalogPageClient({
     hasUserScrolledRef.current = false;
     scrollRef.current?.scrollTo({ top: 0 });
 
-    if (hasMatchingInitialData && initialData) {
+    if (hasInitialData && initialData) {
       setSchemes(initialData.schemes);
       setTotalCount(initialData.total);
       cursorRef.current = initialData.nextCursor;
@@ -210,12 +212,7 @@ export default function CatalogPageClient({
       cursorRef.current = r.nextCursor;
       setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
-  }, [
-    activeCategory,
-    hasSelectedCategory,
-    hasMatchingInitialData,
-    initialData,
-  ]);
+  }, [activeCategory, hasSelectedCategory, hasInitialData, initialData]);
 
   // search feature (tbc)
   if (!hasSelectedCategory) {

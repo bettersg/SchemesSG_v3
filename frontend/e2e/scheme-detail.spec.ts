@@ -50,8 +50,8 @@ test("user can open a catalog scheme and continue to its official website", asyn
     externalPage.getByRole("heading", { name: "Bright Start application" }),
   ).toBeVisible();
 
-  // The detail route is a public build-time read: it must reach the API
-  // anonymously, exactly like the static export does.
+  // The detail route is a public build-time read: it must reach the API from the
+  // server and anonymously, exactly like the static export does.
   const schemeRequests = (await network.readPublicFixtureRequests()).filter(
     (request) => request.resource === "scheme",
   );
@@ -60,6 +60,7 @@ test("user can open a catalog scheme and continue to its official website", asyn
       {
         resource: "scheme",
         authorization: null,
+        initiator: "server",
         method: "GET",
         schemeId: SCHEME_DETAIL_ID,
       },

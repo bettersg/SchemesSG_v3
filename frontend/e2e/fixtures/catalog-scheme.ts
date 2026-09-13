@@ -62,6 +62,8 @@ export type PublicFixtureRequest = {
   resource: "catalog" | "scheme";
   method: string;
   authorization: string | null;
+  /** Whether the page or the server made the read. */
+  initiator: "browser" | "server";
   category?: string | null;
   cursor?: string | null;
   limit?: string | null;
