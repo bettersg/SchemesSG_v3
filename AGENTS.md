@@ -1,70 +1,64 @@
 # SchemesSG v3
 
-Two main folders: `backend/` and `frontend/`. See their `AGENTS.md` for scoped
-guidance. `CLAUDE.md` at each of these three locations is a relative symlink
-to `AGENTS.md` — edit `AGENTS.md` only, never the symlink.
+Agent-agnostic instructions. `CLAUDE.md` at root, `backend/`, and
+`frontend/` symlinks to the colocated `AGENTS.md`; edit the source, not the symlink.
 
-## Firebase Projects
+## Read for the task
 
-- **Production**: `schemessg` — deployed from `main` branch
-- **Development**: `schemessg-v3-dev` — deployed from `stg` branch
+- For `backend/` or `frontend/` work, read its `AGENTS.md` alongside this file;
+  nested instructions may not load automatically.
+- For architecture or product decisions, read `DESIGN.md`, `PRODUCT.md`, and
+  relevant accepted decisions in `docs/adr/`.
+- For required checks, test impact, and evidence, read `docs/verification.md`
+  before choosing checks. Load other references when relevant.
 
-## Task Isolation — REQUIRED for repository changes
+## Task isolation and delivery
 
-Every task that changes tracked (or intended-to-be-tracked) files runs in its
-own git worktree on its own branch. Read-only research is exempt.
+Repository changes require a dedicated worktree and branch; read-only research
+is exempt.
 
-- Create/verify the worktree with `scripts/worktree-create.sh` and
-  `scripts/worktree-preflight.sh` (run `--help` on either for flags). Default
-  base is freshly fetched `origin/stg`; `origin/main` requires explicit
-  `--hotfix` for an approved production fix.
+- Create with `scripts/worktree-create.sh <branch> [path]` (also pushes the empty
+  task branch), then run `scripts/worktree-preflight.sh` in that worktree before
+  editing. Use `--help` for flags; create task branches only through this script.
+- Base: freshly fetched `origin/stg`; PR to `stg`, then `stg` → `main` for
+  production. `origin/main` requires `--hotfix` for an approved production fix.
 - Never commit or push from the user's shared checkout.
-- Run preflight before editing; it fails fast on the wrong worktree, branch,
-  upstream, or base ancestry.
+- Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, …), imperative
+  one-liner, no co-author/signature lines. Semantic-release bumps versions from
+  `feat:`/`fix:` and breaking changes.
+- For PRs, fill every section of `pull_request_template.md` with the required
+  user flow, isolation, test impact, evidence, proof of fix, and caveats.
 - When the PR merges or closes, remove its worktree before the session ends:
-  `scripts/worktree-lifecycle.sh remove <path>` from another checkout. `doctor`
-  names every task worktree whose PR is already merged or closed, and is the
-  check to run after an interrupted or moved worktree; it is diagnostic and
-  never force-removes, prunes, repairs, or deletes branches.
+  `scripts/worktree-lifecycle.sh remove <path>` from another checkout. After an
+  interruption or move, use `doctor` on that script for read-only diagnostics.
 
-## Git Workflow
+## Implementation and completion
 
-- Branch from `stg`, PR to `stg`, then PR `stg` → `main` for production.
-- Commit style: **Conventional Commits** (`feat:`, `fix:`, `chore:`,
-  `docs:`, …), imperative mood, one-liner, no co-author/signature lines.
-  `release.yml` runs semantic-release, which bumps the version only from
-  `feat:`/`fix:` (and `BREAKING CHANGE:`) commits.
-- Branch creation is scripted — see `scripts/worktree-create.sh`. Never
-  `git checkout -b <new> origin/<base>` by hand; it sets upstream to
-  `<base>` and a later bare `push` lands commits on it directly.
+- For implementation, define observable acceptance criteria and continue through
+  the scoped change, verification, and fixes for regressions it causes.
+- Run focused checks while iterating, then all required scope checks. Broaden or
+  repeat only for new changes, failures, or unresolved concerns.
+- Done means a reviewable diff and acceptance evidence. Report checks run,
+  checks skipped with reasons, and unresolved risks.
+- If blocked by missing access, conflicting instructions, or an action outside
+  the request, name the blocker and decision needed; cite the exact file and rule
+  for instruction-based blockers.
 
 ## Safety
 
-- Never commit secrets, `.env*` files, service-account credentials, or
-  production data/exports. See each domain's gitignore and `AGENTS.md` for
-  the exact file list.
-- Deterministic PR verification is secretless. Real Firebase/vector-search
-  smoke is credentialed, must target development (`schemessg-v3-dev`), and
-  must never use production credentials or data.
-- Harness, CI workflow, dependency-manifest, deployment, and secret-boundary
-  files are owned/reviewed per `.github/CODEOWNERS`.
+- Production: `schemessg` (`main`). Development: `schemessg-v3-dev` (`stg`).
+- Never commit secrets, `.env*`, service-account credentials, or production
+  data/exports; exact exclusions are in scoped instructions and gitignore files.
+- Deterministic PR checks are secretless. Credentialed Firebase/vector-search
+  smoke must use development, never production credentials or data.
+- Changes to API contracts, auth, streaming, env/runtime wiring, Compose, or
+  cross-stack journeys require development search smoke when they affect real
+  Firebase/search wiring; follow `docs/verification.md`.
+- Before changing harness, CI, dependency manifests, deployment, or secret
+  boundaries, read `.github/CODEOWNERS` for ownership/review requirements.
 
-## Verification & Evidence
+## Maintaining these instructions
 
-- Authoritative scope-based checks and test-impact policy:
-  `docs/verification.md`.
-- Fill in every section of `pull_request_template.md`: TLDR, the before/after
-  User Flow written from the user's seat, task isolation (worktree/branch/base
-  SHA), test impact, verification evidence, before/after Proof of Fix at named
-  commit hashes, and severity-graded caveats.
-- Cross-boundary changes (API contracts, auth, streaming, env/runtime
-  wiring, Compose, or a journey spanning frontend and backend) additionally
-  require the development search smoke when they affect real Firebase/search
-  wiring — see `docs/verification.md`.
-- "Tests pass" or an assertion is not evidence by itself: readiness comes
-  from health checks, UI behavior from exercising the actual page.
-
-## Design & Decisions
-
-- Architecture/product context: `DESIGN.md`, `PRODUCT.md`.
-- Accepted decisions: `docs/adr/`.
+Keep shared, non-obvious rules here; scope domain rules to the domain's file.
+Link detailed procedures with a read condition instead of copying them. Keep
+personal preferences and agent-specific configuration out of shared policy.
