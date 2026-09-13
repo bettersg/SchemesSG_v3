@@ -191,13 +191,15 @@ def _count_total(
     the filtered base_query when present, else the whole collection. Returns
     None on failure so the caller can degrade gracefully.
 
-    Repeats the page query's `order_by` so the count inherits the same implicit
-    constraint — Firestore omits documents that lack the sort field — and never
-    counts schemes pagination cannot return.
+    Issues no `order_by`. `_count_excluded_schemes` counts a `status ==` filter
+    through here, and ordering that count would need a composite index per
+    filter combination — none of which are deployed. The cost is that a scheme
+    missing `last_scraped_update` is counted but never paginated, which the
+    frontend's enumeration reports as a total mismatch.
     """
     try:
         source = base_query if base_query is not None else collection_ref
-        aggregate = source.order_by("last_scraped_update", direction=Query.DESCENDING).count()
+        aggregate = source.count()
         result = aggregate.get()
         # google-cloud-firestore returns a list of aggregation-result rows.
         return int(result[0][0].value)

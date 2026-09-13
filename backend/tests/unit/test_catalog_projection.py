@@ -28,13 +28,27 @@ def test_catalog_query_leaves_the_document_tie_break_implicit(mocker):
     updated_order.order_by.assert_not_called()
 
 
-def test_catalog_total_count_matches_the_page_query_ordering(mocker):
-    """Counting without the sort field would report unreachable schemes."""
+def test_catalog_total_count_issues_no_order_by(mocker):
+    """Ordering the count would need a composite index per filter combination."""
     collection = mocker.MagicMock()
-    ordered = collection.order_by.return_value
-    ordered.count.return_value.get.return_value = [[mocker.MagicMock(value=7)]]
+    collection.count.return_value.get.return_value = [[mocker.MagicMock(value=7)]]
 
     assert _count_total(collection) == 7
 
-    collection.order_by.assert_called_once_with("last_scraped_update", direction="DESCENDING")
-    collection.count.assert_not_called()
+    collection.order_by.assert_not_called()
+
+
+def test_catalog_status_count_issues_no_order_by(mocker):
+    """`_count_excluded_schemes` counts a `status ==` filter through here.
+
+    Ordering it needs `(status, last_scraped_update)` — and, under a category or
+    agency filter, a three-field index. None are deployed, so every catalog read
+    returned 500 the last time this count carried an `order_by`.
+    """
+    collection = mocker.MagicMock()
+    status_filter = collection.where.return_value
+    status_filter.count.return_value.get.return_value = [[mocker.MagicMock(value=3)]]
+
+    assert _count_total(collection, status_filter) == 3
+
+    status_filter.order_by.assert_not_called()
