@@ -40,6 +40,7 @@ for instructions in "$ROOT/AGENTS.md" "$ROOT/backend/AGENTS.md" "$ROOT/frontend/
 done
 
 assert_line "$ROOT/docs/verification.md" "## Test impact" "test-impact policy heading"
+assert_line "$ROOT/AGENTS.md" "- When the PR merges or closes, remove its worktree before the session ends:" "worktree cleanup obligation"
 T="$ROOT/pull_request_template.md"
 assert_line "$T" "## TLDR" "TLDR PR heading"
 assert_line "$T" "## User Flow" "user-flow PR heading"
