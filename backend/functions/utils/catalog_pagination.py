@@ -159,7 +159,8 @@ def _get_paginated_query(
     # Catalog pages only need card and routing data. Project at the Firestore
     # query so large detail-only fields such as scraped_text are never fetched.
     source = base_query if base_query is not None else collection_ref
-    q = source.select(*CATALOG_FIELDS).order_by("last_scraped_update", direction=Query.DESCENDING).limit(limit + 1)
+    # select() takes one iterable of field paths, not varargs.
+    q = source.select(CATALOG_FIELDS).order_by("last_scraped_update", direction=Query.DESCENDING).limit(limit + 1)
 
     if not cursor:
         return q
