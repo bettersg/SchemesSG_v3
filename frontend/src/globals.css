@@ -155,6 +155,35 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+
+    /* Page scrollbar, same overlay treatment as the in-app panels below. Not the
+       `.thin-scrollbar` class itself: its hover rule is meaningless on the root
+       element (`html:hover` is true whenever the pointer is in the window), so the
+       thumb is simply always the resting tint. Position still needs to be
+       readable on a page this long — this is the quiet version, not a hidden one. */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+  }
+
+  html::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    transition: background-color 0.2s ease;
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.65);
+    background-clip: padding-box;
   }
 
   body {

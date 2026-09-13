@@ -8,7 +8,8 @@ import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
 import { Tabs } from "@heroui/react";
 import NewChatModal from "@/components/chat/new-chat-modal";
-import { ChatStreamEvent, mapToScheme, streamChat } from "@/lib/schemes";
+import { mapToScheme } from "@/lib/scheme-mappers";
+import { ChatStreamEvent, streamChat } from "@/lib/schemes";
 import { fetchWithAuth } from "@/lib/api";
 import {
   productSegmentedIndicator,
@@ -23,7 +24,13 @@ import NewChatButton from "./new-chat-button";
 
 const initialChatRequestKeys = new Set<string>();
 
-export default function ChatPage() {
+type ChatPageProps = {
+  // Clears ChatHome's "chat started" latch so "New Chat" returns to the
+  // landing screen instead of leaving an empty chat view mounted.
+  onReset: () => void;
+};
+
+export default function ChatPage({ onReset }: ChatPageProps) {
   const {
     messages,
     setMessages,
@@ -40,7 +47,7 @@ export default function ChatPage() {
   } = useChat();
 
   const [isGenerating, setIsGenerating] = useState(
-    messages[messages.length - 1].type == "user",
+    messages[messages.length - 1]?.type == "user",
   );
   const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
   const statusStepsRef = useRef<StatusStep[]>([]);
@@ -134,6 +141,10 @@ export default function ChatPage() {
     abortControllerRef.current = controller;
     const requestId = activeRequestIdRef.current + 1;
     activeRequestIdRef.current = requestId;
+    // Claim the in-flight slot before the first await, not on the stream's
+    // onStart — response headers can be seconds away on a slow connection, and
+    // handleSend's guard is useless while it still reads false.
+    setIsGenerating(true);
     schemesBeforeActiveRequestRef.current = schemes;
     quickRepliesBeforeActiveRequestRef.current = quickReplies;
     showQuickRepliesBeforeActiveRequestRef.current = showQuickReplies;
@@ -146,7 +157,6 @@ export default function ChatPage() {
     await streamChat(
       userMessage,
       {
-        onStart: handleStreamStart,
         onEvent: (event) => handleStreamEvent(event, requestId),
         onError: (err) => {
           console.error(err);
@@ -174,10 +184,6 @@ export default function ChatPage() {
     setPendingSchemesTabPulse(false);
     setStreamError(null);
   }, []);
-
-  const handleStreamStart = () => {
-    setIsGenerating(true);
-  };
 
   const handleStreamEvent = (event: ChatStreamEvent, requestId: number) => {
     if (activeRequestIdRef.current !== requestId) return;
@@ -409,6 +415,10 @@ export default function ChatPage() {
     setSchemes([]);
     setMessages([]);
     setSessionId("");
+    onReset();
+    // Supersede the in-flight request the abort below cancels, so its onEnd
+    // can't pass the requestId guard and run handleStreamEnd after the reset.
+    activeRequestIdRef.current += 1;
     abortControllerRef.current?.abort();
     resetStreamUi();
     setQuickReplies([]);

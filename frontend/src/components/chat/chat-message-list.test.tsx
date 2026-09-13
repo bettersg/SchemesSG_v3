@@ -1,0 +1,103 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import ChatMessageList from "./chat-message-list";
+import { THINKING_PHRASES } from "./thinking-phrases";
+
+// The spinner is a canvas/wasm Lottie player with nothing to assert on, and
+// letting it fetch its animation would trip the suite's unhandled-request guard.
+vi.mock("@lottiefiles/dotlottie-react", () => ({
+  DotLottieReact: () => <div data-testid="chat-spinner" />,
+  // ChatSpinner calls this at module scope to point the player at the
+  // self-hosted wasm runtime; the mock has to carry it or the import throws.
+  setWasmUrl: () => {},
+}));
+
+const userTurn = [{ type: "user" as const, text: "i need help with preschool fees" }];
+
+/**
+ * The row announces through a bare aria-live span, deliberately not role="status"
+ * — the schemes panel owns the page's only status role, and a second one makes
+ * every bare getByRole("status") in the e2e and dev-smoke suites ambiguous.
+ */
+const politeLiveRegion = () =>
+  document.querySelector('[aria-live="polite"][aria-atomic="true"]');
+
+/**
+ * Any of the 20 phrases can open the rotation, so the assertions match the set
+ * rather than a fixed index — see thinkingPhraseOrder.
+ */
+const ANY_PHRASE = new RegExp(
+  `^(${THINKING_PHRASES.map((phrase) =>
+    phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  ).join("|")})$`,
+);
+
+describe("ChatMessageList", () => {
+  it("shows the thinking indicator the moment generation starts, with no stream data yet", () => {
+    // This is the regression guard for the original bug: the indicator used to
+    // wait for the first status step or text chunk to arrive over the network.
+    render(
+      <ChatMessageList
+        messages={userTurn}
+        streamingBlocks={[]}
+        statusSteps={[]}
+        isGenerating
+      />,
+    );
+
+    expect(politeLiveRegion()).toHaveTextContent("Working on your answer");
+    expect(screen.getByText(ANY_PHRASE)).toBeInTheDocument();
+    expect(screen.getByTestId("chat-spinner")).toBeInTheDocument();
+  });
+
+  it("announces a real status step instead of the placeholder once one arrives", () => {
+    render(
+      <ChatMessageList
+        messages={userTurn}
+        streamingBlocks={[]}
+        statusSteps={[
+          { id: "1", label: "Searching schemes", message: "Searched for preschool fees" },
+        ]}
+        isGenerating
+      />,
+    );
+
+    expect(politeLiveRegion()).toHaveTextContent("Searching schemes");
+    expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
+  });
+
+  it("does not bring the placeholder back once the answer is streaming", () => {
+    // The reported bug: the first chunk clears statusSteps upstream but
+    // isGenerating stays true until the `done` event, so the placeholder
+    // reappeared above the streamed text and sat there until the quick replies
+    // showed up. This is that exact state — text on screen, no steps, still
+    // generating.
+    render(
+      <ChatMessageList
+        messages={userTurn}
+        streamingBlocks={["Here are some schemes that may help."]}
+        statusSteps={[]}
+        isGenerating
+      />,
+    );
+
+    expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("chat-spinner")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Here are some schemes that may help."),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the indicator when nothing is generating", () => {
+    render(
+      <ChatMessageList
+        messages={[...userTurn, { type: "bot", text: "Here is what I found." }]}
+        streamingBlocks={[]}
+        statusSteps={[]}
+      />,
+    );
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
+  });
+});

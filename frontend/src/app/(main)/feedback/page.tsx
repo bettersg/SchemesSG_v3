@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Card, Input, Label, TextArea, TextField } from "@heroui/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
 import {
@@ -23,10 +23,13 @@ function getFeedbackContext(searchParams: URLSearchParams) {
   const source = searchParams.get("source");
 
   if (source === "chat") {
-    const wasHelpful = searchParams.get("sentiment") === "positive";
+    const sentiment = searchParams.get("sentiment");
+    let sentimentContext = "";
+    if (sentiment === "positive") sentimentContext = " (helpful)";
+    if (sentiment === "negative") sentimentContext = " (not helpful)";
     return {
       label: "Feedback about a chat response",
-      draft: `Chat response feedback (${wasHelpful ? "helpful" : "not helpful"}):\n\n`,
+      draft: `Chat response feedback${sentimentContext}:\n\n`,
     };
   }
 
@@ -49,7 +52,7 @@ function getFeedbackContext(searchParams: URLSearchParams) {
   return null;
 }
 
-export default function FeedbackPage() {
+function FeedbackForm() {
   const searchParams = useSearchParams();
   const feedbackContext = getFeedbackContext(searchParams);
   const [feedbackText, setFeedbackText] = useState(
@@ -171,6 +174,7 @@ export default function FeedbackPage() {
             </TextField>
             {submitStatus && (
               <div
+                role={submitStatus.type === "success" ? "status" : "alert"}
                 className={clsx(
                   "leading-5",
                   submitStatus.type === "success"
@@ -193,5 +197,26 @@ export default function FeedbackPage() {
         </Card.Content>
       </Card>
     </PageShell>
+  );
+}
+
+function FeedbackFallback() {
+  return (
+    <PageShell width="form">
+      <div className="mb-6 flex flex-col gap-2 text-left">
+        <h1 className={productHeading}>Share feedback</h1>
+        <p className={productSubheading}>
+          Help us improve Schemes.sg with your valuable input
+        </p>
+      </div>
+    </PageShell>
+  );
+}
+
+export default function FeedbackPage() {
+  return (
+    <Suspense fallback={<FeedbackFallback />}>
+      <FeedbackForm />
+    </Suspense>
   );
 }

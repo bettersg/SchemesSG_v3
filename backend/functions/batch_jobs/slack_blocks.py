@@ -82,6 +82,7 @@ def build_link_check_summary_message(
     alive_count = results.get("alive_count", 0)
     dead_count = results.get("dead_count", 0)
     restored_count = results.get("restored_count", 0)
+    retired_skipped = results.get("retired_skipped", 0)
     duration = results.get("duration_seconds", 0)
 
     # Format duration nicely
@@ -99,6 +100,8 @@ def build_link_check_summary_message(
     )
     if restored_count > 0:
         summary_text += f":recycle: Restored from inactive: *{restored_count}*\n"
+    if retired_skipped > 0:
+        summary_text += f":no_entry_sign: Retired schemes skipped: *{retired_skipped}*\n"
     summary_text += f":stopwatch: Duration: *{duration_str}*"
 
     blocks = [
@@ -144,7 +147,9 @@ def build_link_check_summary_message(
         reindex_text = (
             f":arrows_counterclockwise: *Embeddings Reindex:* Complete\n"
             f"• Schemes indexed: {reindex_result.get('indexed_schemes', 0)}\n"
-            f"• Inactive skipped: {reindex_result.get('skipped_inactive', 0)}"
+            f"• Inactive skipped: {reindex_result.get('skipped_inactive', 0)}\n"
+            f"• Retired skipped: {reindex_result.get('skipped_retired', 0)}\n"
+            f"• Stale embeddings deleted: {reindex_result.get('deleted_embeddings', 0)}"
         )
     else:
         reindex_text = f":x: *Embeddings Reindex:* Failed\n• Error: {reindex_result.get('error', 'Unknown')}"

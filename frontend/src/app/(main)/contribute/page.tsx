@@ -53,7 +53,13 @@ export default function ContributePage() {
       return false;
     }
     try {
-      new URL(formData.Link);
+      const schemeUrl = new URL(formData.Link);
+      if (
+        !["http:", "https:"].includes(schemeUrl.protocol) ||
+        !schemeUrl.hostname
+      ) {
+        throw new Error("Unsupported scheme URL");
+      }
     } catch {
       setSubmitStatus({
         type: "error",
@@ -161,6 +167,7 @@ export default function ContributePage() {
 
             {submitStatus && (
               <div
+                role={submitStatus.type === "success" ? "status" : "alert"}
                 className={clsx(
                   "leading-5",
                   submitStatus.type === "success"

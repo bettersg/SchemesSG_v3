@@ -1,9 +1,13 @@
 "use client";
 
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { DotLottieReact, setWasmUrl } from "@lottiefiles/dotlottie-react";
 import Image from "next/image";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
+
+// Without this the player fetches its wasm runtime from a CDN and renders
+// nothing when that CDN is blocked. Vendored by scripts/copy-lottie-wasm.mjs.
+setWasmUrl("/dotlottie-player.wasm");
 
 type ChatSpinnerProps = {
   className?: string;
@@ -28,7 +32,10 @@ export default function ChatSpinner({ className }: ChatSpinnerProps) {
   return (
     <DotLottieReact
       className={cn("size-8", className)}
-      src="https://lottie.host/f16d88bc-aee3-4c2f-b50f-fa9f3750e242/je06uPGeC8.lottie"
+      // Self-hosted rather than pulled from lottie.host: this spinner sits on
+      // the critical path of "show something immediately", so nothing it needs
+      // should come from a third-party origin.
+      src="/chat-spinner.lottie"
       loop
       autoplay
     />

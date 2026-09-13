@@ -2,9 +2,8 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from new_scheme.url_utils import check_duplicate_scheme, normalize_url
+from utils.scheme_lifecycle import RETIRED_STATUS
 
 
 def test_normalize_url_strips_www_and_trailing_slash():
@@ -25,7 +24,7 @@ def test_check_duplicate_scheme_finds_match(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc_a]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme("https://example.com/foo/")
     assert result is not None
@@ -40,7 +39,7 @@ def test_check_duplicate_scheme_excludes_target(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc_a]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme(
         "https://example.com/foo/", exclude_doc_id="scheme-a"
@@ -59,13 +58,38 @@ def test_check_duplicate_scheme_excludes_target_but_finds_other(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc_a, doc_b]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     result = check_duplicate_scheme(
         "https://example.com/foo/", exclude_doc_id="scheme-a"
     )
     assert result is not None
     assert result["doc_id"] == "scheme-b"
+
+
+def test_check_duplicate_scheme_ignores_retired_collision(mocker):
+    target = MagicMock()
+    target.id = "scheme-active"
+    target.to_dict.return_value = {"link": "https://example.com/foo"}
+
+    retired_duplicate = MagicMock()
+    retired_duplicate.id = "scheme-retired"
+    retired_duplicate.to_dict.return_value = {
+        "link": "https://www.example.com/foo/",
+        "status": RETIRED_STATUS,
+    }
+
+    client = MagicMock()
+    client.collection.return_value.stream.return_value = [
+        target,
+        retired_duplicate,
+    ]
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
+
+    result = check_duplicate_scheme(
+        "https://example.com/foo/", exclude_doc_id="scheme-active"
+    )
+    assert result is None
 
 
 def test_check_duplicate_scheme_no_match(mocker):
@@ -75,6 +99,6 @@ def test_check_duplicate_scheme_no_match(mocker):
 
     client = MagicMock()
     client.collection.return_value.stream.return_value = [doc]
-    mocker.patch("new_scheme.url_utils.firestore.client", return_value=client)
+    mocker.patch("new_scheme.url_utils.get_firestore_client", return_value=client)
 
     assert check_duplicate_scheme("https://example.com/foo/") is None

@@ -26,6 +26,12 @@ const partnerLogos = [
     src: "/landing/featured/sasw.png",
   },
   { name: "Care Corner Singapore", src: "/landing/featured/carecorner.png" },
+  {
+    name: "CareCompass",
+    src: "/landing/featured/carecompass.png",
+    href: "https://carecompass.sg",
+    showLabel: true,
+  },
 ];
 
 export function FeaturedSection() {
@@ -66,17 +72,45 @@ export function FeaturedSection() {
             {t.featured.partnersHeading}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
-            {partnerLogos.map((logo) => (
-              <Image
-                key={logo.name}
-                src={logo.src}
-                alt={logo.name}
-                width={180}
-                height={64}
-                unoptimized
-                className={`${cssTransition.opacityState} h-14 md:h-16 w-auto object-contain`}
-              />
-            ))}
+            {partnerLogos.map((logo) => {
+              const content = logo.showLabel ? (
+                <span className="flex items-center gap-2.5">
+                  <Image
+                    src={logo.src}
+                    alt={logo.name}
+                    width={72}
+                    height={28}
+                    unoptimized
+                    className={`${cssTransition.opacityState} h-7 w-auto object-contain`}
+                  />
+                  <span className="text-base md:text-lg font-semibold text-neutral-700">
+                    {logo.name}
+                  </span>
+                </span>
+              ) : (
+                <Image
+                  src={logo.src}
+                  alt={logo.name}
+                  width={180}
+                  height={64}
+                  unoptimized
+                  className={`${cssTransition.opacityState} h-14 md:h-16 w-auto object-contain`}
+                />
+              );
+              return logo.href ? (
+                <a
+                  key={logo.name}
+                  href={logo.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={logo.name}
+                >
+                  {content}
+                </a>
+              ) : (
+                <span key={logo.name}>{content}</span>
+              );
+            })}
           </div>
         </div>
       </motion.div>

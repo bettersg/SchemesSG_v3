@@ -119,7 +119,7 @@ export default function ChatInputBar({
           </div>
         )}
       </div>
-      <p className="mt-2 flex items-center justify-center gap-1 text-center text-[10px] text-(--schemes-muted-light)">
+      <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-(--schemes-muted)">
         <ShieldCheck size={9} strokeWidth={2} />
         Anonymous · No personal data stored
       </p>

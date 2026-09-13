@@ -1,6 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { cssTransition } from "@/lib/design-system/motion";
 
 export default function MainLayout({
@@ -8,6 +10,9 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+
   return (
     <>
       <Navbar />
@@ -19,6 +24,7 @@ export default function MainLayout({
       >
         {children}
       </main>
+      {isHome && <Footer />}
     </>
   );
 }

@@ -7,27 +7,20 @@ Usage:
     uv run python -m scripts.run_link_check_and_reindex
 """
 
+import os
+
+from batch_jobs.run_link_check_and_reindex import run_link_check_and_reindex_core
 from dotenv import load_dotenv
-
-
-load_dotenv()
-
-import os  # noqa: E402
-
-from fb_manager.firebaseManager import FirebaseManager  # noqa: E402
-from loguru import logger  # noqa: E402
-
-
-# Initialize Firebase
-logger.info("Initializing Firebase...")
-fm = FirebaseManager()
-logger.info(f"Connected to project: {os.getenv('FB_PROJECT_ID')}")
-
-from batch_jobs.run_link_check_and_reindex import run_link_check_and_reindex_core  # noqa: E402
+from fb_manager.firebaseManager import FirebaseManager
+from loguru import logger
 
 
 def main():
     """Run link check and reindex batch job."""
+    load_dotenv()
+    logger.info("Initializing Firebase...")
+    FirebaseManager()
+    logger.info(f"Connected to project: {os.getenv('FB_PROJECT_ID')}")
     logger.info("Starting link check and reindex batch job")
 
     result = run_link_check_and_reindex_core()

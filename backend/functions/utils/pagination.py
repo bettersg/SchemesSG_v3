@@ -89,6 +89,22 @@ def decode_cursor(cursor_token: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def is_valid_cursor(cursor: str) -> bool:
+    """Report whether a cursor is one *this* module issued and can act on.
+
+    A valid signature is not sufficient. Both cursor codecs sign with the same
+    `CURSOR_SECRET`, so a token minted by `utils.catalog_pagination` — which carries
+    a `doc_id` payload — verifies here too. `get_paginated_results` would then find
+    no `scheme_id`/`similarity_score`, log a warning, and quietly serve the first
+    page. Pasting a list `next_cursor` into a search request is an easy mistake for
+    a partner to make, so the payload shape is checked, not just the signature.
+    """
+    cursor_data = decode_cursor(cursor)
+    if not cursor_data:
+        return False
+    return cursor_data.get("scheme_id") is not None and cursor_data.get("similarity_score") is not None
+
+
 def get_paginated_results(
     results: list, limit: int = 20, cursor: Optional[str] = None, session_id: Optional[str] = None
 ) -> Tuple[list, Optional[str], bool, int]:

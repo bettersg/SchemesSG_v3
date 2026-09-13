@@ -2,7 +2,7 @@
 
 import styles from "./scheme-detail.module.css";
 import { Scheme } from "@/types/types";
-import { Link, ScrollShadow, Tabs } from "@heroui/react";
+import { Link, ScrollShadow } from "@heroui/react";
 import Markdown from "react-markdown";
 import { CSSProperties, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
@@ -292,36 +292,38 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               stickyHeaderHidden && "max-md:border-transparent",
             )}
           >
-            <Tabs
-              selectedKey={activeAnchor}
-              onSelectionChange={(key) => selectAnchor(String(key))}
-              className="w-full"
+            <ScrollShadow
+              orientation="horizontal"
+              className="w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain p-1 sm:overflow-x-visible"
+              hideScrollBar
+              size={20}
             >
-              <Tabs.ListContainer>
-                <ScrollShadow
-                  orientation="horizontal"
-                  className="w-full touch-pan-x overflow-x-auto overflow-y-hidden overscroll-x-contain sm:overflow-x-visible p-1"
-                  hideScrollBar
-                  size={20}
-                >
-                  <Tabs.List
-                    aria-label="On this page"
-                    className={`${productSegmentedList} w-max min-w-full sm:w-full`}
-                  >
-                    {jumpAnchors.map((anchor) => (
-                      <Tabs.Tab
-                        key={anchor.id}
-                        id={anchor.id}
-                        className={`${productSegmentedTab} whitespace-nowrap sm:flex-1`}
-                      >
-                        {anchor.label}
-                        <Tabs.Indicator className={productSegmentedIndicator} />
-                      </Tabs.Tab>
-                    ))}
-                  </Tabs.List>
-                </ScrollShadow>
-              </Tabs.ListContainer>
-            </Tabs>
+              <div
+                className={`${productSegmentedList} flex w-max min-w-full gap-1 p-1 sm:w-full`}
+              >
+                {jumpAnchors.map((anchor) => {
+                  const isActive = activeAnchor === anchor.id;
+                  return (
+                    <a
+                      key={anchor.id}
+                      href={`#${anchor.id}`}
+                      aria-current={isActive ? "location" : undefined}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        selectAnchor(anchor.id);
+                      }}
+                      className={clsx(
+                        productSegmentedTab,
+                        "inline-flex min-h-10 items-center justify-center whitespace-nowrap px-3 py-2 no-underline transition-[background-color,box-shadow] hover:bg-white/60 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-400) sm:flex-1",
+                        isActive && productSegmentedIndicator,
+                      )}
+                    >
+                      {anchor.label}
+                    </a>
+                  );
+                })}
+              </div>
+            </ScrollShadow>
           </nav>
         )}
       </div>

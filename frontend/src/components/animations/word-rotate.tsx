@@ -12,7 +12,10 @@ import { cn } from "@/lib/utils";
 
 interface WordRotateProps {
   words: string[];
-  duration?: number;
+  /** Shortest dwell per word. Pass the same value as maxDuration for a fixed cadence. */
+  minDuration: number;
+  /** Longest dwell per word. Each step re-rolls inside [min, max]. */
+  maxDuration: number;
   motionProps?: MotionProps;
   className?: string;
   renderWord?: (word: string) => ReactNode;
@@ -20,7 +23,8 @@ interface WordRotateProps {
 
 export function WordRotate({
   words,
-  duration = 2500,
+  minDuration,
+  maxDuration,
   motionProps = {
     initial: { opacity: 0, y: -8 },
     animate: { opacity: 1, y: 0 },
@@ -33,17 +37,31 @@ export function WordRotate({
   const [index, setIndex] = useState(0);
   const shouldReduceMotion = useReducedMotion();
 
+  // Self-rescheduling rather than setInterval: a fixed cadence reads as a
+  // machine ticking, so each step re-rolls its own dwell.
   useEffect(() => {
     if (shouldReduceMotion || words.length < 2) return;
 
-    const interval = window.setInterval(() => {
-      setIndex((previousIndex) => (previousIndex + 1) % words.length);
-    }, duration);
+    let timer: number;
 
-    return () => window.clearInterval(interval);
-  }, [words, duration, shouldReduceMotion]);
+    const scheduleNext = () => {
+      const dwell = minDuration + Math.random() * (maxDuration - minDuration);
+      timer = window.setTimeout(() => {
+        setIndex((previousIndex) => (previousIndex + 1) % words.length);
+        scheduleNext();
+      }, dwell);
+    };
 
-  const word = words[shouldReduceMotion ? 0 : index];
+    scheduleNext();
+
+    return () => window.clearTimeout(timer);
+  }, [words, minDuration, maxDuration, shouldReduceMotion]);
+
+  // Clamped because `words` can shrink under a live index — a caller swapping a
+  // long list for a shorter one mid-rotation would otherwise read past the end
+  // and render nothing.
+  const word =
+    words[shouldReduceMotion ? 0 : Math.min(index, words.length - 1)];
 
   if (!word) return null;
 

@@ -1,313 +1,9 @@
 import { fetchWithAuth } from "@/lib/api";
-import { cache } from "react";
-import {
-  BranchContact,
-  RawScheme,
-  RawSchemeData,
-  SearchResponse,
-  Scheme,
-} from "../types/types";
+import { parseSseText, type ChatStreamEvent } from "@/lib/chat-stream";
+import { mapCatalogScheme } from "@/lib/scheme-mappers";
+import { RawSchemeData, SearchResponse, Scheme } from "../types/types";
 
-export const mapToScheme = (rawData: RawSchemeData): Scheme => ({
-  schemeType: rawData["scheme_type"] || rawData["Scheme Type"] || [],
-  schemeName: rawData["scheme"] || rawData["Scheme"] || "",
-  targetAudience: rawData["who_is_it_for"] || rawData["Who's it for"] || [],
-  agency: rawData["agency"] || rawData["Agency"] || "",
-  description: rawData["description"] || rawData["Description"] || "",
-  scrapedText: rawData["scraped_text"] || "",
-  benefits: rawData["what_it_gives"] || rawData["What it gives"] || [],
-  link: rawData["link"] || rawData["Link"] || "",
-  image: rawData["image"] || rawData["Image"] || "",
-  searchBooster:
-    rawData["search_booster"] || rawData["search_booster(WL)"] || "",
-  schemeId: rawData["scheme_id"] || "",
-  query: rawData["query"] || "",
-  planningArea: rawData["planning_area"] || "",
-  summary: rawData["summary"] || "",
-  contact: [],
-  howToApply:
-    (rawData as Record<string, string | undefined>)["how_to_apply"] ||
-    (rawData as Record<string, string | undefined>)["How to apply"] ||
-    "",
-  eligibilityText:
-    (rawData as Record<string, string | undefined>)["eligibility_text"] ||
-    (rawData as Record<string, string | undefined>)["Eligibility"] ||
-    "",
-  lastUpdated:
-    (rawData as Record<string, string | undefined>)["last_updated"] ||
-    (rawData as Record<string, string | undefined>)["Last updated"] ||
-    "",
-  serviceArea:
-    (rawData as Record<string, string | undefined>)["service_area"] ||
-    (rawData as Record<string, string | undefined>)["Service area"] ||
-    "",
-});
-
-const splitCsv = (value?: string | null): string[] | undefined => {
-  if (!value) return undefined;
-  const parts = value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return parts.length ? parts : undefined;
-};
-
-// "No Location" is a placeholder the dataset uses when a scheme has no real
-// planning area. Treat it as "no label" rather than rendering a literal
-// "NO LOCATION" card.
-const cleanPlanningArea = (value?: string): string | undefined =>
-  value && value !== "No Location" ? value : undefined;
-
-// Some scraped sources obfuscate emails (e.g. Joomla/CleanTalk), so the scraper
-// captured placeholder text like "This email address is being protected from
-// spambots..." instead of a real address. Drop anything that isn't a plausible
-// email so it never renders as a broken mailto link.
-const isRealEmail = (value: string): boolean =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-
-const cleanEmails = (emails?: string[]): string[] | undefined => {
-  const valid = emails?.filter(isRealEmail);
-  return valid && valid.length ? valid : undefined;
-};
-
-const buildContacts = (raw: RawScheme): BranchContact[] => {
-  const planningAreas = Array.isArray(raw.planning_area)
-    ? raw.planning_area
-    : raw.planning_area
-      ? [raw.planning_area]
-      : undefined;
-
-  if (planningAreas) {
-    const fieldCount = (value?: string | string[] | null) =>
-      Array.isArray(value) ? value.length : value ? 1 : 0;
-    const maxContacts = Math.max(
-      fieldCount(raw.phone),
-      fieldCount(raw.email),
-      fieldCount(raw.address),
-    );
-
-    if (maxContacts === 0) {
-      // No contact details at all — only keep real planning-area labels, and
-      // drop entries that would render an empty/"No Location" card.
-      return Array.from(new Set(planningAreas))
-        .map(cleanPlanningArea)
-        .filter((planningArea): planningArea is string => Boolean(planningArea))
-        .map((planningArea) => ({
-          planningArea,
-          phones: undefined,
-          emails: undefined,
-          address: undefined,
-        }));
-    }
-
-    if (planningAreas.length === 1) {
-      return [
-        {
-          planningArea: cleanPlanningArea(planningAreas[0]),
-          phones: Array.isArray(raw.phone) ? raw.phone : splitCsv(raw.phone),
-          emails: cleanEmails(
-            Array.isArray(raw.email) ? raw.email : splitCsv(raw.email),
-          ),
-          address: Array.isArray(raw.address)
-            ? raw.address[0]
-            : (raw.address ?? undefined),
-        },
-      ];
-    }
-
-    return planningAreas.map((planningArea, index) => {
-      const phone = Array.isArray(raw.phone) ? raw.phone[index] : raw.phone;
-      const email = Array.isArray(raw.email) ? raw.email[index] : raw.email;
-      const address = Array.isArray(raw.address)
-        ? raw.address[index]
-        : raw.address;
-
-      return {
-        planningArea: cleanPlanningArea(planningArea),
-        phones: splitCsv(phone),
-        emails: cleanEmails(splitCsv(email)),
-        address: address || undefined,
-      };
-    });
-  }
-
-  const phones = splitCsv(
-    Array.isArray(raw.phone) ? raw.phone.join(",") : raw.phone,
-  );
-  const emails = cleanEmails(
-    splitCsv(Array.isArray(raw.email) ? raw.email.join(",") : raw.email),
-  );
-  const address = Array.isArray(raw.address) ? raw.address[0] : raw.address;
-
-  return phones || emails || address
-    ? [{ phones, emails, address: address || undefined }]
-    : [];
-};
-
-export const mapToFullScheme = (raw: RawScheme): Scheme => ({
-  schemeId: raw.scheme_id || "",
-  schemeName: raw.scheme || "",
-  schemeType: raw.scheme_type || [],
-  targetAudience: raw.who_is_it_for || [],
-  agency: raw.agency || "",
-  description: raw.llm_description || raw.description || "",
-  scrapedText: raw.scraped_text || "",
-  benefits: raw.what_it_gives || [],
-  link: raw.link || "",
-  image: raw.image || "",
-  searchBooster: raw.search_booster || "",
-  query: "",
-  planningArea: raw.planning_area || "",
-  summary: raw.summary || "",
-  contact: buildContacts(raw),
-  howToApply: raw.how_to_apply || "",
-  eligibilityText: raw.eligibility || "",
-  serviceArea:
-    (raw.service_area !== "No Service Boundaries" && raw.service_area) || "",
-  lastUpdated: raw.last_scraped_update
-    ? new Date(raw.last_scraped_update._seconds * 1000).toLocaleString()
-    : "",
-});
-
-export const getSchemeById = cache(
-  async (schemeId: string): Promise<Scheme | null> => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!baseUrl) {
-      throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
-    }
-
-    const response = await fetchWithAuth(`${baseUrl}/schemes/${schemeId}`, {
-      next: { revalidate: 86_400 },
-    });
-
-    if (response.status === 404) {
-      return null;
-    }
-
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => "");
-      throw new Error(
-        `Unable to fetch scheme ${schemeId} (${response.status})${
-          responseText ? `: ${responseText.slice(0, 200)}` : ""
-        }`,
-      );
-    }
-
-    const payload = (await response.json()) as { data?: RawScheme };
-    if (!payload.data) {
-      return null;
-    }
-
-    return {
-      ...mapToFullScheme(payload.data),
-      schemeId: payload.data.scheme_id || schemeId,
-    };
-  },
-);
-
-export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
-  }
-
-  const response = await fetchWithAuth(`${baseUrl}/schemes_search`, {
-    method: "POST",
-    body: JSON.stringify({
-      query:
-        "financial assistance healthcare housing employment education family eldercare disability mental health food support social assistance",
-      limit: 1000,
-      top_k: 1000,
-      similarity_threshold: 0,
-      cursor: null,
-    }),
-    next: { revalidate: 86_400 },
-  });
-
-  if (!response.ok) {
-    return [];
-  }
-
-  const payload = (await response.json()) as SearchResponse;
-  const rawSchemes = payload.data
-    ? Array.isArray(payload.data)
-      ? payload.data
-      : [payload.data]
-    : [];
-
-  const seen = new Set<string>();
-  return rawSchemes
-    .map((raw) => mapToFullScheme(raw as RawScheme))
-    .filter((scheme) => {
-      if (!scheme.schemeId || seen.has(scheme.schemeId)) {
-        return false;
-      }
-      seen.add(scheme.schemeId);
-      return true;
-    });
-});
-
-export const getSchemes = async (
-  userQuery: string,
-  nextCursor = "",
-): Promise<{
-  schemesRes: Scheme[];
-  sessionId: string;
-  totalCount: number;
-  nextCursor: string;
-}> => {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
-
-  const requestBody = {
-    query: userQuery,
-    limit: 20,
-    top_k: 50,
-    similarity_threshold: 0,
-    cursor: nextCursor || null, // Send null instead of empty string
-  };
-
-  try {
-    const response = await fetchWithAuth(url, {
-      method: "POST",
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const res = (await response.json()) as SearchResponse;
-    console.log("Search response:", res); // Debug
-
-    const sessionId: string = res.sessionID || "";
-    const totalCount: number = res.total_count || 0;
-    const hasMore: boolean = res.has_more || false;
-    const nextCursor: string =
-      res.next_cursor && hasMore ? res.next_cursor : "";
-
-    // Check if data exists in the response
-    if (res.data) {
-      let schemesData;
-      // Handle both array and single object responses
-      if (Array.isArray(res.data)) {
-        schemesData = res.data;
-      } else {
-        // If it's a single object, convert to array
-        schemesData = [res.data];
-      }
-
-      const schemesRes: Scheme[] = schemesData.map(mapToScheme);
-      console.log("Mapped schemes:", schemesRes); // Debug
-      return { schemesRes, sessionId, totalCount, nextCursor };
-    } else {
-      console.error("Unexpected response format:", res);
-      return { schemesRes: [], sessionId, totalCount, nextCursor };
-    }
-  } catch (error) {
-    console.error("Error making POST request:", error);
-    return { schemesRes: [], sessionId: "", totalCount: 0, nextCursor: "" };
-  }
-};
+export type { ChatStreamEvent } from "@/lib/chat-stream";
 
 type StreamCallbacks = {
   onStart?: () => void;
@@ -315,75 +11,6 @@ type StreamCallbacks = {
   onError: (error: unknown) => void;
   onEnd?: () => void;
 };
-
-export type ChatStreamEvent =
-  | {
-      type: "chunk";
-      data: {
-        chunk?: string;
-        content?: string;
-        text?: string;
-        blockIndex?: number;
-        block_index?: number;
-        messageIndex?: number;
-        message_index?: number;
-      };
-    }
-  | {
-      type: "text";
-      data: {
-        text?: string;
-      };
-    }
-  | {
-      type: "action_message";
-      data: {
-        message?: string;
-      };
-    }
-  | {
-      type: "status";
-      data: {
-        label?: string;
-        phase?: string;
-        sessionID?: string;
-        sessionId?: string;
-      };
-    }
-  | {
-      type: "schemes_update";
-      data: {
-        schemes?: RawSchemeData[];
-      };
-    }
-  | {
-      type: "followups";
-      data: {
-        items?: Record<string, string>;
-      };
-    }
-  | {
-      type: "done";
-      data?: Record<string, unknown>;
-    }
-  | {
-      type: string;
-      data?: Record<string, unknown>;
-    };
-
-function parseStreamEvent(raw: string): ChatStreamEvent | null {
-  const payload = raw.trim();
-  if (!payload || payload === "[DONE]") {
-    return { type: "done" };
-  }
-
-  try {
-    return JSON.parse(payload) as ChatStreamEvent;
-  } catch (error) {
-    console.warn("Failed to parse chat stream event", { payload, error });
-    return null;
-  }
-}
 
 export async function streamChat(
   query: string,
@@ -413,19 +40,16 @@ export async function streamChat(
 
     let buffer = "";
 
-    const processEvent = (eventText: string) => {
-      const dataLines = eventText
-        .split(/\r?\n/)
-        .filter((line) => line.startsWith("data: "))
-        .map((line) => line.slice(6));
+    const processEvents = (text: string, flush = false) => {
+      const parsed = parseSseText(text, { flush });
+      buffer = parsed.remainder;
 
-      if (dataLines.length === 0) return false;
+      for (const event of parsed.events) {
+        callbacks.onEvent(event);
+        if (event.type === "done") return true;
+      }
 
-      const event = parseStreamEvent(dataLines.join("\n"));
-      if (!event) return false;
-
-      callbacks.onEvent(event);
-      return event.type === "done";
+      return false;
     };
 
     while (true) {
@@ -435,61 +59,20 @@ export async function streamChat(
       }
 
       buffer += decoder.decode(value, { stream: true });
-      const events = buffer.split(/\r?\n\r?\n/);
-      buffer = events.pop() ?? "";
-
-      for (const eventText of events) {
-        if (processEvent(eventText)) {
-          await reader.cancel();
-          return;
-        }
+      if (processEvents(buffer)) {
+        await reader.cancel();
+        return;
       }
     }
 
     buffer += decoder.decode();
-    if (buffer.trim()) {
-      processEvent(buffer);
-    }
+    processEvents(buffer, true);
   } catch (e) {
     if ((e as DOMException)?.name === "AbortError") return;
     console.error(e);
     callbacks.onError(e);
   } finally {
     callbacks.onEnd?.();
-  }
-}
-
-export async function searchSchemes(
-  query: string,
-  cursor = "",
-): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schemes_search`;
-  try {
-    const res = await fetchWithAuth(url, {
-      method: "POST",
-      body: JSON.stringify({
-        query: query || "social assistance",
-        limit: 20,
-        top_k: 50,
-        similarity_threshold: 0,
-        cursor: cursor || null,
-      }),
-    });
-    if (!res.ok) throw new Error("fetch failed");
-    const data = (await res.json()) as SearchResponse;
-    console.log(data);
-    const raw = data.data
-      ? Array.isArray(data.data)
-        ? data.data
-        : [data.data]
-      : [];
-    return {
-      schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
-      nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
-      total: data.total_count || 0,
-    };
-  } catch {
-    return { schemes: [], nextCursor: "", total: 0 };
   }
 }
 
@@ -509,7 +92,7 @@ export async function getSchemesCategory(
   }
 
   try {
-    const res = await fetchWithAuth(url.toString(), {
+    const res = await fetch(url, {
       method: "GET",
     });
 
@@ -528,7 +111,7 @@ export async function getSchemesCategory(
       : [];
 
     return {
-      schemes: raw.map((r: RawSchemeData) => mapToScheme(r)),
+      schemes: raw.map((r: RawSchemeData) => mapCatalogScheme(r)),
       nextCursor: data.has_more && data.next_cursor ? data.next_cursor : "",
       total: data.total_count ?? 0,
     };

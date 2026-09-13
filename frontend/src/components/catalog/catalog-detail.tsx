@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getSchemesCategory, searchSchemes } from "@/lib/schemes";
-import { Scheme } from "@/types/types";
+import { getSchemesCategory } from "@/lib/schemes";
+import type { CatalogPageData, Scheme } from "@/types/types";
 import { ScrollShadow, Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -24,16 +24,17 @@ import EmptyState from "@/components/feedback/empty-state";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { Search } from "lucide-react";
 
-type CatalogPageClientProps = {
-  initialCategory?: CatalogCategory;
-};
-
 type CatalogLoadState =
   | "idle"
   | "loadingInitial"
   | "ready"
   | "loadingMore"
   | "exhausted";
+
+type CatalogPageClientProps = {
+  initialCategory?: CatalogCategory;
+  initialData?: CatalogPageData;
+};
 
 function CatalogGridSkeleton() {
   return (
@@ -69,18 +70,29 @@ function CatalogGridSkeleton() {
 
 export default function CatalogPageClient({
   initialCategory,
+  initialData,
 }: CatalogPageClientProps) {
-  const [activeCategory, setActiveCategory] = useState(
-    initialCategory ?? "All",
+  const activeCategory = initialCategory ?? "All";
+  // The category page hands over its server read, so hydration can render the
+  // first page without fetching it again.
+  const hasInitialData =
+    initialData !== undefined && initialCategory !== undefined;
+  const initialLoadState: CatalogLoadState = !initialCategory
+    ? "idle"
+    : !hasInitialData
+      ? "loadingInitial"
+      : initialData?.nextCursor
+        ? "ready"
+        : "exhausted";
+  const hasSelectedCategory = Boolean(initialCategory);
+  const [schemes, setSchemes] = useState<Scheme[]>(
+    hasInitialData ? (initialData?.schemes ?? []) : [],
   );
-  const [hasSelectedCategory, setHasSelectedCategory] = useState(
-    Boolean(initialCategory),
+  const [totalCount, setTotalCount] = useState<number | null>(
+    hasInitialData ? (initialData?.total ?? null) : null,
   );
-  const [schemes, setSchemes] = useState<Scheme[]>([]);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
-  const [loadState, setLoadState] = useState<CatalogLoadState>(
-    initialCategory ? "loadingInitial" : "idle",
-  );
+  const [loadState, setLoadState] =
+    useState<CatalogLoadState>(initialLoadState);
 
   // states for search feature (tbc)
   // const [searchQuery, setSearchQuery] = useState("");
@@ -89,7 +101,9 @@ export default function CatalogPageClient({
   // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const cursorRef = useRef("");
+  const cursorRef = useRef(
+    hasInitialData ? (initialData?.nextCursor ?? "") : "",
+  );
   const requestIdRef = useRef(0);
   const hasUserScrolledRef = useRef(false);
   const isLoadingInitial = loadState === "loadingInitial";
@@ -176,8 +190,17 @@ export default function CatalogPageClient({
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     hasUserScrolledRef.current = false;
-    cursorRef.current = "";
     scrollRef.current?.scrollTo({ top: 0 });
+
+    if (hasInitialData && initialData) {
+      setSchemes(initialData.schemes);
+      setTotalCount(initialData.total);
+      cursorRef.current = initialData.nextCursor;
+      setLoadState(initialData.nextCursor ? "ready" : "exhausted");
+      return;
+    }
+
+    cursorRef.current = "";
     setLoadState("loadingInitial");
     setTotalCount(null);
     getSchemesCategory(
@@ -189,28 +212,9 @@ export default function CatalogPageClient({
       cursorRef.current = r.nextCursor;
       setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
-  }, [activeCategory, hasSelectedCategory]);
+  }, [activeCategory, hasSelectedCategory, hasInitialData, initialData]);
 
   // search feature (tbc)
-  // const handleSearch = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const requestId = requestIdRef.current + 1;
-  //   requestIdRef.current = requestId;
-  //   hasUserScrolledRef.current = false;
-  //   cursorRef.current = "";
-  //   scrollRef.current?.scrollTo({ top: 0 });
-  //   setActiveCategory("All");
-  //   setHasSelectedCategory(true);
-  //   setLoadState("loadingInitial");
-  //   searchSchemes(inputValue).then((r) => {
-  //     if (requestIdRef.current !== requestId) return;
-  //     setSchemes(r.schemes);
-  //     cursorRef.current = r.nextCursor;
-  //     setSearchQuery(inputValue);
-  //     setLoadState(r.nextCursor ? "ready" : "exhausted");
-  //   });
-  // };
-
   if (!hasSelectedCategory) {
     return (
       <PageShell>
@@ -352,7 +356,7 @@ export default function CatalogPageClient({
         {/* Results */}
         <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
           <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-3 pt-2">
-            <p className="text-sm font-semibold text-(--schemes-ink-soft)">
+            <h1 className="text-sm font-semibold text-(--schemes-ink-soft)">
               {isLoadingInitial ? (
                 <StatusTextShimmer>
                   {activeCategory === "All"
@@ -369,7 +373,7 @@ export default function CatalogPageClient({
                   </span>
                 </>
               )}
-            </p>
+            </h1>
           </div>
           {isLoadingInitial ? (
             <CatalogGridSkeleton />
@@ -381,7 +385,7 @@ export default function CatalogPageClient({
           ) : (
             <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
               {schemes.map((s) => (
-                <SchemeCard key={s.schemeId} scheme={s} />
+                <SchemeCard key={s.schemeId} scheme={s} headingLevel={2} />
               ))}
             </div>
           )}

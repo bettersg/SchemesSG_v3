@@ -1,34 +1,17 @@
-import { auth } from "../app/firebaseConfig";
-import { signInAnonymously, User, UserCredential } from "firebase/auth";
+import { getAuthToken } from "@/lib/auth-gateway";
 
-export async function getAuthToken(): Promise<string> {
+export { getAuthToken } from "@/lib/auth-gateway";
+
+export async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {},
+): Promise<Response> {
   try {
-    // Get current user or sign in anonymously
-    let user: User;
-    if (auth.currentUser) {
-      user = auth.currentUser;
-    } else {
-      const credential: UserCredential = await signInAnonymously(auth);
-      user = credential.user;
+    const headers = new Headers(options.headers);
+    headers.set("Authorization", `Bearer ${await getAuthToken()}`);
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
-    const token = await user.getIdToken();
-    return token;
-  } catch (error) {
-    console.error("Error getting auth token:", error);
-    throw error;
-  }
-}
-
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  try {
-    const token = await getAuthToken();
-    
-    // Merge the authorization header with existing headers
-    const headers = {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    };
 
     return fetch(url, {
       ...options,

@@ -59,6 +59,14 @@ export function FAQSection() {
                 <Accordion.Panel>
                   <Accordion.Body className="text-muted-foreground leading-relaxed text-[15px] pb-5">
                     {item.answer}
+                    {item.answerLink && (
+                      <a
+                        href={item.answerLink.href}
+                        className="ml-1 font-medium text-primary underline-offset-4 hover:underline"
+                      >
+                        {item.answerLink.label}
+                      </a>
+                    )}
                   </Accordion.Body>
                 </Accordion.Panel>
               </Accordion.Item>

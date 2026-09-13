@@ -49,7 +49,7 @@ export function Footer() {
   return (
     <footer className="bg-neutral-950 text-neutral-400 py-16 px-6">
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 gap-12 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-12 md:grid-cols-5">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <a
@@ -71,6 +71,10 @@ export function Footer() {
             </p>
           </div>
 
+          <FooterLinkColumn
+            heading={t.footer.schemesHeading}
+            links={t.footer.schemesLinks}
+          />
           <FooterLinkColumn
             heading={t.footer.productHeading}
             links={t.footer.productLinks}

@@ -15,6 +15,23 @@ from loguru import logger
 # or a secure configuration system
 CURSOR_SECRET = os.environ.get("CURSOR_SECRET", "schemes_pagination_secret_key")
 
+CATALOG_FIELDS = (
+    "scheme",
+    "agency",
+    "summary",
+    "description",
+    "llm_description",
+    "scheme_type",
+    "who_is_it_for",
+    "what_it_gives",
+    "link",
+    "image",
+    "planning_area",
+    "last_scraped_update",
+    "status",
+    "merged_into",
+)
+
 
 @dataclass
 class PaginationResult:
@@ -41,9 +58,7 @@ def _encode_cursor(doc_id: str) -> str:
     cursor_json = json.dumps(cursor_data)
 
     # Create signature for verification
-    signature = hmac.new(
-        CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256
-    ).hexdigest()
+    signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
 
     # Combine cursor data and signature
     cursor_token = {"data": cursor_data, "signature": signature}
@@ -82,9 +97,7 @@ def _decode_cursor(cursor: str) -> Optional[str]:
 
         # Verify signature
         cursor_json = json.dumps(received_cursor_data)
-        expected_signature = hmac.new(
-            CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256
-        ).hexdigest()
+        expected_signature = hmac.new(CURSOR_SECRET.encode(), cursor_json.encode(), hashlib.sha256).hexdigest()
 
         if not hmac.compare_digest(received_signature, expected_signature):
             logger.warning("Cursor signature verification failed")
@@ -96,6 +109,24 @@ def _decode_cursor(cursor: str) -> Optional[str]:
         return None
 
 
+def is_valid_cursor(cursor: str) -> bool:
+    """Report whether a cursor is one we issued and can still be trusted.
+
+    Exists so a caller can reject a bad cursor *before* pagination runs.
+    `_get_paginated_query` deliberately falls back to the first page instead
+    (three separate branches), which suits `/catalog` — a person clicks again and
+    sees results. It does not suit a machine consumer: the partner API would
+    return page one with `200` and a fresh `next_cursor`, so a client whose cursor
+    got truncated re-reads page one forever and never learns why.
+
+    Only covers signature and format. A validly signed cursor whose document has
+    since been deleted still falls back to page one inside
+    `_get_paginated_query`; schemes are retired rather than deleted, so that path
+    is rare and needs a Firestore read to detect.
+    """
+    return _decode_cursor(cursor) is not None
+
+
 def _get_paginated_query(
     collection_ref: CollectionReference,
     base_query: Optional[Query] = None,
@@ -104,11 +135,15 @@ def _get_paginated_query(
 ) -> Query:
     """Build a Firestore query with ordering, limit, and optional cursor.
 
-    The query always orders by `last_scraped_update` from newest to oldest and
-    uses `__name__` as an ascending tie-breaker. It requests `limit + 1`
-    documents so the caller can determine whether another page exists. When a
-    cursor is provided, the corresponding document snapshot is fetched and used
-    with `start_at(...)`.
+    The query projects onto `CATALOG_FIELDS`, orders by `last_scraped_update`
+    from newest to oldest, and requests `limit + 1` documents so the caller can
+    determine whether another page exists. When a cursor is provided, the
+    corresponding document snapshot is fetched and used with `start_at(...)`.
+
+    The `__name__` tie-break stays implicit: Firestore appends it in the last
+    explicit ordering's direction, matching the composite indexes in
+    `firestore.indexes.json`. An explicit `__name__ ASCENDING` would need three
+    new mixed-direction indexes deployed first.
 
     Args:
         collection_ref: Base Firestore collection for the catalog.
@@ -121,17 +156,11 @@ def _get_paginated_query(
     Returns:
         A Firestore query ready to execute.
     """
-    # Order by newest updates first and add __name__ as a deterministic
-    # ascending secondary sort key for documents sharing the same timestamp.
-    q = (
-        base_query.order_by("last_scraped_update", direction=Query.DESCENDING).limit(
-            limit + 1
-        )
-        if base_query
-        else collection_ref.order_by(
-            "last_scraped_update", direction=Query.DESCENDING
-        ).limit(limit + 1)
-    )
+    # Catalog pages only need card and routing data. Project at the Firestore
+    # query so large detail-only fields such as scraped_text are never fetched.
+    source = base_query if base_query is not None else collection_ref
+    # select() takes one iterable of field paths, not varargs.
+    q = source.select(CATALOG_FIELDS).order_by("last_scraped_update", direction=Query.DESCENDING).limit(limit + 1)
 
     if not cursor:
         return q
@@ -162,6 +191,12 @@ def _count_total(
     read per 1000 matched documents) rather than reading every document. Counts
     the filtered base_query when present, else the whole collection. Returns
     None on failure so the caller can degrade gracefully.
+
+    Issues no `order_by`. `_count_excluded_schemes` counts a `status ==` filter
+    through here, and ordering that count would need a composite index per
+    filter combination — none of which are deployed. The cost is that a scheme
+    missing `last_scraped_update` is counted but never paginated, which the
+    frontend's enumeration reports as a total mismatch.
     """
     try:
         source = base_query if base_query is not None else collection_ref

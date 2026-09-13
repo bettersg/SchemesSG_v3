@@ -1,11 +1,12 @@
 """Unit tests for the agent search relevance scoring (functions/search/scorers.py).
 
 These tests describe behaviour: real cosine distances map to a normalized
-relevance score where a closer match scores higher. They do not assert the
-internal formula.
+relevance score where a closer match scores higher, and BM25 breaks ties between
+equally-close candidates. They do not assert the internal formula.
 """
 
-from search.scorers import compute_vec_scores
+import pandas as pd
+from search.scorers import compute_vec_scores, rank_results
 
 
 def test_closer_distance_scores_higher():
@@ -41,3 +42,34 @@ def test_empty_input_returns_empty_frame():
 
     assert df.empty
     assert list(df.columns) == ["scheme_id", "vec_similarity_score"]
+
+
+def test_bm25_breaks_ties_using_the_current_retriever_api():
+    """BM25 decides the order when vector scores tie.
+
+    A real ``BM25Retriever`` is used rather than a mock: LangChain removed
+    ``get_relevant_documents()`` and a stale copy of this ranker kept calling it,
+    which 500'd every ``schemes_search`` request (#410). A removed-API call has to
+    fail here instead of in production.
+
+    Two details keep the assertion honest. Three candidates, not two, because BM25
+    floors the IDF of a term appearing in half the corpus and scores everything 0.
+    And the query matches the *last* candidate, so a stable sort returning the input
+    order fails — asserting against the first would pass even with BM25 contributing
+    nothing.
+    """
+    tied_candidates = pd.DataFrame(
+        {
+            "scheme_id": ["housing", "healthcare", "education"],
+            "search_booster": [
+                "housing rental grant",
+                "healthcare subsidy clinic",
+                "school education bursary",
+            ],
+            "vec_similarity_score": [0.5, 0.5, 0.5],
+        }
+    )
+
+    ranked = rank_results("school education bursary", tied_candidates)
+
+    assert ranked["scheme_id"].tolist() == ["education", "healthcare", "housing"]
