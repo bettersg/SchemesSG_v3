@@ -54,12 +54,12 @@ def test_schemes_missing_id(mock_request, mock_https_response, mock_auth, mocker
 
 
 def test_schemes_successful_fetch(mock_request, mock_https_response, mock_auth, mocker):
-    """Test successful scheme fetch."""
+    """Public scheme-detail reads do not require a Firebase bearer token."""
     # Mock the FirebaseManager and document
     mock_doc = mocker.MagicMock()
     mock_doc.exists = True
     mock_doc.to_dict.return_value = {
-        "title": "Test Scheme",
+        "scheme_name": "Test Scheme",
         "description": "Test Description",
         "eligibility": ["Test Eligibility"],
     }
@@ -72,15 +72,22 @@ def test_schemes_successful_fetch(mock_request, mock_https_response, mock_auth, 
 
     mocker.patch("schemes.schemes.create_firebase_manager", return_value=mock_manager)
 
-    request = mock_request(method="GET")
+    request = mock_request(method="GET", headers={"Origin": "http://localhost:3000"})
     request.path = "/test-scheme-id"
 
     response = schemes(request)
 
     assert response.status_code == 200
-    response_data = json.loads(response.get_data())
-    assert "data" in response_data
-    assert response_data["data"]["title"] == "Test Scheme"
+    assert response.content_type == "application/json"
+    assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
+    assert json.loads(response.get_data()) == {
+        "data": {
+            "scheme_name": "Test Scheme",
+            "description": "Test Description",
+            "eligibility": ["Test Eligibility"],
+        }
+    }
+    mock_auth.assert_not_called()
 
 
 def test_schemes_not_found(mock_request, mock_https_response, mock_auth, mocker):

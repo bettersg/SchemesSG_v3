@@ -7,6 +7,7 @@ from firebase_functions import https_fn
 @pytest.fixture
 def mock_auth(mocker):
     """Mock Firebase Auth verification."""
+    mocker.patch("utils.auth.FirebaseManager")
     mock_verify = mocker.patch("utils.auth.auth.verify_id_token")
     mock_verify.return_value = {"uid": "test-user-id"}
     return mock_verify

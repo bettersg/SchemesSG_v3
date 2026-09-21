@@ -1,0 +1,29 @@
+.showMarker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.showMarker ul {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.showMarker li::marker {
+  color: #64748b;
+}
+
+.showMarker li > p {
+  margin: 0;
+}
+
+.showMarker hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 0;
+  border-top: 1px solid rgb(229, 231, 235);
+}

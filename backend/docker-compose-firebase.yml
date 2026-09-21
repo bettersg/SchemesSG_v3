@@ -27,6 +27,7 @@ services:
       - FUNCTIONS_PORT=5001
       # URL for scheme-processor service (Cloud Run in prod, local container in dev)
       - PROCESSOR_SERVICE_URL=http://scheme-processor:8081
+      - FUNCTIONS_DISCOVERY_TIMEOUT=90000
       # Comment out to use cloud Firestore (schemessg-v3-dev) instead of emulator
       # Vector search requires cloud Firestore - emulator has limited support
       # - FIRESTORE_EMULATOR_HOST=localhost:8080
@@ -56,4 +57,15 @@ services:
       - PYTHONUNBUFFERED=1
       - PORT=8081
     # Override CMD for hot reload in dev
-    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081", "--reload"]
+    command:
+      [
+        "uv",
+        "run",
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8081",
+        "--reload",
+      ]

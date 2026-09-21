@@ -1,19 +1,23 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const configDirectory = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  outputFileTracingRoot: configDirectory,
+
   env: {
     APP_ENV: process.env.APP_ENV || "development",
   },
   images: {
-    domains: ["schemes.sg"],
+    remotePatterns: [
+      {
+        hostname: "schemes.sg",
+      },
+    ],
   },
-  // You can add environment-specific configurations here if needed
-  // For example:
-  // publicRuntimeConfig: {
-  //   apiUrl: process.env.APP_ENV === 'production'
-  //     ? 'https://api.example.com'
-  //     : 'https://staging-api.example.com',
-  // },
 };
 
 export default nextConfig;

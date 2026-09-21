@@ -1,6 +1,15 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
+import {
+  getApp,
+  getApps,
+  initializeApp,
+  type FirebaseApp,
+} from "firebase/app";
+import {
+  getAnalytics,
+  isSupported,
+  type Analytics,
+} from "firebase/analytics";
+import { getAuth, type Auth } from "firebase/auth";
 
 // TODO make it a configuration variable
 const firebaseConfig = {
@@ -11,19 +20,42 @@ const firebaseConfig = {
   authDomain: `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`,
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+let app: FirebaseApp | undefined;
+let analyticsInitializationStarted = false;
 
-let analytics: ReturnType<typeof getAnalytics> | undefined;
+function getFirebaseApp(): FirebaseApp {
+  if (!app) {
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  }
+  return app;
+}
 
-isSupported()
-  .then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  })
-  .catch((error) => {
-    console.error("Firebase Analytics is not supported in this environment.", error);
-  });
+function initializeFirebaseAnalytics(firebaseApp: FirebaseApp) {
+  if (typeof window === "undefined" || analyticsInitializationStarted) return;
 
-export { app, auth, analytics };
+  const globalForAnalytics = globalThis as typeof globalThis & {
+    __schemesSgAnalytics?: Analytics;
+  };
+
+  if (globalForAnalytics.__schemesSgAnalytics) return;
+
+  analyticsInitializationStarted = true;
+  void isSupported()
+    .then((supported) => {
+      if (supported) {
+        globalForAnalytics.__schemesSgAnalytics = getAnalytics(firebaseApp);
+      }
+    })
+    .catch((error) => {
+      console.error(
+        "Firebase Analytics is not supported in this environment.",
+        error,
+      );
+    });
+}
+
+export function getFirebaseAuth(): Auth {
+  const firebaseApp = getFirebaseApp();
+  initializeFirebaseAnalytics(firebaseApp);
+  return getAuth(firebaseApp);
+}

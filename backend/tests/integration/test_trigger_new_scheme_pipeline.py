@@ -28,7 +28,7 @@ def _patch_common(mocker):
     post_mock.return_value.json.return_value = {"success": True}
     post_mock.return_value.raise_for_status = MagicMock()
     mocker.patch.object(mod, "get_identity_token", return_value="tok")
-    mocker.patch.object(mod, "firestore")
+    mocker.patch.object(mod, "get_firestore_client", return_value=MagicMock())
     return mod, post_mock
 
 

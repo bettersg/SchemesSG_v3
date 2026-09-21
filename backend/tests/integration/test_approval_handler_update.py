@@ -86,7 +86,7 @@ def _wire_db(mocker, entry_data: dict, target_status: Optional[str] = "inactive"
 
     db.collection.side_effect = collection
     mocker.patch(
-        "new_scheme.approval_handler.firestore.client", return_value=db
+        "new_scheme.approval_handler.get_firestore_client", return_value=db
     )
     return db, entry_ref, target_or_new_ref
 

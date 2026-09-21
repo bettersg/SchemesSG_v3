@@ -5,22 +5,22 @@ URL for local testing:
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?agency=<agency>
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?area=<area>
-http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?scheme_type=<scheme_type>
+http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?category=<category>
 """
 
 import json
 from dataclasses import asdict, dataclass
-from typing import Callable
+from typing import Any, Callable
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
-from new_scheme.constants import SCHEME_TYPE
-from utils.auth import verify_auth_token
-from utils.catalog_pagination import PaginationResult, get_paginated_results
+from new_scheme.constants import SCHEME_CATEGORY_MAPPING
+from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
+from utils.scheme_lifecycle import RETIRED_STATUS
 from werkzeug.datastructures import MultiDict
 
 
@@ -33,7 +33,7 @@ class CatalogFilterSpec:
 
     firestore_field: str
     operator: str
-    normalize: Callable[[str], str]
+    normalize: Callable[[str], str | list[str]]
 
 
 @dataclass(kw_only=True)
@@ -43,17 +43,130 @@ class CatalogRequestParams:
     limit: int = DEFAULT_LIMIT
     cursor: str | None = None
     filter_name: str | None = None
-    filter_value: str | None = None
+    filter_value: str | list[str] | None = None
 
 
-_SCHEME_TYPE_LOOKUP = {st.lower(): st for st in SCHEME_TYPE}
+_CATEGORY_LOOKUP = {cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()}
 
 
-def _normalize_scheme_type(value: str) -> str:
-    canonical = _SCHEME_TYPE_LOOKUP.get(value.lower())
-    if canonical is None:
-        raise ValueError(f"Unknown scheme_type: '{value}'")
-    return canonical
+def _expand_category(value: str) -> list[str]:
+    types = _CATEGORY_LOOKUP.get(value.lower())
+    if types is None:
+        raise ValueError(f"Unknown category: '{value}'")
+    return types
+
+
+def _filter_scheme_types_for_category(results: PaginationResult, category_scheme_types: list[str]) -> PaginationResult:
+    """Trim scheme_type values in category catalog responses to the matched category."""
+
+    category_scheme_type_set = set(category_scheme_types)
+    filtered_data = []
+
+    for item in results.data:
+        scheme_type = item.get("scheme_type")
+        if not isinstance(scheme_type, list):
+            filtered_data.append(item)
+            continue
+
+        filtered_data.append(
+            {
+                **item,
+                "scheme_type": [value for value in scheme_type if value in category_scheme_type_set],
+            }
+        )
+
+    return PaginationResult(
+        data=filtered_data,
+        next_cursor=results.next_cursor,
+        has_more=results.has_more,
+        total_count=results.total_count,
+    )
+
+
+# What /catalog has always hidden. Callers that must hide more (the partner API
+# also hides `inactive`) pass their own set.
+_CATALOG_EXCLUDED_STATUSES: frozenset[str] = frozenset({RETIRED_STATUS})
+
+
+def _keep_listed_schemes(
+    results: PaginationResult,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> PaginationResult:
+    """Remove schemes whose lifecycle status must not appear in a listing."""
+    return PaginationResult(
+        data=[item for item in results.data if item.get("status") not in exclude_statuses],
+        next_cursor=results.next_cursor,
+        has_more=results.has_more,
+        total_count=results.total_count,
+    )
+
+
+def _count_excluded_schemes(
+    collection_ref,
+    base_query: Any = None,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> int | None:
+    """Count documents matching the unpaginated query whose status is excluded.
+
+    One ``==`` count per status rather than a single ``in``: it keeps the query
+    shape the catalog has always issued, so no new composite index is needed.
+    """
+    source = base_query if base_query is not None else collection_ref
+    counts = [_count_total(collection_ref, source.where("status", "==", status)) for status in exclude_statuses]
+    return None if None in counts else sum(counts)
+
+
+def _get_listed_paginated_results(
+    collection_ref,
+    *,
+    base_query: Any = None,
+    cursor: str | None = None,
+    limit: int = DEFAULT_LIMIT,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+) -> PaginationResult:
+    """Fill a page to ``limit``, skipping documents with an excluded status.
+
+    The refill loop and the ``total_count`` adjustment both honour
+    ``exclude_statuses``, so a caller that hides more statuses still gets full
+    pages and a count that matches what it actually returns.
+    """
+    data = []
+    current_cursor = cursor
+    seen_cursors = {cursor} if cursor else set()
+    last_result = PaginationResult(data=[])
+    repeated_cursor = False
+
+    while len(data) < limit:
+        last_result = get_paginated_results(
+            collection_ref=collection_ref,
+            base_query=base_query,
+            cursor=current_cursor,
+            limit=limit - len(data),
+        )
+        data.extend(_keep_listed_schemes(last_result, exclude_statuses).data)
+
+        next_cursor = last_result.next_cursor
+        if not last_result.has_more or not next_cursor:
+            break
+        if next_cursor in seen_cursors:
+            repeated_cursor = True
+            break
+        seen_cursors.add(next_cursor)
+        current_cursor = next_cursor
+
+    excluded_count = _count_excluded_schemes(collection_ref, base_query, exclude_statuses)
+    listed_total = (
+        last_result.total_count - excluded_count
+        if last_result.total_count is not None and excluded_count is not None
+        else None
+    )
+
+    return PaginationResult(
+        data=data[:limit],
+        next_cursor=None if repeated_cursor else last_result.next_cursor,
+        has_more=False if repeated_cursor else last_result.has_more,
+        total_count=listed_total,
+    )
 
 
 FILTER_SPECS = {
@@ -67,10 +180,10 @@ FILTER_SPECS = {
         operator="array_contains",
         normalize=lambda value: value.upper(),
     ),
-    "scheme_type": CatalogFilterSpec(
+    "category": CatalogFilterSpec(
         firestore_field="scheme_type",
-        operator="array_contains",
-        normalize=_normalize_scheme_type,
+        operator="array_contains_any",
+        normalize=_expand_category,
     ),
 }
 ALLOWED_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor", "is_warmup", "sort"}
@@ -85,7 +198,10 @@ def create_firebase_manager() -> FirebaseManager:
 def _supported_catalog_query_message() -> str:
     """Return the standard validation error for supported catalog query shapes."""
 
-    supported_queries = ["/catalog", *[f"/catalog?{name}=<{name}>" for name in FILTER_SPECS]]
+    supported_queries = [
+        "/catalog",
+        *[f"/catalog?{name}=<{name}>" for name in FILTER_SPECS],
+    ]
     return f"Error parsing query parameters; only {', '.join(supported_queries)} are supported"
 
 
@@ -107,18 +223,6 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
     # Get standard CORS headers for all other requests
     headers = get_cors_headers(req)
 
-    # Verify authentication
-    is_valid, auth_message = verify_auth_token(req)
-    if not is_valid:
-        return https_fn.Response(
-            response=json.dumps({"error": f"Authentication failed: {auth_message}"}),
-            status=401,
-            mimetype="application/json",
-            headers=headers,
-        )
-
-    firebase_manager = create_firebase_manager()
-
     if not req.method == "GET":
         return https_fn.Response(
             response=json.dumps({"error": "Invalid request method; only GET is supported"}),
@@ -138,16 +242,16 @@ def catalog(req: https_fn.Request) -> https_fn.Response:
             headers=headers,
         )
 
+    # Catalog data is intentionally public. It contains the same scheme
+    # information shown to all visitors and is required during static builds.
+    firebase_manager = create_firebase_manager()
+
     try:
         query_params = _parse_query_params(req.args)
     except ValueError as e:
         logger.exception("Error parsing query parameters", e)
         return https_fn.Response(
-            response=json.dumps(
-                {
-                    "error": _supported_catalog_query_message()
-                }
-            ),
+            response=json.dumps({"error": _supported_catalog_query_message()}),
             status=400,
             mimetype="application/json",
             headers=headers,
@@ -188,7 +292,7 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
       - /catalog
       - /catalog?agency=<name>
       - /catalog?area=<name>
-      - /catalog?scheme_type=<name>
+      - /catalog?category=<name>
 
     Raises:
         ValueError: If unsupported query parameters are provided.
@@ -201,7 +305,9 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
 
     selected_filters = [name for name in FILTER_SPECS if query_params.get(name)]
     if len(selected_filters) > 1:
-        raise ValueError(f"Invalid query; {', '.join(repr(name) for name in selected_filters)} cannot be used together")
+        raise ValueError(
+            f"Invalid query; {', '.join(repr(name) for name in selected_filters)} cannot be used together"
+        )
 
     # Retrieve limit and cursor from query parameters
     limit = int(query_params.get("limit", DEFAULT_LIMIT))
@@ -243,7 +349,7 @@ def _handle_catalog_request(
     col = firebase_manager.firestore_client.collection("schemes")
 
     if not query_params.filter_name or query_params.filter_value is None:
-        return get_paginated_results(
+        return _get_listed_paginated_results(
             collection_ref=col,
             cursor=query_params.cursor,
             limit=query_params.limit,
@@ -252,9 +358,14 @@ def _handle_catalog_request(
     spec = FILTER_SPECS[query_params.filter_name]
     query = col.where(filter=FieldFilter(spec.firestore_field, spec.operator, query_params.filter_value))
 
-    return get_paginated_results(
+    results = _get_listed_paginated_results(
         collection_ref=col,
         base_query=query,
         cursor=query_params.cursor,
         limit=query_params.limit,
     )
+
+    if query_params.filter_name == "category" and isinstance(query_params.filter_value, list):
+        return _filter_scheme_types_for_category(results, query_params.filter_value)
+
+    return results
