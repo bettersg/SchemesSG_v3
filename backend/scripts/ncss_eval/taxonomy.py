@@ -170,6 +170,7 @@ WHAT_IT_GIVES = [
     G("Protection against violence", "Safety, protection orders, shelters for violence.", "Crisis Assessment & Intervention"),
     G("Residential care/programmes", "Live-in care or programmes.", "Care Services"),
     G("Addictions treatment and rehabilitation", "Treatment and recovery support for addictions.", "Therapy", "Group Work"),
+    G("Social and recreational activities", "Group social, recreational, exercise and active-ageing activities for engagement and connection.", "Enrichment Activities", "Group Work"),
     G("Support groups", "Facilitated peer or group support.", "Group Work"),
     G("Bereavement support", "Support for grief and loss.", "Counselling", "Group Work"),
     G("End-of-life care", "Palliative and end-of-life care.", "Care Services", "Medical Clinic & Services"),
@@ -193,6 +194,7 @@ def N(name, definition, *needs):
 SCHEME_TYPE = [
     N("Family and Parenting Support", "Parenting, marriage, family relationship and family life support.", "Family, Parenting & Relationships"),
     N("Disability Support", "Support for persons with disabilities: mobility, daily living, centre/home-based care, accessibility.", "Disability Support"),
+    N("Active Ageing and Social Activities", "Social, recreational and active-ageing activities that keep seniors (or others) engaged and connected.", "Recreational Activities", "Social support"),
     N("Caregiver Support", "Training, respite and support for caregivers.", "Caregiving"),
     N("Ex-offender Support", "Reintegration support for ex-offenders.", "Reintegration/Transition Services"),
     N("Education Support", "Tuition, learning support, school-related help.", "Education and Learning"),
