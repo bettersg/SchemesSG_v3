@@ -130,17 +130,17 @@ def G(name, definition, *interventions):
 WHAT_IT_GIVES = [
     G("Counselling", "Professional guidance by trained counsellors for personal or family issues.", "Counselling"),
     G("Casework", "Coordinated assessment, planning and monitoring of a person's needs by a social worker.", "Casework/Case Management"),
-    G("Emotional care", "Emotional support and companionship, non-clinical.", "Befriending", "Counselling"),
+    G("Emotional care", "Non-clinical emotional support and companionship (listening, befriending, comfort). Skip if Counselling or Befriending services already describe the same service.", "Befriending", "Counselling"),
     G("Mental health assessment and treatment", "Clinical assessment/treatment of mental health conditions by clinicians.", "Therapy", "Medical Clinic & Services"),
-    G("Psychological support/Psychotherapy", "Structured psychological therapy by qualified therapists.", "Therapy"),
+    G("Psychological support/Psychotherapy", "Only when psychologists/psychotherapists or psychological therapy are explicitly offered. General counselling is Counselling, not this.", "Therapy"),
     G("Befriending services", "Regular companionship to reduce isolation.", "Befriending"),
     G("Helpline services", "Phone/digital helpline support.", "Helpline/Hotline"),
-    G("Referral services", "Connecting people to appropriate services.", "Information & Referral"),
-    G("Educational programmes", "Structured learning or awareness programmes.", "Psychoeducation", "Training"),
+    G("Referral services", "Referral or signposting to other services as a main function of the scheme (not just a passing mention).", "Information & Referral"),
+    G("Educational programmes", "Structured teaching of knowledge or awareness (courses, workshops, talks, parent education) as a main component. Not for counselling or support services that merely include some sessions.", "Psychoeducation", "Training"),
     G("Vocational training", "Skills training for employment.", "Training"),
-    G("Employment assistance", "Help to find, keep or advance in a job.", "Job Placement", "Coaching"),
+    G("Employment assistance", "Job search help, placement, job coaching or employer matching. Skills courses are Vocational training instead.", "Job Placement", "Coaching"),
     G("Skills training and job matching", "Skills upgrading with job placement.", "Training", "Job Placement"),
-    G("Financial assistance (general)", "Cash or material help for general needs.", "Financial/Material Assistance"),
+    G("Financial assistance (general)", "Cash or in-kind help NOT tied to one stated purpose. If the funds are for a stated purpose (education, healthcare, housing, daily living, etc.) use that specific term INSTEAD of this one.", "Financial/Material Assistance"),
     G("Financial assistance for daily living expenses", "Help with everyday living costs.", "Financial/Material Assistance"),
     G("Financial assistance for healthcare", "Help paying medical bills or care.", "Financial/Material Assistance"),
     G("Financial assistance for chronic or terminal illnesses", "Funding for long-term/terminal illness care.", "Financial/Material Assistance"),
@@ -153,7 +153,7 @@ WHAT_IT_GIVES = [
     G("Burial and emergency assistance", "Funeral or emergency cash aid.", "Financial/Material Assistance"),
     G("Food support", "Food distribution, vouchers, meals.", "Financial/Material Assistance"),
     G("Housing/Shelter", "Temporary or transitional shelter or housing help.", "Housing & Shelter Support"),
-    G("Respite care/Caregiver support", "Temporary relief and support for caregivers.", "Care Services"),
+    G("Respite care/Caregiver support", "Temporary relief, training or support for caregivers, including support services offered to family caregivers alongside the main service.", "Care Services"),
     G("Elder sitting and caregiving services", "Home or centre sitting/caregiving for seniors.", "Care Services"),
     G("Child protection services", "Protection and intervention for children at risk.", "Crisis Assessment & Intervention", "Casework/Case Management"),
     G("Childcare services", "Care for children while parents are away.", "Care Services"),
@@ -170,7 +170,7 @@ WHAT_IT_GIVES = [
     G("Protection against violence", "Safety, protection orders, shelters for violence.", "Crisis Assessment & Intervention"),
     G("Residential care/programmes", "Live-in care or programmes.", "Care Services"),
     G("Addictions treatment and rehabilitation", "Treatment and recovery support for addictions.", "Therapy", "Group Work"),
-    G("Social and recreational activities", "Group social, recreational, exercise and active-ageing activities for engagement and connection.", "Enrichment Activities", "Group Work"),
+    G("Social and recreational activities", "Group social, recreational, exercise, arts or outing activities for engagement and connection, when such activities are a main component.", "Enrichment Activities", "Group Work"),
     G("Support groups", "Facilitated peer or group support.", "Group Work"),
     G("Bereavement support", "Support for grief and loss.", "Counselling", "Group Work"),
     G("End-of-life care", "Palliative and end-of-life care.", "Care Services", "Medical Clinic & Services"),
@@ -195,6 +195,7 @@ SCHEME_TYPE = [
     N("Family and Parenting Support", "Parenting, marriage, family relationship and family life support.", "Family, Parenting & Relationships"),
     N("Disability Support", "Support for persons with disabilities: mobility, daily living, centre/home-based care, accessibility.", "Disability Support"),
     N("Active Ageing and Social Activities", "Social, recreational and active-ageing activities that keep seniors (or others) engaged and connected.", "Recreational Activities", "Social support"),
+    N("Child and Youth Services", "Care, protection, development and support programmes for children and youths (residential care, youth centres, mentoring, child welfare).", "Fostering & Alternative Care", "Personal Development"),
     N("Caregiver Support", "Training, respite and support for caregivers.", "Caregiving"),
     N("Ex-offender Support", "Reintegration support for ex-offenders.", "Reintegration/Transition Services"),
     N("Education Support", "Tuition, learning support, school-related help.", "Education and Learning"),
@@ -260,3 +261,23 @@ def age_terms(age_min, age_max):
     lo = 0 if age_min is None else age_min
     hi = 200 if age_max is None else age_max
     return {t for t, a, b in AGE_BAND_TERMS if lo <= b and hi >= a}
+
+
+# ---------------------------------------------------------------- frontend category mapping (10 categories kept)
+# Old mapping used population terms in scheme_type (removed). v2 is built from need-domain terms only.
+# Firestore array-contains-any allows <=30 values per query: keep each list well under that.
+SCHEME_CATEGORY_MAPPING_V2 = {
+    "Financial Assistance": ["Financial Assistance", "Debt Assistance", "Loss of Breadwinner Support", "COVID-19 Support",
+                             "Financial Planning and Retirement Support", "Community Funding"],
+    "Family & Children": ["Family and Parenting Support", "Student Care Support", "Child and Youth Services"],
+    "Health & Wellbeing": ["Healthcare", "Dental Healthcare", "Traditional Chinese Medicine (TCM)", "General Healthcare Subsidies",
+                           "Chronic or Terminal Illness Support", "Mental Health", "Mental Health Rehabilitation",
+                           "End-of-Life/Palliative Care", "Counselling and Emotional Support", "Addictions Rehabilitation"],
+    "Housing & Food": ["Housing/Shelter", "Homelessness Support", "Food Support", "Elderly Housing and Home Improvement"],
+    "Education": ["Education Support", "Student Care Support"],
+    "Employment & Training": ["Employment Support", "Vocational Training", "Ex-offender Support"],
+    "Seniors & Caregiving": ["Caregiver Support", "Residential Care", "Active Ageing and Social Activities"],
+    "Disability & Transport": ["Disability Support", "Transport Support", "Technology Support"],
+    "Legal & Safety": ["Legal Aid", "Abuse/Family Violence", "Protection from Violence"],
+    "Community Support": ["Referral and Information Services", "Community Funding"],
+}
