@@ -20,6 +20,15 @@ GENERIC_EMAIL_PREFIXES = {"user@", "example@", "test@", "name@", "email@", "your
 def is_generic_email(email: str) -> bool:
     """Check if an email is a generic/placeholder address."""
     email_lower = email.lower().strip()
+
+    # Reject Cloudflare placeholder text
+    if any(phrase in email_lower for phrase in [
+        "protected from spambots",
+        "email protected",
+        "cloudflare",
+    ]):
+        return True
+
     domain = email_lower.split("@")[-1] if "@" in email_lower else ""
     if domain in GENERIC_EMAIL_DOMAINS:
         return True
