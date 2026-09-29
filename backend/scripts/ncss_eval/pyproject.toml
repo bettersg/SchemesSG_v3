@@ -1,0 +1,6 @@
+[project]
+name = "ncss-eval"
+version = "0.0.0"
+description = "Offline eval: NCSS taxonomy extraction (gpt-6-luna vs Jev). Not deployed."
+requires-python = ">=3.11"
+dependencies = ["firebase-admin", "openai>=1.50", "python-dotenv", "pandas", "httpx"]
