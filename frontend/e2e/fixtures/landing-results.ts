@@ -1,4 +1,9 @@
-import type { Page, Request } from "@playwright/test";
+import {
+  expect,
+  type Locator,
+  type Page,
+  type Request,
+} from "@playwright/test";
 import type { RawSchemeData } from "../../src/types/types";
 
 export const E2E_API_ORIGIN = "http://127.0.0.1:4174";
@@ -228,4 +233,20 @@ export async function interceptLandingResultsJourney(
   });
 
   return network;
+}
+
+// Linux WebKit on the dev server can finish hydrating after `goto` resolves,
+// and text typed before then is lost: React keeps the controlled value and
+// overwrites the DOM on its next render. React tags every node it hydrates
+// with a `__reactProps$<random>` key, so wait for that before interacting.
+export async function waitForHydration(locator: Locator): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        locator.evaluate((element) =>
+          Object.keys(element).some((key) => key.startsWith("__reactProps$")),
+        ),
+      { message: "React never hydrated the element" },
+    )
+    .toBe(true);
 }

@@ -41,7 +41,11 @@ describe("nightly browser controls", () => {
     expect(workflow).toContain("browser: [chromium, firefox, webkit]");
     expect(workflow).toContain("retention-days: 7");
     expect(workflow).not.toContain("secrets.");
-    expect(workflow.match(/timeout --kill-after=10s 120s/g)).toHaveLength(3);
+    // SIGINT, not timeout's default SIGTERM: Playwright only prints its failure
+    // report when interrupted, so a budget overrun still shows the assertions.
+    expect(
+      workflow.match(/timeout -s INT --kill-after=10s 120s/g),
+    ).toHaveLength(3);
     expect(workflow).toContain("Staging availability/configuration failed");
     expect(workflow).toContain("Staging product assertions failed");
     const errorAnnotations = workflow

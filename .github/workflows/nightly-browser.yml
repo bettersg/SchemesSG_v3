@@ -51,7 +51,7 @@ jobs:
         run: |
           lane_started_at=$(date +%s)
           set +e
-          timeout --kill-after=10s 120s npm run test:e2e:nightly -- --project="$BROWSER"
+          timeout -s INT --kill-after=10s 120s npm run test:e2e:nightly -- --project="$BROWSER"
           lane_status=$?
           set -e
           lane_duration=$(( $(date +%s) - lane_started_at ))
@@ -107,7 +107,7 @@ jobs:
         run: |
           phase_started_at=$(date +%s)
           set +e
-          timeout --kill-after=10s 120s npm exec -- playwright test --config=playwright.staging.config.ts --project=staging-availability
+          timeout -s INT --kill-after=10s 120s npm exec -- playwright test --config=playwright.staging.config.ts --project=staging-availability
           phase_status=$?
           set -e
           phase_duration=$(( $(date +%s) - phase_started_at ))
@@ -127,7 +127,7 @@ jobs:
         run: |
           phase_started_at=$(date +%s)
           set +e
-          timeout --kill-after=10s 120s npm exec -- playwright test --config=playwright.staging.config.ts --project=staging-product --no-deps
+          timeout -s INT --kill-after=10s 120s npm exec -- playwright test --config=playwright.staging.config.ts --project=staging-product --no-deps
           phase_status=$?
           set -e
           phase_duration=$(( $(date +%s) - phase_started_at ))
