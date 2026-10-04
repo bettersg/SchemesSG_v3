@@ -4,7 +4,7 @@ import json
 from collections import Counter
 from types import SimpleNamespace
 
-from new_scheme.constants import SCHEME_CATEGORY_MAPPING, SCHEME_TYPE
+from new_scheme.constants import LEGACY_CATEGORY_TERMS, SCHEME_CATEGORY_MAPPING, SCHEME_TYPE
 from schemes.catalog import (
     CatalogRequestParams,
     _handle_catalog_request,
@@ -14,6 +14,13 @@ from schemes.catalog import (
 from utils.catalog_pagination import PaginationResult
 from werkzeug.datastructures import MultiDict
 
+
+
+# v2 terms (SCHEME_CATEGORY_MAPPING) first, then pre-v2 terms still carried by un-migrated schemes
+_HEALTH_CATEGORY_TERMS = [
+    *SCHEME_CATEGORY_MAPPING["Health & Wellbeing"],
+    *LEGACY_CATEGORY_TERMS["Health & Wellbeing"],
+]
 
 def test_catalog_warmup_request(mock_request, mock_https_response, mock_auth, mocker):
     """Test catalog endpoint with warmup request."""
@@ -162,12 +169,7 @@ def test_parse_query_params_category():
 
     assert isinstance(params, CatalogRequestParams)
     assert params.filter_name == "category"
-    assert params.filter_value == [
-        "Healthcare",
-        "Mental Health",
-        "End-of-Life/Palliative Care",
-        "Counselling and Emotional Support",
-    ]
+    assert params.filter_value == _HEALTH_CATEGORY_TERMS
     assert params.limit == 5
     assert params.cursor == "abc"
 
@@ -184,12 +186,7 @@ def test_parse_query_params_rejects_multiple_filters():
 def test_parse_query_params_category_lookup_is_case_insensitive():
     """Category lookup accepts any casing from the client."""
     params = _parse_query_params(MultiDict([("category", "HEALTH & WELLBEING")]))
-    assert params.filter_value == [
-        "Healthcare",
-        "Mental Health",
-        "End-of-Life/Palliative Care",
-        "Counselling and Emotional Support",
-    ]
+    assert params.filter_value == _HEALTH_CATEGORY_TERMS
 
 
 def test_category_mapping_covers_each_scheme_type_once():
@@ -307,3 +304,18 @@ def test_handle_catalog_request_preserves_scheme_types_for_area_filter(mocker, m
     assert results.data == [{"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}]
     assert results.next_cursor is None
     assert results.has_more is False
+
+
+def test_legacy_scheme_types_still_resolve_to_their_category():
+    """Un-migrated schemes keep pre-v2 terms (e.g. 'Low Income'); category filters must still reach them."""
+    params = _parse_query_params(MultiDict([("category", "Financial Assistance")]))
+
+    assert "Low Income" in params.filter_value
+    assert set(LEGACY_CATEGORY_TERMS["Financial Assistance"]) <= set(params.filter_value)
+    assert len(params.filter_value) <= 30  # Firestore array-contains-any limit
+
+
+def test_legacy_category_terms_do_not_overlap_the_current_vocabulary():
+    legacy = {t for terms in LEGACY_CATEGORY_TERMS.values() for t in terms}
+
+    assert not legacy & set(SCHEME_TYPE)

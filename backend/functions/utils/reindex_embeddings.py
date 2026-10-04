@@ -16,6 +16,7 @@ from fb_manager.firebaseManager import get_firestore_client
 from google.cloud.firestore_v1.vector import Vector
 from langchain_openai import AzureOpenAIEmbeddings
 from loguru import logger
+from new_scheme.taxonomy import TAXONOMY
 
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 
@@ -23,6 +24,15 @@ from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 COLLECTION_SCHEMES = "schemes"
 COLLECTION_EMBEDDINGS = "schemes_embeddings"
 MAX_STALE_DELETE_FRACTION = 0.2
+
+
+TAG_FIELDS = ("who_is_it_for", "what_it_gives", "scheme_type")
+
+
+def _with_synonym(item: str) -> str:
+    """Keep the pre-rename word beside a renamed tag (e.g. 'Seniors (elderly)') so queries using it still match."""
+    synonym = TAXONOMY["embed_synonyms"].get(item)
+    return f"{item} ({synonym})" if synonym else item
 
 
 def build_desc_booster(row) -> str:
@@ -46,6 +56,8 @@ def build_desc_booster(row) -> str:
         value = row.get(field)
         if isinstance(value, list):
             items = [str(v).strip() for v in value if v is not None and str(v).strip()]
+            if field in TAG_FIELDS:
+                items = [_with_synonym(i) for i in items]
             if items:
                 components.append(", ".join(items))
         elif pd.notna(value) and str(value).strip():

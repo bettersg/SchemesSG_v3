@@ -9,13 +9,9 @@ import os
 import re
 from typing import Any, Dict
 
-from app.constants import (
-    EXTRACTION_INSTRUCTION,
-    SCHEME_TYPE,
-    WHAT_IT_GIVES,
-    WHO_IS_IT_FOR,
-)
-from app.services.extraction import is_generic_email, normalize_categories
+from app.constants import EXTRACTION_INSTRUCTION
+from app.services.extraction import is_generic_email
+from app.services.taxonomy_tagger import tag_scheme
 from loguru import logger
 
 
@@ -50,12 +46,13 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
-async def extract_with_llm(content: str) -> Dict[str, Any]:
+async def extract_with_llm(content: str, scheme_name: str = "") -> Dict[str, Any]:
     """
     Extract structured fields from content using Azure OpenAI.
 
     Args:
         content: Scraped text content (HTML or plain text)
+        scheme_name: Submitted scheme name, passed to taxonomy tagging (the gate measured it as input)
 
     Returns:
         Dict with extracted fields
@@ -119,9 +116,6 @@ Return a JSON object with these fields:
 - address: Full physical address including postal code if available (string)
 - phone: Phone number(s) found on the page, including hotlines and toll-free numbers. Comma-separated if multiple (string or null)
 - email: Contact email address(es) found on the page. Comma-separated if multiple (string or null)
-- who_is_it_for: Target audiences as array, select ONLY from: {", ".join(WHO_IS_IT_FOR)}
-- what_it_gives: Benefits/services as array, select ONLY from: {", ".join(WHAT_IT_GIVES)}
-- scheme_type: Scheme categories as array, select ONLY from: {", ".join(SCHEME_TYPE)}
 - service_area: Geographic service area (string)
 - search_booster: Comma-separated keywords for search (string)
 
@@ -165,16 +159,8 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
         response_content = _strip_code_fences(response_content)
         extracted = json.loads(response_content.strip())
 
-        # Normalize categories
-        who_is_it_for = normalize_categories(
-            extracted.get("who_is_it_for") if isinstance(extracted.get("who_is_it_for"), list) else [], WHO_IS_IT_FOR
-        )
-        what_it_gives = normalize_categories(
-            extracted.get("what_it_gives") if isinstance(extracted.get("what_it_gives"), list) else [], WHAT_IT_GIVES
-        )
-        scheme_type = normalize_categories(
-            extracted.get("scheme_type") if isinstance(extracted.get("scheme_type"), list) else [], SCHEME_TYPE
-        )
+        # Taxonomy tags come from a separate strict-schema call (see taxonomy_tagger); a failure leaves them empty
+        tags = _tag_taxonomy(extracted, scheme_name)
 
         # Extract and filter phone/email from LLM (fallback for regex)
         llm_phone = extracted.get("phone")
@@ -194,9 +180,9 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
             "eligibility": extracted.get("eligibility"),
             "how_to_apply": extracted.get("how_to_apply"),
             "agency": extracted.get("agency"),
-            "who_is_it_for": who_is_it_for if who_is_it_for else None,
-            "what_it_gives": what_it_gives if what_it_gives else None,
-            "scheme_type": scheme_type if scheme_type else None,
+            "who_is_it_for": tags["who_is_it_for"],
+            "what_it_gives": tags["what_it_gives"],
+            "scheme_type": tags["scheme_type"],
             "service_area": extracted.get("service_area"),
             "search_booster": extracted.get("search_booster"),
         }
@@ -216,6 +202,23 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
 
         traceback.print_exc()
         return {}
+
+
+def _tag_taxonomy(extracted: Dict[str, Any], scheme_name: str = "") -> Dict[str, Any]:
+    """Tag who_is_it_for / what_it_gives / scheme_type from the extracted descriptive fields. Never raises."""
+    try:
+        return tag_scheme(
+            {
+                "scheme": scheme_name,
+                "agency": extracted.get("agency"),
+                "llm_description": extracted.get("llm_description"),
+                "summary": extracted.get("summary"),
+                "eligibility": extracted.get("eligibility"),
+            }
+        )
+    except Exception as e:
+        logger.error(f"Taxonomy tagging failed, leaving tags empty: {e}")
+        return {"who_is_it_for": None, "what_it_gives": None, "scheme_type": None}
 
 
 def _html_to_text(html: str) -> str:

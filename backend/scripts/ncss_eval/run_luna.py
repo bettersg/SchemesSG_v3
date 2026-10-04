@@ -1,6 +1,6 @@
 """Arm A: gpt-6-luna, strict json_schema (enum-constrained), definitions in prompt.
 usage: run_luna.py <effort> [deployment]   -> data/runs/luna-<effort>/<id>.json"""
-import json, os, sys, time
+import json, os, sys, time, types
 from concurrent.futures import ThreadPoolExecutor
 from openai import AzureOpenAI
 import common as c
@@ -11,35 +11,11 @@ out = f"{c.DATA}/runs/luna-{effort}" + os.environ.get("RUN_TAG", ""); os.makedir
 client = AzureOpenAI(api_key=os.environ["AZURE_OPENAI_API_KEY"], azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
                      api_version=os.environ.get("OPENAI_API_VERSION", "2025-01-01-preview"))
 
-MAXN = {"who_is_it_for": 8, "what_it_gives": 6, "scheme_type": 4}  # age terms are re-derived in code, so who has headroom
-
-def arr(field):
-    return {"type": "array", "maxItems": MAXN[field], "items": {"type": "string", "enum": [t.name for t in c.vocab(field)]}}
-
-SCHEMA = {"name": "ncss_tags", "strict": True, "schema": {
-    "type": "object", "additionalProperties": False,
-    "required": ["who_is_it_for", "what_it_gives", "scheme_type", "age_min", "age_max", "rationale"],
-    "properties": {"who_is_it_for": arr("who_is_it_for"), "what_it_gives": arr("what_it_gives"), "scheme_type": arr("scheme_type"),
-                   "age_min": {"type": ["integer", "null"]}, "age_max": {"type": ["integer", "null"]},
-                   "rationale": {"type": "string"}}}}
-
-SYSTEM = f"""You tag Singapore social-service schemes using the NCSS-aligned taxonomy below. Select ALL applicable terms per field, only if the text supports them; do not guess.
-Rules:
-- Mental health conditions are NOT disabilities. Only permanent intellectual/physical disabilities count as "Persons with disabilities (PWDs)".
-- Use "General public" only when no other who_is_it_for term fits.
-- Age: report the stated age range in age_min/age_max (null if none or open-ended). Age terms are re-derived in code from the range (every overlapping band is tagged), so also select age terms consistent with the range: Infants and toddlers 0-3; Preschool 4-6; Primary 7-12; Children = umbrella 0-12; Teenagers 13-17; Youth = umbrella 13-21; Adults 22-59; Seniors 60+. Select EVERY band the stated range overlaps (e.g. 15-25 => Teenagers, Youth, Adults; 18 and above => Youth, Adults, plus Elderly ONLY if seniors are explicitly targeted). When only a group is named (e.g. 'children') without ages, pick the best-matching terms.
-- Precision over recall: tag only what the scheme clearly targets/provides as a main focus. Skip marginal or passing mentions. Most schemes need 2-5 who terms, 2-5 what terms, 1-3 scheme_type terms; hard caps are enforced.
-- age_min/age_max: the ages of the people the scheme ultimately SERVES. If a scheme serves parents/caregivers on behalf of children of a stated age (e.g. 'parents of children up to 16'), use the children's ages, because child age groups matter for search. Otherwise participants/beneficiaries only. Ignore ages of volunteers, staff, professionals or eligibility of referrers. If the text says 'N and above', set age_min=N and age_max=null. If it says there is no age restriction or serves all ages, set BOTH to null (never 0/null). Select an age term for 'Seniors' only if the scheme targets seniors (60+) explicitly or age_min >= 60.
-- rationale: one or two sentences.
-
-WHO_IS_IT_FOR terms:
-{c.defs_block('who_is_it_for')}
-
-WHAT_IT_GIVES terms:
-{c.defs_block('what_it_gives')}
-
-SCHEME_TYPE terms (needs addressed):
-{c.defs_block('scheme_type')}"""
+# Prompt and schema come from the production tagger so the gate measures exactly what ships.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../scheme-processor"))
+sys.modules.setdefault("loguru", types.SimpleNamespace(logger=types.SimpleNamespace(error=print, warning=print, info=print)))
+from app.services.taxonomy_tagger import TAGGING_SCHEMA as SCHEMA, build_system_prompt  # noqa: E402
+SYSTEM = build_system_prompt()
 
 def run(s):
     p = f"{out}/{s['id']}.json"

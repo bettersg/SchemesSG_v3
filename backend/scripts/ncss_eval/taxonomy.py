@@ -292,8 +292,8 @@ def age_terms(age_min, age_max):
 # Firestore array-contains-any allows <=30 values per query: keep each list well under that.
 SCHEME_CATEGORY_MAPPING_V2 = {
     "Financial Assistance": ["Financial Assistance", "Debt Assistance", "Loss of Breadwinner Support", "COVID-19 Support",
-                             "Financial Planning and Retirement Support", "Community Funding"],
-    "Family & Children": ["Family and Parenting Support", "Student Care Support", "Child and Youth Services"],
+                             "Financial Planning and Retirement Support"],
+    "Family & Children": ["Family and Parenting Support", "Child and Youth Services"],
     "Health & Wellbeing": ["Healthcare", "Dental Healthcare", "Traditional Chinese Medicine (TCM)", "General Healthcare Subsidies",
                            "Chronic or Terminal Illness Support", "Mental Health", "Mental Health Rehabilitation",
                            "End-of-Life/Palliative Care", "Counselling and Emotional Support", "Addictions Rehabilitation"],
@@ -304,4 +304,45 @@ SCHEME_CATEGORY_MAPPING_V2 = {
     "Disability & Transport": ["Disability Support", "Transport Support", "Technology Support"],
     "Legal & Safety": ["Legal Aid", "Abuse/Family Violence", "Protection from Violence"],
     "Community Support": ["Referral and Information Services", "Community Funding"],
+}
+
+
+# ---------------------------------------------------------------- legacy aliases (migration / normaliser / partner layer)
+# Old (pre-v2) term -> new term(s) in the SAME field, or `moved` to another field. Terms that exist unchanged are not listed.
+LEGACY_ALIASES = {
+    "who_is_it_for": {
+        "Need shelter": {"moved": {"what_it_gives": ["Housing/Shelter"]}},
+        "Need food support": {"moved": {"what_it_gives": ["Food support"]}},
+        "Need mortgage support": {"moved": {"what_it_gives": ["Mortgage assistance"]}},
+        "Individuals needing legal aid": {"moved": {"what_it_gives": ["Legal aid and services"]}},
+    },
+    "what_it_gives": {
+        "Referral services": {"to": ["Information and referral services"]},
+        "Information services": {"to": ["Information and referral services"]},
+        "Rehabilitation services": {"to": ["Rehabilitation services (Physiotherapy/Occupational therapy)"]},  # live-data drift
+        "Technology assistance": {"to": ["Technology assistance (internet/computers)"]},  # live-data drift
+        "Tuition/Enrichment programmes": {"to": ["Tuition", "Enrichment programmes"], "review": True},
+        "Home retrofitting and assistive technology": {"to": ["Home retrofitting", "Assistive technology"], "review": True},
+        "Child protection services": {"moved": {"scheme_type": ["Child and Youth Services"]}},
+        "Protection against violence": {"moved": {"scheme_type": ["Protection from Violence"]}},
+        "Identification and safety tagging": {"to": []},
+        "COVID-19 support": {"to": [], "review": True},
+    },
+    "scheme_type": {  # removed population terms -> who_is_it_for terms
+        "Low Income": {"moved": {"who_is_it_for": ["Low income"]}},
+        "Family": {"moved": {"who_is_it_for": ["Families"]}},
+        "Children": {"moved": {"who_is_it_for": ["Children"]}},
+        "Youth": {"moved": {"who_is_it_for": ["Youth"]}},
+        "Youth-at-Risk": {"moved": {"who_is_it_for": ["Youth-at-risk"]}},
+        "Women": {"moved": {"who_is_it_for": ["Women"]}},
+        "Single Parents": {"moved": {"who_is_it_for": ["Single parents"]}},
+        "Elderly": {"moved": {"who_is_it_for": ["Seniors"]}},
+        "Persons with Disabilities (PWD)": {"moved": {"who_is_it_for": ["Persons with disabilities (PWDs)"]}},
+        "Special Needs": {"moved": {"who_is_it_for": ["Persons with special needs"]}},
+        "Foreign Domestic Workers (FDWs)": {"moved": {"who_is_it_for": ["Foreign domestic workers/maids"]}},
+        "Migrant Workers/Foreign Workers": {"moved": {"who_is_it_for": ["Migrant workers/Foreign workers"]}},
+        "Foreign Spouse/Transnational Family Support": {"moved": {"who_is_it_for": ["Transnational families/Foreign spouses"]}},
+        "Incarcerated/Inmate Family Support": {"moved": {"who_is_it_for": ["Families of inmates or ex-offenders"]}},
+        "General Public Support": {"moved": {"who_is_it_for": ["General public"]}},
+    },
 }
