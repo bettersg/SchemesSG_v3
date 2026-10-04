@@ -8,7 +8,7 @@ OLD = {
  "Health & Wellbeing": ["Healthcare","Mental Health","End-of-Life/Palliative Care","Counselling and Emotional Support"],
  "Housing & Food": ["Housing/Shelter","Food Support"], "Education": ["Education Support"],
  "Employment & Training": ["Employment Support","Vocational Training","Ex-offender Support"],
- "Seniors & Caregiving": ["Elderly","Caregiver Support"],
+ "Seniors & Caregiving": ["Seniors","Caregiver Support"],
  "Disability & Transport": ["Persons with Disabilities (PWD)","Special Needs","Transport Support"],
  "Legal & Safety": ["Legal Aid","Abuse/Family Violence"], "Community Support": ["General Public Support"]}
 S = {json.loads(l)["id"]: json.loads(l) for l in open("data/sample_dev_50.jsonl")}

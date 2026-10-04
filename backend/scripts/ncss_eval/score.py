@@ -15,13 +15,24 @@ a = ap.parse_args()
 def fix_age(terms, amin, amax):
     d = tx.age_terms(amin, amax)
     if d is None: return set(terms)
-    if amax is None and (amin is None or amin < 60) and "Elderly" not in terms:
-        d = d - {"Elderly"}  # open-ended 'N+' does not imply seniors unless the tagger/labeller said so
+    if amax is None and (amin is None or amin < 60) and "Seniors" not in terms:
+        d = d - {"Seniors"}  # open-ended 'N+' does not imply seniors unless the tagger/labeller said so
     elif amax is None and (amin is None or amin < 60):
-        d = d | {"Elderly"}
+        d = d | {"Seniors"}
     return (set(terms) - tx.AGE_TERM_NAMES) | d
 
 gold = {g["id"]: g for g in json.load(open(a.gold))}
+MERGED = {"Referral services": "Information and referral services", "Information services": "Information and referral services"}
+DROPPED_WHAT = {"Tuition/Enrichment programmes", "Home retrofitting and assistive technology", "Child protection services",
+                "Protection against violence", "Identification and safety tagging", "COVID-19 support"}  # need relabel under v2
+def migrate(vals, field):
+    out = [tx.RENAMES.get(v, v) for v in vals]
+    if field == "what_it_gives":
+        out = [MERGED.get(v, v) for v in out if v not in DROPPED_WHAT]
+    return sorted(set(out))
+for g in gold.values():
+    for f in ("who_is_it_for", "what_it_gives", "scheme_type"):
+        g[f] = migrate(g[f], f)
 for g in gold.values():  # gold age terms derived from stated range where one exists
     g["who_is_it_for"] = sorted(fix_age(g["who_is_it_for"], g.get("age_min"), g.get("age_max")))
 
@@ -58,7 +69,7 @@ def rules(pred, g, d):
     """Rule checks return list of violations."""
     v = []
     who = pred["who_is_it_for"]
-    if "Persons with disabilities (PWDs)" in who and "Persons with mental health issues" in g["who_is_it_for"] \
+    if "Persons with disabilities (PWDs)" in who and "Persons with mental health conditions" in g["who_is_it_for"] \
             and "Persons with disabilities (PWDs)" not in g["who_is_it_for"]:
         v.append("mental-health-as-disability")
     if who & set(tx.MOVED_OUT_OF_WHO): v.append("moved-out who term")
