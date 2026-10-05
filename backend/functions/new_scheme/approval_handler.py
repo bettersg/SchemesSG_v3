@@ -146,6 +146,16 @@ def handle_new_scheme_approval(
                 "approved_by": reviewer_email or reviewer_id,
                 "approved_at": SERVER_TIMESTAMP,
                 "source_entry_id": entry_doc_id,
+                # The approved link starts with a clean slate: without this the old
+                # fail streak survives, the scheme stays in the Notion link queue,
+                # and one more hard-dead check delists it again.
+                "link_check_fail_streak": firestore.DELETE_FIELD,
+                "link_check_fail_class": firestore.DELETE_FIELD,
+                "link_check_error": firestore.DELETE_FIELD,
+                "link_suspect": firestore.DELETE_FIELD,
+                "status_reason": firestore.DELETE_FIELD,
+                "link_check_manual_verified_at": firestore.DELETE_FIELD,
+                "link_check_manual_verified_by": firestore.DELETE_FIELD,
             }
             target_ref.update(patch)
             resulting_scheme_id = target_scheme_id
