@@ -15,6 +15,7 @@ from fb_manager.firebaseManager import FirebaseManager
         "slack_integration.storage",
         "main",
         "scripts.run_link_check_and_reindex",
+        "batch_jobs.notion_link_queue",
     ],
 )
 def test_import_does_not_initialize_firebase_or_contact_network(module_name, mocker):

@@ -32,6 +32,8 @@ The following endpoints are available:
 6. Batch Jobs:
    - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
+   - scheduled_notion_link_queue_sync: Every 30 minutes, mirror failing-link schemes into the
+     Notion Link Queue (prod only; no-op unless NOTION_* is set)
 
 7. System:
    - health: Health check endpoint
@@ -54,6 +56,7 @@ import json
 import sys
 
 from agent.handler import agent_chat_message  # noqa: F401
+from batch_jobs.notion_link_queue import scheduled_notion_link_queue_sync  # noqa: F401
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options

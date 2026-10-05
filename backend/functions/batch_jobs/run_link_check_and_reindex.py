@@ -27,6 +27,7 @@ from slack_sdk.errors import SlackApiError
 from utils.check_link import check_link_health, classify_link_result
 from utils.reindex_embeddings import reindex_embeddings
 
+from batch_jobs.notion_link_queue import append_metrics_row
 from batch_jobs.slack_blocks import (
     build_link_check_error_message,
     build_link_check_summary_message,
@@ -296,13 +297,26 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                 "retired_skipped": retired_count,
             }
 
-            message = build_link_check_summary_message(results_summary, dead_links, reindex_result, restored_links)
+            message = build_link_check_summary_message(
+                results_summary,
+                dead_links,
+                reindex_result,
+                restored_links,
+                notion_url=os.getenv("NOTION_DASHBOARD_URL"),
+            )
 
             slack_client.chat_postMessage(channel=channel, **message)
             logger.info("Slack notification sent")
 
         except (SlackApiError, ValueError) as e:
             logger.error(f"Failed to send Slack notification: {e}")
+
+        # Step 6: Weekly Notion metrics row. Best effort: a Notion outage must never
+        # fail the link check.
+        try:
+            append_metrics_row(db, dead_count, restored_count)
+        except Exception:
+            logger.exception("Failed to append Notion metrics row")
 
         # Return summary
         response_data = {

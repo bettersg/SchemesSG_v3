@@ -128,6 +128,18 @@ def test_update_approval_patches_target_scheme(mocker):
     assert "last_llm_processed_update" in patch
     assert patch["approved_by"] == "rev@example.com"
     assert patch["source_entry_id"] == "entry-1"
+    # The approved link starts clean, so it leaves the Notion link queue and a
+    # later failure doesn't inherit the dead link's streak.
+    for cleared in (
+        "link_check_fail_streak",
+        "link_check_fail_class",
+        "link_check_error",
+        "link_suspect",
+        "status_reason",
+        "link_check_manual_verified_at",
+        "link_check_manual_verified_by",
+    ):
+        assert patch[cleared] is mod.firestore.DELETE_FIELD
 
     # Must not have created a new doc
     target_ref.set.assert_not_called()
