@@ -194,3 +194,26 @@ def test_notion_failure_does_not_fail_link_check(mocker, fake_firestore, fake_sl
     assert result["success"] is True
     metrics.assert_called_once_with(fake_firestore, 0, 0)
     assert len(fake_slack_client.posted_messages) == 1
+
+
+def test_verified_scheme_uses_threshold_4(mocker, fake_firestore, fake_slack_client):
+    link = "https://example.gov.sg/verified"
+    fake_firestore.seed(
+        "schemes",
+        "scheme-verified",
+        {
+            "scheme": "Verified Support",
+            "link": link,
+            "status": "active",
+            "link_check_manual_verified_at": "2026-10-05",
+        },
+    )
+    health = {link: {"alive": False, "status_code": 404, "error": "Not Found"}}
+
+    statuses = []
+    for _ in range(4):
+        _run_link_job(mocker, fake_firestore, fake_slack_client, health)
+        statuses.append(fake_firestore.get_document("schemes", "scheme-verified")["status"])
+
+    # Without manual verification it would be delisted at week 2.
+    assert statuses == ["active", "active", "active", "inactive"]

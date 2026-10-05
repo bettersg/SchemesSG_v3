@@ -63,10 +63,10 @@ def _failing(name: str, **extra) -> dict:
     }
 
 
-def main() -> int:
+def load_qa_config() -> dict:
+    """QA Notion config from functions/.env.notion-qa; exits unless this is the dev project."""
     if os.getenv("FB_PROJECT_ID") != DEV_PROJECT_ID:
-        print(f"Refusing: FB_PROJECT_ID is {os.getenv('FB_PROJECT_ID')!r}, expected {DEV_PROJECT_ID!r}")
-        return 2
+        sys.exit(f"Refusing: FB_PROJECT_ID is {os.getenv('FB_PROJECT_ID')!r}, expected {DEV_PROJECT_ID!r}")
     qa = dotenv_values(".env.notion-qa")
     cfg = {
         "token": qa.get("NOTION_API_TOKEN") or "",
@@ -74,8 +74,12 @@ def main() -> int:
         "metrics": qa.get("NOTION_METRICS_DATA_SOURCE_ID") or "",
     }
     if not all(cfg.values()):
-        print("Refusing: functions/.env.notion-qa must set NOTION_API_TOKEN and both data-source IDs")
-        return 2
+        sys.exit("Refusing: functions/.env.notion-qa must set NOTION_API_TOKEN and both data-source IDs")
+    return cfg
+
+
+def main() -> int:
+    cfg = load_qa_config()
 
     db = get_firestore_client()
     schemes = db.collection("schemes")

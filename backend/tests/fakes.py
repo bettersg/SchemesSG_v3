@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from google.api_core.exceptions import AlreadyExists
 from google.cloud import firestore
 
 
@@ -32,6 +33,11 @@ class FakeDocumentReference:
 
     def set(self, data: dict[str, Any], merge: bool = False) -> None:
         self._client._set_document(self._collection_name, self.id, data, merge=merge)
+
+    def create(self, data: dict[str, Any]) -> None:
+        if self._client.get_document(self._collection_name, self.id) is not None:
+            raise AlreadyExists(f"{self._collection_name}/{self.id} already exists")
+        self.set(data)
 
     def update(self, fields: dict[str, Any]) -> None:
         self._client._update_document(self._collection_name, self.id, fields)
