@@ -171,9 +171,7 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, zero
     )
     check(
         "unknown version is 404 unsupported_version",
-        lambda: _expect_error(
-            requests.get(f"{base}/v2/schemes", headers=auth, timeout=60), 404, "unsupported_version"
-        ),
+        lambda: _expect_error(requests.get(f"{base}/v2/schemes", headers=auth, timeout=60), 404, "unsupported_version"),
     )
     check(
         "unknown resource is 404 not_found",
@@ -181,9 +179,7 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, zero
     )
     check(
         "POST on the collection is 405",
-        lambda: _expect_error(
-            requests.post(f"{base}/v1/schemes", headers=auth, timeout=60), 405, "method_not_allowed"
-        ),
+        lambda: _expect_error(requests.post(f"{base}/v1/schemes", headers=auth, timeout=60), 405, "method_not_allowed"),
     )
     check(
         "GET on /v1/schemes/search is 405, not a detail lookup",
@@ -255,10 +251,7 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, zero
     print("\nSEARCH")
 
     search = requests.post(
-        f"{base}/v1/schemes/search",
-        headers=auth,
-        json={"query": "financial help for elderly", "limit": 5},
-        timeout=180,
+        f"{base}/v1/schemes/search", headers=auth, json={"query": "financial help for elderly", "limit": 5}, timeout=180
     )
     check("POST /v1/schemes/search returns 200 with data", lambda: _expect_list(search))
     check("no internal fields in search payload", lambda: _expect_no_leaks(search))
@@ -286,7 +279,9 @@ def _run_checks(base: str, auth: dict, throttle_key: str, revoked_key: str, zero
     check(
         "zero-budget key cannot fetch data",
         lambda: _expect_error(
-            requests.get(f"{base}/v1/schemes?limit=1", headers={"X-API-Key": zero_budget_key}, timeout=60),
+            requests.get(
+                f"{base}/v1/schemes?limit=1", headers={"X-API-Key": zero_budget_key}, timeout=60
+            ),
             429,
             "rate_limited",
         ),
