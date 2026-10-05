@@ -129,10 +129,7 @@ def _load_firestore(use_prod: bool):
 
     expected_project_id = os.getenv("FB_PROJECT_ID")
     if app.project_id != expected_project_id:
-        raise RuntimeError(
-            f"Firebase app {app_name!r} targets {app.project_id!r}, "
-            f"expected {expected_project_id!r}"
-        )
+        raise RuntimeError(f"Firebase app {app_name!r} targets {app.project_id!r}, expected {expected_project_id!r}")
     logger.info(f"Connected to Firebase project {app.project_id!r} using app {app.name!r}")
     return firestore.client(app=app)
 

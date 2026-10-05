@@ -125,9 +125,7 @@ def list_keys(db) -> None:
 
 def revoke_consumer(db, consumer: str) -> None:
     """Deactivate every key belonging to a consumer. Takes effect next request."""
-    docs = list(
-        db.collection(PARTNER_KEYS_COLLECTION).where("consumer", "==", consumer).stream()
-    )
+    docs = list(db.collection(PARTNER_KEYS_COLLECTION).where("consumer", "==", consumer).stream())
     if not docs:
         print(f"No keys found for consumer '{consumer}'.")
         return

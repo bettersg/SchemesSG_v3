@@ -17,6 +17,7 @@ HUMAN_COLUMNS = {
     "Merged into": "rich_text",
     "Note": "rich_text",
     "AI Triage Hint": "rich_text",
+    "Verdict by": "people",
 }
 
 
@@ -27,6 +28,7 @@ class FakeNotion(nlq.NotionClient):
         self.pages = {}
         self.calls = []
         self.patches = []  # property payload of every PATCH, to prove which columns the sync touches
+        self.users = {"u-alex": {"object": "user", "name": "Alex Tan", "person": {"email": "alex@example.org"}}}
 
     def _call(self, method, path, body=None):
         self.calls.append((method, path))
@@ -50,6 +52,8 @@ class FakeNotion(nlq.NotionClient):
             self.patches.append(deepcopy(body["properties"]))
             self._apply(page_id, body["properties"])
             return deepcopy(self.pages[page_id])
+        if method == "GET" and path.startswith("/users/"):
+            return deepcopy(self.users[path.split("/")[2]])
         raise AssertionError(f"Unexpected Notion call {method} {path}")
 
     def _apply(self, page_id, properties):
@@ -320,7 +324,7 @@ def test_sync_never_overwrites_volunteer_columns(fake_firestore):
     notion = FakeNotion()
     nlq.run_notion_link_queue_sync_core(fake_firestore, cfg=CFG, notion=notion)
     edits = {
-        "Verdict": "Moved",
+        "Verdict": "Unclear",
         "New URL": "https://example.org/new",
         "Retire reason": "Ended in 2025",
         "Merged into": "other-scheme",
@@ -341,11 +345,267 @@ def test_sync_never_overwrites_volunteer_columns(fake_firestore):
     assert {name: rows["s1"][name] for name in edits} == edits  # facts refreshed, volunteer work intact
     assert rows["s1"]["Error"] == "Gone"
     assert rows["s2"]["Sync state"] == "Open" and rows["s2"]["Verdict"] is None  # reopen clears only Verdict
-    assert {name: rows["s2"][name] for name in edits if name != "Verdict"} == {
-        name: value for name, value in edits.items() if name != "Verdict"
-    }
+    assert rows["s2"]["AI Triage Hint"] == ""  # stale after a reopen; refills on the next edit
+    kept = {name for name in edits if name not in ("Verdict", "AI Triage Hint")}
+    assert {name: rows["s2"][name] for name in kept} == {name: edits[name] for name in kept}
     for patch in notion.patches:
         touched = set(patch) & set(HUMAN_COLUMNS)
-        assert touched <= {"Verdict"}, touched
+        assert touched <= {"Verdict", "AI Triage Hint"}, touched
         if "Verdict" in patch:
             assert patch["Verdict"] == {"select": None} and patch["Sync state"] == {"select": {"name": "Open"}}
+        if "AI Triage Hint" in patch:  # only ever cleared, and only on a reopen or rejection
+            assert patch["AI Triage Hint"] == {"rich_text": []}
+            assert patch["Sync state"]["select"]["name"] in ("Open", "Rejected")
+
+
+# --- Verdicts (push) ---------------------------------------------------------
+
+UPDATE_SCHEME_KEYS = {
+    "Changes", "Description", "Link", "Scheme", "Status", "entryId", "targetSchemeId", "oldLink",
+    "retiredReason", "mergedInto", "timestamp", "userName", "userEmail", "typeOfRequest",
+}  # fmt: skip
+
+
+def _queue_with_row(fake_firestore, scheme_id="s1", **scheme):
+    fake_firestore.seed("schemes", scheme_id, _failing("scheme-1", **scheme))
+    fake_firestore.seed("schemes", "other", {"scheme": "Other scheme", "link": "https://example.org/other"})
+    notion = FakeNotion()
+    nlq.run_notion_link_queue_sync_core(fake_firestore, cfg=CFG, notion=notion)
+    return notion, notion.page_id(scheme_id)
+
+
+def _verdict(notion, page_id, **values):
+    values.setdefault("Verdict by", [{"id": "u-alex"}])
+    notion.set_human(page_id, **values)
+
+
+def _sync(fake_firestore, notion):
+    notion.calls.clear()
+    return nlq.run_notion_link_queue_sync_core(fake_firestore, cfg=CFG, notion=notion)
+
+
+def test_moved_verdict_submits_an_update_entry_like_update_scheme(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(
+        notion, page_id, Verdict="Moved", **{"New URL": "https://example.org/new-home", "Note": "Moved under services"}
+    )
+
+    _sync(fake_firestore, notion)
+
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Entry ID"]) == ("Submitted", f"notion-{page_id}-1")
+    entry = fake_firestore.get_document("schemeEntries", f"notion-{page_id}-1")
+    assert set(entry) == UPDATE_SCHEME_KEYS | {"source"} and "pipeline_status" not in entry
+    assert entry["typeOfRequest"] == "update" and entry["targetSchemeId"] == "s1"
+    assert (entry["Link"], entry["oldLink"]) == ("https://example.org/new-home", "https://example.org/scheme-1")
+    assert (entry["Scheme"], entry["Changes"]) == ("scheme-1", "Moved under services")
+    assert (entry["userName"], entry["userEmail"], entry["source"]) == ("Alex Tan", "alex@example.org", nlq.SOURCE)
+    # Waiting on the maintainer: the next run reads the entry and writes nothing.
+    _sync(fake_firestore, notion)
+    assert notion.writes() == []
+
+
+def test_retire_verdict_submits_a_retire_entry(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Retire", **{"Retire reason": "Programme ended in 2025", "Merged into": "other"})
+
+    _sync(fake_firestore, notion)
+
+    entry = fake_firestore.get_document("schemeEntries", f"notion-{page_id}-1")
+    assert entry["typeOfRequest"] == "retire"
+    assert (entry["retiredReason"], entry["mergedInto"], entry["oldLink"]) == (
+        "Programme ended in 2025",
+        "other",
+        None,
+    )
+    assert notion.rows()["s1"]["Sync state"] == "Submitted"
+
+
+@pytest.mark.parametrize(
+    ("values", "message"),
+    [
+        ({"Verdict": "Moved"}, "Paste the new web address into New URL."),
+        (
+            {"Verdict": "Moved", "New URL": "ftp://example.org/x"},
+            "New URL must be a full web address starting with https://.",
+        ),
+        (
+            {"Verdict": "Moved", "New URL": "https://www.EXAMPLE.org/scheme-1/"},
+            "New URL is the same as the current link.",
+        ),
+        ({"Verdict": "Retire"}, "Write in Retire reason why the scheme has ended."),
+        (
+            {"Verdict": "Retire", "Retire reason": "Ended", "Merged into": "no-such-scheme"},
+            "Merged into must be the Scheme ID of another scheme that is still listed.",
+        ),
+        (
+            {"Verdict": "Retire", "Retire reason": "Ended", "Merged into": "s1"},
+            "Merged into must be the Scheme ID of another scheme that is still listed.",
+        ),
+    ],
+    ids=[
+        "moved-no-url",
+        "moved-not-http",
+        "moved-same-url",
+        "retire-no-reason",
+        "retire-bad-merge",
+        "retire-self-merge",
+    ],
+)
+def test_invalid_verdict_is_rejected_with_a_plain_message(values, message, fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, **values)
+
+    _sync(fake_firestore, notion)
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Sync message"]) == ("Rejected", message)
+    assert fake_firestore.list_documents("schemeEntries") == {}
+    # Still invalid: no rewrite every 30 minutes.
+    _sync(fake_firestore, notion)
+    assert notion.writes() == []
+    # Volunteer clears the verdict: back to Open.
+    notion.set_human(page_id, Verdict=None)
+    _sync(fake_firestore, notion)
+    assert notion.rows()["s1"]["Sync state"] == "Open"
+
+
+def test_checker_wrong_restores_the_scheme_and_marks_it_verified(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Checker wrong")
+
+    _sync(fake_firestore, notion)
+
+    stored = fake_firestore.get_document("schemes", "s1")
+    assert (stored["status"], stored["status_reason"]) == ("active", "Manually verified via Notion link queue")
+    assert stored["link_check_manual_verified_by"] == "alex@example.org" and stored["link_check_manual_verified_at"]
+    assert not set(nlq.CHECKER_WRONG_CLEARS) & set(stored)
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Sync message"]) == ("Applied", "Searchable again after Monday's reindex")
+    assert (row["Firestore status"], row["Weeks failing"], row["Error"]) == ("active", None, "")
+    # Out of the failing set now, but Applied stays Applied rather than Resolved.
+    _sync(fake_firestore, notion)
+    assert notion.writes() == []
+
+
+def test_unclear_parks_until_the_next_weekly_check(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Unclear", Note="Domain looks new")
+    _sync(fake_firestore, notion)
+    assert notion.rows()["s1"]["Sync state"] == "Parked"
+    _sync(fake_firestore, notion)
+    assert notion.writes() == []  # parked while already inactive: no reopen loop
+
+    fake_firestore.seed("schemes", "s1", _failing("scheme-1", last_link_check="2099-01-05T09:01:00+00:00"))
+    _sync(fake_firestore, notion)
+
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Verdict"], row["Note"]) == ("Open", None, "Domain looks new")
+    assert row["Sync message"] == "Still failing after this week's check. Take another look."
+
+
+def test_applied_row_reopens_when_the_scheme_goes_inactive_again(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Checker wrong")
+    _sync(fake_firestore, notion)
+    # Four more hard-dead weeks later the link check delists it again.
+    restored = fake_firestore.get_document("schemes", "s1")
+    fake_firestore.seed("schemes", "s1", {**restored, **_failing("scheme-1", link_check_fail_streak=4)})
+
+    _sync(fake_firestore, notion)
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Verdict"]) == ("Open", None)
+    assert row["Sync message"] == "Went inactive again. Please check it again."
+    _sync(fake_firestore, notion)
+    assert notion.writes() == []
+
+
+@pytest.mark.parametrize(
+    ("entry_update", "state", "message", "verdict_cleared"),
+    [
+        ({"Status": "approved", "pipeline_status": "completed"}, "Resolved", "Approved by a maintainer", False),
+        (
+            {"Status": "rejected", "rejection_reason": "Wrong programme"},
+            "Open",
+            "A maintainer rejected this: Wrong programme. Check again and choose a verdict.",
+            True,
+        ),
+        ({"Status": "rejected"}, "Open", "A maintainer rejected this. Check again and choose a verdict.", True),
+        (
+            {"pipeline_status": "duplicate", "duplicate_scheme_id": "other", "duplicate_scheme_name": "Other scheme"},
+            "Open",
+            "That address already belongs to Other scheme (other). If it is the same scheme, "
+            "choose Retire and put other in Merged into.",
+            True,
+        ),
+        ({"pipeline_status": "failed"}, "Open", "Processing failed. Choose the verdict again to retry.", True),
+        (None, "Open", "The submission was lost. Choose the verdict again.", True),
+        ({"pipeline_status": "completed"}, "Submitted", "Sent to a maintainer for approval in Slack", False),
+    ],
+    ids=["approved", "rejected-reason", "rejected", "duplicate", "failed", "missing", "pending"],
+)
+def test_submitted_row_follows_the_maintainer_outcome(entry_update, state, message, verdict_cleared, fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Moved", **{"New URL": "https://example.org/new-home"})
+    notion.set_human(page_id, **{"AI Triage Hint": "All done: this goes to a maintainer for approval."})
+    _sync(fake_firestore, notion)
+    entry_id = f"notion-{page_id}-1"
+    if entry_update is None:
+        fake_firestore._documents["schemeEntries"].pop(entry_id)
+    else:
+        fake_firestore.collection("schemeEntries").document(entry_id).update(entry_update)
+    if (entry_update or {}).get("Status") == "approved":
+        # What approval_handler does to the scheme: new link, active, failure state cleared.
+        fake_firestore.seed(
+            "schemes", "s1", {"scheme": "scheme-1", "link": "https://example.org/new-home", "status": "active"}
+        )
+
+    _sync(fake_firestore, notion)
+
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Sync message"]) == (state, message)
+    assert (row["Verdict"] is None) == verdict_cleared
+    assert (row.get("AI Triage Hint") == "") == verdict_cleared  # reopened: the "All done" hint is cleared
+    assert row["Entry ID"] == entry_id  # never cleared: the next submission is -2
+    assert len(fake_firestore.list_documents("schemeEntries")) == (0 if entry_update is None else 1)
+
+
+def test_resubmission_after_rejection_and_crash_replay(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    # Crash replay: last run created entry -1 but died before saving Entry ID in Notion.
+    fake_firestore.seed("schemeEntries", f"notion-{page_id}-1", {"typeOfRequest": "update", "marker": "first run"})
+    _verdict(notion, page_id, Verdict="Moved", **{"New URL": "https://example.org/new-home"})
+    _sync(fake_firestore, notion)
+    assert notion.rows()["s1"]["Entry ID"] == f"notion-{page_id}-1"
+    assert fake_firestore.get_document("schemeEntries", f"notion-{page_id}-1")["marker"] == "first run"
+
+    fake_firestore.collection("schemeEntries").document(f"notion-{page_id}-1").update({"Status": "rejected"})
+    _sync(fake_firestore, notion)
+    _verdict(notion, page_id, Verdict="Moved", **{"New URL": "https://example.org/newer-home"})
+    _sync(fake_firestore, notion)
+
+    assert notion.rows()["s1"]["Entry ID"] == f"notion-{page_id}-2"
+    newer = fake_firestore.get_document("schemeEntries", f"notion-{page_id}-2")
+    assert newer["Link"] == "https://example.org/newer-home"
+    assert len(fake_firestore.list_documents("schemeEntries")) == 2
+
+
+def test_verdict_on_a_retired_scheme_is_never_applied(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Checker wrong")
+    fake_firestore.seed("schemes", "s1", _failing("scheme-1", status="retired"))
+
+    _sync(fake_firestore, notion)
+
+    assert fake_firestore.get_document("schemes", "s1")["status"] == "retired"
+    assert notion.rows()["s1"]["Sync state"] == "Resolved"
+
+
+def test_retire_verdict_is_applied_even_if_the_link_just_recovered(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Retire", **{"Retire reason": "Programme ended"})
+    fake_firestore.seed("schemes", "s1", {"scheme": "scheme-1", "link": "https://example.org/scheme-1"})
+
+    _sync(fake_firestore, notion)
+
+    assert notion.rows()["s1"]["Sync state"] == "Submitted"
+    assert fake_firestore.get_document("schemeEntries", f"notion-{page_id}-1")["typeOfRequest"] == "retire"
