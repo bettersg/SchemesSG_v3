@@ -39,6 +39,9 @@ from batch_jobs.slack_blocks import (
 # first failure quarantines it (``link_suspect``) but leaves it searchable, so
 # a transient outage or a single bad weekly run never delists a live scheme.
 HARD_DEAD_FAIL_THRESHOLD = 2
+# A volunteer confirmed the link works ("Checker wrong" in the Notion link queue), so
+# wait longer before delisting it again. It is still checked every week.
+VERIFIED_HARD_DEAD_FAIL_THRESHOLD = 4
 # Within a single run, retry a transient failure this many times before trusting
 # the verdict (kills concurrency-induced flaps).
 TRANSIENT_RETRIES = 2
@@ -172,7 +175,12 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                         # searchable) and waits for recovery or a human.
                         fail_class = classify_link_result(result)
                         new_streak = (scheme_data.get("link_check_fail_streak", 0) or 0) + 1
-                        inactivate = fail_class == "hard_dead" and new_streak >= HARD_DEAD_FAIL_THRESHOLD
+                        threshold = (
+                            VERIFIED_HARD_DEAD_FAIL_THRESHOLD
+                            if scheme_data.get("link_check_manual_verified_at")
+                            else HARD_DEAD_FAIL_THRESHOLD
+                        )
+                        inactivate = fail_class == "hard_dead" and new_streak >= threshold
                         result["_fail_class"] = fail_class
                         result["_new_streak"] = new_streak
                         result["_inactivate"] = inactivate
