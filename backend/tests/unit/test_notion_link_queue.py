@@ -8,6 +8,16 @@ from batch_jobs import notion_link_queue as nlq
 
 
 CFG = {"token": "secret", "link_queue": "ds-queue", "metrics": "ds-metrics"}
+# Columns volunteers (or the Notion AI agent) own. The sync must never send these, except
+# clearing Verdict when a Resolved row reopens.
+HUMAN_COLUMNS = {
+    "Verdict": "select",
+    "New URL": "url",
+    "Retire reason": "rich_text",
+    "Merged into": "rich_text",
+    "Note": "rich_text",
+    "AI Triage Hint": "rich_text",
+}
 
 
 class FakeNotion(nlq.NotionClient):
@@ -16,6 +26,7 @@ class FakeNotion(nlq.NotionClient):
     def __init__(self):
         self.pages = {}
         self.calls = []
+        self.patches = []  # property payload of every PATCH, to prove which columns the sync touches
 
     def _call(self, method, path, body=None):
         self.calls.append((method, path))
@@ -36,6 +47,7 @@ class FakeNotion(nlq.NotionClient):
             return deepcopy(self.pages[page_id])
         if method == "PATCH":
             page_id = path.split("/")[2]
+            self.patches.append(deepcopy(body["properties"]))
             self._apply(page_id, body["properties"])
             return deepcopy(self.pages[page_id])
         raise AssertionError(f"Unexpected Notion call {method} {path}")
@@ -50,7 +62,7 @@ class FakeNotion(nlq.NotionClient):
 
     def set_human(self, page_id, **values):
         """Simulate a volunteer editing human-owned columns."""
-        types = {"Verdict": "select", "Note": "rich_text"}
+        types = {name: HUMAN_COLUMNS[name] for name in values}
         self._apply(page_id, nlq.encode_properties(values, types))
 
     def rows(self, data_source="ds-queue"):
@@ -300,3 +312,40 @@ def test_metrics_upsert_by_iso_week_counts_and_latest(fake_firestore):
 
 def test_iso_week_uses_iso_year():
     assert nlq._iso_week(date(2029, 12, 31)) == "2030-W01"
+
+
+def test_sync_never_overwrites_volunteer_columns(fake_firestore):
+    fake_firestore.seed("schemes", "s1", _failing("scheme-1"))
+    fake_firestore.seed("schemes", "s2", _failing("scheme-2"))
+    notion = FakeNotion()
+    nlq.run_notion_link_queue_sync_core(fake_firestore, cfg=CFG, notion=notion)
+    edits = {
+        "Verdict": "Moved",
+        "New URL": "https://example.org/new",
+        "Retire reason": "Ended in 2025",
+        "Merged into": "other-scheme",
+        "Note": "Checked on Monday",
+        "AI Triage Hint": "Search the agency website.",
+    }
+    for scheme_id in ("s1", "s2"):
+        notion.set_human(notion.page_id(scheme_id), **edits)
+
+    # Facts change on s1, s2 recovers (Resolved), then s2 fails again (reopens).
+    fake_firestore.seed("schemes", "s1", _failing("scheme-1", link_check_error="Gone", link_check_fail_streak=3))
+    fake_firestore.seed("schemes", "s2", {"scheme": "scheme-2", "link": "https://example.org/scheme-2"})
+    nlq.run_notion_link_queue_sync_core(fake_firestore, cfg=CFG, notion=notion)
+    fake_firestore.seed("schemes", "s2", _failing("scheme-2"))
+    nlq.run_notion_link_queue_sync_core(fake_firestore, cfg=CFG, notion=notion)
+
+    rows = notion.rows()
+    assert {name: rows["s1"][name] for name in edits} == edits  # facts refreshed, volunteer work intact
+    assert rows["s1"]["Error"] == "Gone"
+    assert rows["s2"]["Sync state"] == "Open" and rows["s2"]["Verdict"] is None  # reopen clears only Verdict
+    assert {name: rows["s2"][name] for name in edits if name != "Verdict"} == {
+        name: value for name, value in edits.items() if name != "Verdict"
+    }
+    for patch in notion.patches:
+        touched = set(patch) & set(HUMAN_COLUMNS)
+        assert touched <= {"Verdict"}, touched
+        if "Verdict" in patch:
+            assert patch["Verdict"] == {"select": None} and patch["Sync state"] == {"select": {"name": "Open"}}
