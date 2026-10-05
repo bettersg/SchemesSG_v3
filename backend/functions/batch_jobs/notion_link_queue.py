@@ -50,7 +50,7 @@ LINK_QUEUE_TYPES = {
     "Fail class": "select",
     "Status code": "number",
     "Error": "rich_text",
-    "Fail streak": "number",
+    "Weeks failing": "number",
     "Status reason": "rich_text",
     "Last checked": "date",
     "Verdict": "select",
@@ -220,7 +220,7 @@ def scheme_facts(scheme_id: str, scheme: Dict[str, Any]) -> Dict[str, Any]:
         "Fail class": scheme.get("link_check_fail_class") or None,
         "Status code": _number(scheme.get("link_check_status_code")),
         "Error": str(scheme.get("link_check_error") or "")[:MAX_TEXT],
-        "Fail streak": _number(scheme.get("link_check_fail_streak")),
+        "Weeks failing": _number(scheme.get("link_check_fail_streak")),
         "Status reason": str(scheme.get("status_reason") or "")[:MAX_TEXT],
         # Date only: Notion normalises date-times, so a full timestamp never compares equal.
         "Last checked": checked.date().isoformat() if checked else None,

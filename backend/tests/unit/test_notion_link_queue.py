@@ -153,7 +153,7 @@ def test_pull_creates_paginates_resolves_and_never_writes_human_columns(fake_fir
         "Fail class": "hard_dead",
         "Status code": 404,
         "Error": "Not Found",
-        "Fail streak": 2,
+        "Weeks failing": 2,
         "Status reason": "Dead link (hard_dead, 2 consecutive checks)",
         "Last checked": "2026-10-05",
         "Sync state": "Open",
@@ -178,7 +178,7 @@ def test_pull_creates_paginates_resolves_and_never_writes_human_columns(fake_fir
     assert rows["s1"]["Sync state"] == "Resolved"
     assert rows["s1"]["Sync message"] == "Link is working again"
     assert rows["s1"]["Note"] == "Checked the agency site"
-    assert rows["s2"]["Error"] == "Gone" and rows["s2"]["Fail streak"] == 3
+    assert rows["s2"]["Error"] == "Gone" and rows["s2"]["Weeks failing"] == 3
     assert rows["s2"]["Sync state"] == "Open"
 
 

@@ -191,6 +191,7 @@ def main() -> int:
             nxt = nlq.append_metrics_row(db, 0, 0, cfg=cfg, notion=notion, today=today + timedelta(days=7))
             pages = {p["id"]: nlq._decode_row(p) for p in notion.query_all(cfg["metrics"])}
             check("8 Latest moves to the newest row", [pid for pid, r in pages.items() if r.get("Latest")] == [nxt])
+            nlq.append_metrics_row(db, 1, 2, cfg=cfg, notion=notion, today=today)  # leave QA on this week
 
         step("1 first sync", first_sync)
         step("2 rerun", rerun_is_noop)
