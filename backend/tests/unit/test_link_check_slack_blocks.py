@@ -167,3 +167,18 @@ def test_every_returned_block_has_valid_slack_shape(dead_count, restored_count):
             pass
         else:
             raise AssertionError(f"Unexpected block type: {block['type']}")
+
+
+def test_notion_link_only_when_url_given():
+    def texts(msg):
+        return [el["text"] for b in msg["blocks"] if b["type"] == "context" for el in b["elements"]]
+
+    without = build_link_check_summary_message(_results(10, 10, 0), [], _reindex_success())
+    url = "https://www.notion.so/SchemesSG-Data-Health-abc"
+    with_url = build_link_check_summary_message(
+        _results(500, 420, 80), [_dead_link(i) for i in range(80)], _reindex_success(), notion_url=url
+    )
+
+    assert not any("Triage in Notion" in t for t in texts(without))
+    assert f"<{url}|Triage in Notion →>" in texts(with_url)  # survives the 50-block cap
+    assert len(with_url["blocks"]) <= 50

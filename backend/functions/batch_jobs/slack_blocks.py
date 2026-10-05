@@ -4,7 +4,7 @@ Slack Block Kit builders for link check & reindex batch job.
 Builds summary messages for link health check results.
 """
 
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 
 MAX_LINKS_PER_BLOCK = 10
@@ -62,6 +62,7 @@ def build_link_check_summary_message(
     dead_links: List[Dict[str, Any]],
     reindex_result: Dict[str, Any],
     restored_links: List[Dict[str, Any]] = None,
+    notion_url: Optional[str] = None,
 ) -> dict:
     """
     Build Slack message summarizing link check and reindex results.
@@ -71,6 +72,7 @@ def build_link_check_summary_message(
         dead_links: List of dead link details
         reindex_result: Embeddings reindex result
         restored_links: List of restored link details (previously inactive)
+        notion_url: Notion Data Health dashboard to link for triage; omitted when unset
 
     Returns:
         Slack message payload with blocks
@@ -108,6 +110,11 @@ def build_link_check_summary_message(
         {"type": "header", "text": {"type": "plain_text", "text": "Link Check & Reindex Complete", "emoji": True}},
         {"type": "section", "text": {"type": "mrkdwn", "text": summary_text}},
     ]
+    # Right under the summary, not at the end: _enforce_block_cap trims from the end.
+    if notion_url:
+        blocks.append(
+            {"type": "context", "elements": [{"type": "mrkdwn", "text": f"<{notion_url}|Triage in Notion →>"}]}
+        )
 
     # Add restored links section if any
     if restored_links:

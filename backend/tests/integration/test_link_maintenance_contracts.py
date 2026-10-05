@@ -177,3 +177,20 @@ def test_retired_scheme_is_excluded_from_link_maintenance(
     assert result["link_check"]["total_checked"] == 1
     assert result["link_check"]["retired_skipped"] == 1
     assert fake_firestore.get_document("schemes", "scheme-retired") == retired
+
+
+def test_notion_failure_does_not_fail_link_check(mocker, fake_firestore, fake_slack_client):
+    link = "https://example.gov.sg/ok"
+    fake_firestore.seed("schemes", "scheme-ok", {"scheme": "OK", "link": link})
+    metrics = mocker.patch.object(link_job, "append_metrics_row", side_effect=RuntimeError("Notion down"))
+
+    result = _run_link_job(
+        mocker,
+        fake_firestore,
+        fake_slack_client,
+        {link: {"alive": True, "status_code": 200, "error": None}},
+    )
+
+    assert result["success"] is True
+    metrics.assert_called_once_with(fake_firestore, 0, 0)
+    assert len(fake_slack_client.posted_messages) == 1
