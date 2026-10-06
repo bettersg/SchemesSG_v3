@@ -64,7 +64,7 @@ export const en: Translations = {
   },
 
   hero: {
-    headline: "Find the Right\nSchemes, All in\nOne Place",
+    headline: "Find the Right\nAssistance Schemes\nin Singapore",
     subtitle:
       "AI-powered search to help you discover the social assistance schemes you deserve. Over 600 schemes from 200+ agencies.",
     volunteerBanner: "Built by volunteers at",
@@ -111,12 +111,12 @@ export const en: Translations = {
           "Our AI agents responsibly gather publicly available details from the webpage. A volunteer then reviews and approves the listing before it goes live.",
       },
       database: {
-        title: "See How We Find Your Matches",
+        title: "How We Find Your Matches",
         description:
-          "After you send your question, Schemes.sg searches over 600 government and community schemes from agencies like MSF, MOH, HDB, and CPF, then explains what it found.",
+          "Simply type your question, and Schemes.sg instantly scans more than 600 government and community assistance programs to show you what help is available.",
       },
       filter: {
-        title: "Find the Right Scheme, No Noise",
+        title: "Find the Right Scheme",
         description:
           "Use filters to narrow down schemes by agency, category, eligibility criteria, and the type of support you need.",
       },
@@ -269,7 +269,8 @@ export const en: Translations = {
       {
         question: "Is my personal information safe?",
         answer:
-          "Your privacy is protected by design. We don't require any login or account, which means there's no way for us to know who you are. Your searches are encrypted in transit and at rest, and we never share your information with anyone.",
+          "Your privacy is protected by design. We don't require any login or account and we never ask for your name or NRIC, which means there's no way for us to know who you are. Your searches are encrypted in transit, we don't sell your information, and the measurements we use to improve the site never include what you typed.",
+        answerLink: { label: "Read our Privacy Policy.", href: "/privacy" },
       },
       {
         question: "How up-to-date is the information?",
@@ -280,7 +281,7 @@ export const en: Translations = {
         question: "Can I access Schemes.sg data through an API?",
         answer:
           "We share scheme data programmatically with a small number of partner organisations, on request. It is not a self-serve public API. Get in touch if your organisation wants to integrate.",
-        answerLink: { label: "Read the developer docs", href: "/developers" },
+        answerLink: { label: "Read the developer docs.", href: "/developers" },
       },
     ],
     sidebar: {
@@ -370,8 +371,7 @@ export const en: Translations = {
       header: "Header",
     },
     errorMeanings: {
-      invalid_request:
-        "The parameters are wrong. The message names which one.",
+      invalid_request: "The parameters are wrong. The message names which one.",
       missing_key: "No X-API-Key header was sent.",
       invalid_key: "The key is not one we issued.",
       revoked_key: "The key was valid and has been turned off. Talk to us.",
@@ -411,10 +411,22 @@ export const en: Translations = {
     productHeading: "PRODUCT",
     resourcesHeading: "RESOURCES",
     legalHeading: "LEGAL",
+    // All ten, not a subset: the footer is the only sitewide crawlable path
+    // into the category pages.
     schemesLinks: [
       { label: "Financial Assistance", href: "/catalog/financial-assistance" },
+      { label: "Family & Children", href: "/catalog/family-children" },
       { label: "Health & Wellbeing", href: "/catalog/health-wellbeing" },
       { label: "Housing & Food", href: "/catalog/housing-food" },
+      { label: "Education", href: "/catalog/education" },
+      { label: "Employment & Training", href: "/catalog/employment-training" },
+      { label: "Seniors & Caregiving", href: "/catalog/seniors-caregiving" },
+      {
+        label: "Disability & Transport",
+        href: "/catalog/disability-transport",
+      },
+      { label: "Legal & Safety", href: "/catalog/legal-safety" },
+      { label: "Community Support", href: "/catalog/community-support" },
       { label: "All Categories", href: "/catalog" },
     ],
     productLinks: [

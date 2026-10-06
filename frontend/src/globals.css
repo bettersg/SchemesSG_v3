@@ -152,6 +152,44 @@
 
 @variant hover (&:hover);
 
+/* Minimum readable size for logographic scripts.
+ *
+ * A Han character carries its meaning in the strokes inside the glyph, not in
+ * its outline, so it needs more pixels than a Latin letter to stay legible.
+ * At 12px to 14px, sizes that read fine in English, the strokes merge. 20px is
+ * the floor for Chinese, so every size below it is raised here rather than
+ * duplicating conditional classes across components.
+ *
+ * `:lang(zh)` matches the `zh-Hans` that LanguageProvider writes to <html>, and
+ * matches by subtag, so future regional variants are covered. Tamil gets the
+ * same treatment when it lands: add `:lang(ta)` to the selector. Malay is
+ * written in Latin script and needs nothing.
+ *
+ * The arbitrary sizes are listed individually because CSS cannot clamp a
+ * computed font-size. Prefer the named scale in new code so this list does not
+ * have to grow.
+ */
+@layer utilities {
+  :lang(zh)
+    :is(
+      .text-xs,
+      .text-sm,
+      .text-base,
+      .text-lg,
+      .text-\[10px\],
+      .text-\[11px\],
+      .text-\[12px\],
+      .text-\[12\.5px\],
+      .text-\[13px\],
+      .text-\[14px\],
+      .text-\[15px\],
+      .text-\[0\.95rem\]
+    ) {
+    font-size: 1.25rem;
+    line-height: 1.6;
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

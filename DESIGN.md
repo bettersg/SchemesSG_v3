@@ -192,6 +192,14 @@ Ten semantic categories, each defined as a `bg / border / text` triplet:
 
 **The Lexend-For-Heads Rule.** Lexend appears on headings only. Body copy is Open Sans. Don't reach for Lexend at small sizes — its shapes are tuned for scale, and below 18px it loses the calm it brings at 24px and up.
 
+**The 20px Logographic Floor.** Chinese text is never smaller than **20px**, whatever the English equivalent is set to. A Han character carries meaning in the strokes *inside* the glyph rather than in its outline, so at the 12px and 14px that read comfortably in Latin the strokes merge into a blur. This is a legibility floor, not a preference, and it applies everywhere: labels, chips, captions, button text, input placeholders, helper text.
+
+The floor is enforced centrally in `globals.css`, scoped to `:lang(zh)`, which `LanguageProvider` writes to `<html>` as `zh-Hans`. Do not re-implement it with conditional classes in components. Because CSS cannot clamp a computed font-size, the rule lists the sub-20px sizes explicitly, so **prefer the named type scale over arbitrary `text-[13px]` values**, or the floor silently stops covering your text.
+
+Two consequences worth designing around rather than fighting. A component tuned for a 10px or 11px Latin label will not hold 20px Chinese, so chips, badges, and dense toolbars need to be checked in Chinese and given room, not shrunk back. And English and Chinese will not be the same height: a layout that only works when both languages occupy identical space is the wrong layout.
+
+**Tamil** gets the same floor when it ships, for the same reason: add `:lang(ta)` to the selector. **Malay** is written in Latin script and needs nothing.
+
 ## 4. Elevation
 
 The system is flat by default. Surfaces sit on the warm-neutral background without shadows. Depth, when needed, comes from tonal layering (`--schemes-bg` → `--schemes-surface` → `--schemes-blue-50` on hover) and from full borders, never from drop shadows at rest.
