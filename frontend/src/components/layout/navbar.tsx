@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { Tabs } from "@heroui/react";
 import Image from "next/image";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import { useChat } from "@/providers/chat-provider";
 import {
   cssTransition,
   motionPreset,
@@ -27,6 +28,7 @@ type NavLink = {
 export function Navbar() {
   const { t } = useLanguage();
   const pathname = usePathname();
+  const { hasActiveChat, setResetModalIsOpen } = useChat();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isHidden: mobileHidden, isScrolled: scrolled } = useHideOnScroll({
     disabled: mobileOpen,
@@ -40,7 +42,6 @@ export function Navbar() {
     { label: t.nav.about, href: "/about" },
   ];
 
-  // Determine selected tab from pathname
   const selectedKey =
     navLinks.find(
       (link) =>
@@ -61,6 +62,16 @@ export function Navbar() {
     };
   }, [mobileHidden, mobileOpen]);
 
+  // Navigating away from an active chat discards it, so confirm first.
+  const handleSearchEntryClick = (event: MouseEvent<Element>) => {
+    setMobileOpen(false);
+
+    if (pathname === "/" && hasActiveChat) {
+      event.preventDefault();
+      setResetModalIsOpen(true);
+    }
+  };
+
   return (
     <header
       className={cn(
@@ -75,9 +86,9 @@ export function Navbar() {
       )}
     >
       <nav className="mx-auto h-full flex max-w-7xl items-center justify-between px-6">
-        {/* Logo */}
         <a
           href="/"
+          onClick={handleSearchEntryClick}
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
         >
           <Image
@@ -91,7 +102,6 @@ export function Navbar() {
           <span className="text-neutral-400 -ml-1">.sg</span>
         </a>
 
-        {/* Center pill nav - desktop (HeroUI Tabs) */}
         <div className="hidden md:flex">
           <Tabs selectedKey={selectedKey} aria-label="Navigation">
             <Tabs.ListContainer>
@@ -109,16 +119,20 @@ export function Navbar() {
                       cssTransition.allState,
                       "text-neutral-500",
                       "hover:text-neutral-900",
-                      "aria-selected:font-semibold aria-selected:text-neutral-900",
+                      "aria-selected:bg-(--schemes-amber-400) aria-selected:font-semibold aria-selected:text-neutral-900",
                       "aria-disabled:text-neutral-300 aria-disabled:cursor-default",
                     )}
                   >
-                    <Link href={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={
+                        link.href === "/" ? handleSearchEntryClick : undefined
+                      }
+                    >
                       {link.label}
                       {link.href === "/" && (
                         <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
                       )}
-                      <Tabs.Indicator className="rounded-full bg-(--schemes-amber-400)" />
                     </Link>
                   </Tabs.Tab>
                 ))}
@@ -127,12 +141,10 @@ export function Navbar() {
           </Tabs>
         </div>
 
-        {/* Language toggle - desktop */}
         <div className="hidden md:flex items-center">
           <LanguageToggle />
         </div>
 
-        {/* Mobile menu toggle */}
         <button
           className="inline-flex size-11 items-center justify-center rounded-lg md:hidden cursor-pointer"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -146,7 +158,6 @@ export function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile menu */}
       <AnimatePresence initial={false}>
         {mobileOpen && (
           <motion.div
@@ -187,6 +198,7 @@ export function Navbar() {
               <Link href="/">
                 <Button
                   size="sm"
+                  onClick={handleSearchEntryClick}
                   className={cn(
                     "min-h-11 w-full cursor-pointer gap-1.5 rounded-full font-semibold",
                     selectedKey === "/"

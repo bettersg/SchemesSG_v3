@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { LanguageProvider } from "@/lib/landing-i18n";
+import { ChatProvider } from "@/providers/chat-provider";
 import { Navbar } from "./navbar";
 
 vi.mock("next/navigation", () => ({
@@ -13,7 +14,9 @@ describe("Navbar", () => {
     const user = userEvent.setup();
     const { unmount } = render(
       <LanguageProvider>
-        <Navbar />
+        <ChatProvider>
+          <Navbar />
+        </ChatProvider>
       </LanguageProvider>,
     );
 
