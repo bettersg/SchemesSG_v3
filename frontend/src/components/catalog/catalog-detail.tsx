@@ -2,37 +2,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSchemesCategory } from "@/lib/schemes";
 import type { CatalogPageData, Scheme } from "@/types/types";
-import { ScrollShadow, Skeleton, Spinner } from "@heroui/react";
+import { Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
-import Image from "next/image";
 import SchemeCard from "@/components/schemes/scheme-card";
-import {
-  CATALOG_CATEGORY_ICON_SRC,
-  CATALOG_CATEGORY_OPTIONS,
-  CATALOG_CATEGORY_SLUGS,
-  type CatalogCategory,
-} from "@/lib/design-system/categories";
-import CatalogCategoryDrawer from "@/components/catalog/catalog-category-drawer";
+import { type CatalogCategory } from "@/lib/design-system/categories";
+import CatalogCategorySelect from "@/components/catalog/catalog-category-select";
 import {
   productCard,
-  productHeading,
   productPageShell,
-  productSubheading,
 } from "@/lib/design-system/product-styles";
-import PageShell from "@/components/layout/page-shell";
 import EmptyState from "@/components/feedback/empty-state";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { Search } from "lucide-react";
 
 type CatalogLoadState =
-  | "idle"
   | "loadingInitial"
   | "ready"
   | "loadingMore"
   | "exhausted";
 
 type CatalogPageClientProps = {
-  initialCategory?: CatalogCategory;
+  initialCategory: CatalogCategory;
   initialData?: CatalogPageData;
 };
 
@@ -40,25 +30,24 @@ function CatalogGridSkeleton() {
   return (
     <div
       aria-label="Loading schemes"
-      className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4"
+      className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[68rem] lg:grid-cols-3 2xl:max-w-none 2xl:grid-cols-4"
     >
       {Array.from({ length: 8 }).map((_, index) => (
         <div
           key={index}
           className={`${productCard} flex min-h-[172px] flex-col gap-3 p-4`}
         >
-          <div className="flex items-start gap-2.5">
-            <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {/* Mirrors SchemeCard: 64px logo against three rows (name, agency,
+              one chip), then the summary. */}
+          <div className="flex items-start gap-3">
+            <Skeleton className="h-16 w-16 shrink-0 rounded-lg" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Skeleton className="h-3.5 w-4/5 rounded-full" />
               <Skeleton className="h-3 w-1/2 rounded-full" />
+              <Skeleton className="h-5 w-24 rounded-full" />
             </div>
           </div>
-          <div className="flex gap-1.5">
-            <Skeleton className="h-5 w-20 rounded-full" />
-            <Skeleton className="h-5 w-24 rounded-full" />
-          </div>
-          <div className="mt-auto flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <Skeleton className="h-3 w-full rounded-full" />
             <Skeleton className="h-3 w-5/6 rounded-full" />
           </div>
@@ -72,19 +61,15 @@ export default function CatalogPageClient({
   initialCategory,
   initialData,
 }: CatalogPageClientProps) {
-  const activeCategory = initialCategory ?? "All";
-  // The category page hands over its server read, so hydration can render the
-  // first page without fetching it again.
-  const hasInitialData =
-    initialData !== undefined && initialCategory !== undefined;
-  const initialLoadState: CatalogLoadState = !initialCategory
-    ? "idle"
-    : !hasInitialData
-      ? "loadingInitial"
-      : initialData?.nextCursor
-        ? "ready"
-        : "exhausted";
-  const hasSelectedCategory = Boolean(initialCategory);
+  const activeCategory = initialCategory;
+  // The route hands over its server read, so hydration can render the first
+  // page without fetching it again.
+  const hasInitialData = initialData !== undefined;
+  const initialLoadState: CatalogLoadState = !hasInitialData
+    ? "loadingInitial"
+    : initialData?.nextCursor
+      ? "ready"
+      : "exhausted";
   const [schemes, setSchemes] = useState<Scheme[]>(
     hasInitialData ? (initialData?.schemes ?? []) : [],
   );
@@ -98,7 +83,6 @@ export default function CatalogPageClient({
   // const [searchQuery, setSearchQuery] = useState("");
   // const [inputValue, setInputValue] = useState("");
 
-  // load more schemes when user scrolls to bottom
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef(
@@ -143,7 +127,7 @@ export default function CatalogPageClient({
   useEffect(() => {
     const root = scrollRef.current;
     const target = bottomRef.current;
-    if (!hasSelectedCategory || !root || !target) return;
+    if (!root || !target) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -162,11 +146,11 @@ export default function CatalogPageClient({
     return () => {
       observer.disconnect();
     };
-  }, [hasSelectedCategory, loadMoreSchemes]);
+  }, [loadMoreSchemes]);
 
   useEffect(() => {
     const root = scrollRef.current;
-    if (!hasSelectedCategory || !root) return;
+    if (!root) return;
 
     const handleScroll = () => {
       if (root.scrollTop > 0) {
@@ -182,11 +166,9 @@ export default function CatalogPageClient({
     return () => {
       root.removeEventListener("scroll", handleScroll);
     };
-  }, [hasSelectedCategory, loadMoreSchemes]);
+  }, [loadMoreSchemes]);
 
-  // Initial load
   useEffect(() => {
-    if (!hasSelectedCategory) return;
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     hasUserScrolledRef.current = false;
@@ -212,45 +194,9 @@ export default function CatalogPageClient({
       cursorRef.current = r.nextCursor;
       setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
-  }, [activeCategory, hasSelectedCategory, hasInitialData, initialData]);
+  }, [activeCategory, hasInitialData, initialData]);
 
   // search feature (tbc)
-  if (!hasSelectedCategory) {
-    return (
-      <PageShell>
-        <h1 className={`${productHeading} mb-2`}>
-          Explore our schemes collection
-        </h1>
-        <p className={`${productSubheading} mb-8`}>
-          Pick a category to browse social assistance schemes available in
-          Singapore.
-        </p>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-          {CATALOG_CATEGORY_OPTIONS.map((cat) => (
-            <Link
-              key={cat}
-              href={`/catalog/${CATALOG_CATEGORY_SLUGS[cat]}`}
-              className={`${productCard} group flex items-center gap-3 p-4 text-left transition-[border-color,box-shadow,transform,color,background-color] hover:-translate-y-0.5 hover:border-(--schemes-blue-100) hover:shadow-[0_4px_20px_rgba(24,95,165,0.08)] sm:p-5`}
-            >
-              <Image
-                src={CATALOG_CATEGORY_ICON_SRC[cat]}
-                alt=""
-                width={40}
-                height={40}
-                aria-hidden="true"
-                className="h-10 w-10 shrink-0"
-              />
-              <span className="text-sm font-semibold text-(--schemes-blue-900) group-hover:text-(--schemes-blue-600)">
-                {cat === "All" ? "All Schemes" : cat}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </PageShell>
-    );
-  }
-
   return (
     <div
       ref={scrollRef}
@@ -305,75 +251,59 @@ export default function CatalogPageClient({
         </div>
       </div> */}
 
-      {/* Filter bar */}
-      <div className="z-10">
-        {/* Mobile (<md): collapse the chip row into a single-select category
-            drawer trigger, with the Search mode-switch beside it. */}
-        <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2.5 md:hidden">
-          <CatalogCategoryDrawer activeCategory={activeCategory} />
-          <Link
-            href="/"
-            aria-label="Search schemes"
-            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-4 py-2 text-sm font-semibold text-(--schemes-blue-600) transition-[background-color,border-color,color] hover:border-(--schemes-blue-600) hover:bg-(--schemes-blue-600) hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)"
-          >
-            <Search size={18} strokeWidth={2} />
-            Search
-          </Link>
-        </div>
-        {/* Desktop (md+): the original horizontal category chip row. */}
-        <ScrollShadow
-          orientation="horizontal"
-          className="no-scrollbar mx-auto hidden max-w-5xl flex-wrap gap-2 overflow-x-auto px-4 py-2.5 sm:px-8 md:flex"
-        >
-          {CATALOG_CATEGORY_OPTIONS.map((cat) => (
-            <Link
-              key={cat}
-              href={`/catalog/${CATALOG_CATEGORY_SLUGS[cat]}`}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-[background-color,border-color,color] ${
-                activeCategory === cat
-                  ? "border-(--schemes-blue-600) bg-(--schemes-blue-600) text-white"
-                  : "border-(--schemes-border-neutral) bg-white text-(--schemes-muted) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600)"
-              }`}
-            >
-              {cat}
-            </Link>
-          ))}
-          {/* Mode switch: browse categories here, or search conversationally.
-              Same chip shape as the categories so it flows in the row; tinted
-              blue with a search icon so it reads as a control, not a category. */}
-          <Link
-            href="/"
-            aria-label="Search schemes"
-            className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-3.5 py-2 text-xs font-semibold text-(--schemes-blue-600) transition-[background-color,border-color,color] hover:border-(--schemes-blue-600) hover:bg-(--schemes-blue-600) hover:text-white"
-          >
-            <Search size={15} strokeWidth={2} />
-            Search
-          </Link>
-        </ScrollShadow>
-      </div>
-
       <div className="flex">
-        {/* Results */}
-        <div className="mx-auto max-w-5xl flex-1 px-4 sm:px-8">
-          <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-3 pt-2">
-            <h1 className="text-sm font-semibold text-(--schemes-ink-soft)">
-              {isLoadingInitial ? (
-                <StatusTextShimmer>
-                  {activeCategory === "All"
-                    ? "Finding schemes across all categories..."
-                    : `Finding ${activeCategory} schemes...`}
-                </StatusTextShimmer>
-              ) : (
-                <>
-                  {activeCategory === "All" ? "All schemes" : activeCategory}
-                  <span className="ml-2 text-(--schemes-blue-600)">
-                    {totalCount !== null && schemes.length < totalCount
-                      ? `(${schemes.length} of ${totalCount})`
-                      : `(${totalCount ?? schemes.length})`}
-                  </span>
-                </>
-              )}
-            </h1>
+        {/* max-w-7xl with the navbar's px-6, so the grid's outer edge lines up
+            with the nav and footer on wide screens. Wider than the shared
+            productPageContent (max-w-5xl) on purpose: that cap protects the
+            65-75ch reading measure on prose pages, and a card grid has no prose
+            to protect. Prose routes stay at 5xl. */}
+        <div className="mx-auto max-w-7xl flex-1 px-4 sm:px-6">
+          <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-4 pt-2 sm:pb-3">
+            {/* The count reads first on desktop and the controls sit opposite
+                it; on mobile the controls come first, so the count stays
+                directly above the grid it describes. */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <h1 className="order-2 font-(--font-head) text-xl font-semibold text-(--schemes-blue-900) sm:order-none sm:text-2xl">
+                {isLoadingInitial ? (
+                  <StatusTextShimmer>
+                    {activeCategory === "All"
+                      ? "Finding schemes across all categories..."
+                      : `Finding ${activeCategory} schemes...`}
+                  </StatusTextShimmer>
+                ) : (
+                  <>
+                    {activeCategory === "All" ? "All schemes" : activeCategory}
+                    <span className="ml-2 align-middle text-sm font-semibold text-(--schemes-blue-600)">
+                      {totalCount !== null && schemes.length < totalCount
+                        ? `(${schemes.length} of ${totalCount})`
+                        : `(${totalCount ?? schemes.length})`}
+                    </span>
+                  </>
+                )}
+              </h1>
+              <div className="order-1 flex shrink-0 items-center gap-2 sm:order-none">
+                {/* Names the dimension: the h1 already states the active
+                    category, so an unlabelled trigger reads as a badge. */}
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-(--schemes-muted)">
+                  Category
+                </span>
+                {/* Fills the row on mobile, content-width from sm up. Width
+                    rather than flex-basis: HeroUI's button base is w-fit, and a
+                    flex-1 basis of 0 fights it. */}
+                <CatalogCategorySelect
+                  activeCategory={activeCategory}
+                  className="w-full sm:w-auto"
+                />
+                <Link
+                  href="/"
+                  aria-label="Search schemes"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-4 py-2 text-sm font-semibold text-(--schemes-blue-600) transition-[background-color,border-color,color] hover:border-(--schemes-blue-600) hover:bg-(--schemes-blue-600) hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)"
+                >
+                  <Search size={18} strokeWidth={2} />
+                  Search
+                </Link>
+              </div>
+            </div>
           </div>
           {isLoadingInitial ? (
             <CatalogGridSkeleton />
@@ -383,9 +313,14 @@ export default function CatalogPageClient({
               description="Try a different search or category"
             />
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-              {schemes.map((s) => (
-                <SchemeCard key={s.schemeId} scheme={s} headingLevel={2} />
+            <div className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[68rem] lg:grid-cols-3 2xl:max-w-none 2xl:grid-cols-4">
+              {schemes.map((s, index) => (
+                <SchemeCard
+                  key={s.schemeId}
+                  scheme={s}
+                  headingLevel={2}
+                  list={{ id: "catalog", index }}
+                />
               ))}
             </div>
           )}

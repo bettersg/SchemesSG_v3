@@ -15,13 +15,21 @@ import {
 // half-capitalised mid-sentence.
 const lowerCaseLabel = (value: string) => value.toLowerCase();
 
+// Sitemap paths: /catalog plus the ten category routes. The "All" entry maps to
+// /catalog itself, so filtering its slug here avoids emitting it twice.
 export const CATALOG_ROUTE_PATHS = [
   "/catalog",
-  ...CATALOG_CATEGORY_ROUTES.map(({ slug }) => `/catalog/${slug}`),
+  ...CATALOG_CATEGORY_ROUTES.filter(({ slug }) => slug !== "all").map(
+    ({ slug }) => `/catalog/${slug}`,
+  ),
 ];
 
+// "All" lives at /catalog itself: it is the unfiltered view, not a category
+// below the hub. There is no /catalog/all.
 export function getCatalogCategoryPath(category: CatalogCategory) {
-  return `/catalog/${CATALOG_CATEGORY_SLUGS[category]}`;
+  return category === "All"
+    ? "/catalog"
+    : `/catalog/${CATALOG_CATEGORY_SLUGS[category]}`;
 }
 
 export function getCatalogBreadcrumbListJsonLd(path: string) {
