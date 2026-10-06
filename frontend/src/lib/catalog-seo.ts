@@ -4,10 +4,16 @@ import {
   CATALOG_CATEGORY_SLUGS,
   type CatalogCategory,
 } from "@/lib/design-system/categories";
-import { SCHEMES_SG_LOGO_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
+import {
+  SCHEMES_SG_LOGO_PNG_URL,
+  SCHEMES_SG_OG_IMAGE_URL,
+  SEO_COPY,
+  SITE_URL,
+} from "@/lib/seo";
 
-const lowerFirst = (value: string) =>
-  value.charAt(0).toLowerCase() + value.slice(1);
+// Lowering only the first character leaves multi-word categories
+// half-capitalised mid-sentence.
+const lowerCaseLabel = (value: string) => value.toLowerCase();
 
 export const CATALOG_ROUTE_PATHS = [
   "/catalog",
@@ -16,6 +22,101 @@ export const CATALOG_ROUTE_PATHS = [
 
 export function getCatalogCategoryPath(category: CatalogCategory) {
   return `/catalog/${CATALOG_CATEGORY_SLUGS[category]}`;
+}
+
+export function getCatalogBreadcrumbListJsonLd(path: string) {
+  return {
+    "@type": "BreadcrumbList",
+    "@id": `${SITE_URL}${path}#breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Catalog",
+        item: `${SITE_URL}/catalog`,
+      },
+    ],
+  };
+}
+
+export function getCategoryBreadcrumbListJsonLd(
+  category: CatalogCategory,
+  path: string,
+) {
+  return {
+    "@type": "BreadcrumbList",
+    "@id": `${SITE_URL}${path}#breadcrumb`,
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Catalog",
+        item: `${SITE_URL}/catalog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: category,
+        item: `${SITE_URL}${path}`,
+      },
+    ],
+  };
+}
+
+export function getSchemeBreadcrumbListJsonLd(
+  category: CatalogCategory | undefined,
+  categoryPath: string,
+  schemeName: string,
+  schemePath: string,
+) {
+  const items = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: SITE_URL,
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Catalog",
+      item: `${SITE_URL}/catalog`,
+    },
+  ];
+
+  if (category) {
+    items.push({
+      "@type": "ListItem",
+      position: 3,
+      name: category,
+      item: `${SITE_URL}${categoryPath}`,
+    });
+  }
+
+  items.push({
+    "@type": "ListItem",
+    position: items.length + 1,
+    name: schemeName,
+    item: `${SITE_URL}${schemePath}`,
+  });
+
+  return {
+    "@type": "BreadcrumbList",
+    "@id": `${SITE_URL}${schemePath}#breadcrumb`,
+    itemListElement: items,
+  };
 }
 
 export function getCatalogTitle(category?: CatalogCategory) {
@@ -31,7 +132,7 @@ export function getCatalogDescription(category?: CatalogCategory) {
     return SEO_COPY.catalogDescription;
   }
 
-  return `Browse ${lowerFirst(category)} schemes in Singapore from government agencies and community organisations. Find eligibility, benefits, application links, and contact details.`;
+  return `Browse ${lowerCaseLabel(category)} schemes in Singapore from government agencies and community organisations. Find eligibility, benefits, application links, and contact details.`;
 }
 
 export function getCatalogMetadata({
@@ -58,8 +159,10 @@ export function getCatalogMetadata({
       type: "website",
       images: [
         {
-          url: SCHEMES_SG_LOGO_URL,
+          url: SCHEMES_SG_OG_IMAGE_URL,
           alt: "Schemes.sg logo",
+          width: 1200,
+          height: 630,
         },
       ],
     },
@@ -67,7 +170,7 @@ export function getCatalogMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: [SCHEMES_SG_LOGO_URL],
+      images: [SCHEMES_SG_OG_IMAGE_URL],
     },
   };
 }
@@ -75,9 +178,11 @@ export function getCatalogMetadata({
 export function getCatalogJsonLd({
   category,
   path,
+  schemes,
 }: {
   category?: CatalogCategory;
   path: string;
+  schemes?: Array<{ schemeId: string; schemeName: string; agency: string }>;
 }) {
   const pageUrl = `${SITE_URL}${path}`;
   const title = getCatalogTitle(category).replace(" | Schemes.sg", "");
@@ -113,6 +218,11 @@ export function getCatalogJsonLd({
           })),
         };
 
+  const breadcrumb =
+    category && category !== "All"
+      ? getCategoryBreadcrumbListJsonLd(category, path)
+      : getCatalogBreadcrumbListJsonLd(path);
+
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -138,16 +248,30 @@ export function getCatalogJsonLd({
         mainEntity: {
           "@id": `${pageUrl}#scheme-catalog`,
         },
+        breadcrumb: {
+          "@id": breadcrumb["@id"],
+        },
       },
+      breadcrumb,
       {
         "@type": "ItemList",
         "@id": `${pageUrl}#scheme-catalog`,
         name: `${categoryName} in Singapore`,
         description:
           category && category !== "All"
-            ? `A browsable list of ${lowerFirst(category)} schemes indexed by Schemes.sg.`
+            ? `A browsable list of ${lowerCaseLabel(category)} schemes indexed by Schemes.sg.`
             : "A browsable database of social assistance schemes indexed by Schemes.sg.",
         itemListOrder: "https://schema.org/ItemListUnordered",
+        ...(schemes && schemes.length > 0
+          ? {
+              itemListElement: schemes.slice(0, 30).map((scheme, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                url: `${SITE_URL}/schemes/${scheme.schemeId}`,
+                name: scheme.schemeName || scheme.agency,
+              })),
+            }
+          : {}),
       },
       topic,
       {
@@ -170,7 +294,7 @@ export function getCatalogJsonLd({
         "@id": `${SITE_URL}/#organization`,
         name: SEO_COPY.productName,
         url: SITE_URL,
-        logo: SCHEMES_SG_LOGO_URL,
+        logo: SCHEMES_SG_LOGO_PNG_URL,
         description:
           "Schemes.sg is an AI-powered search engine that makes social assistance information accessible by indexing public schemes from government agencies and community organisations.",
       },

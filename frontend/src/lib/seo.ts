@@ -1,11 +1,18 @@
 export const SITE_URL = "https://schemes.sg";
 export const SCHEMES_SG_LOGO_URL = `${SITE_URL}/logo.svg`;
+// Next serves file-convention metadata images at their full filename. The
+// extensionless paths 404, which silently breaks og:image and
+// Organization.logo for every crawler.
+export const SCHEMES_SG_LOGO_PNG_URL = `${SITE_URL}/icon.png`;
+export const SCHEMES_SG_OG_IMAGE_URL = `${SITE_URL}/opengraph-image.png`;
 
 export const SEO_COPY = {
   productName: "Schemes.sg",
-  homeTitle: "Find the Right Schemes, All in One Place | Schemes.sg",
+  // "government and community" is the differentiator against SupportGoWhere,
+  // which covers government schemes only.
+  homeTitle: "Social Assistance Schemes in Singapore | Schemes.sg",
   homeDescription:
-    "AI-powered search to help you discover the social assistance schemes you deserve. Over 600 schemes from 200+ agencies.",
+    "Search 600+ government and community assistance schemes in Singapore. Describe your situation to find the help you may be eligible for.",
   aboutTitle: "About Schemes.sg | Find the Right Schemes, All in One Place",
   aboutDescription:
     "Schemes.sg is an AI-powered search engine that helps you discover public social assistance schemes you may be eligible for.",
@@ -29,11 +36,11 @@ export const getSeoImages = (image?: string) => {
   const primaryImage =
     image?.startsWith("http://") || image?.startsWith("https://")
       ? image
-      : SCHEMES_SG_LOGO_URL;
+      : SCHEMES_SG_OG_IMAGE_URL;
 
-  if (primaryImage === SCHEMES_SG_LOGO_URL) {
-    return [SCHEMES_SG_LOGO_URL];
+  if (primaryImage === SCHEMES_SG_OG_IMAGE_URL) {
+    return [SCHEMES_SG_OG_IMAGE_URL];
   }
 
-  return [primaryImage, SCHEMES_SG_LOGO_URL];
+  return [primaryImage, SCHEMES_SG_OG_IMAGE_URL];
 };
