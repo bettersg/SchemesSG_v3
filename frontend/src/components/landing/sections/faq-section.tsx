@@ -5,6 +5,7 @@ import { Accordion } from "@heroui/react";
 import { Button } from "@/components/landing/ui/button";
 import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
 import { useLanguage } from "@/lib/landing-i18n";
+import { track } from "@/lib/analytics";
 import { ChevronDown, MessageCircle } from "lucide-react";
 import {
   delay,
@@ -62,6 +63,14 @@ export function FAQSection() {
                     {item.answerLink && (
                       <a
                         href={item.answerLink.href}
+                        onClick={() =>
+                          track("select_content", {
+                            content_type: "faq_link",
+                            // The destination, not the label: it is stable
+                            // across languages and copy edits.
+                            item_id: item.answerLink!.href,
+                          })
+                        }
                         className="ml-1 font-medium text-primary underline-offset-4 hover:underline"
                       >
                         {item.answerLink.label}
