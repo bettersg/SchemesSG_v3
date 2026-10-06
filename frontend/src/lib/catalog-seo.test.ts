@@ -14,7 +14,8 @@ describe("catalog SEO", () => {
     }).toEqual({
       title: "Health & Wellbeing Schemes in Singapore | Schemes.sg",
       description:
-        "Browse health & Wellbeing schemes in Singapore from government agencies and community organisations. Find eligibility, benefits, application links, and contact details.",
+        // Fully lowercased mid-sentence, not just the first character.
+        "Browse health & wellbeing schemes in Singapore from government agencies and community organisations. Find eligibility, benefits, application links, and contact details.",
     });
   });
 
