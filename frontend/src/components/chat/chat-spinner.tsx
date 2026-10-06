@@ -5,8 +5,8 @@ import Image from "next/image";
 import { useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-// Without this the player fetches its wasm runtime from a CDN and renders
-// nothing when that CDN is blocked. Vendored by scripts/copy-lottie-wasm.mjs.
+// Points the player at the wasm runtime vendored by
+// scripts/copy-lottie-wasm.mjs instead of a third-party CDN.
 setWasmUrl("/dotlottie-player.wasm");
 
 type ChatSpinnerProps = {
