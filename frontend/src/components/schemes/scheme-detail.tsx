@@ -38,11 +38,9 @@ import {
 } from "@/lib/design-system/motion";
 
 // Scheme descriptions sometimes use literal bullet glyphs (• ● ‣ ·) on their
-// own lines instead of Markdown list syntax, and separate them with blank
-// lines. react-markdown then renders each as a standalone <p>, so they get the
-// same spacing as paragraphs and don't read as a grouped list. Normalize those
-// lines into real Markdown list items (and drop the blank lines between them)
-// so they render as a tight <ul> with proper markers and indentation.
+// own blank-line-separated lines instead of Markdown list syntax, which
+// react-markdown renders as standalone paragraphs. Rewrite them into real list
+// items so they render as one tight <ul>.
 function normalizeBulletMarkdown(text: string): string {
   const isBullet = (line: string) => /^\s*[•●‣·]\s+/.test(line);
   const toItem = (line: string) => line.replace(/^\s*[•●‣·]\s+/, "- ");
@@ -261,25 +259,42 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
     <PageShell contentClassName="pb-24 md:pb-8">
       <div
         ref={stickyHeaderRef}
-        className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) md:mx-auto md:w-full md:max-w-3xl"
+        // px here, not on the rows: this band breaks out of PageShell's padding
+        // (full-bleed on mobile, a centred card from md), so without it the
+        // logo and action buttons sit flush against the edges while the jump
+        // nav below looks inset. px-3 matches the py-3 on the rows inside, so
+        // the inset reads the same on every edge.
+        className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) px-3 md:mx-auto md:w-full md:max-w-3xl"
       >
         <div
           className={clsx(
-            "overflow-hidden py-3 md:max-h-none md:translate-y-0 md:opacity-100",
+            // pt only. The jump nav below owns its own top padding, so this
+            // row must not also contribute a bottom gap.
+            "overflow-hidden pt-3 md:max-h-none md:translate-y-0 md:opacity-100",
             cssTransition.disclosureState,
             "flex flex-col gap-3",
             stickyHeaderHidden
-              ? "max-md:max-h-0 max-md:-translate-y-full max-md:py-0 max-md:opacity-0"
+              ? "max-md:max-h-0 max-md:-translate-y-full max-md:pt-0 max-md:opacity-0"
               : "max-md:translate-y-0 max-md:opacity-100",
           )}
         >
           <div className="flex items-center justify-between gap-4 text-left">
             <div className="flex min-w-0 items-center gap-4 md:gap-5">
-              <SchemeLogo
-                agency={scheme.agency}
-                image={scheme.image}
-                size="lg"
-              />
+              {/* Same src, so the second img is a cache hit, not a fetch. */}
+              <div className="md:hidden">
+                <SchemeLogo
+                  agency={scheme.agency}
+                  image={scheme.image}
+                  size="lg"
+                />
+              </div>
+              <div className="hidden md:block">
+                <SchemeLogo
+                  agency={scheme.agency}
+                  image={scheme.image}
+                  size="xl"
+                />
+              </div>
               <div className="flex min-w-0 flex-col gap-2">
                 {scheme.agency && (
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
@@ -308,7 +323,12 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
         {jumpAnchors.length > 1 && (
           <nav
             aria-label="On this page"
+            // Owns both top and bottom padding so the band stays symmetric
+            // when the hero collapses on scroll and the nav is all that is
+            // left. It cannot live on the outer element: the hero wrapper
+            // animates its own padding to 0 to close the band.
             className={clsx(
+              "py-3",
               cssTransition.borderState,
               stickyHeaderHidden && "max-md:border-transparent",
             )}

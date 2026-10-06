@@ -61,9 +61,11 @@ describe("SchemeDetail", () => {
     expect(
       screen.getByRole("heading", { name: "Agency details" }),
     ).toBeVisible();
-    expect(screen.getByRole("list")).toHaveTextContent(
-      "Cash assistance Case guidance",
+    const lists = screen.getAllByRole("list");
+    const benefitsList = lists.find((list) =>
+      list.textContent?.includes("Cash assistance"),
     );
+    expect(benefitsList).toHaveTextContent("Cash assistance Case guidance");
     expect(screen.getByRole("link", { name: "6123 4567" })).toHaveAttribute(
       "href",
       "tel:6123 4567",
