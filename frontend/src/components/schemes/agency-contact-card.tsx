@@ -1,6 +1,7 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import { BranchContact } from "@/types/types";
 import { capitalize } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 interface AgencyContactCardProps {
   contact: BranchContact;
@@ -26,6 +27,7 @@ export default function AgencyContactCard({
           {planningArea}
         </p>
       )}
+      {/* No track() call: Enhanced Measurement already counts https clicks. */}
       {address && (
         <a
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${schemeName} ${address}`)}`}
@@ -41,6 +43,7 @@ export default function AgencyContactCard({
         <a
           key={p}
           href={`tel:${p}`}
+          onClick={() => track("agency_contact_click", { contact_method: "phone" })}
           className="flex items-center gap-2 text-(--schemes-blue-600) hover:underline"
         >
           <Phone size={16} strokeWidth={2} className="shrink-0" />
@@ -51,6 +54,7 @@ export default function AgencyContactCard({
         <a
           key={e}
           href={`mailto:${e}`}
+          onClick={() => track("agency_contact_click", { contact_method: "email" })}
           className="flex items-center gap-2 break-all text-(--schemes-blue-600) hover:underline"
         >
           <Mail size={16} strokeWidth={2} className="shrink-0" />

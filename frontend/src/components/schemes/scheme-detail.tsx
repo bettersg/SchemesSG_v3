@@ -4,7 +4,7 @@ import styles from "./scheme-detail.module.css";
 import { Scheme } from "@/types/types";
 import { Link, ScrollShadow } from "@heroui/react";
 import Markdown from "react-markdown";
-import { CSSProperties, useMemo, useRef, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import SchemeLogo from "@/components/schemes/scheme-logo";
 import CategoryTag from "@/components/schemes/category-tag";
@@ -13,6 +13,7 @@ import BulletItem from "@/components/schemes/bullet-item";
 import AgencyContactCard from "@/components/schemes/agency-contact-card";
 import StatusBanner from "@/components/feedback/status-banner";
 import { AlertCircle, Check, ExternalLink, Share2 } from "lucide-react";
+import { track } from "@/lib/analytics";
 import {
   productButtonOutlineNeutral,
   productButtonProminent,
@@ -114,9 +115,13 @@ function ShareButton({
     ) {
       try {
         await navigator.share(shareData);
+        track("scheme_shared", { share_outcome: "web_share" });
         return;
       } catch (err) {
-        if ((err as DOMException)?.name === "AbortError") return;
+        if ((err as DOMException)?.name === "AbortError") {
+          track("scheme_shared", { share_outcome: "dismissed" });
+          return;
+        }
       }
     }
 
@@ -124,6 +129,7 @@ function ShareButton({
       try {
         await navigator.clipboard.writeText(url);
         flash("copied");
+        track("scheme_shared", { share_outcome: "clipboard" });
         return;
       } catch (err) {
         console.error("Clipboard write failed:", err);
@@ -131,6 +137,7 @@ function ShareButton({
     }
 
     flash("failed");
+    track("scheme_shared", { share_outcome: "failed" });
   };
 
   return (
@@ -208,6 +215,20 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
   const sortedTypes = [...scheme.schemeType].sort((a, b) => {
     return Number(hasCategory(b)) - Number(hasCategory(a));
   });
+
+  // Keyed on the scheme id, so navigating between schemes in a session reports
+  // each one once rather than only the first.
+  useEffect(() => {
+    track("view_item", {
+      items: [
+        {
+          item_id: scheme.schemeId,
+          item_name: scheme.schemeName,
+          item_category: sortedTypes[0],
+        },
+      ],
+    });
+  }, [scheme.schemeId, scheme.schemeName, sortedTypes]);
 
   const jumpAnchors = useMemo(() => buildJumpAnchors(scheme), [scheme]);
   const stickyHeaderRef = useRef<HTMLDivElement>(null);

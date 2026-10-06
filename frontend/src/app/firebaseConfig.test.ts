@@ -31,7 +31,7 @@ vi.mock("firebase/auth", () => ({
   getAuth: firebaseMocks.getAuth,
 }));
 
-import { getFirebaseAuth } from "./firebaseConfig";
+import { getFirebaseAuth, getFirebaseApp } from "./firebaseConfig";
 
 const importCalls = {
   getAuth: firebaseMocks.getAuth.mock.calls.length,
@@ -47,5 +47,14 @@ describe("Firebase configuration", () => {
     expect(getFirebaseAuth()).toBe(firebaseMocks.auth);
     expect(firebaseMocks.initializeApp).toHaveBeenCalledOnce();
     expect(firebaseMocks.getAuth).toHaveBeenCalledWith(firebaseMocks.app);
+  });
+
+  it("analytics initialization does not depend on getFirebaseAuth", () => {
+    // getFirebaseApp can be called independently without triggering auth
+    // App is already initialized from previous test, so getAuth should still be at 1 call
+    const authCallsBefore = firebaseMocks.getAuth.mock.calls.length;
+
+    expect(getFirebaseApp()).toBe(firebaseMocks.app);
+    expect(firebaseMocks.getAuth).toHaveBeenCalledTimes(authCallsBefore);
   });
 });

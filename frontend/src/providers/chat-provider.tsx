@@ -8,8 +8,10 @@ import type { Scheme } from "@/types/types";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
@@ -27,8 +29,18 @@ export type {
 } from "@/types/chat";
 
 type ChatContextType = {
+  /** True once the user has sent anything, so the navbar can guard navigation. */
+  hasActiveChat: boolean;
+  /** Separates an automatic post-refresh resume from a real user submit. */
+  consumeIsResumedTurn: (turnKey: string) => boolean;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  /**
+   * Lives here rather than in ChatPage so the navbar can open the reset modal
+   * without ChatPage being its parent.
+   */
+  resetModalIsOpen: boolean;
+  setResetModalIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   sessionId: string;
   setSessionId: React.Dispatch<React.SetStateAction<string>>;
   schemes: Scheme[];
@@ -45,12 +57,25 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [quickReplies, setQuickReplies] = useState<QuickReplySuggestion[]>([]);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [draftMessage, setDraftMessage] = useState("");
   const [isInitialized, setIsInitialized] = useState(false);
+  const hydratedTurnKeyRef = useRef<string | null>(null);
+
+  /**
+   * True when turnKey is the turn restored from sessionStorage, meaning this
+   * send is ChatPage's automatic resume rather than a user action. Clears on
+   * match, so an identical question asked later still counts as a real submit.
+   */
+  const consumeIsResumedTurn = useCallback((turnKey: string) => {
+    if (hydratedTurnKeyRef.current !== turnKey) return false;
+    hydratedTurnKeyRef.current = null;
+    return true;
+  }, []);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -71,6 +96,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         if (stored.quickReplies.length > 0) {
           setShowQuickReplies(true);
         }
+
+        // A restored transcript ending on a user message gets re-fired by
+        // ChatPage's mount effect. A key rather than a boolean: a boolean stays
+        // true for the provider's life and would mislabel a later real submit.
+        const last = stored.messages[stored.messages.length - 1];
+        hydratedTurnKeyRef.current =
+          last?.type === "user"
+            ? `${stored.messages.length}:${last.text}`
+            : null;
       } catch (error) {
         console.error("Error loading from sessionStorage:", error);
       } finally {
@@ -112,8 +146,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ChatContext.Provider
       value={{
+        hasActiveChat: messages.length > 0,
+        consumeIsResumedTurn,
         messages,
         setMessages,
+        resetModalIsOpen,
+        setResetModalIsOpen,
         schemes,
         setSchemes,
         sessionId,
