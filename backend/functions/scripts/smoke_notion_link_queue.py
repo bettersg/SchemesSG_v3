@@ -5,7 +5,7 @@ Seeds three temporary ``schemes/zz-notion-qa-*`` documents in the dev project, r
 sync and metrics code against the real Notion API, prints a pass/fail table, then deletes the
 documents it made. Notion rows are left in the QA copy (they resolve once the docs are gone).
 
-Notion is prod-only (issue #443), so this never uses NOTION_* from ``.env``. The token and
+This never uses NOTION_* from ``.env``, which may hold a deploy's token. The token and
 data-source IDs come from ``functions/.env.notion-qa``, and the token must belong to a
 connection that is shared with the QA copy only, so a bug here cannot reach the prod root:
 

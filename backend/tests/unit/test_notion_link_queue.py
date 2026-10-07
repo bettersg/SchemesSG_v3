@@ -113,17 +113,12 @@ def _failing(name, **extra):
 @pytest.mark.parametrize(
     "env",
     [
-        {"FB_PROJECT_ID": "schemessg"},  # token unset
-        {
-            "FB_PROJECT_ID": "schemessg-v3-dev",
-            "NOTION_API_TOKEN": "secret",
-            "NOTION_LINK_QUEUE_DATA_SOURCE_ID": "ds-queue",
-            "NOTION_METRICS_DATA_SOURCE_ID": "ds-metrics",
-        },
+        {},
+        {"NOTION_API_TOKEN": "secret", "NOTION_LINK_QUEUE_DATA_SOURCE_ID": "ds-queue"},
     ],
-    ids=["token_unset", "dev_project"],
+    ids=["unset", "metrics_unset"],
 )
-def test_noop_unless_prod_configured(env, monkeypatch, mocker):
+def test_noop_unless_configured(env, monkeypatch, mocker):
     for name in ("NOTION_API_TOKEN", "NOTION_LINK_QUEUE_DATA_SOURCE_ID", "NOTION_METRICS_DATA_SOURCE_ID"):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
@@ -137,8 +132,9 @@ def test_noop_unless_prod_configured(env, monkeypatch, mocker):
     session.assert_not_called()
 
 
-def test_prod_config_requires_prod_project(monkeypatch):
-    monkeypatch.setenv("FB_PROJECT_ID", "schemessg")
+@pytest.mark.parametrize("project", ["schemessg", "schemessg-v3-dev"])
+def test_config_is_read_in_any_project(project, monkeypatch):
+    monkeypatch.setenv("FB_PROJECT_ID", project)
     monkeypatch.setenv("NOTION_API_TOKEN", "secret")
     monkeypatch.setenv("NOTION_LINK_QUEUE_DATA_SOURCE_ID", "ds-queue")
     monkeypatch.setenv("NOTION_METRICS_DATA_SOURCE_ID", "ds-metrics")
