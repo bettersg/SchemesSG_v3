@@ -140,6 +140,7 @@ describe("SchemeDetail", () => {
     expect(
       screen.getByRole("heading", {
         name: "We couldn't reach this scheme's website",
+        level: 2,
       }),
     ).toBeVisible();
     expect(screen.getByText(/details below may be out of date/i)).toBeVisible();

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import {
   CATALOG_SCHEMES,
@@ -84,4 +85,9 @@ test("an inactive scheme's page warns that its website failed our check", async 
   await expect(
     page.getByText(/details below may be out of date/i),
   ).toBeVisible();
+
+  const accessibilityScan = await new AxeBuilder({ page })
+    .include("main")
+    .analyze();
+  expect(accessibilityScan.violations).toEqual([]);
 });
