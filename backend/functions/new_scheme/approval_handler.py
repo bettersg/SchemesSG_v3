@@ -160,8 +160,8 @@ def handle_new_scheme_approval(
                 "link_check_error": firestore.DELETE_FIELD,
                 "link_suspect": firestore.DELETE_FIELD,
                 "status_reason": firestore.DELETE_FIELD,
-                "link_check_manual_verified_at": firestore.DELETE_FIELD,
-                "link_check_manual_verified_by": firestore.DELETE_FIELD,
+                # link_check_manual_verified_* stays: it only covers the link it was approved for,
+                # so a details-only correction keeps it and a new link is checked normally.
             }
             target_ref.update(patch)
             resulting_scheme_id = target_scheme_id
@@ -411,8 +411,8 @@ def handle_link_restore_approval(
 ) -> None:
     """List a scheme again after a volunteer confirmed its link works, and mark the link verified.
 
-    The weekly link check ignores failures on a verified link (see run_link_check_and_reindex),
-    so it is not flagged again. Approving an update with a new link clears the mark.
+    The weekly link check ignores failures on the verified link (see run_link_check_and_reindex),
+    so it is not flagged again. Once the scheme's link changes, the new link is checked normally.
     """
     logger.info(f"Processing link restore approval for entry {entry_doc_id}")
 
@@ -455,6 +455,8 @@ def handle_link_restore_approval(
             "status_updated_at": SERVER_TIMESTAMP,
             "link_check_manual_verified_at": SERVER_TIMESTAMP,
             "link_check_manual_verified_by": entry_data.get("userEmail") or entry_data.get("userName") or reviewer,
+            # The link check ignores failures only while the scheme still has this link.
+            "link_check_manual_verified_link": target_data.get("link"),
             **dict.fromkeys(LINK_FAILURE_FIELDS, firestore.DELETE_FIELD),
         },
     )

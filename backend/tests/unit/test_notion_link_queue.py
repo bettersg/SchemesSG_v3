@@ -567,6 +567,29 @@ def test_submitted_row_follows_the_maintainer_outcome(entry_update, state, messa
     assert len(fake_firestore.list_documents("schemeEntries")) == (0 if entry_update is None else 1)
 
 
+def test_resolved_row_shows_the_link_a_maintainer_approved(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore)
+    _verdict(notion, page_id, Verdict="Moved", **{"New URL": "https://example.org/new-home"})
+    _sync(fake_firestore, notion)
+    fake_firestore.collection("schemeEntries").document(f"notion-{page_id}-1").update({"Status": "approved"})
+    # What approving the update writes to the scheme.
+    fake_firestore.seed(
+        "schemes", "s1", {"scheme": "scheme-1", "link": "https://example.org/new-home", "status": "active"}
+    )
+
+    _sync(fake_firestore, notion)
+
+    row = notion.rows()["s1"]
+    assert (row["Sync state"], row["Link"], row["Firestore status"]) == (
+        "Resolved",
+        "https://example.org/new-home",
+        "active",
+    )
+    assert (row["Weeks failing"], row["Error"]) == (None, "")
+    _sync(fake_firestore, notion)
+    assert notion.writes() == []
+
+
 def test_resubmission_after_rejection_and_crash_replay(fake_firestore):
     notion, page_id = _queue_with_row(fake_firestore)
     # Crash replay: last run created entry -1 but died before saving Entry ID in Notion.

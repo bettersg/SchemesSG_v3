@@ -263,8 +263,8 @@ def plan_row_update(row: Dict[str, Any], scheme: Optional[Dict[str, Any]], in_se
     if not in_set:
         if state in ("Open", "Rejected", "Parked"):
             return move("Resolved", "Link is working again")
-        # Resolved rows keep their last facts; Submitted rows wait for their outcome.
-        return {} if state == "Resolved" else changed
+        # Resolved and Submitted rows keep tracking Firestore, e.g. the link a maintainer approved.
+        return changed
     if state == "Resolved":
         return move("Open", "Failing the link check again", Verdict=None, **STALE_HINT)
     parked_on = (row.get("Last synced") or "")[:10]
