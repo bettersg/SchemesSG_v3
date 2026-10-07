@@ -140,7 +140,7 @@ def test_retirement_approval_updates_audit_and_deletes_embedding(mocker):
     batch.commit.assert_called_once()
 
 
-def test_catalog_filters_retired_schemes():
+def test_catalog_filters_retired_and_inactive_schemes():
     result = _keep_listed_schemes(
         PaginationResult(
             data=[
@@ -151,7 +151,7 @@ def test_catalog_filters_retired_schemes():
             ]
         )
     )
-    assert [item["scheme_id"] for item in result.data] == ["legacy", "active", "inactive"]
+    assert [item["scheme_id"] for item in result.data] == ["legacy", "active"]
 
 
 def test_delete_stale_embeddings_removes_non_searchable_ids():

@@ -4,6 +4,7 @@ import json
 from collections import Counter
 from types import SimpleNamespace
 
+import pytest
 from new_scheme.constants import SCHEME_CATEGORY_MAPPING, SCHEME_TYPE
 from schemes.catalog import (
     CatalogRequestParams,
@@ -106,7 +107,7 @@ def test_catalog_successful_category_fetch(mock_request, mock_https_response, mo
         ],
         "next_cursor": "next-page",
         "has_more": True,
-        "total_count": 6,
+        "total_count": 5,  # 7 minus one inactive and one retired
     }
     mock_auth.assert_not_called()
 
@@ -307,3 +308,41 @@ def test_handle_catalog_request_preserves_scheme_types_for_area_filter(mocker, m
     assert results.data == [{"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}]
     assert results.next_cursor is None
     assert results.has_more is False
+
+
+@pytest.mark.parametrize("filter_name, filter_value", [(None, None), ("category", ["Elderly"])])
+def test_handle_catalog_request_hides_inactive_and_retired_schemes(
+    filter_name, filter_value, mocker, mock_firebase_manager
+):
+    """The catalog lists only searchable schemes, and its total count agrees."""
+    mock_collection = mocker.MagicMock()
+    mock_query = mocker.MagicMock()
+    mock_collection.where.return_value = mock_query
+    mock_firebase_manager.firestore_client.collection.return_value = mock_collection
+    mocker.patch("schemes.catalog.FieldFilter", return_value="filter")
+    mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        return_value=PaginationResult(
+            data=[
+                {"scheme_name": "Active", "status": "active"},
+                {"scheme_name": "Legacy"},
+                {"scheme_name": "Dead link", "status": "inactive"},
+                {"scheme_name": "Ended", "status": "retired"},
+            ],
+            has_more=False,
+            total_count=10,
+        ),
+    )
+    count_total = mocker.patch("schemes.catalog._count_total", return_value=3)
+
+    results = _handle_catalog_request(
+        mock_firebase_manager,
+        CatalogRequestParams(filter_name=filter_name, filter_value=filter_value, limit=10),
+    )
+
+    assert [item["scheme_name"] for item in results.data] == ["Active", "Legacy"]
+    counted_source = mock_query if filter_name else mock_collection
+    counted = {call.args[2] for call in counted_source.where.call_args_list if call.args[:2] == ("status", "==")}
+    assert counted == {"inactive", "retired"}
+    assert count_total.call_count == 2  # one count per hidden status
+    assert results.total_count == 10 - 3 - 3

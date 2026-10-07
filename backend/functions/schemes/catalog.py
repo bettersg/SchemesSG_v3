@@ -20,7 +20,7 @@ from new_scheme.constants import SCHEME_CATEGORY_MAPPING
 from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
-from utils.scheme_lifecycle import RETIRED_STATUS
+from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
 from werkzeug.datastructures import MultiDict
 
 
@@ -83,9 +83,9 @@ def _filter_scheme_types_for_category(results: PaginationResult, category_scheme
     )
 
 
-# What /catalog has always hidden. Callers that must hide more (the partner API
-# also hides `inactive`) pass their own set.
-_CATALOG_EXCLUDED_STATUSES: frozenset[str] = frozenset({RETIRED_STATUS})
+# The catalog lists what search lists: an inactive scheme's official link is dead,
+# so browsing must not surface it either.
+_CATALOG_EXCLUDED_STATUSES: frozenset[str] = NON_SEARCHABLE_STATUSES
 
 
 def _keep_listed_schemes(
