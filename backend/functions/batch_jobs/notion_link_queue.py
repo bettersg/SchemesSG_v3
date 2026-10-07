@@ -310,7 +310,7 @@ def _verdict_error(
     return None
 
 
-def _submission_outcome(db, row: Dict[str, Any], schemes: Dict[str, dict], now: str) -> Optional[Dict[str, Any]]:
+def _submission_outcome(db, row: Dict[str, Any], now: str) -> Optional[Dict[str, Any]]:
     """Follow a Submitted row's schemeEntries doc through the maintainer's Slack review."""
     entry_id = row.get("Entry ID")
     snapshot = db.collection("schemeEntries").document(entry_id).get() if entry_id else None
@@ -331,13 +331,6 @@ def _submission_outcome(db, row: Dict[str, Any], schemes: Dict[str, dict], now: 
         reason = entry.get("rejection_reason")
         return reopen(
             f"A maintainer rejected this{': ' + reason if reason else ''}. Check again and choose a verdict."
-        )
-    if entry.get("pipeline_status") == "duplicate":
-        other_id = entry.get("duplicate_scheme_id") or ""
-        other = entry.get("duplicate_scheme_name") or (schemes.get(other_id) or {}).get("scheme") or "another scheme"
-        return reopen(
-            f"That address already belongs to {other} ({other_id}). If it is the same scheme, "
-            f"choose Retire and put {other_id} in Merged into."
         )
     if entry.get("pipeline_status") == "failed":
         return reopen("Processing failed. Choose the verdict again to retry.")
@@ -378,7 +371,7 @@ def push_verdict(
     if scheme is None or scheme.get("status") == RETIRED_STATUS:
         return None  # The pull marks it Resolved; never act on a retired or missing scheme.
     if state == "Submitted":
-        return _submission_outcome(db, row, schemes, now)
+        return _submission_outcome(db, row, now)
     if state not in ("Open", "Rejected", "Parked") or not verdict:
         return None
 

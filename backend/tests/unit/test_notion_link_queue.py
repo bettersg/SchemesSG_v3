@@ -535,18 +535,11 @@ def test_parked_row_reopens_when_the_scheme_goes_inactive(fake_firestore):
             True,
         ),
         ({"Status": "rejected"}, "Open", "A maintainer rejected this. Check again and choose a verdict.", True),
-        (
-            {"pipeline_status": "duplicate", "duplicate_scheme_id": "other", "duplicate_scheme_name": "Other scheme"},
-            "Open",
-            "That address already belongs to Other scheme (other). If it is the same scheme, "
-            "choose Retire and put other in Merged into.",
-            True,
-        ),
         ({"pipeline_status": "failed"}, "Open", "Processing failed. Choose the verdict again to retry.", True),
         (None, "Open", "The submission was lost. Choose the verdict again.", True),
         ({"pipeline_status": "completed"}, "Submitted", "Sent to a maintainer for approval in Slack", False),
     ],
-    ids=["approved", "rejected-reason", "rejected", "duplicate", "failed", "missing", "pending"],
+    ids=["approved", "rejected-reason", "rejected", "failed", "missing", "pending"],
 )
 def test_submitted_row_follows_the_maintainer_outcome(entry_update, state, message, verdict_cleared, fake_firestore):
     notion, page_id = _queue_with_row(fake_firestore)
