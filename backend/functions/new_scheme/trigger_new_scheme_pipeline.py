@@ -20,9 +20,13 @@ from google.oauth2 import service_account
 from loguru import logger
 from slack_sdk.web import WebClient
 from utils.json_utils import safe_json_dumps
-from utils.scheme_lifecycle import retirement_validation_error
+from utils.scheme_lifecycle import RETIRED_STATUS, retirement_validation_error
 
-from new_scheme.new_scheme_blocks import build_new_scheme_duplicate_message, build_scheme_retirement_review_message
+from new_scheme.new_scheme_blocks import (
+    build_link_restore_review_message,
+    build_new_scheme_duplicate_message,
+    build_scheme_retirement_review_message,
+)
 from new_scheme.url_utils import check_duplicate_scheme
 
 
@@ -118,22 +122,58 @@ def process_scheme_retirement_entry(doc_id: str, data: dict) -> None:
             }
         )
 
-        slack_client = get_slack_client()
-        channel = get_slack_channel()
-        message = build_scheme_retirement_review_message(doc_id, data, target_data, merge_target_data)
-        response = slack_client.chat_postMessage(channel=channel, **message)
-        if response.get("ok"):
-            entry_ref.update(
-                {
-                    "slack_channel": channel,
-                    "slack_message_ts": response.get("ts"),
-                    "slack_notified_at": datetime.now(timezone.utc).isoformat(),
-                }
-            )
+        _post_for_review(
+            entry_ref, build_scheme_retirement_review_message(doc_id, data, target_data, merge_target_data)
+        )
         logger.info(f"Posted retirement request to Slack for {doc_id}")
     except Exception as e:
         logger.error(f"Failed to process retirement request {doc_id}: {e}")
         _update_error_status(doc_id, str(e))
+
+
+def process_link_restore_entry(doc_id: str, data: dict) -> None:
+    """Send a volunteer's "the link works" verdict straight to Slack review; there is nothing to scrape."""
+    db = get_firestore_client()
+    entry_ref = db.collection("schemeEntries").document(doc_id)
+    target_scheme_id = data.get("targetSchemeId")
+
+    try:
+        if not target_scheme_id or not isinstance(target_scheme_id, str):
+            raise ValueError("Link restore request requires targetSchemeId")
+        target_snap = db.collection("schemes").document(target_scheme_id).get()
+        if not target_snap.exists:
+            raise ValueError(f"Target scheme {target_scheme_id!r} does not exist")
+        target_data = target_snap.to_dict() or {}
+        if target_data.get("status") == RETIRED_STATUS:
+            raise ValueError(f"Target scheme {target_scheme_id!r} is retired")
+
+        entry_ref.update(
+            {
+                "pipeline_status": "awaiting_approval",
+                "pipeline_completed_at": datetime.now(timezone.utc).isoformat(),
+                "Scheme": target_data.get("scheme", data.get("Scheme")),
+                "Link": target_data.get("link", data.get("Link")),
+            }
+        )
+        _post_for_review(entry_ref, build_link_restore_review_message(doc_id, data, target_data))
+        logger.info(f"Posted link restore request to Slack for {doc_id}")
+    except Exception as e:
+        logger.error(f"Failed to process link restore request {doc_id}: {e}")
+        _update_error_status(doc_id, str(e))
+
+
+def _post_for_review(entry_ref, message: dict) -> None:
+    """Post a review card to the Slack channel and record where it went on the entry."""
+    channel = get_slack_channel()
+    response = get_slack_client().chat_postMessage(channel=channel, **message)
+    if response.get("ok"):
+        entry_ref.update(
+            {
+                "slack_channel": channel,
+                "slack_message_ts": response.get("ts"),
+                "slack_notified_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
 
 def process_new_scheme_entry(doc_id: str, data: dict) -> None:
@@ -167,6 +207,9 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
     type_of_request = (data.get("typeOfRequest") or "").lower()
     if type_of_request == "retire":
         process_scheme_retirement_entry(doc_id, data)
+        return
+    if type_of_request == "restore":
+        process_link_restore_entry(doc_id, data)
         return
 
     # Only process new scheme submissions and update-in-place requests.

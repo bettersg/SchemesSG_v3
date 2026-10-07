@@ -769,12 +769,12 @@ def build_scheme_retirement_review_message(
     }
 
 
-def build_scheme_retirement_rejection_modal(metadata: str) -> dict:
-    """Build a modal that requires a reason for rejecting retirement."""
+def build_scheme_retirement_rejection_modal(metadata: str, title: str = "Reject Retirement") -> dict:
+    """Build a modal that requires a reason for rejecting a retirement or link restore."""
     return {
         "type": "modal",
         "callback_id": "scheme_retirement_rejection_submit",
-        "title": {"type": "plain_text", "text": "Reject Retirement"},
+        "title": {"type": "plain_text", "text": title},
         "submit": {"type": "plain_text", "text": "Reject"},
         "close": {"type": "plain_text", "text": "Cancel"},
         "private_metadata": metadata,
@@ -845,6 +845,143 @@ def build_scheme_retirement_rejected_message(
                 "text": {
                     "type": "mrkdwn",
                     "text": (f":x: *RETIREMENT REJECTED* — *{scheme_name}* (`{target_scheme_id}`){reason_text}"),
+                },
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Rejected by <@{reviewer_id}>"},
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                ],
+            },
+        ],
+    }
+
+
+def build_link_restore_review_message(
+    doc_id: str,
+    submission_data: Dict[str, Any],
+    target_data: Dict[str, Any],
+) -> dict:
+    """Build a Slack message asking a maintainer to confirm a volunteer's "the link works" verdict."""
+    target_scheme_id = submission_data.get("targetSchemeId", "")
+    scheme_name = target_data.get("scheme", submission_data.get("Scheme", "Unknown"))
+    scheme_url = target_data.get("link", submission_data.get("Link", ""))
+    last_check = " ".join(
+        str(part) for part in (target_data.get("link_check_status_code"), target_data.get("link_check_error")) if part
+    )
+    blocks = [
+        {
+            "type": "header",
+            "text": {"type": "plain_text", "text": "Link Restore Request", "emoji": True},
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*List again:* *{scheme_name}* (`{target_scheme_id}`)\n<{scheme_url}|Open the link>",
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    "A volunteer says this link works, but our link check could not reach it"
+                    f"{f' (last result: {last_check})' if last_check else ''}. Open the link to confirm. "
+                    "Approving lists the scheme again and stops the link check flagging this link."
+                ),
+            },
+        },
+    ]
+    if submission_data.get("Changes"):
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"*Note:*\n{submission_data['Changes']}"}})
+    blocks += [
+        {
+            "type": "context",
+            "elements": [
+                {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                {
+                    "type": "mrkdwn",
+                    "text": f"Requested by: {submission_data.get('userEmail') or submission_data.get('userName') or 'unknown'}",
+                },
+            ],
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Approve - list again", "emoji": True},
+                    "style": "primary",
+                    "action_id": "approve_link_restore",
+                    "value": doc_id,
+                },
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Reject", "emoji": True},
+                    "action_id": "reject_link_restore",
+                    "value": doc_id,
+                },
+            ],
+        },
+    ]
+    return {
+        "text": f"Link restore request: {scheme_name} ({target_scheme_id})",
+        "blocks": blocks,
+        "unfurl_links": False,
+        "unfurl_media": False,
+    }
+
+
+def build_link_restore_approved_message(
+    doc_id: str,
+    scheme_name: str,
+    target_scheme_id: str,
+    reviewer_id: str,
+) -> dict:
+    """Build the terminal Slack state after a link restore is approved."""
+    return {
+        "text": f"Link restore approved: {scheme_name} ({target_scheme_id})",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f":white_check_mark: *LINK RESTORE APPROVED* — *{scheme_name}* (`{target_scheme_id}`) "
+                        "is listed again and searchable after Monday's reindex."
+                    ),
+                },
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {"type": "mrkdwn", "text": f"Approved by <@{reviewer_id}>"},
+                    {"type": "mrkdwn", "text": f"Entry ID: `{doc_id}`"},
+                ],
+            },
+        ],
+    }
+
+
+def build_link_restore_rejected_message(
+    doc_id: str,
+    scheme_name: str,
+    target_scheme_id: str,
+    reviewer_id: str,
+    reason: Optional[str] = None,
+) -> dict:
+    """Build the terminal Slack state after a link restore is rejected."""
+    reason_text = f"\nReason: {reason}" if reason else ""
+    return {
+        "text": f"Link restore rejected: {scheme_name} ({target_scheme_id})",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f":x: *LINK RESTORE REJECTED* — *{scheme_name}* (`{target_scheme_id}`){reason_text}",
                 },
             },
             {

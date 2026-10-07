@@ -465,20 +465,30 @@ def test_invalid_verdict_is_rejected_with_a_plain_message(values, message, fake_
     assert notion.rows()["s1"]["Sync state"] == "Open"
 
 
-def test_checker_wrong_restores_the_scheme_and_marks_it_verified(fake_firestore):
+def test_checker_wrong_asks_a_maintainer_to_restore_the_link(fake_firestore):
     notion, page_id = _queue_with_row(fake_firestore)
-    _verdict(notion, page_id, Verdict="Checker wrong")
+    before = fake_firestore.get_document("schemes", "s1")
+    _verdict(notion, page_id, Verdict="Checker wrong", Note="Opens fine in a browser")
 
     _sync(fake_firestore, notion)
 
-    stored = fake_firestore.get_document("schemes", "s1")
-    assert (stored["status"], stored["status_reason"]) == ("active", "Manually verified via Notion link queue")
-    assert stored["link_check_manual_verified_by"] == "alex@example.org" and stored["link_check_manual_verified_at"]
-    assert not set(nlq.CHECKER_WRONG_CLEARS) & set(stored)
+    # Nothing changes on the scheme until a maintainer approves in Slack.
+    assert fake_firestore.get_document("schemes", "s1") == before
+    entry = fake_firestore.get_document("schemeEntries", f"notion-{page_id}-1")
+    assert set(entry) == UPDATE_SCHEME_KEYS | {"source"}
+    assert (entry["typeOfRequest"], entry["targetSchemeId"], entry["Link"]) == ("restore", "s1", before["link"])
+    assert (entry["oldLink"], entry["retiredReason"], entry["Changes"]) == (None, None, "Opens fine in a browser")
+    assert notion.rows()["s1"]["Sync state"] == "Submitted"
+
+    # Approval relists the scheme (see approval_handler), so it leaves the failing set.
+    fake_firestore.collection("schemeEntries").document(f"notion-{page_id}-1").update({"Status": "approved"})
+    fake_firestore.seed("schemes", "s1", {"scheme": "scheme-1", "link": before["link"], "status": "active"})
+    _sync(fake_firestore, notion)
     row = notion.rows()["s1"]
-    assert (row["Sync state"], row["Sync message"]) == ("Applied", "Searchable again after Monday's reindex")
-    assert (row["Firestore status"], row["Weeks failing"], row["Error"]) == ("active", None, "")
-    # Out of the failing set now, but Applied stays Applied rather than Resolved.
+    assert (row["Sync state"], row["Sync message"]) == (
+        "Resolved",
+        "Approved: listed again, and searchable after Monday's reindex",
+    )
     _sync(fake_firestore, notion)
     assert notion.writes() == []
 
@@ -499,13 +509,12 @@ def test_unclear_parks_until_the_next_weekly_check(fake_firestore):
     assert row["Sync message"] == "Still failing after this week's check. Take another look."
 
 
-def test_applied_row_reopens_when_the_scheme_goes_inactive_again(fake_firestore):
-    notion, page_id = _queue_with_row(fake_firestore)
-    _verdict(notion, page_id, Verdict="Checker wrong")
+def test_parked_row_reopens_when_the_scheme_goes_inactive(fake_firestore):
+    notion, page_id = _queue_with_row(fake_firestore, status="active", link_check_fail_streak=1, link_suspect=True)
+    _verdict(notion, page_id, Verdict="Unclear")
     _sync(fake_firestore, notion)
-    # Four more hard-dead weeks later the link check delists it again.
-    restored = fake_firestore.get_document("schemes", "s1")
-    fake_firestore.seed("schemes", "s1", {**restored, **_failing("scheme-1", link_check_fail_streak=4)})
+    # A second hard-dead week delists it.
+    fake_firestore.seed("schemes", "s1", _failing("scheme-1"))
 
     _sync(fake_firestore, notion)
     row = notion.rows()["s1"]

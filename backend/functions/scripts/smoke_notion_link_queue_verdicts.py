@@ -4,8 +4,8 @@ human step in dev Slack.
 
     cd backend/functions
     uv run python -m scripts.smoke_notion_link_queue_verdicts start
-    # In dev Slack: approve the "Scheme Update" card for "QA v-moved", and reject the
-    # retirement card for "QA v-retire" with a reason.
+    # In dev Slack: approve the "Scheme Update" card for "QA v-moved" and the "Link Restore"
+    # card for "QA v-checker", and reject the retirement card for "QA v-retire" with a reason.
     uv run python -m scripts.smoke_notion_link_queue_verdicts finish
 
 ``start`` seeds ``schemes/zz-notion-v-*`` in the dev project, sets a verdict on each QA row
@@ -92,14 +92,14 @@ def main(phase: str) -> int:
             "Retire -> Submitted, retire entry",
             retire["Sync state"] == "Submitted" and retire_entry.get("typeOfRequest") == "retire",
         )
-        checker = db.collection("schemes").document(PREFIX + "checker").get().to_dict()
+        checker = row("checker")
+        checker_entry = entry(checker["Entry ID"])
         check(
-            "Checker wrong -> Applied, scheme restored and verified",
-            row("checker")["Sync state"] == "Applied"
-            and checker.get("status") == "active"
-            and checker.get("link_check_manual_verified_by") == REVIEWER_EMAIL
-            and not set(nlq.CHECKER_WRONG_CLEARS) & set(checker),
-            str({k: checker.get(k) for k in ("status", "status_reason", "link_check_manual_verified_by")}),
+            "Checker wrong -> Submitted restore entry, scheme still delisted",
+            checker["Sync state"] == "Submitted"
+            and checker_entry.get("typeOfRequest") == "restore"
+            and db.collection("schemes").document(PREFIX + "checker").get().to_dict().get("status") == "inactive",
+            str({k: checker_entry.get(k) for k in ("typeOfRequest", "Link", "userEmail")}),
         )
         check("Unclear -> Parked", row("unclear")["Sync state"] == "Parked")
         bad = row("bad")
@@ -112,18 +112,18 @@ def main(phase: str) -> int:
         check("Rerun writes nothing", notion.writes == 0, f"{notion.writes} writes")
 
         deadline = time.time() + 300
-        while time.time() < deadline and not (
-            entry(moved["Entry ID"]).get("slack_message_ts") and entry(retire["Entry ID"]).get("slack_message_ts")
-        ):
+        cards = (("update", moved["Entry ID"]), ("retirement", retire["Entry ID"]), ("restore", checker["Entry ID"]))
+        while time.time() < deadline and not all(entry(entry_id).get("slack_message_ts") for _, entry_id in cards):
             time.sleep(15)
-        for label, entry_id in (("update", moved["Entry ID"]), ("retirement", retire["Entry ID"])):
+        for label, entry_id in cards:
             posted = entry(entry_id)
             check(
                 f"Slack {label} card posted",
                 bool(posted.get("slack_message_ts")),
                 f"pipeline_status={posted.get('pipeline_status')}",
             )
-        print("\nNext: in dev Slack, APPROVE the update card for 'QA v-moved' and REJECT (with a reason)")
+        print("\nNext: in dev Slack, APPROVE the update card for 'QA v-moved' and the restore card for")
+        print("'QA v-checker', and REJECT (with a reason)")
         print("the retirement card for 'QA v-retire'. Then run: ... smoke_notion_link_queue_verdicts finish\n")
 
     elif phase == "finish":
@@ -140,6 +140,17 @@ def main(phase: str) -> int:
             scheme.get("status") == "active"
             and not {"link_check_fail_streak", "link_suspect", "link_check_error"} & set(scheme),
             str({k: scheme.get(k) for k in ("status", "link", "link_check_fail_streak", "link_suspect")}),
+        )
+        checker = row("checker")
+        restored = db.collection("schemes").document(PREFIX + "checker").get().to_dict()
+        check(
+            "Approved restore -> Resolved, scheme listed again and verified",
+            checker["Sync state"] == "Resolved"
+            and restored.get("status") == "active"
+            and restored.get("link_check_manual_verified_by") == REVIEWER_EMAIL
+            and not {"link_check_fail_streak", "link_suspect", "link_check_error"} & set(restored),
+            f"{checker['Sync message']} status={restored.get('status')} "
+            f"verified_by={restored.get('link_check_manual_verified_by')}",
         )
         retire = row("retire")
         check(

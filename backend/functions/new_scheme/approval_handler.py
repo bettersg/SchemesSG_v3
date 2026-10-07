@@ -21,6 +21,8 @@ from slack_sdk.web import WebClient
 from utils.scheme_lifecycle import RETIRED_STATUS, retirement_validation_error
 
 from new_scheme.new_scheme_blocks import (
+    build_link_restore_approved_message,
+    build_link_restore_rejected_message,
     build_new_scheme_approved_message,
     build_new_scheme_rejected_message,
     build_scheme_retirement_approved_message,
@@ -28,6 +30,10 @@ from new_scheme.new_scheme_blocks import (
     build_scheme_update_approved_message,
     build_scheme_update_rejected_message,
 )
+
+
+# Cleared when a link restore is approved: the scheme starts again with no failure history.
+LINK_FAILURE_FIELDS = ("link_check_fail_streak", "link_check_fail_class", "link_check_error", "link_suspect")
 
 
 def handle_new_scheme_approval(
@@ -396,6 +402,84 @@ def handle_scheme_retirement_approval(
         )
 
 
+def handle_link_restore_approval(
+    slack_client: WebClient,
+    entry_doc_id: str,
+    channel_id: Optional[str],
+    message_ts: Optional[str],
+    reviewer_id: str,
+) -> None:
+    """List a scheme again after a volunteer confirmed its link works, and mark the link verified.
+
+    The weekly link check ignores failures on a verified link (see run_link_check_and_reindex),
+    so it is not flagged again. Approving an update with a new link clears the mark.
+    """
+    logger.info(f"Processing link restore approval for entry {entry_doc_id}")
+
+    db = get_firestore_client()
+    entry_ref = db.collection("schemeEntries").document(entry_doc_id)
+    entry_snap = entry_ref.get()
+    entry_data = (entry_snap.to_dict() or {}) if entry_snap.exists else {}
+    if (entry_data.get("typeOfRequest") or "").lower() != "restore":
+        raise ValueError(f"Entry {entry_doc_id!r} is not a link restore request")
+    if entry_data.get("Status") == "approved":
+        logger.info(f"Link restore entry {entry_doc_id} is already approved")
+        return
+
+    target_scheme_id = entry_data.get("targetSchemeId")
+    if not target_scheme_id:
+        raise ValueError("Link restore entry is missing targetSchemeId")
+    target_ref = db.collection("schemes").document(target_scheme_id)
+    target_snap = target_ref.get()
+    if not target_snap.exists:
+        raise ValueError(f"Target scheme {target_scheme_id!r} does not exist")
+    target_data = target_snap.to_dict() or {}
+    if target_data.get("status") == RETIRED_STATUS:
+        raise ValueError(f"Target scheme {target_scheme_id!r} is retired")
+
+    reviewer_email = None
+    try:
+        user_info = slack_client.users_info(user=reviewer_id)
+        if user_info.get("ok"):
+            reviewer_email = user_info.get("user", {}).get("profile", {}).get("email")
+    except Exception as e:
+        logger.warning(f"Could not get reviewer email from Slack: {e}")
+
+    reviewer = reviewer_email or reviewer_id
+    batch = db.batch()
+    batch.update(
+        target_ref,
+        {
+            "status": "active",
+            "status_reason": firestore.DELETE_FIELD,
+            "status_updated_at": SERVER_TIMESTAMP,
+            "link_check_manual_verified_at": SERVER_TIMESTAMP,
+            "link_check_manual_verified_by": entry_data.get("userEmail") or entry_data.get("userName") or reviewer,
+            **dict.fromkeys(LINK_FAILURE_FIELDS, firestore.DELETE_FIELD),
+        },
+    )
+    batch.update(
+        entry_ref,
+        {
+            "Status": "approved",
+            "pipeline_status": "approved",
+            "approved_by": reviewer,
+            "approved_at": SERVER_TIMESTAMP,
+            "approved_scheme_id": target_scheme_id,
+        },
+    )
+    batch.commit()
+
+    if channel_id and message_ts:
+        message = build_link_restore_approved_message(
+            entry_doc_id,
+            target_data.get("scheme", entry_data.get("Scheme", "Unknown")),
+            target_scheme_id,
+            reviewer_id,
+        )
+        slack_client.chat_update(channel=channel_id, ts=message_ts, **message)
+
+
 def handle_new_scheme_rejection(
     slack_client: WebClient,
     entry_doc_id: str,
@@ -445,11 +529,20 @@ def handle_new_scheme_rejection(
         target_scheme_id = entry_data.get("targetSchemeId")
         is_update = type_of_request == "update" and bool(target_scheme_id)
         is_retire = type_of_request == "retire" and bool(target_scheme_id)
+        is_restore = type_of_request == "restore" and bool(target_scheme_id)
 
         # Update original Slack message
         if channel_id and message_ts:
             try:
-                if is_retire:
+                if is_restore:
+                    rejected_message = build_link_restore_rejected_message(
+                        doc_id=entry_doc_id,
+                        scheme_name=scheme_name,
+                        target_scheme_id=target_scheme_id,
+                        reviewer_id=reviewer_id,
+                        reason=reason,
+                    )
+                elif is_retire:
                     rejected_message = build_scheme_retirement_rejected_message(
                         doc_id=entry_doc_id,
                         scheme_name=scheme_name,
