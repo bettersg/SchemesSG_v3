@@ -11,10 +11,11 @@ rewritten from it, and the only writes back are verdicts:
 - Checker wrong clears the scheme's failure state and marks it manually verified.
 - Unclear parks the row until the next weekly check.
 
-Notion covers production only. Every entry point is a no-op unless the
-``NOTION_*`` variables are set *and* ``FB_PROJECT_ID`` is the prod project, so a
-dev deploy (or a local ``.env`` with dev creds) never mixes dev Firestore with
-the prod Notion workspace.
+Every entry point is a no-op unless the ``NOTION_*`` variables are set. Which
+workspace a deploy syncs is decided by its token: prod uses a connection shared with
+the prod root only, and dev uses a QA-only connection, so dev Firestore can never
+reach the prod Notion workspace as long as the prod token stays in
+``FUNCTIONS_ENV_VARS_PROD``.
 
 Can also be run locally against a non-prod Notion copy by passing ``cfg`` and
 ``notion`` explicitly; see ``scripts/smoke_notion_link_queue.py``.
@@ -39,7 +40,6 @@ from urllib3.util.retry import Retry
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES, RETIRED_STATUS, retirement_validation_error
 
 
-PROD_PROJECT_ID = "schemessg"
 NOTION_API = "https://api.notion.com/v1"
 NOTION_VERSION = "2026-03-11"
 # Notion allows ~3 requests/second per connection.
@@ -100,9 +100,6 @@ def notion_config() -> Optional[Dict[str, str]]:
     link_queue = os.getenv("NOTION_LINK_QUEUE_DATA_SOURCE_ID")
     metrics = os.getenv("NOTION_METRICS_DATA_SOURCE_ID")
     if not (token and link_queue and metrics):
-        return None
-    if os.getenv("FB_PROJECT_ID") != PROD_PROJECT_ID:
-        logger.warning("NOTION_* is set outside the prod project; refusing to sync Notion")
         return None
     return {"token": token, "link_queue": link_queue, "metrics": metrics}
 
@@ -588,6 +585,6 @@ def append_metrics_row(
     retry_count=0,  # The next run is 30 minutes away.
 )
 def scheduled_notion_link_queue_sync(event: scheduler_fn.ScheduledEvent) -> None:
-    """Rewrite the Notion Link Queue from Firestore (prod only)."""
+    """Rewrite the Notion Link Queue from Firestore."""
     logger.info(f"Notion link queue sync triggered at {event.schedule_time}")
     run_notion_link_queue_sync_core()

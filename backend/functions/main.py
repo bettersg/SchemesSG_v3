@@ -33,7 +33,7 @@ The following endpoints are available:
    - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
    - scheduled_notion_link_queue_sync: Every 30 minutes, mirror failing-link schemes into the
-     Notion Link Queue (prod only; no-op unless NOTION_* is set)
+     Notion Link Queue (no-op unless NOTION_* is set; dev uses a QA-only Notion copy)
 
 7. System:
    - health: Health check endpoint
