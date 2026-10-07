@@ -17,6 +17,7 @@ from firebase_functions import https_fn, options
 from loguru import logger
 from new_scheme.approval_handler import (
     get_processed_data_from_entry,
+    handle_link_restore_approval,
     handle_new_scheme_approval,
     handle_new_scheme_rejection,
     handle_scheme_retirement_approval,
@@ -363,20 +364,27 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                     headers=headers,
                 )
 
-            # Handle terminal scheme retirement actions.
+            # Handle terminal scheme retirement and link restore actions (no review modal).
             if action.get("action_id") in (
                 "approve_scheme_retirement",
                 "reject_scheme_retirement",
+                "approve_link_restore",
+                "reject_link_restore",
             ):
                 entry_doc_id = action.get("value")
                 reviewer_id = event.get("user", {}).get("id", "")
                 container = event.get("container", {})
                 channel_id = container.get("channel_id")
                 message_ts = container.get("message_ts")
+                approvals = {
+                    "approve_scheme_retirement": (handle_scheme_retirement_approval, "retire scheme"),
+                    "approve_link_restore": (handle_link_restore_approval, "list scheme again"),
+                }
 
-                if action.get("action_id") == "approve_scheme_retirement":
+                if action.get("action_id") in approvals:
+                    approve, what = approvals[action.get("action_id")]
                     try:
-                        handle_scheme_retirement_approval(
+                        approve(
                             slack_client=slack_client,
                             entry_doc_id=entry_doc_id,
                             channel_id=channel_id,
@@ -384,11 +392,11 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                             reviewer_id=reviewer_id,
                         )
                     except Exception as e:
-                        logger.error(f"Failed to approve retirement {entry_doc_id}: {e}")
+                        logger.error(f"Failed to {what} for {entry_doc_id}: {e}")
                         if channel_id:
                             slack_client.chat_postMessage(
                                 channel=channel_id,
-                                text=f":warning: Could not retire scheme: {e}",
+                                text=f":warning: Could not {what}: {e}",
                             )
                 else:
                     rejection_metadata = json.dumps(
@@ -398,9 +406,11 @@ def slack_interactive(req: https_fn.Request) -> https_fn.Response:
                             "message_ts": message_ts,
                         }
                     )
+                    restore = action.get("action_id") == "reject_link_restore"
+                    title = "Reject Link Restore" if restore else "Reject Retirement"
                     slack_client.views_open(
                         trigger_id=event.get("trigger_id"),
-                        view=build_scheme_retirement_rejection_modal(rejection_metadata),
+                        view=build_scheme_retirement_rejection_modal(rejection_metadata, title),
                     )
 
                 return https_fn.Response(

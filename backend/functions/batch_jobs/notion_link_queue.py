@@ -8,7 +8,7 @@ the Data Health dashboard. Firestore stays the source of truth; Notion rows are
 rewritten from it, and the only writes back are verdicts:
 
 - Moved / Retire create a ``schemeEntries`` doc, so the normal Slack review card follows.
-- Checker wrong clears the scheme's failure state and marks it manually verified.
+- Checker wrong creates a link restore request; once approved, the link check stops flagging it.
 - Unclear parks the row until the next weekly check.
 
 Every entry point is a no-op unless the ``NOTION_*`` variables are set. Which
@@ -30,7 +30,6 @@ from urllib.parse import urlparse
 
 import requests
 from fb_manager.firebaseManager import get_firestore_client
-from firebase_admin import firestore
 from firebase_functions import options, scheduler_fn
 from google.api_core.exceptions import AlreadyExists
 from loguru import logger
@@ -47,8 +46,8 @@ REQUEST_INTERVAL_SEC = 0.34
 # Notion rejects rich text, titles and URLs longer than this.
 MAX_TEXT = 2000
 SOURCE = "notion-link-queue"
-# Cleared by "Checker wrong": the scheme starts again with no failure history.
-CHECKER_WRONG_CLEARS = ("link_check_fail_streak", "link_check_fail_class", "link_check_error", "link_suspect")
+# Verdict -> schemeEntries typeOfRequest. Each goes through the Slack review its trigger posts.
+REQUEST_TYPES = {"Moved": "update", "Retire": "retire", "Checker wrong": "restore"}
 
 # Property name -> Notion property type. Names are a contract with the Notion
 # databases: renaming a column in Notion makes every write to it fail.
@@ -259,16 +258,12 @@ def plan_row_update(row: Dict[str, Any], scheme: Optional[Dict[str, Any]], in_se
         return move("Resolved", "Scheme retired" if scheme else "Scheme no longer exists")
     # Compare with the status stored on the row, so a row parked while already
     # inactive doesn't reopen on every run.
-    if (
-        state in ("Applied", "Parked")
-        and row.get("Firestore status") != "inactive"
-        and facts["Firestore status"] == "inactive"
-    ):
+    if state == "Parked" and row.get("Firestore status") != "inactive" and facts["Firestore status"] == "inactive":
         return move("Open", "Went inactive again. Please check it again.", Verdict=None, **STALE_HINT)
     if not in_set:
         if state in ("Open", "Rejected", "Parked"):
             return move("Resolved", "Link is working again")
-        # Resolved rows keep their last facts; Submitted/Applied rows wait for their outcome.
+        # Resolved rows keep their last facts; Submitted rows wait for their outcome.
         return {} if state == "Resolved" else changed
     if state == "Resolved":
         return move("Open", "Failing the link check again", Verdict=None, **STALE_HINT)
@@ -328,7 +323,10 @@ def _submission_outcome(db, row: Dict[str, Any], schemes: Dict[str, dict], now: 
     if entry is None:
         return reopen("The submission was lost. Choose the verdict again.")
     if entry.get("Status") == "approved":
-        return {"Sync state": "Resolved", "Sync message": "Approved by a maintainer", "Last synced": now}
+        message = "Approved by a maintainer"
+        if entry.get("typeOfRequest") == "restore":
+            message = "Approved: listed again, and searchable after Monday's reindex"
+        return {"Sync state": "Resolved", "Sync message": message, "Last synced": now}
     if entry.get("Status") == "rejected":
         reason = entry.get("rejection_reason")
         return reopen(
@@ -397,32 +395,11 @@ def push_verdict(
             None if (state, row.get("Sync message")) == ("Rejected", error) else move("Rejected", error, **STALE_HINT)
         )
 
+    # The same document shape update_scheme writes, so on_new_scheme_entry posts the usual
+    # Slack review card. No pipeline_status, or the trigger skips it.
     name, email = _reviewer(notion, row, users)
-    if verdict == "Checker wrong":
-        update: Dict[str, Any] = {
-            "link_check_manual_verified_at": now,
-            "link_check_manual_verified_by": email or name or SOURCE,
-            **dict.fromkeys(CHECKER_WRONG_CLEARS, firestore.DELETE_FIELD),
-        }
-        if scheme.get("status") == "inactive":
-            update.update(
-                {
-                    "status": "active",
-                    "status_reason": "Manually verified via Notion link queue",
-                    "status_updated_at": now,
-                }
-            )
-        db.collection("schemes").document(scheme_id).update(update)
-        # Keep the in-memory copy current so this run's pull sees the restored scheme.
-        for field in CHECKER_WRONG_CLEARS:
-            scheme.pop(field, None)
-        scheme.update({k: v for k, v in update.items() if v is not firestore.DELETE_FIELD})
-        return move("Applied", "Searchable again after Monday's reindex", **{"Firestore status": "active"})
-
-    # Moved / Retire: the same document shape update_scheme writes, so on_new_scheme_entry
-    # runs the usual pipeline and Slack review card. No pipeline_status, or the trigger skips it.
     entry_id = _next_entry_id(page_id, row.get("Entry ID"))
-    moved = verdict == "Moved"
+    moved, retire = verdict == "Moved", verdict == "Retire"
     entry = {
         "Changes": row.get("Note") or None,
         "Description": None,
@@ -432,12 +409,12 @@ def push_verdict(
         "entryId": None,
         "targetSchemeId": scheme_id,
         "oldLink": scheme.get("link") if moved else None,
-        "retiredReason": None if moved else (row.get("Retire reason") or "").strip(),
-        "mergedInto": None if moved else ((row.get("Merged into") or "").strip() or None),
+        "retiredReason": (row.get("Retire reason") or "").strip() if retire else None,
+        "mergedInto": ((row.get("Merged into") or "").strip() or None) if retire else None,
         "timestamp": datetime.now(timezone.utc),
         "userName": name,
         "userEmail": email,
-        "typeOfRequest": "update" if moved else "retire",
+        "typeOfRequest": REQUEST_TYPES[verdict],
         "source": SOURCE,
     }
     try:
@@ -477,7 +454,7 @@ def run_notion_link_queue_sync_core(
             scheme = schemes.get(scheme_id)
             # Push before resolving: a Retire on a scheme that just stopped failing must not be lost.
             changes = push_verdict(db, notion, page["id"], row, scheme, schemes, now, users) or {}
-            in_set = scheme is not None and in_queue(scheme)  # Checker wrong may have just changed it
+            in_set = scheme is not None and in_queue(scheme)
             changes.update(plan_row_update({**row, **changes}, scheme, in_set, now))
             if changes:
                 notion.update_page(page["id"], encode_properties(changes, LINK_QUEUE_TYPES))
