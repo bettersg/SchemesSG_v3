@@ -22,6 +22,7 @@ from fb_manager.firebaseManager import get_firestore_client
 from firebase_admin import firestore
 from firebase_functions import options, scheduler_fn
 from loguru import logger
+from new_scheme.url_utils import normalize_url
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from utils.check_link import check_link_health, classify_link_result
@@ -148,11 +149,17 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
             for future in as_completed(futures):
                 try:
                     doc_id, scheme_data, result = future.result()
-                    if not result["alive"] and scheme_data.get("link_check_manual_verified_at"):
-                        # A maintainer approved a volunteer's "the link works" (Notion link queue
-                        # Checker wrong), so this checker can't judge the link. Approving a new
-                        # link clears the mark. ponytail: a verified link that later dies for
-                        # real is never flagged; add an expiry if that happens.
+                    verified_link = scheme_data.get("link_check_manual_verified_link")
+                    if (
+                        not result["alive"]
+                        and verified_link
+                        and normalize_url(verified_link) == normalize_url(scheme_data.get("link") or "")
+                    ):
+                        # A maintainer approved a volunteer's "the link works" for this exact link
+                        # (Notion link queue Checker wrong), so this checker can't judge it. Edits that
+                        # keep the link keep the mark; any new link is checked normally.
+                        # ponytail: a verified link that later dies for real is never flagged; add an
+                        # expiry if that happens.
                         logger.info(f"Ignoring failed check on manually verified link {doc_id}: {result.get('error')}")
                         result = {**result, "alive": True}
                     check_results.append((doc_id, scheme_data, result))

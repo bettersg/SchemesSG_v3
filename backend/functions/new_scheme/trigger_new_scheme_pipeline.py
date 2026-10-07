@@ -227,7 +227,9 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
     # Check for duplicate URL (keep this in Firebase Functions for speed)
     link = data.get("Link", "")
     duplicate = check_duplicate_scheme(link, exclude_doc_id=target_scheme_id)
-    if duplicate:
+    # An update keeps going: the page has likely changed, so a maintainer still reviews the
+    # scraped fields, with a warning on the card that another scheme has this link.
+    if duplicate and type_of_request != "update":
         logger.warning(f"Duplicate URL detected for {doc_id}: {duplicate}")
 
         # Update schemeEntries with duplicate status
@@ -283,6 +285,8 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
 
         if not result.get("success"):
             logger.error(f"Scheme-processor failed for {doc_id}: {result.get('error')}")
+        elif duplicate:
+            _warn_shared_link(doc_id, duplicate)
 
     except requests.exceptions.Timeout:
         logger.error(f"Scheme-processor timeout for {doc_id}")
@@ -295,6 +299,28 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
     except requests.exceptions.RequestException as e:
         logger.error(f"Scheme-processor error for {doc_id}: {e}")
         _update_error_status(doc_id, str(e))
+
+
+def _warn_shared_link(doc_id: str, duplicate: dict) -> None:
+    """Reply on an update's review card that its new link already belongs to another scheme."""
+    try:
+        entry = get_firestore_client().collection("schemeEntries").document(doc_id).get().to_dict() or {}
+        if not (entry.get("slack_channel") and entry.get("slack_message_ts")):
+            return
+        get_slack_client().chat_postMessage(
+            channel=entry["slack_channel"],
+            thread_ts=entry["slack_message_ts"],
+            reply_broadcast=True,
+            text=(
+                f":warning: *Same link as another scheme.* This new link already belongs to "
+                f"*{duplicate['scheme']}* (`{duplicate['doc_id']}`): {duplicate['link']}\n"
+                "Approving gives both schemes this link. If they are the same programme, reject this "
+                f"and retire `{entry.get('targetSchemeId')}` with Merged into `{duplicate['doc_id']}` instead."
+            ),
+            unfurl_links=False,
+        )
+    except Exception as e:
+        logger.error(f"Failed to post shared-link warning for {doc_id}: {e}")
 
 
 def _update_error_status(doc_id: str, error_msg: str) -> None:

@@ -255,7 +255,10 @@ def test_approved_link_restore_lists_the_scheme_and_the_checker_stops_flagging_i
     assert response.status_code == 200
     scheme = fake_firestore.get_document("schemes", "scheme-1")
     assert scheme["status"] == "active"
-    assert scheme["link_check_manual_verified_by"] == "vol@example.org"
+    assert (scheme["link_check_manual_verified_by"], scheme["link_check_manual_verified_link"]) == (
+        "vol@example.org",
+        link,
+    )
     assert not {"status_reason", "link_check_fail_streak", "link_check_error", "link_suspect"} & set(scheme)
     entry_after = fake_firestore.get_document("schemeEntries", "entry-restore")
     assert (entry_after["Status"], entry_after["approved_by"]) == ("approved", "reviewer@example.com")
@@ -272,12 +275,27 @@ def test_approved_link_restore_lists_the_scheme_and_the_checker_stops_flagging_i
 
 
 def test_verification_only_covers_the_link_a_maintainer_approved(mocker, fake_firestore, fake_slack_client):
-    link = "https://example.gov.sg/unverified"
-    fake_firestore.seed("schemes", "scheme-1", {"scheme": "Unverified", "link": link, "status": "active"})
-
-    result = _run_link_job(
-        mocker, fake_firestore, fake_slack_client, {link: {"alive": False, "status_code": 404, "error": "Not Found"}}
+    verified, new = "https://example.gov.sg/captcha", "https://example.gov.sg/new-home"
+    fake_firestore.seed(
+        "schemes",
+        "scheme-1",
+        {
+            "scheme": "Captcha Support",
+            "link": verified,
+            "status": "active",
+            "link_check_manual_verified_at": "2026-10-07",
+            "link_check_manual_verified_link": "https://www.example.gov.sg/captcha/",
+        },
     )
+    failing = {"alive": False, "status_code": 404, "error": "Not Found"}
 
+    # A maintainer corrects the details but keeps the link: still never flagged.
+    fake_firestore.collection("schemes").document("scheme-1").update({"description": "Corrected"})
+    result = _run_link_job(mocker, fake_firestore, fake_slack_client, {verified: failing})
+    assert result["link_check"]["suspect_count"] == 0
+
+    # The scheme gets a new link: that link is checked like any other.
+    fake_firestore.collection("schemes").document("scheme-1").update({"link": new})
+    result = _run_link_job(mocker, fake_firestore, fake_slack_client, {new: failing})
     assert result["link_check"]["suspect_count"] == 1
     assert fake_firestore.get_document("schemes", "scheme-1")["link_check_fail_streak"] == 1
