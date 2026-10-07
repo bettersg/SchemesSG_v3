@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import {
   CATALOG_SCHEMES,
@@ -66,4 +67,27 @@ test("user can open a catalog scheme and continue to its official website", asyn
       },
     ]),
   );
+});
+
+test("an inactive scheme's page warns that its website failed our check", async ({
+  page,
+}) => {
+  await page.goto("/schemes/dead-link-support");
+
+  await expect(
+    page.getByRole("heading", { name: "Dead Link Support", level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "We couldn't reach this scheme's website",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/details below may be out of date/i),
+  ).toBeVisible();
+
+  const accessibilityScan = await new AxeBuilder({ page })
+    .include("main")
+    .analyze();
+  expect(accessibilityScan.violations).toEqual([]);
 });
