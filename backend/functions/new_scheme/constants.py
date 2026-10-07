@@ -8,122 +8,24 @@ Contains category lists, patterns, and prompts used throughout the pipeline.
 # Categorization Constants
 # =============================================================================
 
-WHO_IS_IT_FOR = [
-    "Children",
-    "Youth",
-    "Youth-at-risk",
-    "Teenagers facing pregnancy",
-    "Young adults",
-    "Students",
-    "Families",
-    "Single parents",
-    "Women",
-    "Pregnant individuals in distress",
-    "Elderly",
-    "Elderly with dementia",
-    "Persons with disabilities (PWDs)",
-    "Persons with special needs",
-    "Persons on autism spectrum",
-    "Persons with chronic or terminal illnesses",
-    "Persons with mental health issues",
-    "Caregivers",
-    "Low income",
-    "Low income families",
-    "Low income elderly",
-    "Unemployed",
-    "Retrenched",
-    "Homeless",
-    "Need shelter",
-    "Need food support",
-    "Foreign domestic workers/maids",
-    "Migrant workers/Foreign workers",
-    "Ex-offenders",
-    "Inmates",
-    "Families of inmates or ex-offenders",
-    "Victims of abuse or harassment",
-    "Facing end of life",
-    "Facing financial hardship",
-    "Need mortgage support",
-    "Individuals needing legal aid",
-    "Individuals struggling with loss",
-    "Individuals with gambling addiction",
-    "Transnational families/Foreign spouses",
-    "Malay/Muslim community",
-    "Indian community",
-    "Chinese community",
-    "General public",
-]
+# Vocabulary is generated from the canonical taxonomy (scripts/ncss_eval/taxonomy.py -> export_taxonomy.py)
+# and vendored as taxonomy_data.json next to this module. Do not edit the lists by hand.
+import json
+from pathlib import Path
 
-WHAT_IT_GIVES = [
-    "Counselling",
-    "Casework",
-    "Emotional care",
-    "Mental health assessment and treatment",
-    "Psychological support/Psychotherapy",
-    "Befriending services",
-    "Helpline services",
-    "Referral services",
-    "Educational programmes",
-    "Vocational training",
-    "Employment assistance",
-    "Skills training and job matching",
-    "Financial assistance (general)",
-    "Financial assistance for daily living expenses",
-    "Financial assistance for healthcare",
-    "Financial assistance for education",
-    "Financial assistance for housing",
-    "Food support",
-    "Housing/Shelter",
-    "Respite care/Caregiver support",
-    "Child protection services",
-    "Childcare services",
-    "Transport subsidies",
-    "Healthcare (general/basic services)",
-    "Dental services",
-    "Rehabilitation services",
-    "Legal aid and services",
-    "Protection against violence",
-    "Residential care/programmes",
-    "Support groups",
-    "Bereavement support",
-    "End-of-life care",
-    "Technology assistance",
-    "Information services",
-]
+TAXONOMY = json.loads((Path(__file__).parent / "taxonomy_data.json").read_text())
+WHO_IS_IT_FOR = [t["name"] for t in TAXONOMY["who_is_it_for"]]
+WHAT_IT_GIVES = [t["name"] for t in TAXONOMY["what_it_gives"]]
+SCHEME_TYPE = [t["name"] for t in TAXONOMY["scheme_type"]]
 
-SCHEME_TYPE = [
-    "Low Income",
-    "Family",
-    "Children",
-    "Youth",
-    "Youth-at-Risk",
-    "Women",
-    "Single Parents",
-    "Elderly",
-    "Caregiver Support",
-    "Persons with Disabilities (PWD)",
-    "Special Needs",
-    "Ex-offender Support",
-    "Education Support",
-    "Healthcare",
-    "Mental Health",
-    "End-of-Life/Palliative Care",
-    "Food Support",
-    "Housing/Shelter",
-    "Employment Support",
-    "Vocational Training",
-    "Financial Assistance",
-    "Transport Support",
-    "Legal Aid",
-    "Abuse/Family Violence",
-    "COVID-19 Support",
-    "Counselling and Emotional Support",
-    "General Public Support",
-]
 
-# TODO: Ideally, we should combine SCHEME_TYPE and SCHEME_CATEGORY_MAPPING into a single dictionary.
-# However, this would require some refactoring of the codebase.
-SCHEME_CATEGORY_MAPPING = {
+# Category -> scheme_type values: a partition of SCHEME_TYPE (each term in exactly one category).
+SCHEME_CATEGORY_MAPPING = TAXONOMY["category_mapping"]
+# Pre-v2 scheme_type values per category, accepted by category lookups until the data is migrated.
+LEGACY_CATEGORY_TERMS = TAXONOMY["legacy_category_mapping"]
+
+# Pre-v2 category lists. Kept only as the seed for the union in taxonomy_data.json (old-vocabulary data until migrated).
+LEGACY_SCHEME_CATEGORY_MAPPING = {
     "Financial Assistance": [
         "Financial Assistance",
         "Low Income",

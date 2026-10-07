@@ -16,7 +16,7 @@ from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
-from new_scheme.constants import SCHEME_CATEGORY_MAPPING
+from new_scheme.constants import LEGACY_CATEGORY_TERMS, SCHEME_CATEGORY_MAPPING
 from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
@@ -46,7 +46,10 @@ class CatalogRequestParams:
     filter_value: str | list[str] | None = None
 
 
-_CATEGORY_LOOKUP = {cat.lower(): types for cat, types in SCHEME_CATEGORY_MAPPING.items()}
+# v2 terms first, then pre-v2 terms so schemes that still carry the old vocabulary stay reachable until migrated
+_CATEGORY_LOOKUP = {
+    cat.lower(): [*types, *LEGACY_CATEGORY_TERMS.get(cat, [])] for cat, types in SCHEME_CATEGORY_MAPPING.items()
+}
 
 
 def _expand_category(value: str) -> list[str]:

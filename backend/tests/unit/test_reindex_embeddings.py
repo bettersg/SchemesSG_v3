@@ -60,3 +60,8 @@ def test_realistic_mixed_row_combines_scalars_and_lists():
     assert "Monthly cash payout" in result
     assert "Financial Assistance" in result
     assert "Singapore" in result
+
+
+def test_build_desc_booster_keeps_pre_rename_word_next_to_renamed_tags():
+    row = pd.Series({"who_is_it_for": ["Seniors", "Caregivers"], "scheme_type": ["Healthcare"]})
+    assert build_desc_booster(row) == "Seniors (Elderly), Caregivers Healthcare"

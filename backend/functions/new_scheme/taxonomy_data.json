@@ -1,0 +1,1700 @@
+{
+ "version": "v2-draft-2026-10-04",
+ "age_bands": [
+  {
+   "term": "Infants and toddlers (0-3)",
+   "min": 0,
+   "max": 3
+  },
+  {
+   "term": "Preschool children (4-6)",
+   "min": 4,
+   "max": 6
+  },
+  {
+   "term": "Primary school children (7-12)",
+   "min": 7,
+   "max": 12
+  },
+  {
+   "term": "Children",
+   "min": 0,
+   "max": 12
+  },
+  {
+   "term": "Teenagers (13-17)",
+   "min": 13,
+   "max": 17
+  },
+  {
+   "term": "Youth",
+   "min": 13,
+   "max": 21
+  },
+  {
+   "term": "Adults",
+   "min": 22,
+   "max": 59
+  },
+  {
+   "term": "Seniors",
+   "min": 60,
+   "max": 200
+  }
+ ],
+ "who_is_it_for": [
+  {
+   "name": "Children",
+   "definition": "Umbrella: children aged 12 and below (any child age band below also applies).",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Children"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Infants and toddlers (0-3)",
+   "definition": "Children aged 0 to 3 (infant care, early intervention, toddlers).",
+   "provisional": false,
+   "note": "granular: CareCompass",
+   "age_group": [
+    "Children"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Preschool children (4-6)",
+   "definition": "Children aged 4 to 6 (kindergarten, preschool).",
+   "provisional": false,
+   "note": "granular: CareCompass",
+   "age_group": [
+    "Children"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Primary school children (7-12)",
+   "definition": "Children aged 7 to 12 (primary school).",
+   "provisional": false,
+   "note": "granular: CareCompass",
+   "age_group": [
+    "Children"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Teenagers (13-17)",
+   "definition": "Adolescents aged 13 to 17 (secondary school / minors).",
+   "provisional": false,
+   "note": "granular: CareCompass; under-18",
+   "age_group": [
+    "Youths"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Youth",
+   "definition": "Umbrella: youths aged 13 to 21.",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Youths"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Youth-at-risk",
+   "definition": "Youths aged 13 to 21 at risk of offending, school dropout, or other adverse outcomes.",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Youths"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Teenagers facing pregnancy",
+   "definition": "Teenagers (13-19) who are pregnant or facing an unplanned pregnancy.",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Youths"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Young adults",
+   "definition": "Persons aged roughly 18-35. NCSS does not use this band; use only if the scheme says 'young adults'.",
+   "provisional": false,
+   "note": "NCSS: no consistent age range",
+   "age_group": [
+    "Youths",
+    "Adults"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Adults",
+   "definition": "Adults aged 22 to 59.",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Adults"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Students",
+   "definition": "Persons currently enrolled in school/tertiary education. Education status, not a social-service population.",
+   "provisional": false,
+   "note": "NCSS: eligibility metadata",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Families",
+   "definition": "Families in general, not necessarily in distress.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Families"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Multi-stressed families",
+   "definition": "Families facing multiple concurrent challenges across two or more needs.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Multi-stressed family"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Single parents",
+   "definition": "Parents raising children on their own (divorced, widowed, unmarried, separated).",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Families"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Women",
+   "definition": "Programme restricted to women. Demographic marker.",
+   "provisional": false,
+   "note": "NCSS: metadata, no profile",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Pregnant individuals in distress",
+   "definition": "Pregnant persons facing crisis, unplanned pregnancy or hardship.",
+   "provisional": false,
+   "note": "NCSS: circumstance; no profile",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Seniors",
+   "definition": "Seniors / elderly persons aged 60 and above (formerly 'Elderly').",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Seniors"
+   ],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Seniors with dementia",
+   "definition": "Seniors / elderly persons aged 60+ diagnosed with dementia, and their care.",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Seniors"
+   ],
+   "profile": [
+    "Chronically ill"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Persons with disabilities (PWDs)",
+   "definition": "Persons with permanent intellectual or physical disabilities (e.g. mobility, vision, hearing, intellectual disability, cerebral palsy). Mental health conditions are NOT disabilities.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with disabilities"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Persons with special needs",
+   "definition": "Persons with developmental or learning needs (e.g. SPED students). Treat as disability only when the disability is permanent.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with disabilities"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Persons on autism spectrum",
+   "definition": "Persons diagnosed with autism spectrum disorder.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with disabilities"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Persons with chronic or terminal illnesses",
+   "definition": "Persons with long-term, persistent or terminal illness requiring ongoing management (e.g. cancer, kidney failure, diabetes).",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Chronically ill"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Persons with mental health conditions",
+   "definition": "Persons diagnosed with, or severely affected by, mental health conditions (e.g. depression, schizophrenia). Recoverable, so NOT persons with disabilities.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with mental health conditions"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Persons with substance and behavioural addictions",
+   "definition": "Persons dependent on substances or compulsive behaviours (drugs, alcohol, gambling, gaming).",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with substance and behavioural addictions"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Individuals with gambling addiction",
+   "definition": "Persons with a gambling addiction or problem gambling, and affected family.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with substance and behavioural addictions"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Caregivers",
+   "definition": "People providing ongoing primary care to someone with care needs from age, disability, illness or mental health condition.",
+   "provisional": false,
+   "note": "check vs NCSS Caregiver def",
+   "age_group": [],
+   "profile": [
+    "Caregiver"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Low income",
+   "definition": "Individuals/households with insufficient income, incl. those on means-tested schemes.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with financial difficulties"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Low income families",
+   "definition": "Families with low household income.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with financial difficulties",
+    "Families"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Low income seniors",
+   "definition": "Seniors / elderly persons aged 60+ with low income.",
+   "provisional": false,
+   "note": "",
+   "age_group": [
+    "Seniors"
+   ],
+   "profile": [
+    "Persons with financial difficulties"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Facing financial hardship",
+   "definition": "Persons or households in temporary or acute financial difficulty (job loss, debt, emergencies).",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Persons with financial difficulties"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Unemployed",
+   "definition": "Persons not in paid work, available for and seeking work.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Unemployed"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Retrenched",
+   "definition": "Persons who lost their job through retrenchment.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Unemployed"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Homeless",
+   "definition": "Persons without stable, safe accommodation, sleeping rough or moving between temporary housing.",
+   "provisional": true,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Homeless"
+   ],
+   "fallback_profile": [
+    "Persons with financial difficulties"
+   ]
+  },
+  {
+   "name": "Foreign domestic workers/maids",
+   "definition": "Foreign domestic workers (maids) employed in Singapore households, and their employers when the scheme is for FDW matters.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Migrant individuals"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Migrant workers/Foreign workers",
+   "definition": "Foreign workers in Singapore on work passes (e.g. construction, marine).",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Migrant individuals"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Transnational families/Foreign spouses",
+   "definition": "Foreign spouses of Singaporeans and cross-border families.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Migrant individuals",
+    "Families"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Ex-offenders",
+   "definition": "Persons who completed a sentence and are reintegrating.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Ex-offender"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Inmates",
+   "definition": "Persons currently in prison or custody.",
+   "provisional": true,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Inmates / persons in custody"
+   ],
+   "fallback_profile": [
+    "Ex-offender"
+   ]
+  },
+  {
+   "name": "Families of inmates or ex-offenders",
+   "definition": "Family members of inmates or ex-offenders.",
+   "provisional": false,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Families"
+   ],
+   "fallback_profile": []
+  },
+  {
+   "name": "Victims of abuse or harassment",
+   "definition": "Persons experiencing or who experienced abuse, family violence, or harassment.",
+   "provisional": true,
+   "note": "",
+   "age_group": [],
+   "profile": [
+    "Victims of abuse or harassment"
+   ],
+   "fallback_profile": [
+    "Multi-stressed family"
+   ]
+  },
+  {
+   "name": "Facing end of life",
+   "definition": "Persons with a life-limiting illness nearing end of life, and their families.",
+   "provisional": false,
+   "note": "NCSS: circumstance; review under needs, no profile parent until needs mapping arrives",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Individuals struggling with loss",
+   "definition": "Persons bereaved or grieving. Circumstance, not a population.",
+   "provisional": false,
+   "note": "NCSS: review under needs; no profile parent",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Malay/Muslim community",
+   "definition": "Programme targeted at Malay/Muslim community. Demographic marker.",
+   "provisional": false,
+   "note": "NCSS: metadata",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Indian community",
+   "definition": "Programme targeted at Indian community. Demographic marker.",
+   "provisional": false,
+   "note": "NCSS: metadata",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "Chinese community",
+   "definition": "Programme targeted at Chinese community. Demographic marker.",
+   "provisional": false,
+   "note": "NCSS: metadata",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  },
+  {
+   "name": "General public",
+   "definition": "Open to all residents with no specific target group. Use ONLY if no other term fits.",
+   "provisional": false,
+   "note": "NCSS: access descriptor",
+   "age_group": [],
+   "profile": [],
+   "fallback_profile": []
+  }
+ ],
+ "what_it_gives": [
+  {
+   "name": "Counselling",
+   "definition": "Professional guidance by trained counsellors for personal or family issues.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Counselling"
+   ]
+  },
+  {
+   "name": "Casework",
+   "definition": "Coordinated assessment, planning and monitoring of a person's needs by a social worker.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Casework/Case Management"
+   ]
+  },
+  {
+   "name": "Emotional care",
+   "definition": "Non-clinical emotional support and companionship (listening, befriending, comfort). Skip if Counselling or Befriending services already describe the same service.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Befriending",
+    "Counselling"
+   ]
+  },
+  {
+   "name": "Mental health assessment and treatment",
+   "definition": "Clinical assessment/treatment of mental health conditions by clinicians.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Therapy",
+    "Medical Clinic & Services"
+   ]
+  },
+  {
+   "name": "Psychological support/Psychotherapy",
+   "definition": "Only when psychologists/psychotherapists or psychological therapy are explicitly offered. General counselling is Counselling, not this.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Therapy"
+   ]
+  },
+  {
+   "name": "Befriending services",
+   "definition": "Regular companionship to reduce isolation.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Befriending"
+   ]
+  },
+  {
+   "name": "Helpline services",
+   "definition": "Phone/digital helpline support.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Helpline/Hotline"
+   ]
+  },
+  {
+   "name": "Information and referral services",
+   "definition": "Information, guidance or referral/signposting to other services as a main function of the scheme (not just a passing mention).",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Information & Referral"
+   ]
+  },
+  {
+   "name": "Educational programmes",
+   "definition": "Structured teaching of knowledge or awareness (courses, workshops, talks, parent education) as a main component. Not for counselling or support services that merely include some sessions.",
+   "provisional": true,
+   "note": "NCSS: review programmes to find actual intervention",
+   "intervention": [
+    "Psychoeducation",
+    "Training"
+   ]
+  },
+  {
+   "name": "Learning intervention",
+   "definition": "Structured support that builds learning skills or academic/learning outcomes for learners (e.g. learning support, literacy/numeracy help). Use Tuition for school-subject tuition.",
+   "provisional": true,
+   "note": "NCSS: added at NCSS request; definition to confirm",
+   "intervention": [
+    "Learning Intervention"
+   ]
+  },
+  {
+   "name": "Vocational training",
+   "definition": "Skills training for employment.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Training"
+   ]
+  },
+  {
+   "name": "Employment assistance",
+   "definition": "Job search help, placement, job coaching or employer matching. Skills courses are Vocational training instead.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Job Placement",
+    "Coaching"
+   ]
+  },
+  {
+   "name": "Skills training and job matching",
+   "definition": "Skills upgrading with job placement.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Training",
+    "Job Placement"
+   ]
+  },
+  {
+   "name": "Financial assistance (general)",
+   "definition": "Cash or in-kind help NOT tied to one stated purpose. If the funds are for a stated purpose (education, healthcare, housing, daily living, etc.) use that specific term INSTEAD of this one.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for daily living expenses",
+   "definition": "Help with everyday living costs.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for healthcare",
+   "definition": "Help paying medical bills or care.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for chronic or terminal illnesses",
+   "definition": "Funding for long-term/terminal illness care.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for education",
+   "definition": "Bursaries, fee or school-cost help.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for kindergarten/student care",
+   "definition": "Subsidies for preschool/student care.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for assistive technology and medical equipment",
+   "definition": "Funding for assistive devices/equipment.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Financial assistance for housing",
+   "definition": "Help with rent, housing costs.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Mortgage assistance",
+   "definition": "Help paying home loans.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Debt assistance",
+   "definition": "Help managing or repaying debt.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Casework/Case Management"
+   ]
+  },
+  {
+   "name": "Burial and emergency assistance",
+   "definition": "Funeral or emergency cash aid.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Food support",
+   "definition": "Food distribution, vouchers, meals.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Housing/Shelter",
+   "definition": "Temporary or transitional shelter or housing help.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Housing & Shelter Support"
+   ]
+  },
+  {
+   "name": "Respite care/Caregiver support",
+   "definition": "Temporary relief, training or support for caregivers, including support services offered to family caregivers alongside the main service.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Care Services"
+   ]
+  },
+  {
+   "name": "Senior sitting and caregiving services",
+   "definition": "Home or centre sitting/caregiving for seniors / the elderly.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Care Services"
+   ]
+  },
+  {
+   "name": "Childcare services",
+   "definition": "Care for children while parents are away.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Care Services"
+   ]
+  },
+  {
+   "name": "Babysitting/Childcare services",
+   "definition": "Babysitting and childcare.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Care Services"
+   ]
+  },
+  {
+   "name": "Student care",
+   "definition": "After-school care.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Care Services"
+   ]
+  },
+  {
+   "name": "Tuition",
+   "definition": "Academic tuition and homework/learning coaching for school subjects.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Tuition"
+   ]
+  },
+  {
+   "name": "Enrichment programmes",
+   "definition": "Non-academic enrichment (arts, sports, life skills, holiday programmes) for personal growth.",
+   "provisional": true,
+   "note": "NCSS: no match, review programmes",
+   "intervention": [
+    "Enrichment Activities"
+   ]
+  },
+  {
+   "name": "Transport subsidies",
+   "definition": "Subsidised fares/transport.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Medical transport assistance",
+   "definition": "Transport to medical appointments.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Transportation"
+   ]
+  },
+  {
+   "name": "Healthcare (general/basic services)",
+   "definition": "General clinic and basic health services.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Medical Clinic & Services"
+   ]
+  },
+  {
+   "name": "Dental services",
+   "definition": "Dental care.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Medical Clinic & Services"
+   ]
+  },
+  {
+   "name": "Traditional Chinese Medicine (TCM)",
+   "definition": "TCM clinics and services.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Medical Clinic & Services"
+   ]
+  },
+  {
+   "name": "Rehabilitation services (Physiotherapy/Occupational therapy)",
+   "definition": "Physio/occupational rehabilitation.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Therapy"
+   ]
+  },
+  {
+   "name": "Legal aid and services",
+   "definition": "Legal advice, aid and representation.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Legal Services"
+   ]
+  },
+  {
+   "name": "Residential care/programmes",
+   "definition": "Live-in care or programmes.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Care Services"
+   ]
+  },
+  {
+   "name": "Addictions treatment and rehabilitation",
+   "definition": "Treatment and recovery support for addictions.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Therapy",
+    "Group Work"
+   ]
+  },
+  {
+   "name": "Social and recreational activities",
+   "definition": "Group social, recreational, exercise, arts or outing activities for engagement and connection, when such activities are a main component.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Enrichment Activities",
+    "Group Work"
+   ]
+  },
+  {
+   "name": "Support groups",
+   "definition": "Facilitated peer or group support.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Group Work"
+   ]
+  },
+  {
+   "name": "Bereavement support",
+   "definition": "Support for grief and loss.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Counselling",
+    "Group Work"
+   ]
+  },
+  {
+   "name": "End-of-life care",
+   "definition": "Palliative and end-of-life care.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Care Services",
+    "Medical Clinic & Services"
+   ]
+  },
+  {
+   "name": "Subsidies for Foreign Domestic Workers (FDWs)",
+   "definition": "Subsidies for hiring/training FDWs.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Retirement and financial planning assistance",
+   "definition": "Advice on retirement/financial planning.",
+   "provisional": true,
+   "note": "NCSS: no match, programme review pending",
+   "intervention": [
+    "Information & Referral",
+    "Coaching"
+   ]
+  },
+  {
+   "name": "Benefits and perks for PWDs (transport, discounts, facilities)",
+   "definition": "Concessions for persons with disabilities.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Technology assistance (internet/computers)",
+   "definition": "Devices, internet access, digital help.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Financial/Material Assistance"
+   ]
+  },
+  {
+   "name": "Home retrofitting",
+   "definition": "Home modifications, repairs and upgrades (e.g. grab bars, ramps, minor repairs).",
+   "provisional": true,
+   "note": "NCSS: conditional match, review programmes",
+   "intervention": [
+    "Home Maintenance"
+   ]
+  },
+  {
+   "name": "Assistive technology",
+   "definition": "Assistive devices and equipment (e.g. mobility aids, hearing aids, wheelchairs).",
+   "provisional": true,
+   "note": "our assumption; NCSS has no match",
+   "intervention": [
+    "Mobility Services"
+   ]
+  },
+  {
+   "name": "Funding for community projects",
+   "definition": "Grants for community initiatives.",
+   "provisional": false,
+   "note": "",
+   "intervention": [
+    "Community Development/Outreach"
+   ]
+  }
+ ],
+ "scheme_type": [
+  {
+   "name": "Family and Parenting Support",
+   "definition": "Parenting, marriage, family relationship and family life support.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Family, Parenting & Relationships"
+   ]
+  },
+  {
+   "name": "Disability Support",
+   "definition": "Support for persons with disabilities: mobility, daily living, centre/home-based care, accessibility.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Disability Support"
+   ]
+  },
+  {
+   "name": "Active Ageing and Social Activities",
+   "definition": "Social, recreational and active-ageing activities that keep seniors (or others) engaged and connected.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Recreational Activities",
+    "Social support"
+   ]
+  },
+  {
+   "name": "Child and Youth Services",
+   "definition": "Care, protection, development and support programmes for children and youths (residential care, youth centres, mentoring, child welfare).",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Fostering & Alternative Care",
+    "Personal Development"
+   ]
+  },
+  {
+   "name": "Caregiver Support",
+   "definition": "Training, respite and support for caregivers.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Caregiving"
+   ]
+  },
+  {
+   "name": "Ex-offender Support",
+   "definition": "Reintegration support for ex-offenders.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Reintegration/Transition Services"
+   ]
+  },
+  {
+   "name": "Education Support",
+   "definition": "Tuition, learning support, school-related help.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Education and Learning"
+   ]
+  },
+  {
+   "name": "Student Care Support",
+   "definition": "After-school and student care.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Education and Learning",
+    "Family, Parenting & Relationships"
+   ]
+  },
+  {
+   "name": "Healthcare",
+   "definition": "Treatment and prevention of physical health issues.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Healthcare & Well-Being"
+   ]
+  },
+  {
+   "name": "Dental Healthcare",
+   "definition": "Dental care.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Healthcare & Well-Being"
+   ]
+  },
+  {
+   "name": "Traditional Chinese Medicine (TCM)",
+   "definition": "TCM services.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Healthcare & Well-Being"
+   ]
+  },
+  {
+   "name": "General Healthcare Subsidies",
+   "definition": "Subsidies for medical costs.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Healthcare & Well-Being",
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Chronic or Terminal Illness Support",
+   "definition": "Support for long-term/terminal illness.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Healthcare & Well-Being"
+   ]
+  },
+  {
+   "name": "Mental Health",
+   "definition": "Emotional support and treatment for mental health.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Mental Health Services"
+   ]
+  },
+  {
+   "name": "Mental Health Rehabilitation",
+   "definition": "Recovery and rehabilitation for mental health.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Mental Health Services",
+    "Reintegration/Transition Services"
+   ]
+  },
+  {
+   "name": "Counselling and Emotional Support",
+   "definition": "Counselling and emotional support.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Counselling & Crisis Support",
+    "Mental Health Services"
+   ]
+  },
+  {
+   "name": "End-of-Life/Palliative Care",
+   "definition": "Palliative and end-of-life care.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Healthcare & Well-Being",
+    "Retirement & Legacy Planning"
+   ]
+  },
+  {
+   "name": "Food Support",
+   "definition": "Food and meals.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Housing/Shelter",
+   "definition": "Shelter and housing.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Housing & Shelter Support"
+   ]
+  },
+  {
+   "name": "Homelessness Support",
+   "definition": "Support for homeless persons.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Housing & Shelter Support"
+   ]
+  },
+  {
+   "name": "Seniors Housing and Home Improvement",
+   "definition": "Home upgrades/repairs for seniors / the elderly.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Home maintenance",
+    "Housing & Shelter Support"
+   ]
+  },
+  {
+   "name": "Employment Support",
+   "definition": "Help finding and keeping work.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Work & Employment"
+   ]
+  },
+  {
+   "name": "Vocational Training",
+   "definition": "Job skills training.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Work & Employment",
+    "Education and Learning"
+   ]
+  },
+  {
+   "name": "Financial Assistance",
+   "definition": "Cash or material aid.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Debt Assistance",
+   "definition": "Debt management.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Loss of Breadwinner Support",
+   "definition": "Support after loss of family income earner.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Financial Planning and Retirement Support",
+   "definition": "Retirement and financial planning.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Retirement & Legacy Planning"
+   ]
+  },
+  {
+   "name": "Transport Support",
+   "definition": "Transport help.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Disability Support",
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Technology Support",
+   "definition": "Digital access and assistive tech.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Disability Support",
+    "Education and Learning"
+   ]
+  },
+  {
+   "name": "Legal Aid",
+   "definition": "Legal advice and aid.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Justice & Legal Protection"
+   ]
+  },
+  {
+   "name": "Abuse/Family Violence",
+   "definition": "Family violence and abuse response.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Counselling & Crisis Support"
+   ]
+  },
+  {
+   "name": "Protection from Violence",
+   "definition": "Protection against violence.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Counselling & Crisis Support"
+   ]
+  },
+  {
+   "name": "COVID-19 Support",
+   "definition": "COVID-19 relief (legacy).",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Financial & Material Support"
+   ]
+  },
+  {
+   "name": "Community Funding",
+   "definition": "Funding for community projects.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Community participation/Engagement"
+   ]
+  },
+  {
+   "name": "Residential Care",
+   "definition": "Live-in care.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Disability Support",
+    "Caregiving"
+   ]
+  },
+  {
+   "name": "Addictions Rehabilitation",
+   "definition": "Addiction recovery.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Substance and Behavioral Addictions recovery"
+   ]
+  },
+  {
+   "name": "Referral and Information Services",
+   "definition": "Information and referrals.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Social support"
+   ]
+  }
+ ],
+ "renames": {
+  "Elderly": "Seniors",
+  "Elderly with dementia": "Seniors with dementia",
+  "Low income elderly": "Low income seniors",
+  "Elderly Housing and Home Improvement": "Seniors Housing and Home Improvement",
+  "Elder sitting and caregiving services": "Senior sitting and caregiving services",
+  "Persons with mental health issues": "Persons with mental health conditions"
+ },
+ "legacy_aliases": {
+  "who_is_it_for": {
+   "Need shelter": {
+    "moved": {
+     "what_it_gives": [
+      "Housing/Shelter"
+     ]
+    }
+   },
+   "Need food support": {
+    "moved": {
+     "what_it_gives": [
+      "Food support"
+     ]
+    }
+   },
+   "Need mortgage support": {
+    "moved": {
+     "what_it_gives": [
+      "Mortgage assistance"
+     ]
+    }
+   },
+   "Individuals needing legal aid": {
+    "moved": {
+     "what_it_gives": [
+      "Legal aid and services"
+     ]
+    }
+   }
+  },
+  "what_it_gives": {
+   "Referral services": {
+    "to": [
+     "Information and referral services"
+    ]
+   },
+   "Information services": {
+    "to": [
+     "Information and referral services"
+    ]
+   },
+   "Rehabilitation services": {
+    "to": [
+     "Rehabilitation services (Physiotherapy/Occupational therapy)"
+    ]
+   },
+   "Technology assistance": {
+    "to": [
+     "Technology assistance (internet/computers)"
+    ]
+   },
+   "Tuition/Enrichment programmes": {
+    "to": [
+     "Tuition",
+     "Enrichment programmes"
+    ],
+    "review": true
+   },
+   "Home retrofitting and assistive technology": {
+    "to": [
+     "Home retrofitting",
+     "Assistive technology"
+    ],
+    "review": true
+   },
+   "Child protection services": {
+    "moved": {
+     "scheme_type": [
+      "Child and Youth Services"
+     ]
+    }
+   },
+   "Protection against violence": {
+    "moved": {
+     "scheme_type": [
+      "Protection from Violence"
+     ]
+    }
+   },
+   "Identification and safety tagging": {
+    "to": []
+   },
+   "COVID-19 support": {
+    "to": [],
+    "review": true
+   }
+  },
+  "scheme_type": {
+   "Low Income": {
+    "moved": {
+     "who_is_it_for": [
+      "Low income"
+     ]
+    }
+   },
+   "Family": {
+    "moved": {
+     "who_is_it_for": [
+      "Families"
+     ]
+    }
+   },
+   "Children": {
+    "moved": {
+     "who_is_it_for": [
+      "Children"
+     ]
+    }
+   },
+   "Youth": {
+    "moved": {
+     "who_is_it_for": [
+      "Youth"
+     ]
+    }
+   },
+   "Youth-at-Risk": {
+    "moved": {
+     "who_is_it_for": [
+      "Youth-at-risk"
+     ]
+    }
+   },
+   "Women": {
+    "moved": {
+     "who_is_it_for": [
+      "Women"
+     ]
+    }
+   },
+   "Single Parents": {
+    "moved": {
+     "who_is_it_for": [
+      "Single parents"
+     ]
+    }
+   },
+   "Elderly": {
+    "moved": {
+     "who_is_it_for": [
+      "Seniors"
+     ]
+    }
+   },
+   "Persons with Disabilities (PWD)": {
+    "moved": {
+     "who_is_it_for": [
+      "Persons with disabilities (PWDs)"
+     ]
+    }
+   },
+   "Special Needs": {
+    "moved": {
+     "who_is_it_for": [
+      "Persons with special needs"
+     ]
+    }
+   },
+   "Foreign Domestic Workers (FDWs)": {
+    "moved": {
+     "who_is_it_for": [
+      "Foreign domestic workers/maids"
+     ]
+    }
+   },
+   "Migrant Workers/Foreign Workers": {
+    "moved": {
+     "who_is_it_for": [
+      "Migrant workers/Foreign workers"
+     ]
+    }
+   },
+   "Foreign Spouse/Transnational Family Support": {
+    "moved": {
+     "who_is_it_for": [
+      "Transnational families/Foreign spouses"
+     ]
+    }
+   },
+   "Incarcerated/Inmate Family Support": {
+    "moved": {
+     "who_is_it_for": [
+      "Families of inmates or ex-offenders"
+     ]
+    }
+   },
+   "General Public Support": {
+    "moved": {
+     "who_is_it_for": [
+      "General public"
+     ]
+    }
+   }
+  }
+ },
+ "moved_out_need_parent": {
+  "Need shelter": "Housing & Shelter Support",
+  "Need food support": "Financial & Material Support",
+  "Need mortgage support": "Financial & Material Support",
+  "Individuals needing legal aid": "Justice & Legal Protection"
+ },
+ "provisional_intervention_parents": [
+  "Coaching",
+  "Community Development/Outreach",
+  "Crisis Assessment & Intervention",
+  "Enrichment Activities",
+  "Information & Communication Accessibility",
+  "Learning Intervention",
+  "Mentoring",
+  "Mobility Services",
+  "Psychoeducation"
+ ],
+ "embed_synonyms": {
+  "Seniors": "Elderly",
+  "Seniors with dementia": "Elderly with dementia",
+  "Low income seniors": "Low income elderly",
+  "Seniors Housing and Home Improvement": "Elderly Housing and Home Improvement",
+  "Senior sitting and caregiving services": "Elder sitting and caregiving services",
+  "Persons with mental health conditions": "Persons with mental health issues"
+ },
+ "category_mapping": {
+  "Financial Assistance": [
+   "Financial Assistance",
+   "Debt Assistance",
+   "Loss of Breadwinner Support",
+   "COVID-19 Support",
+   "Financial Planning and Retirement Support"
+  ],
+  "Family & Children": [
+   "Family and Parenting Support",
+   "Child and Youth Services"
+  ],
+  "Health & Wellbeing": [
+   "Healthcare",
+   "Dental Healthcare",
+   "Traditional Chinese Medicine (TCM)",
+   "General Healthcare Subsidies",
+   "Chronic or Terminal Illness Support",
+   "Mental Health",
+   "Mental Health Rehabilitation",
+   "End-of-Life/Palliative Care",
+   "Counselling and Emotional Support",
+   "Addictions Rehabilitation"
+  ],
+  "Housing & Food": [
+   "Housing/Shelter",
+   "Homelessness Support",
+   "Food Support",
+   "Seniors Housing and Home Improvement"
+  ],
+  "Education": [
+   "Education Support",
+   "Student Care Support"
+  ],
+  "Employment & Training": [
+   "Employment Support",
+   "Vocational Training",
+   "Ex-offender Support"
+  ],
+  "Seniors & Caregiving": [
+   "Caregiver Support",
+   "Residential Care",
+   "Active Ageing and Social Activities"
+  ],
+  "Disability & Transport": [
+   "Disability Support",
+   "Transport Support",
+   "Technology Support"
+  ],
+  "Legal & Safety": [
+   "Legal Aid",
+   "Abuse/Family Violence",
+   "Protection from Violence"
+  ],
+  "Community Support": [
+   "Referral and Information Services",
+   "Community Funding"
+  ]
+ },
+ "legacy_category_mapping": {
+  "Financial Assistance": [
+   "Low Income"
+  ],
+  "Family & Children": [
+   "Family",
+   "Children",
+   "Youth",
+   "Youth-at-Risk",
+   "Single Parents",
+   "Women"
+  ],
+  "Health & Wellbeing": [],
+  "Housing & Food": [],
+  "Education": [],
+  "Employment & Training": [],
+  "Seniors & Caregiving": [
+   "Elderly"
+  ],
+  "Disability & Transport": [
+   "Persons with Disabilities (PWD)",
+   "Special Needs"
+  ],
+  "Legal & Safety": [],
+  "Community Support": [
+   "General Public Support"
+  ]
+ }
+}
