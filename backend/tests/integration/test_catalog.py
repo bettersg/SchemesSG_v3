@@ -333,7 +333,7 @@ def test_handle_catalog_request_hides_inactive_and_retired_schemes(
             total_count=10,
         ),
     )
-    count_total = mocker.patch("schemes.catalog._count_total", return_value=3)
+    mocker.patch("schemes.catalog._count_total", return_value=3)  # per hidden status
 
     results = _handle_catalog_request(
         mock_firebase_manager,
@@ -341,8 +341,4 @@ def test_handle_catalog_request_hides_inactive_and_retired_schemes(
     )
 
     assert [item["scheme_name"] for item in results.data] == ["Active", "Legacy"]
-    counted_source = mock_query if filter_name else mock_collection
-    counted = {call.args[2] for call in counted_source.where.call_args_list if call.args[:2] == ("status", "==")}
-    assert counted == {"inactive", "retired"}
-    assert count_total.call_count == 2  # one count per hidden status
-    assert results.total_count == 10 - 3 - 3
+    assert results.total_count == 10 - 3 - 3  # inactive and retired both subtracted

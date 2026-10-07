@@ -127,8 +127,8 @@ def _get_listed_paginated_results(
     """Fill a page to ``limit``, skipping documents with an excluded status.
 
     The refill loop and the ``total_count`` adjustment both honour
-    ``exclude_statuses``, so a caller that hides more statuses still gets full
-    pages and a count that matches what it actually returns.
+    ``exclude_statuses``, so pages stay full and the count matches what is
+    actually returned.
     """
     data = []
     current_cursor = cursor
