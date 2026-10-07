@@ -66,6 +66,21 @@ const e2eSchemes = [
 
 const schemes = [buildScheme, ...e2eSchemes];
 
+// Like the real API, /catalog leaves inactive schemes out but /schemes/{id}
+// still serves them, so an old link renders the page with a dead-link warning.
+const unlistedSchemes = [
+  {
+    scheme_id: "dead-link-support",
+    scheme: "Dead Link Support",
+    agency: "Family Services Singapore",
+    scheme_type: ["Financial Assistance"],
+    summary: "Help that the agency may no longer offer at this address.",
+    link: "https://support.example.test/dead-link",
+    phone: "6123 4567",
+    status: "inactive",
+  },
+];
+
 /** Every scheme the fixture publishes, so callers can assert on the build. */
 export const PUBLIC_FIXTURE_SCHEME_IDS = schemes.map(
   (scheme) => scheme.scheme_id,
@@ -153,7 +168,9 @@ export function createPublicBuildFixtureServer() {
           error: "Public scheme requests must not send authorization",
         });
       }
-      const scheme = schemes.find((item) => item.scheme_id === schemeId);
+      const scheme = [...schemes, ...unlistedSchemes].find(
+        (item) => item.scheme_id === schemeId,
+      );
       if (scheme) return sendJson(response, 200, { data: scheme });
     }
 

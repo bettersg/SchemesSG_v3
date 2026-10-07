@@ -328,6 +328,19 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
         )}
       </div>
 
+      {scheme.status === "inactive" && (
+        <StatusBanner
+          variant="alert"
+          title="We couldn't reach this scheme's website"
+          className="mx-auto mb-8 max-w-3xl"
+        >
+          <p>
+            Its official link failed our last check, so the details below may be
+            out of date. Contact the agency to confirm before you apply.
+          </p>
+        </StatusBanner>
+      )}
+
       {!hasDetail && (
         <section className="mb-10 rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-6">
           <p className="mb-3 text-sm leading-relaxed text-(--schemes-status-info-text)">
