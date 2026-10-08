@@ -149,6 +149,43 @@ const _eventNamesAreExhaustive: MissingFromEventNames extends never ? true : nev
 void _eventNamesAreExhaustive;
 
 /**
+ * Events reported before Analytics finished initialising, held until it has.
+ *
+ * `AnalyticsProvider` can only resolve `isSupported()` asynchronously, and
+ * React runs child effects before parent ones, so anything reported from a
+ * mount effect runs first: `view_item` on a scheme page opened cold, and
+ * `chat_message_send` on the automatic resume of an unanswered turn.
+ *
+ * Durations are computed into params before queueing, so only GA4's own event
+ * timestamp shifts, by the few hundred milliseconds until the flush.
+ */
+const pendingEvents: Array<{ event: string; params: Record<string, unknown> }> =
+  [];
+
+/**
+ * Bounded because a browser where `isSupported()` resolves false never flushes.
+ * Twenty covers one page load's events.
+ */
+const PENDING_LIMIT = 20;
+
+/** Called by `AnalyticsProvider` once the Analytics instance exists. */
+export function flushPendingEvents(): void {
+  const globalForAnalytics = globalThis as typeof globalThis & {
+    __schemesSgAnalytics?: Analytics;
+  };
+  const analytics = globalForAnalytics.__schemesSgAnalytics;
+  if (!analytics) return;
+
+  for (const queued of pendingEvents.splice(0, pendingEvents.length)) {
+    try {
+      logEvent(analytics, queued.event, queued.params);
+    } catch {
+      // Analytics must never surface to the user.
+    }
+  }
+}
+
+/**
  * Records an analytics event. Never throws and never blocks render: no-ops
  * silently server-side, when the measurement ID is absent, when isSupported()
  * is false, and when an extension blocks the SDK. Callers can therefore call it
@@ -168,6 +205,12 @@ export function track<K extends EventName>(event: K, params: EventMap[K]): void 
     };
 
     if (!globalForAnalytics.__schemesSgAnalytics) {
+      if (pendingEvents.length < PENDING_LIMIT) {
+        pendingEvents.push({
+          event: event as string,
+          params: params as Record<string, unknown>,
+        });
+      }
       return;
     }
 

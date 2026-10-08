@@ -25,28 +25,32 @@ start reporting into one property.
 
 ## Status
 
-15 events are defined in `src/lib/analytics.ts`; 14 are instrumented. `search`
-is the exception: it has no call site because the catalog keyword search it
-would measure is still commented out, and its `result_count` overlaps
+15 events are defined in `src/lib/analytics.ts`; 12 are instrumented today.
+
+`select_item` and `filter_apply` are defined here but get their call sites with
+the catalog work, because those changes share the same files.
+
+`search` has no call site at all: the catalog keyword search it would measure is
+still commented out, and its `result_count` overlaps
 `chat_answer_shown.schemes_found`. Decide what it measures before wiring it.
 
-|                        | Event       | Kind | Instrumented                               | Call site |
-| ---------------------- | ----------- | ---- | ------------------------------------------ | --------- |
-| `chat_message_send`    | custom      | yes  | `chat-page.tsx` → `fetchResponse`          |
-| `chat_answer_shown`    | custom      | yes  | `chat-page.tsx` → `done` branch            |
-| `chat_turn_aborted`    | custom      | yes  | `chat-page.tsx` → `handleStopGenerating`   |
-| `chat_turn_failed`     | custom      | yes  | `chat-page.tsx` → `handleStreamError`      |
-| `chat_turn_abandoned`  | custom      | yes  | `chat-page.tsx` → `visibilitychange`       |
-| `agency_contact_click` | custom      | yes  | `agency-contact-card.tsx`                  |
-| `scheme_shared`        | custom      | yes  | `scheme-detail.tsx` → `handleShare`        |
-| `search`               | recommended | no   | see Status                                 |
-| `select_item`          | recommended | yes  | `scheme-card.tsx`, list id from the parent |
-| `view_item`            | recommended | yes  | `scheme-detail.tsx`, on mount per scheme   |
-| `filter_apply`         | custom      | yes  | `schemes-filter.tsx`                       |
-| `docs_section_view`    | custom      | yes  | `developers-page-content.tsx`              |
-| `code_sample_copy`     | custom      | yes  | `developers/code-block.tsx`                |
-| `generate_lead`        | recommended | yes  | `developers-page-content.tsx`              |
-| `select_content`       | recommended | yes  | `sections/faq-section.tsx`                 |
+| Event                  | Kind        | Instrumented | Call site                                |
+| ---------------------- | ----------- | ------------ | ---------------------------------------- |
+| `chat_message_send`    | custom      | yes          | `chat-page.tsx` → `fetchResponse`        |
+| `chat_answer_shown`    | custom      | yes          | `chat-page.tsx` → `done` branch          |
+| `chat_turn_aborted`    | custom      | yes          | `chat-page.tsx` → `handleStopGenerating` |
+| `chat_turn_failed`     | custom      | yes          | `chat-page.tsx` → `handleStreamError`    |
+| `chat_turn_abandoned`  | custom      | yes          | `chat-page.tsx` → `visibilitychange`     |
+| `agency_contact_click` | custom      | yes          | `agency-contact-card.tsx`                |
+| `scheme_shared`        | custom      | yes          | `scheme-detail.tsx` → `handleShare`      |
+| `search`               | recommended | no           | see Status                               |
+| `select_item`          | recommended | no           | lands with the catalog work              |
+| `view_item`            | recommended | yes          | `scheme-detail.tsx`, on mount per scheme |
+| `filter_apply`         | custom      | no           | lands with the catalog work              |
+| `docs_section_view`    | custom      | yes          | `developers-page-content.tsx`            |
+| `code_sample_copy`     | custom      | yes          | `developers/code-block.tsx`              |
+| `generate_lead`        | recommended | yes          | `developers-page-content.tsx`            |
+| `select_content`       | recommended | yes          | `sections/faq-section.tsx`               |
 
 ## Event reference
 
@@ -214,15 +218,14 @@ changed later without losing data; the event parameter cannot.
 | Scheme Page Share Outcome            | `share_outcome`     | Scheme detail page — how a share ended: native share sheet, dismissed, copied to clipboard, or failed.                                                    | yes        |
 | Search Has Results                   | `has_results`       | Scheme search — whether any schemes were returned.                                                                                                        | no         |
 | Catalog Filter Name                  | `filter_name`       | Catalog browse — which filter was applied.                                                                                                                | no         |
-| Developer Docs Section               | `section_id`        | Developer docs (/developers) — which documentation section scrolled into view. Partner API audience, not scheme seekers.                                  | no         |
-| Developer Docs Code Sample Operation | `operation`         | Developer docs (/developers) — which partner API operation a copied code sample demonstrates.                                                             | no         |
-| Developer Docs Code Sample Language  | `code_language`     | Developer docs (/developers) — programming language of a copied code sample.                                                                              | no         |
+| Developer Docs Section               | `section_id`        | Developer docs (/developers) — which documentation section scrolled into view. Partner API audience, not scheme seekers.                                  | yes        |
+| Developer Docs Code Sample Operation | `operation`         | Developer docs (/developers) — which partner API operation a copied code sample demonstrates.                                                             | yes        |
+| Developer Docs Code Sample Language  | `code_language`     | Developer docs (/developers) — programming language of a copied code sample.                                                                              | yes        |
 
 > `code_language`, not `language`. GA4 automatically collects a `language`
 > parameter (browser language, surfaced as the built-in Language dimension), so
-> registering a custom dimension against that name risks shadowing it. The code
-> still sends `language` — rename it before instrumenting `code_sample_copy`.
-> Free to do now, since that event has no call sites.
+> registering a custom dimension against that name would shadow it. The code
+> sends `code_language` already; register exactly that string.
 
 `turn_index` is registered as a dimension rather than a metric: it is an
 ordinal, and an average turn index means nothing.

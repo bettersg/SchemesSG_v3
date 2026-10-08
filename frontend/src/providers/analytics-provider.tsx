@@ -3,6 +3,7 @@
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 import { useEffect, type ReactNode } from "react";
 import { getFirebaseApp } from "@/app/firebaseConfig";
+import { flushPendingEvents } from "@/lib/analytics";
 
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -25,6 +26,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           // getAnalytics, not initializeAnalytics with send_page_view: false.
           // Enhanced Measurement is the intended source of page_view.
           globalForAnalytics.__schemesSgAnalytics = getAnalytics(app);
+          flushPendingEvents();
         }
       })
       .catch((error) => {

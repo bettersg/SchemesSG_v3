@@ -13,6 +13,7 @@ vi.mock("firebase/analytics", () => ({
 import {
   EVENT_NAMES,
   EVENT_PARAM_KEYS,
+  flushPendingEvents,
   track,
   type SchemeItem,
 } from "./analytics";
@@ -134,6 +135,76 @@ describe("analytics", () => {
       expect(() => {
         track("filter_apply", { filter_name: "eligibility" });
       }).not.toThrow();
+    });
+  });
+
+  describe("events reported before initialisation", () => {
+    const mockAnalytics = { name: "test-analytics" };
+    type GlobalWithAnalytics = typeof globalThis & {
+      __schemesSgAnalytics?: unknown;
+    };
+    const setInitialised = () => {
+      (globalThis as GlobalWithAnalytics).__schemesSgAnalytics = mockAnalytics;
+    };
+    const setUninitialised = () => {
+      delete (globalThis as GlobalWithAnalytics).__schemesSgAnalytics;
+    };
+
+    beforeEach(() => {
+      // The queue is module state, so drain whatever earlier tests left in it.
+      setInitialised();
+      flushPendingEvents();
+      setUninitialised();
+      vi.clearAllMocks();
+      // clearAllMocks keeps implementations, and an earlier test makes logEvent
+      // throw.
+      firebaseAnalyticsMocks.logEvent.mockImplementation(() => {});
+    });
+
+    it("delivers a mount-time event once analytics initialises", () => {
+      const items: SchemeItem[] = [
+        { item_id: "scheme-1", item_name: "Rental Support" },
+      ];
+      track("view_item", { items });
+      expect(firebaseAnalyticsMocks.logEvent).not.toHaveBeenCalled();
+
+      setInitialised();
+      flushPendingEvents();
+
+      expect(firebaseAnalyticsMocks.logEvent).toHaveBeenCalledTimes(1);
+      expect(firebaseAnalyticsMocks.logEvent).toHaveBeenCalledWith(
+        mockAnalytics,
+        "view_item",
+        { items },
+      );
+    });
+
+    it("keeps order and does not replay on a second flush", () => {
+      track("chat_message_send", {
+        turn_index: 1,
+        send_trigger: "auto_resume",
+      });
+      track("docs_section_view", { section_id: "getting-started" });
+
+      setInitialised();
+      flushPendingEvents();
+      flushPendingEvents();
+
+      expect(
+        firebaseAnalyticsMocks.logEvent.mock.calls.map((call) => call[1]),
+      ).toEqual(["chat_message_send", "docs_section_view"]);
+    });
+
+    it("stops queueing rather than growing without bound", () => {
+      // A browser where isSupported() resolves false never flushes.
+      for (let i = 0; i < 50; i += 1) {
+        track("docs_section_view", { section_id: `section-${i}` });
+      }
+
+      setInitialised();
+      flushPendingEvents();
+
+      expect(firebaseAnalyticsMocks.logEvent).toHaveBeenCalledTimes(20);
     });
   });
 

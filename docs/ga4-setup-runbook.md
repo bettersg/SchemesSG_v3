@@ -230,14 +230,21 @@ All 12 are **Scope: Event**.
 | 11 | `Developer Docs Code Sample Operation` | Event | `operation` | Developer docs (/developers) — which partner API operation a copied code sample demonstrates. |
 | 12 | `Developer Docs Code Sample Language` | Event | `code_language` | Developer docs (/developers) — programming language of a copied code sample. |
 
-Rows 1 to 7 belong to instrumented events and will populate. Rows 8 to 12
-belong to events that have no call sites yet and will stay empty — expected,
-not a misconfiguration.
+Rows 1 to 7 and rows 10 to 12 belong to instrumented events and will populate.
+Rows 8 and 9 stay empty for now, which is expected rather than a
+misconfiguration: row 8 (`has_results`) belongs to `search`, which has no call
+site at all, and row 9 (`filter_name`) is wired up with the catalog work.
 
-> **Row 12 depends on a code change.** The app currently sends `language`, not
-> `code_language`. `language` is an automatically collected GA4 parameter, so it
-> must not be used for a custom dimension. Register `code_language` as above and
-> rename it in `src/lib/analytics.ts` before `code_sample_copy` is instrumented.
+> **Row 12 is `code_language`, not `language`.** GA4 collects `language`
+> automatically for the browser locale, so it cannot be reused for a custom
+> dimension. The app already sends `code_language`, so register exactly that
+> string; nothing in the code needs changing.
+
+Parameters GA4 already understands are deliberately absent. `method`,
+`content_type` and `item_id` are recommended-event parameters with built-in
+dimensions, and `item_list_id`, `index` and `items` belong to the ecommerce
+schema, reported as Item list ID, Item list position and the item fields. A
+parameter cannot be both built-in and custom, so registering these is rejected.
 
 ## Step 6 — Register 5 custom metrics
 
