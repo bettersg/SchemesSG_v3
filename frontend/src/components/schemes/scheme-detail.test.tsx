@@ -124,4 +124,38 @@ describe("SchemeDetail", () => {
       screen.queryByRole("navigation", { name: "On this page" }),
     ).not.toBeInTheDocument();
   });
+
+  it("warns when the scheme's official website failed our last check", () => {
+    render(
+      <SchemeDetail
+        scheme={makeScheme({
+          schemeName: "Dead Link Scheme",
+          status: "inactive",
+          link: "https://example.test/gone",
+          contact: [{ phones: ["6123 4567"] }],
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "We couldn't reach this scheme's website",
+        level: 2,
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/details below may be out of date/i)).toBeVisible();
+    // The agency's contact details stay, so people can still confirm with them.
+    expect(screen.getByText("6123 4567")).toBeVisible();
+  });
+
+  it.each([{ status: "active" as const }, { status: undefined }])(
+    "shows no website warning for a listed scheme (status $status)",
+    ({ status }) => {
+      render(<SchemeDetail scheme={makeScheme({ status })} />);
+
+      expect(
+        screen.queryByText("We couldn't reach this scheme's website"),
+      ).not.toBeInTheDocument();
+    },
+  );
 });

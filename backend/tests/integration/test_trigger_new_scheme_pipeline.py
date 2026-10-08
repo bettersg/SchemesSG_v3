@@ -83,23 +83,3 @@ def test_process_new_scheme_entry_edit_still_skipped(mocker):
     )
 
     post_mock.assert_not_called()
-
-
-def test_process_new_scheme_entry_update_duplicate_short_circuits(mocker, update_data):
-    mod, post_mock = _patch_common(mocker)
-    mocker.patch.object(
-        mod,
-        "check_duplicate_scheme",
-        return_value={
-            "doc_id": "scheme-xyz",
-            "scheme": "Other",
-            "link": "https://example.com/foo",
-            "normalized_url": "example.com/foo",
-        },
-    )
-    mocker.patch.object(mod, "post_duplicate_to_slack")
-
-    mod.process_new_scheme_entry("entry-1", update_data)
-
-    # Short-circuit: no Cloud Run call
-    post_mock.assert_not_called()

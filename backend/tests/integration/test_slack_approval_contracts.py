@@ -238,3 +238,32 @@ def test_slack_retirement_rejection_requires_reason(
         "errors": {"retirement_rejection_reason_block": "A rejection reason is required"},
     }
     assert fake_firestore.get_document("schemeEntries", "entry-retire") == original_entry
+
+
+def test_slack_link_restore_rejection_records_reason_and_keeps_scheme_delisted(
+    mock_request,
+    mocker,
+    fake_firestore,
+    fake_slack_client,
+):
+    target = {"scheme": "Blocks Bots Support", "status": "inactive", "link_check_fail_streak": 2}
+    fake_firestore.seed("schemes", "scheme-1", target)
+    fake_firestore.seed(
+        "schemeEntries",
+        "entry-restore",
+        {"typeOfRequest": "restore", "targetSchemeId": "scheme-1", "Scheme": "Blocks Bots Support"},
+    )
+    _wire_external_boundaries(mocker, fake_firestore, fake_slack_client)
+
+    slack_module.slack_interactive(_request(mock_request, _block_action("reject_link_restore", "entry-restore")))
+    view = fake_slack_client.opened_views[0]["view"]
+    response = slack_module.slack_interactive(
+        _request(mock_request, _retirement_rejection_event(view["private_metadata"], "Page is gone"))
+    )
+
+    assert view["title"]["text"] == "Reject Link Restore"
+    assert json.loads(response.get_data()) == {"response_action": "clear"}
+    entry = fake_firestore.get_document("schemeEntries", "entry-restore")
+    assert (entry["Status"], entry["rejection_reason"]) == ("rejected", "Page is gone")
+    assert fake_firestore.get_document("schemes", "scheme-1") == target
+    assert "LINK RESTORE REJECTED" in json.dumps(fake_slack_client.updated_messages[-1])
