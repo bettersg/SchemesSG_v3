@@ -11,6 +11,12 @@ import NewChatModal from "@/components/chat/new-chat-modal";
 import { mapToScheme } from "@/lib/scheme-mappers";
 import { ChatStreamEvent, streamChat } from "@/lib/schemes";
 import { fetchWithAuth } from "@/lib/api";
+import { track } from "@/lib/analytics";
+
+// Module scope so the React Compiler purity lint does not flag Date.now(): it
+// cannot tell a handler declared in the component body from render code.
+const markNow = () => Date.now();
+const msSince = (start: number) => Date.now() - start;
 import {
   productSegmentedIndicator,
   productSegmentedList,
@@ -44,6 +50,9 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setShowQuickReplies,
     draftMessage,
     setDraftMessage,
+    resetModalIsOpen,
+    setResetModalIsOpen,
+    consumeIsResumedTurn,
   } = useChat();
 
   const [isGenerating, setIsGenerating] = useState(
@@ -52,7 +61,13 @@ export default function ChatPage({ onReset }: ChatPageProps) {
   const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
   const statusStepsRef = useRef<StatusStep[]>([]);
   const [streamError, setStreamError] = useState<string | null>(null);
-  const [resetModalIsOpen, setResetModalIsOpen] = useState(false);
+  // Refs, not state: read inside stream callbacks, must not re-render.
+  const sendAtRef = useRef<number | null>(null);
+  const firstTokenAtRef = useRef<number | null>(null);
+  const turnIndexRef = useRef(0);
+  const lastMilestoneRef = useRef<"sent" | "status" | "token" | "results">(
+    "sent",
+  );
   const [streamingBlocks, setStreamingBlocks] = useState<string[]>([]);
   const streamingBlocksRef = useRef<string[]>([]);
   // Mobile-only Tabs selection (desktop shows chat + schemes side by side).
@@ -85,7 +100,16 @@ export default function ChatPage({ onReset }: ChatPageProps) {
       const requestKey = `${sessionId || "new"}:${messages.length}:${lastMessage.text}`;
       if (initialChatRequestKeys.has(requestKey)) return;
       initialChatRequestKeys.add(requestKey);
-      fetchResponse(lastMessage.text, sessionId || undefined).finally(() => {
+      // Only a turn restored from sessionStorage counts as auto_resume; a hero
+      // handoff reaches this same effect without rehydrating.
+      const turnIndex = messages.filter((m) => m.type === "user").length;
+      const isResumed = consumeIsResumedTurn(
+        `${messages.length}:${lastMessage.text}`,
+      );
+      fetchResponse(lastMessage.text, sessionId || undefined, {
+        turnIndex,
+        sendTrigger: isResumed ? "auto_resume" : "user_submit",
+      }).finally(() => {
         initialChatRequestKeys.delete(requestKey);
       });
     }
@@ -97,10 +121,23 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setMessages((prev) => [...prev, { type: "user", text: trimmed }]);
     setDraftMessage("");
     setShowQuickReplies(false);
-    await fetchResponse(trimmed, sessionId);
+    // `messages` is the pre-setMessages snapshot, so this turn isn't counted yet.
+    await fetchResponse(trimmed, sessionId, {
+      turnIndex: messages.filter((m) => m.type === "user").length + 1,
+      sendTrigger: "user_submit",
+    });
   };
 
   const handleStopGenerating = () => {
+    // Separate from a failure: both run the same rollback, but one is a user
+    // decision and the other is a bug.
+    if (sendAtRef.current !== null) {
+      track("chat_turn_aborted", {
+        ms_since_send: msSince(sendAtRef.current),
+        had_streamed_text: streamingBlocksRef.current.length > 0,
+      });
+      sendAtRef.current = null;
+    }
     abortControllerRef.current?.abort();
     rollbackActiveRequest();
   };
@@ -134,7 +171,24 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     });
   };
 
-  const fetchResponse = async (userMessage: string, sessionId?: string) => {
+  const fetchResponse = async (
+    userMessage: string,
+    sessionId?: string,
+    analytics?: {
+      turnIndex: number;
+      sendTrigger: "user_submit" | "auto_resume";
+    },
+  ) => {
+    if (analytics) {
+      sendAtRef.current = markNow();
+      firstTokenAtRef.current = null;
+      lastMilestoneRef.current = "sent";
+      turnIndexRef.current = analytics.turnIndex;
+      track("chat_message_send", {
+        turn_index: analytics.turnIndex,
+        send_trigger: analytics.sendTrigger,
+      });
+    }
     // snapshots chat state
     abortControllerRef.current?.abort();
     const controller = new AbortController();
@@ -142,7 +196,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     const requestId = activeRequestIdRef.current + 1;
     activeRequestIdRef.current = requestId;
     // Claim the in-flight slot before the first await, not on the stream's
-    // onStart — response headers can be seconds away on a slow connection, and
+    // onStart: response headers can be seconds away on a slow connection, and
     // handleSend's guard is useless while it still reads false.
     setIsGenerating(true);
     schemesBeforeActiveRequestRef.current = schemes;
@@ -195,6 +249,9 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           label?: string;
           message?: string;
         };
+        if (lastMilestoneRef.current === "sent") {
+          lastMilestoneRef.current = "status";
+        }
         appendStatusStep("action_message", data.label, data.message, requestId);
         break;
       }
@@ -208,6 +265,11 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           messageIndex?: number;
           message_index?: number;
         };
+        // First visible token: the latency that decides whether they wait.
+        if (firstTokenAtRef.current === null) {
+          firstTokenAtRef.current = markNow();
+          lastMilestoneRef.current = "token";
+        }
         appendStreamingChunk(
           data.chunk ?? data.content ?? data.text ?? "",
           data.blockIndex ??
@@ -231,6 +293,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
         break;
       }
       case "schemes_update": {
+        lastMilestoneRef.current = "results";
         const data = (event.data ?? {}) as { schemes?: RawSchemeData[] };
         const rawSchemes = data.schemes;
         if (rawSchemes) {
@@ -256,6 +319,19 @@ export default function ChatPage({ onReset }: ChatPageProps) {
         break;
       }
       case "done": {
+        if (sendAtRef.current !== null) {
+          const doneAt = markNow();
+          track("chat_answer_shown", {
+            turn_index: turnIndexRef.current,
+            schemes_found: schemes.length,
+            // 0 when the stream finished without ever emitting text.
+            ms_to_first_token: firstTokenAtRef.current
+              ? firstTokenAtRef.current - sendAtRef.current
+              : 0,
+            ms_to_done: doneAt - sendAtRef.current,
+          });
+          sendAtRef.current = null;
+        }
         commitStreamingBlocks(true);
         setStatusSteps([]);
         setIsGenerating(false);
@@ -348,6 +424,17 @@ export default function ChatPage({ onReset }: ChatPageProps) {
   );
 
   const handleStreamError = () => {
+    if (sendAtRef.current !== null) {
+      const hadText = streamingBlocksRef.current.length > 0;
+      track("chat_turn_failed", {
+        // Never the error text, only the coarse stage: failing before any
+        // token means the request fell over, after means the stream broke.
+        failure_stage: hadText ? "stream" : "request",
+        ms_since_send: msSince(sendAtRef.current),
+        had_streamed_text: hadText,
+      });
+      sendAtRef.current = null;
+    }
     rollbackActiveRequest(
       "The connection dropped before the response finished. Send it again when ready.",
     );
@@ -358,6 +445,25 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setStatusSteps([]);
     setIsGenerating(false);
   };
+
+  // Abandonment is an absence: no done, no stop, no error. On visibilitychange
+  // to hidden rather than pagehide, because logEvent has no beacon transport
+  // and the network is still up at hidden. Overcounts a tab switch that
+  // returns, so read it as an upper bound.
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState !== "hidden") return;
+      if (sendAtRef.current === null) return;
+      track("chat_turn_abandoned", {
+        last_milestone: lastMilestoneRef.current,
+        ms_since_send: Date.now() - sendAtRef.current,
+      });
+      sendAtRef.current = null;
+    };
+
+    document.addEventListener("visibilitychange", onHidden);
+    return () => document.removeEventListener("visibilitychange", onHidden);
+  }, []);
 
   const rollbackActiveRequest = useCallback(
     (errorMessage?: string) => {
@@ -415,6 +521,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     setSchemes([]);
     setMessages([]);
     setSessionId("");
+    setResetModalIsOpen(false);
     onReset();
     // Supersede the in-flight request the abort below cancels, so its onEnd
     // can't pass the requestId guard and run handleStreamEnd after the reset.
@@ -454,12 +561,11 @@ export default function ChatPage({ onReset }: ChatPageProps) {
 
   return (
     <div className="w-full max-w-[1400px] h-full mx-auto flex flex-col bg-(--schemes-bg) overflow-hidden">
-      {/* Desktop: Split layout: Chat + SchemeList */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {/* Chat column — position:relative so the left drawer can anchor to it */}
+        {/* position:relative so the left drawer can anchor to this column. */}
         <div className="basis-1 flex-1 flex flex-col overflow-hidden relative min-w-0">
-          {/* Messages — no onNoticePress: desktop shows the schemes list
-              alongside, so the notice is a static badge, not a tab jump. */}
+          {/* No onNoticePress: desktop shows the schemes list alongside, so
+              the notice is a static badge, not a tab jump. */}
           <ChatMessageList
             messages={messages}
             streamingBlocks={streamingBlocks}
@@ -495,7 +601,6 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           />
         </div>
 
-        {/* Right scheme list — desktop only */}
         <SchemesList
           handleNewChat={() => setResetModalIsOpen(true)}
           isGenerating={schemesListIsLoading}

@@ -34,7 +34,7 @@ jobs:
                   key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}
             - name: Install dependencies and build
               env:
-                  APP_ENV: prod
+                  APP_ENV: production
                   NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
                   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
                   NEXT_PUBLIC_FB_API_KEY: ${{ vars.NEXT_PUBLIC_FB_API_KEY }}
@@ -61,6 +61,10 @@ jobs:
                   entryPoint: ./frontend
               env:
                   FIREBASE_CLI_EXPERIMENTS: webframeworks
+                  # The webframeworks deploy rebuilds the app, so every build-time
+                  # variable has to be repeated here or the deployed bundle silently
+                  # falls back to next.config's default of "development".
+                  APP_ENV: production
                   NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
                   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
                   NEXT_PUBLIC_FB_API_KEY: ${{ vars.NEXT_PUBLIC_FB_API_KEY }}
