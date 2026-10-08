@@ -278,7 +278,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               <SchemeLogo
                 agency={scheme.agency}
                 image={scheme.image}
-                size="lg"
+                size="md"
               />
               <div className="flex min-w-0 flex-col gap-2">
                 {scheme.agency && (
