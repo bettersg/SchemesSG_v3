@@ -14,3 +14,15 @@ def test_router_prompt_includes_stray_tamil_regression_rule_for_email_drafts():
     assert ORIGINAL_ISSUE_EMAIL_REQUEST.startswith("Draft an email")
     assert "stray Tamil characters in an English reply" in ROUTER_AGENT_SYSTEM_TEMPLATE
     assert "out-of-place characters from unrelated writing systems" in ROUTER_AGENT_SYSTEM_TEMPLATE
+
+
+def test_router_prompt_preserves_cards_for_fresh_searches():
+    assert "Do not use it for new searches, in the same turn as search_schemes" in ROUTER_AGENT_SYSTEM_TEMPLATE
+    assert "mention a few notable schemes" in ROUTER_AGENT_SYSTEM_TEMPLATE
+    assert "without replacing the full search result cards" in ROUTER_AGENT_SYSTEM_TEMPLATE
+
+
+def test_router_prompt_keeps_cards_in_sync_for_user_requested_refinements():
+    assert "current message asks you to narrow, shortlist, rank" in ROUTER_AGENT_SYSTEM_TEMPLATE
+    assert "you MUST call filter_rerank_by_directive in the same turn" in ROUTER_AGENT_SYSTEM_TEMPLATE
+    assert 'even if the user does not use the word "filter"' in ROUTER_AGENT_SYSTEM_TEMPLATE
