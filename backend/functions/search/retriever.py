@@ -1,4 +1,5 @@
 import os
+from time import perf_counter
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -7,6 +8,7 @@ from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
 from google.cloud.firestore_v1.vector import Vector
 from integrations import EmbeddingsManager, FirebaseManager
 from loguru import logger
+from utils.latency import log_elapsed
 from utils.scheme_lifecycle import RETIRED_STATUS
 
 from .scorers import compute_vec_scores, rank_results
@@ -49,10 +51,14 @@ def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str
 
     db = firebase_manager.firestore_client
     unique_scheme_ids = list(dict.fromkeys([scheme_id.strip() for scheme_id in scheme_ids if scheme_id.strip()]))
+    if not unique_scheme_ids:
+        return [], []
+
     scheme_details_by_id: dict[str, Dict] = {}
 
-    for scheme_id in unique_scheme_ids:
-        doc = db.collection(SCHEMES_COLLECTION).document(scheme_id).get()
+    collection = db.collection(SCHEMES_COLLECTION)
+    doc_refs = [collection.document(scheme_id) for scheme_id in unique_scheme_ids]
+    for doc in db.get_all(doc_refs):
         if not doc.exists:
             continue
 
@@ -61,7 +67,7 @@ def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str
             continue
         scheme_data["scheme_id"] = doc.id
         scheme_data.pop("scraped_text", None)
-        scheme_details_by_id[scheme_id] = scheme_data
+        scheme_details_by_id[doc.id] = scheme_data
 
     scheme_details = [scheme_details_by_id[scheme_id] for scheme_id in unique_scheme_ids if scheme_id in scheme_details_by_id]
     missing_scheme_ids = [scheme_id for scheme_id in unique_scheme_ids if scheme_id not in scheme_details_by_id]
@@ -96,9 +102,9 @@ class SearchModel:
 
         cls.initialised = True
 
-    def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
+    def fetch_schemes_batch(self, scheme_ids: List[str], trace_id: str | None = None) -> List[Dict]:
         """
-        Fetch multiple schemes, batching to respect Firestore's 30-item 'in' limit, and remove 'scraped_text' field if present.
+        Fetch multiple schemes with one Firestore get_all call and remove scraped_text.
 
         Args:
             scheme_ids (List[str]): List of scheme IDs to fetch
@@ -108,7 +114,9 @@ class SearchModel:
         """
 
         # Lifecycle changes must be visible immediately; do not cache documents.
+        started_at = perf_counter()
         scheme_details, _ = fetch_schemes_by_ids(self.__class__.firebase_manager, scheme_ids)
+        log_elapsed(logger, trace_id, "scheme_hydration", started_at, candidate_count=len(scheme_ids))
         return scheme_details
 
     def __new__(cls, firebase_manager: FirebaseManager):
@@ -126,7 +134,12 @@ class SearchModel:
             self.__class__.firebase_manager = firebase_manager
             self.__class__.initialise()
 
-    def search(self, query_text: str, pool_size: Optional[int] = None) -> pd.DataFrame:
+    def search(
+        self,
+        query_text: str,
+        pool_size: Optional[int] = None,
+        trace_id: str | None = None,
+    ) -> pd.DataFrame:
         """
         Embed the input query, search the Firestore vector index across the whole
         candidate pool, and return a merged DataFrame containing scheme metadata
@@ -136,7 +149,9 @@ class SearchModel:
             pool_size = RETRIEVAL_LIMIT
 
         # Step 1: Generate query embedding
+        started_at = perf_counter()
         vec = self.__class__.embeddings.embed_query(query_text)
+        log_elapsed(logger, trace_id, "query_embedding", started_at)
 
         # Step 2: Query embeddings collection using Firestore vector search,
         # asking Firestore to return the actual cosine distance per match.
@@ -152,7 +167,9 @@ class SearchModel:
         )
 
         # Get matching doc_ids and their real cosine distances from the results
+        started_at = perf_counter()
         embedding_results = vector_query.get()
+        log_elapsed(logger, trace_id, "firestore_vector_query", started_at, candidate_count=len(embedding_results))
         ids = [doc.id for doc in embedding_results]
         distances = [doc.to_dict().get("vector_distance") for doc in embedding_results]
 
@@ -165,7 +182,7 @@ class SearchModel:
 
         # Step 3: Fetch full scheme data from schemes collection
         try:
-            scheme_df = pd.DataFrame(self.fetch_schemes_batch(ids))
+            scheme_df = pd.DataFrame(self.fetch_schemes_batch(ids, trace_id=trace_id))
         except Exception as e:
             logger.error("Error fetching schemes: %s", e)
             raise
@@ -190,6 +207,7 @@ class SearchModel:
         query_text: str,
         threshold: Optional[float] = None,
         requested_target: Optional[int] = None,
+        trace_id: str | None = None,
     ) -> pd.DataFrame:
         """
         Perform hybrid vector + BM25 retrieval, then return a relevance-driven
@@ -209,14 +227,16 @@ class SearchModel:
 
         # Retrieve the full candidate pool, independent of how many we return.
         # Lifecycle changes must be visible immediately, so ranked metadata is not cached.
-        results = self.search(query_text)
+        results = self.search(query_text, trace_id=trace_id)
 
         # Handle empty results - skip ranking if no vector results
         if results.empty:
             logger.warning(f"No search results to rank for query: {query_text}")
             return results
 
+        started_at = perf_counter()
         ranked = self.rank(query_text, results).drop_duplicates("scheme_id")
+        log_elapsed(logger, trace_id, "bm25_hybrid_ranking", started_at, candidate_count=len(results))
 
         relevant = ranked[ranked["combined_scores"] >= threshold]
         return relevant.head(cap)
