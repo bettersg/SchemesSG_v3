@@ -136,10 +136,10 @@ def test_update_approval_patches_target_scheme(mocker):
         "link_check_error",
         "link_suspect",
         "status_reason",
-        "link_check_manual_verified_at",
-        "link_check_manual_verified_by",
     ):
         assert patch[cleared] is mod.firestore.DELETE_FIELD
+    # A Checker wrong verification is tied to its link, so the update leaves it alone.
+    assert not {"link_check_manual_verified_at", "link_check_manual_verified_link"} & set(patch)
 
     # Must not have created a new doc
     target_ref.set.assert_not_called()
