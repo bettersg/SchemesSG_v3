@@ -19,6 +19,7 @@
 /backend/scripts/check_coverage.py @longwind48
 /backend/tests/unit/test_coverage_ratchet.py @longwind48
 /backend/functions/requirements.txt @longwind48
+/backend/firebase.json @longwind48
 /frontend/package.json @longwind48
 /frontend/package-lock.json @longwind48
 /frontend/playwright.nightly.config.ts @longwind48
