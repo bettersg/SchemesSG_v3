@@ -44,6 +44,7 @@ import os
 from typing import Dict, Optional
 
 import requests
+from fb_manager.firebaseManager import FirebaseManager
 from firebase_admin import auth
 from firebase_functions import options, scheduler_fn
 from loguru import logger
@@ -90,6 +91,7 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
         logger.info(f"Making warm-up request to: {url}")
 
         # Create a custom token for warmup requests
+        FirebaseManager()
         custom_token = auth.create_custom_token("warmup-user")
 
         # Exchange custom token for ID token
@@ -97,6 +99,7 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
             "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken",
             params={"key": os.getenv("FB_API_KEY")},
             json={"token": custom_token.decode(), "returnSecureToken": True},
+            timeout=10,
         )
 
         if response.status_code != 200:
@@ -235,9 +238,9 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
         if all(results):
             logger.info("Successfully kept all endpoints warm")
         else:
-            logger.warning(f"Failed to keep some endpoints warm. Success rate: {sum(results)}/{len(results)}")
+            failed = [endpoint["name"] for endpoint, success in zip(endpoints, results) if not success]
+            raise RuntimeError(f"Warmup failed for: {', '.join(failed)}")
 
     except Exception as e:
         logger.exception("Error in keep_endpoints_warm function", e)
-
-    return None  # Always return None to avoid retries
+        raise

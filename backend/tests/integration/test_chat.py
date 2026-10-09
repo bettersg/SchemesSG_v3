@@ -16,13 +16,15 @@ def response_stream_events(response):
     return [json.loads(chunk.removeprefix("data: ")) for chunk in chunks]
 
 
-def test_chat_warmup_request(mock_request, mock_https_response, mock_auth):
+def test_chat_warmup_request(mock_request, mock_https_response, mock_auth, mocker):
+    graph_stream = mocker.patch("agent.handler.stream_chat_events_sync")
     request = mock_request(method="POST", json_data={"is_warmup": True})
 
     response = agent_chat_message(request)
 
     assert response.status_code == 200
     assert response_json(response)["message"] == "Warmup request successful"
+    graph_stream.assert_not_called()
 
 
 def test_chat_invalid_method(mock_request, mock_https_response, mock_auth):
