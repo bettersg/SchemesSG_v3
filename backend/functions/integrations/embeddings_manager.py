@@ -5,8 +5,11 @@ This module validates embedding config, initializes the selected Azure
 embedding client, and keeps Azure wiring out of retrieval code.
 """
 
+import hashlib
 import os
 from dataclasses import dataclass
+from pathlib import Path
+from tempfile import TemporaryDirectory, gettempdir
 from typing import Dict
 
 from dotenv import load_dotenv
@@ -27,6 +30,27 @@ PRESET_EMBEDDING_CONFIGS = {
 
 EMBEDDING_REQUEST_TIMEOUT_SECONDS = 6.0
 EMBEDDING_MAX_RETRIES = 1
+TOKENIZER_ASSET = Path(__file__).resolve().parents[1] / "assets" / "tiktoken" / "9b5ad71b2ce5302211f9c61530b329a4922fc6a4"
+TOKENIZER_SHA256 = "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7"
+
+
+def prepare_tokenizer_cache() -> None:
+    cache_setting = os.environ.get("TIKTOKEN_CACHE_DIR", os.environ.get("DATA_GYM_CACHE_DIR"))
+    if cache_setting == "":
+        return
+    cache_dir = Path(cache_setting) if cache_setting is not None else Path(gettempdir()) / "data-gym-cache"
+    data = TOKENIZER_ASSET.read_bytes()
+    if hashlib.sha256(data).hexdigest() != TOKENIZER_SHA256:
+        raise ValueError("Packaged cl100k_base tokenizer checksum mismatch")
+    destination = cache_dir / TOKENIZER_ASSET.name
+    if destination.is_file() and destination.read_bytes() == data:
+        return
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    # Atomic replacement lets concurrent initializers share the writable cache.
+    with TemporaryDirectory(dir=cache_dir) as temporary_dir:
+        temporary_file = Path(temporary_dir) / TOKENIZER_ASSET.name
+        temporary_file.write_bytes(data)
+        temporary_file.replace(destination)
 
 
 @dataclass(frozen=True)
@@ -87,6 +111,7 @@ class EmbeddingsManager:
 
     @staticmethod
     def _initialize_model(config: EmbeddingsConfig) -> AzureOpenAIEmbeddings:
+        prepare_tokenizer_cache()
         return AzureOpenAIEmbeddings(
             azure_endpoint=config.endpoint,
             api_key=config.api_key,
