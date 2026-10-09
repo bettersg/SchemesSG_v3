@@ -49,10 +49,12 @@ def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str
 
     db = firebase_manager.firestore_client
     unique_scheme_ids = list(dict.fromkeys([scheme_id.strip() for scheme_id in scheme_ids if scheme_id.strip()]))
+    if not unique_scheme_ids:
+        return [], []
     scheme_details_by_id: dict[str, Dict] = {}
 
-    for scheme_id in unique_scheme_ids:
-        doc = db.collection(SCHEMES_COLLECTION).document(scheme_id).get()
+    references = [db.collection(SCHEMES_COLLECTION).document(scheme_id) for scheme_id in unique_scheme_ids]
+    for doc in db.get_all(references):
         if not doc.exists:
             continue
 
@@ -61,7 +63,7 @@ def fetch_schemes_by_ids(firebase_manager: FirebaseManager, scheme_ids: List[str
             continue
         scheme_data["scheme_id"] = doc.id
         scheme_data.pop("scraped_text", None)
-        scheme_details_by_id[scheme_id] = scheme_data
+        scheme_details_by_id[doc.id] = scheme_data
 
     scheme_details = [scheme_details_by_id[scheme_id] for scheme_id in unique_scheme_ids if scheme_id in scheme_details_by_id]
     missing_scheme_ids = [scheme_id for scheme_id in unique_scheme_ids if scheme_id not in scheme_details_by_id]
@@ -98,7 +100,7 @@ class SearchModel:
 
     def fetch_schemes_batch(self, scheme_ids: List[str]) -> List[Dict]:
         """
-        Fetch multiple schemes, batching to respect Firestore's 30-item 'in' limit, and remove 'scraped_text' field if present.
+        Fetch scheme documents in a batch, preserving order and excluding scraped text.
 
         Args:
             scheme_ids (List[str]): List of scheme IDs to fetch
