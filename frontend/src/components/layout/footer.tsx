@@ -15,9 +15,9 @@ function FooterLinkColumn({
 }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-4">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-4">
         {heading}
-      </h3>
+      </h2>
       <ul className="space-y-3">
         {links.map((link) => (
           <li key={link.label}>
@@ -50,7 +50,6 @@ export function Footer() {
     <footer className="bg-neutral-950 text-neutral-400 py-16 px-6">
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-2 gap-12 md:grid-cols-5">
-          {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <a
               href="/"

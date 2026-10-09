@@ -147,7 +147,7 @@ function SearchProgressPreview({ copy }: { copy: TutorialCopy }) {
           ["/landing/logos/hdb.jpg", "HDB"],
           ["/landing/logos/cpf.jpg", "CPF"],
         ].map(([src, agency]) => (
-          <SchemeLogo key={agency} agency={agency} image={src} />
+          <SchemeLogo key={agency} agency={agency} image={src} size="sm" />
         ))}
       </div>
       <div className="space-y-2">
@@ -189,7 +189,7 @@ function MiniSchemeCard({ scheme }: { scheme: PreviewScheme }) {
   return (
     <div className={cn(productCard, "flex min-h-36 flex-col p-3")}>
       <div className="mb-2 flex items-start gap-3">
-        <SchemeLogo agency={scheme.agency} image={scheme.image} />
+        <SchemeLogo agency={scheme.agency} image={scheme.image} size="sm" />
         <div className="min-w-0 flex-1">
           <h4 className="font-(--font-head) text-sm font-semibold leading-snug text-(--schemes-blue-900)">
             {scheme.name}
@@ -282,7 +282,7 @@ function DetailPreview({ copy }: { copy: TutorialCopy }) {
           <SchemeLogo
             agency={copy.detailAgency}
             image="/landing/logos/msf.jpg"
-            size="lg"
+            size="md"
           />
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-(--schemes-muted)">

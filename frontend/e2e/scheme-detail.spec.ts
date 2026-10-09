@@ -16,7 +16,6 @@ test("user can open a catalog scheme and continue to its official website", asyn
   const network = await interceptCatalogSchemeJourney(page);
   await interceptSchemeDetailJourney(context);
   await page.goto("/catalog");
-  await page.getByRole("link", { name: "Financial Assistance" }).click();
 
   const schemeLink = page.getByRole("link", {
     name: `${CATALOG_SCHEMES[0].scheme}, ${CATALOG_SCHEMES[0].agency} (opens in new tab)`,

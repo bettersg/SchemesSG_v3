@@ -274,7 +274,10 @@ export default function SchemesList({
                   }}
                   className="col-span-1"
                 >
-                  <SchemeCard scheme={scheme} />
+                  <SchemeCard
+                    scheme={scheme}
+                    list={{ id: "chat_results", index }}
+                  />
                 </motion.div>
               );
             })}

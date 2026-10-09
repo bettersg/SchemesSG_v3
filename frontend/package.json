@@ -34,6 +34,7 @@
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "build:public": "node scripts/run-public-build.mjs",
+    "seo:images": "node scripts/generate-seo-images.mjs",
     "test:build-fixture": "node --test scripts/public-build-fixture.test.mjs",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
     "test-build:prod": "npm run build:prod && npx serve@latest out",

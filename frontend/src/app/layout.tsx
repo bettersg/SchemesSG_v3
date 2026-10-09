@@ -9,7 +9,7 @@ import {
 import React from "react";
 import "@/globals.css";
 import { AppProviders } from "@/providers";
-import { SCHEMES_SG_LOGO_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
+import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
 const openSans = Open_Sans({
   subsets: ["latin"],
@@ -38,7 +38,6 @@ const dmSerifDisplay = DM_Serif_Display({
   preload: false,
 });
 
-// Keep Geist as fallback
 const geistSans = localFont({
   src: "../assets/fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -66,8 +65,10 @@ export const metadata: Metadata = {
     locale: "en_SG",
     images: [
       {
-        url: SCHEMES_SG_LOGO_URL,
+        url: SCHEMES_SG_OG_IMAGE_URL,
         alt: "Schemes.sg logo",
+        width: 1200,
+        height: 630,
       },
     ],
   },
@@ -75,7 +76,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SEO_COPY.homeTitle,
     description: SEO_COPY.homeDescription,
-    images: [SCHEMES_SG_LOGO_URL],
+    images: [SCHEMES_SG_OG_IMAGE_URL],
   },
 };
 
