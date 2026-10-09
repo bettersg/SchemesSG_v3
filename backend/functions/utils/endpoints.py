@@ -239,8 +239,12 @@ def keep_endpoints_warm(event: scheduler_fn.ScheduledEvent) -> None:
             logger.info("Successfully kept all endpoints warm")
         else:
             failed = [endpoint["name"] for endpoint, success in zip(endpoints, results) if not success]
-            raise RuntimeError(f"Warmup failed for: {', '.join(failed)}")
+            logger.warning(
+                f"Failed to keep some endpoints warm. Success rate: {sum(results)}/{len(results)}. "
+                f"Failed endpoints: {', '.join(failed)}"
+            )
 
     except Exception as e:
         logger.exception("Error in keep_endpoints_warm function", e)
-        raise
+
+    return None  # Always return None to avoid retries

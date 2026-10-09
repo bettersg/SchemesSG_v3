@@ -1,4 +1,4 @@
-"""Warmup authentication, bounded waits, and scheduler failure visibility."""
+"""Warmup authentication, bounded waits, and nonfatal failure reporting."""
 
 from types import SimpleNamespace
 
@@ -82,22 +82,28 @@ def test_successful_schedule_preserves_all_seven_warmup_targets(transport):
     [False] * 7,
     [True, True, False, True, True, True, True],
 ])
-def test_failed_schedule_attempts_every_target_and_returns_500(mocker, results):
+def test_failed_schedule_attempts_every_target_logs_names_and_returns_200(mocker, results):
     ping = mocker.patch("utils.endpoints.make_warmup_request", side_effect=results)
+    warning = mocker.patch("utils.endpoints.logger.warning")
     response = invoke_schedule()
     assert ping.call_count == 7
-    assert response.status_code == 500
-    assert "agent_chat_message" in response.get_data(as_text=True)
+    assert response.status_code == 200
+    warning.assert_called_once()
+    message = warning.call_args.args[0]
+    assert "agent_chat_message" in message
+    assert f"{sum(results)}/7" in message
 
 
 def test_authentication_timeout_does_not_prevent_later_targets(transport):
     success = SimpleNamespace(status_code=200, json=lambda: {"idToken": "test-id-token"})
     transport.exchange.side_effect = [endpoints.requests.exceptions.Timeout("timeout")] + [success] * 6
-    assert invoke_schedule().status_code == 500
+    assert invoke_schedule().status_code == 200
     assert transport.exchange.call_count == 7
     assert transport.ping.call_count == 6
 
 
-def test_unexpected_scheduler_failure_is_visible(mocker):
+def test_unexpected_scheduler_failure_is_logged_without_failing_job(mocker):
     mocker.patch("utils.endpoints.get_endpoint_url", side_effect=RuntimeError("invalid configuration"))
-    assert invoke_schedule().status_code == 500
+    error = mocker.patch("utils.endpoints.logger.exception")
+    assert invoke_schedule().status_code == 200
+    error.assert_called_once()
