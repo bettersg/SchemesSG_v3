@@ -90,7 +90,7 @@ def make_warmup_request(url: str, method: str = "GET", json_data: Optional[Dict]
     try:
         logger.info(f"Making warm-up request to: {url}")
 
-        # Create a custom token for warmup requests
+        # A fresh scheduler process needs Admin before signing; this singleton initializes it only once.
         FirebaseManager()
         custom_token = auth.create_custom_token("warmup-user")
 
