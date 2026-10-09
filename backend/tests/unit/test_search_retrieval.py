@@ -42,6 +42,8 @@ def model(mocker):
     m.__class__.embeddings = mocker.MagicMock()
     m.__class__.embeddings.embed_query.return_value = [0.0, 0.0, 0.0]
     m.__class__.db = mocker.MagicMock()
+    collection = m.__class__.db.collection.return_value
+    collection.select.return_value = collection
     return m
 
 
@@ -85,6 +87,26 @@ def test_search_requests_full_pool_and_distance_field(model, mocker):
     _, kwargs = model.__class__.db.collection.return_value.find_nearest.call_args
     assert kwargs["limit"] == RETRIEVAL_LIMIT
     assert kwargs["distance_result_field"] == "vector_distance"
+
+
+def test_search_projects_only_distance(model, mocker):
+    collection = model.__class__.db.collection.return_value
+    collection.find_nearest.return_value.get.return_value = [_fake_doc("a", 0.2)]
+    mocker.patch.object(model, "fetch_schemes_batch", return_value=[{"scheme_id": "a", "search_booster": "x"}])
+
+    result = model.search("a query")
+
+    collection.select.assert_called_once_with(["vector_distance"])
+    assert result["scheme_id"].tolist() == ["a"]
+    assert result["vec_similarity_score"].tolist() == [1.0]
+
+
+def test_empty_projected_results_skip_hydration(model, mocker):
+    model.__class__.db.collection.return_value.find_nearest.return_value.get.return_value = []
+    fetch = mocker.patch.object(model, "fetch_schemes_batch")
+
+    assert model.search("a query").empty
+    fetch.assert_not_called()
 
 
 def test_scheme_hydration_uses_get_all_and_preserves_requested_order(mocker):
