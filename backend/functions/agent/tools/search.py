@@ -1,17 +1,18 @@
 """Search tool defined for agent use."""
 
-import asyncio
-import os
-from typing import Any
+from time import perf_counter
+
+from integrations import FirebaseManager
+from langchain_core.tools import StructuredTool
+from langgraph.config import get_stream_writer
 
 # Import ToolRuntime from langgraph.prebuilt
 from langgraph.prebuilt import ToolRuntime
-from langchain_core.tools import StructuredTool
-from langgraph.config import get_stream_writer
-from search import PredictParams, QueryHandler, LLM_RESULT_LIMIT, slim_for_llm
 from pydantic import BaseModel, Field
+from search import LLM_RESULT_LIMIT, PredictParams, QueryHandler, slim_for_llm
+from utils.latency import log_elapsed
 from utils.logging_setup import setup_logging
-from integrations import FirebaseManager
+
 
 logger = setup_logging()
 
@@ -75,13 +76,17 @@ def _search_schemes_sync(
     except Exception as e:
         logger.debug(f"Failed to emit search input to stream: {e}")
 
+    started_at = perf_counter()
     model = QueryHandler(FirebaseManager())
+    log_elapsed(logger, session_id, "search_setup", started_at)
     params = PredictParams(
         query=query,
         requested_target=requested_target,
         session_id=session_id,  # Passes the extracted session_id here
     )
+    started_at = perf_counter()
     results = model.predict_for_agent(params)
+    log_elapsed(logger, session_id, "search_pipeline", started_at, result_count=len(results.get("data", [])))
     try:
         writer = get_stream_writer()
         writer(

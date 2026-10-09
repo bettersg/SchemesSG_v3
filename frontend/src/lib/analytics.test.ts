@@ -52,6 +52,7 @@ describe("analytics", () => {
       track("chat_answer_shown", {
         turn_index: 1,
         schemes_found: 12,
+        ms_to_first_results: 1800,
         ms_to_first_token: 2400,
         ms_to_done: 18200,
       });

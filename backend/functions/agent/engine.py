@@ -1,11 +1,17 @@
+from time import perf_counter
 from typing import Any, Iterator
 
 from integrations import FirebaseManager
 from langchain_core.messages import HumanMessage
+from loguru import logger
+from utils.latency import log_elapsed
 
 from .event_type import AgentStreamEventType
 from .router import RouterAgentGraph
 from .tracing import load_langfuse_client_and_handler
+
+
+_FIRST_TURN = True
 
 
 def restore_messages_state(graph: Any, thread_id: str) -> dict[str, Any]:
@@ -55,35 +61,49 @@ def stream_chat_events(input_text: str, session_id: str) -> Iterator[dict[str, A
 
     Yields dicts shaped like: {"type": "text", "data": {...}} or {"type": "custom", "data": ...}
     """
+    global _FIRST_TURN
+
+    turn_started_at = perf_counter()
+    first_turn = _FIRST_TURN
+    _FIRST_TURN = False
+    started_at = perf_counter()
     firebase_manager = FirebaseManager()
     main_agent_graph = RouterAgentGraph(firestore_client=firebase_manager.firestore_client)
     graph = main_agent_graph.graph
+    log_elapsed(logger, session_id, "request_setup", started_at, first_turn_in_process=first_turn)
 
     _, langfuse_handler = load_langfuse_client_and_handler()
 
+    started_at = perf_counter()
     demo_state = restore_messages_state(graph, session_id)
+    log_elapsed(logger, session_id, "checkpoint_restore", started_at)
     demo_state["messages"].append(HumanMessage(content=input_text))
 
-    for chunk in graph.stream(
-        demo_state,
-        config={
-            "callbacks": [langfuse_handler] if langfuse_handler else [],
-            "configurable": {"thread_id": session_id},
-        },
-        stream_mode=["messages", "custom"],
-        version="v2",
-    ):
-        # Process message chunks into text events
-        if isinstance(chunk, dict) and chunk.get("type") == "messages":
-            result = process_streaming_chunk(chunk)
-            if result:
-                yield result
-            continue
+    completed = False
+    try:
+        for chunk in graph.stream(
+            demo_state,
+            config={
+                "callbacks": [langfuse_handler] if langfuse_handler else [],
+                "configurable": {"thread_id": session_id},
+            },
+            stream_mode=["messages", "custom"],
+            version="v2",
+        ):
+            # Process message chunks into text events
+            if isinstance(chunk, dict) and chunk.get("type") == "messages":
+                result = process_streaming_chunk(chunk)
+                if result:
+                    yield result
+                continue
 
-        # Yield custom chunks raw for handler parsing
-        if isinstance(chunk, dict) and chunk.get("type") == "custom":
-            yield chunk.get("data", {})
-            continue
+            # Yield custom chunks raw for handler parsing
+            if isinstance(chunk, dict) and chunk.get("type") == "custom":
+                yield chunk.get("data", {})
+                continue
+        completed = True
+    finally:
+        log_elapsed(logger, session_id, "turn_complete", turn_started_at, completed=completed)
 
     # final state fetch (optional) - yield a DONE marker
     yield {"type": AgentStreamEventType.DONE, "data": {}}
