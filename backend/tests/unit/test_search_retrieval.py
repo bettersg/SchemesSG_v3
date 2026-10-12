@@ -6,8 +6,7 @@ live index is needed.
 """
 
 import pytest
-
-from search.retriever import SearchModel, RETRIEVAL_LIMIT
+from search.retriever import RETRIEVAL_LIMIT, SearchModel, fetch_schemes_by_ids
 
 
 def _fake_doc(doc_id, distance):
@@ -18,6 +17,18 @@ def _fake_doc(doc_id, distance):
             return {"vector_distance": distance}
 
     return _Doc()
+
+
+def _fake_scheme_doc(doc_id, data, *, exists=True):
+    class _Doc:
+        id = doc_id
+
+        def to_dict(self):
+            return data.copy()
+
+    doc = _Doc()
+    doc.exists = exists
+    return doc
 
 
 @pytest.fixture
@@ -74,3 +85,24 @@ def test_search_requests_full_pool_and_distance_field(model, mocker):
     _, kwargs = model.__class__.db.collection.return_value.find_nearest.call_args
     assert kwargs["limit"] == RETRIEVAL_LIMIT
     assert kwargs["distance_result_field"] == "vector_distance"
+
+
+def test_scheme_hydration_uses_get_all_and_preserves_requested_order(mocker):
+    firestore = mocker.MagicMock()
+    firestore.get_all.return_value = [
+        _fake_scheme_doc("second", {"scheme": "Second", "scraped_text": "large"}),
+        _fake_scheme_doc("retired", {"scheme": "Retired", "status": "retired"}),
+        _fake_scheme_doc("first", {"scheme": "First"}),
+    ]
+    manager = mocker.MagicMock(firestore_client=firestore)
+
+    schemes, missing = fetch_schemes_by_ids(
+        manager,
+        ["first", "second", "retired", "missing", "first"],
+    )
+
+    assert [scheme["scheme_id"] for scheme in schemes] == ["first", "second"]
+    assert "scraped_text" not in schemes[1]
+    assert missing == ["retired", "missing"]
+    firestore.get_all.assert_called_once()
+    firestore.collection.return_value.document.return_value.get.assert_not_called()

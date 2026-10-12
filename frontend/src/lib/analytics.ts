@@ -63,6 +63,7 @@ export interface EventMap {
   chat_answer_shown: {
     turn_index: number;
     schemes_found: number;
+    ms_to_first_results: number;
     ms_to_first_token: number;
     ms_to_done: number;
   };
@@ -134,6 +135,7 @@ export const EVENT_PARAM_KEYS: {
   chat_answer_shown: [
     "turn_index",
     "schemes_found",
+    "ms_to_first_results",
     "ms_to_first_token",
     "ms_to_done",
   ],

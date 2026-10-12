@@ -63,6 +63,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
   const [streamError, setStreamError] = useState<string | null>(null);
   // Refs, not state: read inside stream callbacks, must not re-render.
   const sendAtRef = useRef<number | null>(null);
+  const firstResultsAtRef = useRef<number | null>(null);
   const firstTokenAtRef = useRef<number | null>(null);
   const turnIndexRef = useRef(0);
   const lastMilestoneRef = useRef<"sent" | "status" | "token" | "results">(
@@ -181,6 +182,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
   ) => {
     if (analytics) {
       sendAtRef.current = markNow();
+      firstResultsAtRef.current = null;
       firstTokenAtRef.current = null;
       lastMilestoneRef.current = "sent";
       turnIndexRef.current = analytics.turnIndex;
@@ -302,6 +304,9 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           );
           setSchemes(parsedSchemes);
           schemesFoundCountRef.current = parsedSchemes.length;
+          if (parsedSchemes.length > 0 && firstResultsAtRef.current === null) {
+            firstResultsAtRef.current = markNow();
+          }
           setPendingSchemesTabPulse(parsedSchemes.length > 0);
         }
         break;
@@ -323,7 +328,11 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           const doneAt = markNow();
           track("chat_answer_shown", {
             turn_index: turnIndexRef.current,
-            schemes_found: schemes.length,
+            schemes_found: schemesFoundCountRef.current,
+            // 0 when the stream finished without any useful result cards.
+            ms_to_first_results: firstResultsAtRef.current
+              ? firstResultsAtRef.current - sendAtRef.current
+              : 0,
             // 0 when the stream finished without ever emitting text.
             ms_to_first_token: firstTokenAtRef.current
               ? firstTokenAtRef.current - sendAtRef.current

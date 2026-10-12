@@ -1,13 +1,16 @@
 import os
 from datetime import datetime, timezone
-from uuid import uuid1
+from time import perf_counter
 from typing import Any
+from uuid import uuid1
 
 import pandas as pd
-from loguru import logger
 from integrations import FirebaseManager
-from .types import PredictParams
+from loguru import logger
+from utils.latency import log_elapsed
+
 from .retriever import SearchModel
+from .types import PredictParams
 
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -75,12 +78,15 @@ class QueryHandler:
             params.query,
             params.similarity_threshold,
             params.requested_target,
+            trace_id=params.session_id,
         )
 
         session_id = params.session_id if params.session_id else str(uuid1())
         results_dict = final_results.to_dict(orient="records")
 
+        started_at = perf_counter()
         doc_id = self.save_llm_query(params.query, session_id, results_dict)
+        log_elapsed(logger, session_id, "query_persistence", started_at, result_count=len(results_dict))
 
         shortfall = params.requested_target is not None and len(results_dict) < params.requested_target
 

@@ -90,6 +90,7 @@ ipython_config.py
 
 # pyenv
 .python-version
+!backend/.python-version
 
 # celery beat schedule file
 celerybeat-schedule

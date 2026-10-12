@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS schemessg-backend
+FROM python:3.12-slim AS schemessg-backend
 
 # Install Node.js, npm, Java (required for Firestore emulator), and browser dependencies
 RUN apt-get update && apt-get install -y \

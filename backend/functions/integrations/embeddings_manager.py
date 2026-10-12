@@ -12,6 +12,7 @@ from typing import Dict
 from dotenv import load_dotenv
 from langchain_openai import AzureOpenAIEmbeddings
 
+
 load_dotenv()
 
 
@@ -23,6 +24,9 @@ PRESET_EMBEDDING_CONFIGS = {
         "dimensions": 2048,
     }
 }
+
+EMBEDDING_REQUEST_TIMEOUT_SECONDS = 6.0
+EMBEDDING_MAX_RETRIES = 1
 
 
 @dataclass(frozen=True)
@@ -89,4 +93,6 @@ class EmbeddingsManager:
             api_version=config.api_version,
             model=config.deployment_name,
             dimensions=config.dimensions,
+            request_timeout=EMBEDDING_REQUEST_TIMEOUT_SECONDS,
+            max_retries=EMBEDDING_MAX_RETRIES,
         )
