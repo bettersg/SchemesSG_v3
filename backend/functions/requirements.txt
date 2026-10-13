@@ -21,3 +21,6 @@ rank_bm25==0.2.2
 requests>=2.32.5
 slack-sdk==3.33.1
 trafilatura>=2.0.0  # clean main-content + link extraction for the fetch_webpage tool
+browser-use>=0.11.13
+defusedxml>=0.7.1
+rapidfuzz>=3.14.6

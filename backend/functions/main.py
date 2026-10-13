@@ -32,6 +32,8 @@ The following endpoints are available:
 6. Batch Jobs:
    - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
+   - scheduled_link_discovery_agent: Weekly scheduled job to discover working URLs for
+     schemes with broken links
 
 7. System:
    - health: Health check endpoint
@@ -55,6 +57,7 @@ import sys
 
 from agent.handler import agent_chat_message  # noqa: F401
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
+from batch_jobs.run_link_discovery_agent import scheduled_link_discovery_agent  # noqa: F401
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
 from loguru import logger
