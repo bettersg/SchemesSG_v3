@@ -158,7 +158,7 @@ class SearchModel:
         # find_nearest returns at most the whole collection, so a sentinel limit
         # above the corpus size means "retrieve everything".
         embeddings_collection = self.__class__.db.collection(EMBEDDINGS_COLLECTION)
-        vector_query = embeddings_collection.find_nearest(
+        vector_query = embeddings_collection.select(["vector_distance"]).find_nearest(
             vector_field="embedding",
             query_vector=Vector(vec),
             distance_measure=DistanceMeasure.COSINE,
