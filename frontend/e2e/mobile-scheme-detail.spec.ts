@@ -26,7 +26,6 @@ test("mobile scheme details remain accessible and actionable", async ({
 
   const accessibilityScan = await new AxeBuilder({ page })
     .include("main")
-    .exclude("footer")
     .analyze();
   expect(accessibilityScan.violations).toEqual([]);
   await expect(page.locator("main")).toHaveScreenshot(

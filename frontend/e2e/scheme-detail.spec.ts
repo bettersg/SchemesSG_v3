@@ -87,7 +87,6 @@ test("an inactive scheme's page warns that its website failed our check", async 
 
   const accessibilityScan = await new AxeBuilder({ page })
     .include("main")
-    .exclude("footer")
     .analyze();
   expect(accessibilityScan.violations).toEqual([]);
 });
@@ -100,15 +99,20 @@ test("scheme detail page shows a breadcrumb to catalog and category", async ({
   await interceptCatalogSchemeJourney(page);
   await interceptSchemeDetailJourney(context);
 
-  const rawHtml = await request.get(`/schemes/${SCHEME_DETAIL_ID}`);
-  expect(rawHtml.ok()).toBe(true);
-  const body = await rawHtml.text();
-  expect(body).toContain('href="/catalog/financial-assistance"');
-
   await page.goto(`/schemes/${SCHEME_DETAIL_ID}`);
   await expect(
     page.getByRole("heading", { name: SCHEME_DETAIL.scheme }),
   ).toBeVisible();
+
+  // After the page load, so `next dev` has compiled the route. Scoped to the
+  // breadcrumb because the footer links every category on this page too.
+  const rawHtml = await request.get(`/schemes/${SCHEME_DETAIL_ID}`);
+  expect(rawHtml.ok()).toBe(true);
+  const serverBreadcrumb = (await rawHtml.text()).match(
+    /<nav[^>]*aria-label="Breadcrumb"[^>]*>[\s\S]*?<\/nav>/,
+  )?.[0];
+  expect(serverBreadcrumb).toContain('href="/catalog"');
+  expect(serverBreadcrumb).toContain('href="/catalog/financial-assistance"');
 
   const breadcrumb = page.getByLabel("Breadcrumb");
   const catalogLink = breadcrumb.getByRole("link", { name: "Catalog" });

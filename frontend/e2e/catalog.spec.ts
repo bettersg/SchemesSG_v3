@@ -53,7 +53,6 @@ test("user sees schemes on arrival and narrows them by category", async ({
 
   const accessibilityScan = await new AxeBuilder({ page })
     .include("main")
-    .exclude("footer")
     .analyze();
   expect(accessibilityScan.violations).toEqual([]);
   await page.mouse.move(1200, 750);
@@ -104,16 +103,6 @@ test("category links are in the footer without opening the picker", async ({
 }) => {
   await interceptCatalogSchemeJourney(page);
 
-  const rawHtml = await request.get("/catalog");
-  expect(rawHtml.ok()).toBe(true);
-  const body = await rawHtml.text();
-  expect(body).toContain('href="/catalog/financial-assistance"');
-  const catalogLinks = body.match(/href="\/catalog\/[a-z-]+"/g) || [];
-  const uniqueCategoryLinks = new Set(
-    catalogLinks.filter((link) => link !== 'href="/catalog/all"'),
-  );
-  expect(uniqueCategoryLinks.size).toBeGreaterThan(1);
-
   await page.goto("/catalog");
   await expect(
     page.getByRole("heading", { level: 1, name: /All schemes/ }),
@@ -123,4 +112,17 @@ test("category links are in the footer without opening the picker", async ({
   await expect(
     footer.locator('a[href="/catalog/financial-assistance"]').first(),
   ).toBeAttached();
+
+  // After the page load, so `next dev` has compiled the route: a raw request
+  // that arrives mid-compile can have its connection reset. Raw HTML carries no
+  // JavaScript, so these links are what a crawler sees.
+  const rawHtml = await request.get("/catalog");
+  expect(rawHtml.ok()).toBe(true);
+  const body = await rawHtml.text();
+  expect(body).toContain('href="/catalog/financial-assistance"');
+  const catalogLinks = body.match(/href="\/catalog\/[a-z-]+"/g) || [];
+  const uniqueCategoryLinks = new Set(
+    catalogLinks.filter((link) => link !== 'href="/catalog/all"'),
+  );
+  expect(uniqueCategoryLinks.size).toBeGreaterThan(1);
 });
