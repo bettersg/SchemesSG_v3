@@ -62,7 +62,7 @@ export function Navbar() {
     };
   }, [mobileHidden, mobileOpen]);
 
-  // Navigating away from an active chat discards it, so confirm first.
+  // On the search page these would only reload the same chat, so offer a reset.
   const handleSearchEntryClick = (event: MouseEvent<Element>) => {
     setMobileOpen(false);
 
@@ -119,7 +119,7 @@ export function Navbar() {
                       cssTransition.allState,
                       "text-neutral-500",
                       "hover:text-neutral-900",
-                      "aria-selected:bg-(--schemes-amber-400) aria-selected:font-semibold aria-selected:text-neutral-900",
+                      "aria-selected:font-semibold aria-selected:text-neutral-900",
                       "aria-disabled:text-neutral-300 aria-disabled:cursor-default",
                     )}
                   >
@@ -133,6 +133,7 @@ export function Navbar() {
                       {link.href === "/" && (
                         <ArrowRight className="inline h-3.5 w-3.5 ml-1.5" />
                       )}
+                      <Tabs.Indicator className="rounded-full bg-(--schemes-amber-400)" />
                     </Link>
                   </Tabs.Tab>
                 ))}

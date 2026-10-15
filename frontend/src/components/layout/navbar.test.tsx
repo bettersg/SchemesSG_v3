@@ -82,7 +82,7 @@ describe("Navbar", () => {
     expect(document.documentElement.dataset.mobileNavHidden).toBeUndefined();
   });
 
-  it("asks before the logo discards an active chat on the search page", async () => {
+  it("offers a reset from the logo during a chat on the search page", async () => {
     const { probe, logo } = await renderNavbar({
       pathname: "/",
       activeChat: true,
@@ -93,7 +93,7 @@ describe("Navbar", () => {
     expect(probe.dataset.confirm).toBe("true");
   });
 
-  it("asks before the Search tab discards an active chat", async () => {
+  it("offers a reset from the Search tab during a chat", async () => {
     const { probe } = await renderNavbar({ pathname: "/", activeChat: true });
 
     const searchTab = screen.getByRole("link", { name: /Search Schemes/ });
@@ -101,7 +101,7 @@ describe("Navbar", () => {
     expect(probe.dataset.confirm).toBe("true");
   });
 
-  it("navigates straight to search when there is no chat to lose", async () => {
+  it("navigates straight to search when there is no chat", async () => {
     const { probe, logo } = await renderNavbar({
       pathname: "/",
       activeChat: false,
