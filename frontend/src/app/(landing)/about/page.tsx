@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import AboutPageContent from "@/components/landing/about-page-content";
-import { SCHEMES_SG_LOGO_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
+import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: SEO_COPY.aboutTitle,
@@ -16,8 +16,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: SCHEMES_SG_LOGO_URL,
+        url: SCHEMES_SG_OG_IMAGE_URL,
         alt: "Schemes.sg logo",
+        width: 1200,
+        height: 630,
       },
     ],
   },
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SEO_COPY.aboutTitle,
     description: SEO_COPY.aboutDescription,
-    images: [SCHEMES_SG_LOGO_URL],
+    images: [SCHEMES_SG_OG_IMAGE_URL],
   },
 };
 

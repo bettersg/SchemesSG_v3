@@ -143,13 +143,16 @@ showing a status flash. `failed` covers a clipboard write that threw.
 
 **`select_item`** — scheme opened from a list. `item_list_id` is `catalog` or `chat_results`, so the two surfaces can be compared.
 
-- `item_list_id` (string), `index` (number), `items` (`SchemeItem[]`)
+- `item_list_id` (string), `items` (`SchemeItem[]`)
+
+Each item in the array includes an optional `index` for GA4's Item list position.
 
 ```typescript
 type SchemeItem = {
   item_id: string;
   item_name: string;
   item_category?: string;
+  index?: number;
 };
 ```
 
