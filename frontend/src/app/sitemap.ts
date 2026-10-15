@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getSchemesForSitemap } from "@/lib/schemes.server";
 import { CATALOG_ROUTE_PATHS } from "@/lib/catalog-seo";
-import { hasIndexableContent } from "@/lib/scheme-indexing";
 
 const SITE_URL = "https://schemes.sg";
 
@@ -28,12 +27,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const schemes = await getSchemesForSitemap();
-  const schemeRoutes: MetadataRoute.Sitemap = schemes
-    .filter((scheme) => hasIndexableContent(scheme))
-    .map((scheme) => ({
-      url: `${SITE_URL}/schemes/${scheme.schemeId}`,
-      lastModified: getLastModified(scheme.lastUpdated),
-    }));
+  const schemeRoutes: MetadataRoute.Sitemap = schemes.map((scheme) => ({
+    url: `${SITE_URL}/schemes/${scheme.schemeId}`,
+    lastModified: getLastModified(scheme.lastUpdated),
+  }));
 
   return [...staticRoutes, ...schemeRoutes];
 }

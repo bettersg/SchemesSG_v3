@@ -4,7 +4,10 @@ import { ArrowUpRight } from "lucide-react";
 import { Separator } from "@heroui/react";
 import { useLanguage } from "@/lib/landing-i18n";
 import Image from "next/image";
+import Link from "next/link";
 import { cssTransition } from "@/lib/design-system/motion";
+import { CATALOG_CATEGORY_OPTIONS } from "@/lib/design-system/categories";
+import { getCatalogCategoryPath } from "@/lib/catalog-seo";
 
 function FooterLinkColumn({
   heading,
@@ -28,6 +31,13 @@ function FooterLinkColumn({
                   Coming Soon
                 </span>
               </span>
+            ) : link.href.startsWith("/") ? (
+              <Link
+                href={link.href}
+                className="text-sm hover:text-white transition-colors cursor-pointer"
+              >
+                {link.label}
+              </Link>
             ) : (
               <a
                 href={link.href}
@@ -41,6 +51,27 @@ function FooterLinkColumn({
       </ul>
     </div>
   );
+}
+
+/**
+ * Every category route, so each page carries server-rendered links into the
+ * catalog. Labels come from the translated footer copy where it names that
+ * route; the rest fall back to the English category name the catalog itself
+ * shows in every locale.
+ */
+function getSchemesLinks(translated: { label: string; href: string }[]) {
+  const labelFor = (href: string) =>
+    translated.find((link) => link.href === href)?.label;
+  const categoryLinks = CATALOG_CATEGORY_OPTIONS.filter(
+    (cat) => cat !== "All",
+  ).map((cat) => {
+    const href = getCatalogCategoryPath(cat);
+    return { label: labelFor(href) ?? cat, href };
+  });
+  return [
+    ...categoryLinks,
+    { label: labelFor("/catalog") ?? "All Categories", href: "/catalog" },
+  ];
 }
 
 export function Footer() {
@@ -72,7 +103,7 @@ export function Footer() {
 
           <FooterLinkColumn
             heading={t.footer.schemesHeading}
-            links={t.footer.schemesLinks}
+            links={getSchemesLinks(t.footer.schemesLinks)}
           />
           <FooterLinkColumn
             heading={t.footer.productHeading}

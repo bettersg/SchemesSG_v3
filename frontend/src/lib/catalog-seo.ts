@@ -272,7 +272,7 @@ export function getCatalogJsonLd({
         itemListOrder: "https://schema.org/ItemListUnordered",
         ...(schemes && schemes.length > 0
           ? {
-              itemListElement: schemes.slice(0, 30).map((scheme, index) => ({
+              itemListElement: schemes.slice(0, 60).map((scheme, index) => ({
                 "@type": "ListItem",
                 position: index + 1,
                 url: `${SITE_URL}/schemes/${scheme.schemeId}`,

@@ -47,12 +47,12 @@ function SchemeCard({
           ? () =>
               track("select_item", {
                 item_list_id: list.id,
-                index: list.index,
                 items: [
                   {
                     item_id: scheme.schemeId,
                     item_name: scheme.schemeName,
                     item_category: topType,
+                    index: list.index,
                   },
                 ],
               })

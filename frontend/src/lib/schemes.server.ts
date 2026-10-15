@@ -9,6 +9,7 @@ import type {
   Scheme,
 } from "../types/types";
 import { mapCatalogScheme, mapToFullScheme } from "./scheme-mappers";
+import { hasIndexableContent } from "./scheme-indexing";
 
 type CatalogResponse = {
   data?: RawSchemeData[] | RawSchemeData;
@@ -86,7 +87,8 @@ export async function getCatalogData(
   };
 }
 
-const CATALOG_PAGE_SIZE = 20;
+// Three desktop columns of 20 rows.
+const CATALOG_PAGE_SIZE = 60;
 const MAX_CATALOG_PAGES = 500;
 
 /**
@@ -177,13 +179,48 @@ export const getAllCatalogSchemes = cache(getAllCatalogSchemesUncached);
 
 const PUBLIC_BUILD_EXCLUDED_STATUSES = new Set(["inactive", "retired"]);
 
-export const getSchemesForSitemap = cache(
-  async (): Promise<Scheme[]> =>
-    (await getAllCatalogSchemes()).filter(
-      (scheme) =>
-        !scheme.status || !PUBLIC_BUILD_EXCLUDED_STATUSES.has(scheme.status),
-    ),
-);
+async function enrichSchemeForSitemap(scheme: Scheme): Promise<Scheme | null> {
+  if (scheme.description) return scheme;
+
+  try {
+    const full = await getSchemeById(scheme.schemeId);
+    return full;
+  } catch {
+    return null;
+  }
+}
+
+async function processInBatches<T, R>(
+  items: T[],
+  batchSize: number,
+  processor: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
+export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
+  const catalogSchemes = (await getAllCatalogSchemes()).filter(
+    (scheme) =>
+      !scheme.status || !PUBLIC_BUILD_EXCLUDED_STATUSES.has(scheme.status),
+  );
+
+  const enriched = await processInBatches(
+    catalogSchemes,
+    10,
+    enrichSchemeForSitemap,
+  );
+
+  return enriched.filter(
+    (scheme): scheme is Scheme =>
+      scheme !== null && hasIndexableContent(scheme),
+  );
+});
 
 export const getSchemeById = cache(
   async (schemeId: string): Promise<Scheme | null> => {

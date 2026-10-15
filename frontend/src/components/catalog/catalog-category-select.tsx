@@ -101,7 +101,7 @@ function CatalogCategorySelect({
 
   const trigger = (
     <Button
-      aria-label="Browse by category"
+      aria-label={`${categoryLabel(activeCategory)}: browse by category`}
       className={clsx(
         "inline-flex min-h-11 items-center gap-2 rounded-full border border-(--schemes-border-neutral) bg-white px-4 py-2 text-sm font-semibold text-(--schemes-ink-soft) transition-[background-color,border-color,color] hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
         className,

@@ -3,12 +3,13 @@ import { notFound, permanentRedirect } from "next/navigation";
 import SchemeDetail from "@/components/schemes/scheme-detail";
 import { getSchemeById, getSchemesForSitemap } from "@/lib/schemes.server";
 import {
+  getSeoImageMetadata,
   getSeoImages,
   SCHEMES_SG_OG_IMAGE_URL,
   SEO_COPY,
   SITE_URL,
 } from "@/lib/seo";
-import { getSchemeCategory } from "@/lib/design-system/categories";
+import { resolveSchemeCategory } from "@/lib/design-system/categories";
 import {
   getCatalogCategoryPath,
   getSchemeBreadcrumbListJsonLd,
@@ -114,13 +115,11 @@ export async function generateMetadata({
       siteName: SEO_COPY.productName,
       type: "article",
       images: imageUrls.map((url) => ({
-        url,
+        ...getSeoImageMetadata(url),
         alt:
           url === SCHEMES_SG_OG_IMAGE_URL
             ? "Schemes.sg logo"
             : `${scheme.agency || scheme.schemeName} logo`,
-        width: 1200,
-        height: 630,
       })),
     },
     twitter: {
@@ -161,10 +160,7 @@ export default async function SchemePage({ params }: SchemePageProps) {
   }
 
   const canonicalUrl = `${SITE_URL}/schemes/${schemeId}`;
-  const category =
-    scheme.schemeType.length > 0
-      ? getSchemeCategory(scheme.schemeType[0])
-      : undefined;
+  const category = resolveSchemeCategory(scheme.schemeType);
   const categoryPath = category ? getCatalogCategoryPath(category) : "";
   const breadcrumbJsonLd = getSchemeBreadcrumbListJsonLd(
     category,

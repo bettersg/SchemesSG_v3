@@ -44,3 +44,16 @@ export const getSeoImages = (image?: string) => {
 
   return [primaryImage, SCHEMES_SG_OG_IMAGE_URL];
 };
+
+export interface SeoImageMetadata {
+  url: string;
+  width?: number;
+  height?: number;
+}
+
+export const getSeoImageMetadata = (url: string): SeoImageMetadata => {
+  if (url === SCHEMES_SG_OG_IMAGE_URL) {
+    return { url, width: 1200, height: 630 };
+  }
+  return { url };
+};

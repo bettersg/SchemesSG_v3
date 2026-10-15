@@ -24,7 +24,13 @@ import {
   productSegmentedTab,
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
-import { getSchemeCategory } from "@/lib/design-system/categories";
+import {
+  getSchemeCategory,
+  resolveSchemeCategory,
+} from "@/lib/design-system/categories";
+import { getCatalogCategoryPath } from "@/lib/catalog-seo";
+import NextLink from "next/link";
+import { ChevronRight } from "lucide-react";
 import {
   type SchemeDetailAnchor,
   useSchemeDetailStickyOffset,
@@ -36,6 +42,7 @@ import {
   cssTransition,
   timeout as motionTimeout,
 } from "@/lib/design-system/motion";
+import { Footer } from "@/components/layout/footer";
 
 // Scheme descriptions sometimes use literal bullet glyphs (• ● ‣ ·) on their
 // own lines instead of Markdown list syntax, and separate them with blank
@@ -258,7 +265,16 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
   } satisfies CSSProperties;
 
   return (
-    <PageShell contentClassName="pb-24 md:pb-8">
+    <PageShell
+      contentClassName="pb-8"
+      footer={
+        // The fixed mobile action bar overlays the end of the page, so the
+        // footer carries that clearance in its own colour.
+        <div className="bg-neutral-950 pb-24 md:pb-0">
+          <Footer />
+        </div>
+      }
+    >
       <div
         ref={stickyHeaderRef}
         className="sticky top-0 z-20 -mt-8 mb-8 ml-[calc(50%-50vw)] w-screen border-b border-(--schemes-border-neutral) bg-(--schemes-surface) md:mx-auto md:w-full md:max-w-3xl"
@@ -281,6 +297,32 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                 size="md"
               />
               <div className="flex min-w-0 flex-col gap-2">
+                {(() => {
+                  const category = resolveSchemeCategory(scheme.schemeType);
+                  if (category) {
+                    return (
+                      <nav
+                        aria-label="Breadcrumb"
+                        className="flex items-center gap-1 text-xs text-(--schemes-muted)"
+                      >
+                        <NextLink
+                          href="/catalog"
+                          className="transition-colors hover:text-(--schemes-blue-600)"
+                        >
+                          Catalog
+                        </NextLink>
+                        <ChevronRight size={12} strokeWidth={2} aria-hidden />
+                        <NextLink
+                          href={getCatalogCategoryPath(category)}
+                          className="transition-colors hover:text-(--schemes-blue-600)"
+                        >
+                          {category}
+                        </NextLink>
+                      </nav>
+                    );
+                  }
+                  return null;
+                })()}
                 {scheme.agency && (
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--schemes-muted)">
                     {scheme.agency}

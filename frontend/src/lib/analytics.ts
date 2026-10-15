@@ -10,6 +10,7 @@ export interface SchemeItem {
   item_id: string;
   item_name: string;
   item_category?: string;
+  index?: number;
 }
 
 /**
@@ -30,7 +31,7 @@ export interface EventMap {
   /** GA4 recommended: search run. Deliberately omits search_term (no PII). */
   search: { result_count: number; has_results: boolean };
   /** GA4 recommended: scheme opened from a list */
-  select_item: { item_list_id: string; index: number; items: SchemeItem[] };
+  select_item: { item_list_id: string; items: SchemeItem[] };
   /** GA4 recommended: scheme detail viewed */
   view_item: { items: SchemeItem[] };
   /** Custom: catalog filter applied */
@@ -126,7 +127,7 @@ export const EVENT_PARAM_KEYS: {
   generate_lead: ["method"],
   select_content: ["content_type", "item_id"],
   search: ["result_count", "has_results"],
-  select_item: ["item_list_id", "index", "items"],
+  select_item: ["item_list_id", "items"],
   view_item: ["items"],
   filter_apply: ["filter_name"],
   chat_message_send: ["turn_index", "send_trigger"],

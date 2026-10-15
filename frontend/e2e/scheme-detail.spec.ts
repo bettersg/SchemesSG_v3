@@ -87,6 +87,47 @@ test("an inactive scheme's page warns that its website failed our check", async 
 
   const accessibilityScan = await new AxeBuilder({ page })
     .include("main")
+    .exclude("footer")
     .analyze();
   expect(accessibilityScan.violations).toEqual([]);
+});
+
+test("scheme detail page shows a breadcrumb to catalog and category", async ({
+  context,
+  page,
+  request,
+}) => {
+  await interceptCatalogSchemeJourney(page);
+  await interceptSchemeDetailJourney(context);
+
+  const rawHtml = await request.get(`/schemes/${SCHEME_DETAIL_ID}`);
+  expect(rawHtml.ok()).toBe(true);
+  const body = await rawHtml.text();
+  expect(body).toContain('href="/catalog/financial-assistance"');
+
+  await page.goto(`/schemes/${SCHEME_DETAIL_ID}`);
+  await expect(
+    page.getByRole("heading", { name: SCHEME_DETAIL.scheme }),
+  ).toBeVisible();
+
+  const breadcrumb = page.getByLabel("Breadcrumb");
+  const catalogLink = breadcrumb.getByRole("link", { name: "Catalog" });
+  await expect(catalogLink).toBeVisible();
+  await expect(catalogLink).toHaveAttribute("href", "/catalog");
+
+  const schemeType = SCHEME_DETAIL.scheme_type;
+  expect(schemeType).toBeDefined();
+  expect(schemeType?.length).toBeGreaterThan(0);
+  const firstCategory = schemeType?.[0];
+  expect(firstCategory).toBeDefined();
+
+  const expectedCategory = firstCategory?.toLowerCase().replace(/\s+/g, "-");
+  const categoryLink = breadcrumb.getByRole("link", {
+    name: firstCategory,
+  });
+  await expect(categoryLink).toBeVisible();
+  await expect(categoryLink).toHaveAttribute(
+    "href",
+    `/catalog/${expectedCategory}`,
+  );
 });

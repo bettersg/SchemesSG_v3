@@ -14,6 +14,7 @@ import {
 import EmptyState from "@/components/feedback/empty-state";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { Search } from "lucide-react";
+import { Footer } from "@/components/layout/footer";
 
 type CatalogLoadState =
   | "loadingInitial"
@@ -329,6 +330,7 @@ export default function CatalogPageClient({
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
