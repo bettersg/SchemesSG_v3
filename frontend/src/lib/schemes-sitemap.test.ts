@@ -4,7 +4,10 @@ import type { RawScheme, RawSchemeData } from "@/types/types";
 
 vi.mock("server-only", () => ({}));
 
-import { getSchemesForSitemap } from "./schemes.server";
+import {
+  getIndexableSchemesForSitemap,
+  getSchemesForSitemap,
+} from "./schemes.server";
 import { hasIndexableContent } from "./scheme-indexing";
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -52,7 +55,7 @@ describe("sitemap enrichment for indexability", () => {
       catalogPage([withDescription], { total: 1 }),
     );
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getIndexableSchemesForSitemap();
 
     expect(schemes).toHaveLength(1);
     expect(schemes[0].schemeId).toBe("has-description");
@@ -79,7 +82,7 @@ describe("sitemap enrichment for indexability", () => {
         }),
       );
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getIndexableSchemesForSitemap();
 
     expect(schemes).toHaveLength(1);
     expect(schemes[0].schemeId).toBe("eligibility-only");
@@ -110,7 +113,7 @@ describe("sitemap enrichment for indexability", () => {
         }),
       );
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getIndexableSchemesForSitemap();
 
     expect(schemes).toHaveLength(1);
     expect(schemes[0].schemeId).toBe("application-only");
@@ -138,9 +141,26 @@ describe("sitemap enrichment for indexability", () => {
         }),
       );
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getIndexableSchemesForSitemap();
 
     expect(schemes).toHaveLength(0);
+  });
+
+  it("still lists a thin scheme for prerendering", async () => {
+    // The scheme route prerenders from this list, so filtering it for the
+    // sitemap would delete the page rather than just noindex it.
+    const thin = {
+      ...catalogScheme,
+      scheme_id: "thin-scheme",
+      description: "",
+      llm_description: "",
+    };
+    vi.mocked(fetch).mockResolvedValueOnce(catalogPage([thin], { total: 1 }));
+
+    const schemes = await getSchemesForSitemap();
+
+    expect(schemes.map((scheme) => scheme.schemeId)).toEqual(["thin-scheme"]);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it("excludes scheme when full fetch fails", async () => {
@@ -155,7 +175,7 @@ describe("sitemap enrichment for indexability", () => {
       .mockResolvedValueOnce(catalogPage([noDescription], { total: 1 }))
       .mockRejectedValueOnce(new Error("Network error"));
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getIndexableSchemesForSitemap();
 
     expect(schemes).toHaveLength(0);
   });
@@ -182,7 +202,7 @@ describe("sitemap enrichment for indexability", () => {
         }),
       );
 
-    const schemes = await getSchemesForSitemap();
+    const schemes = await getIndexableSchemesForSitemap();
 
     expect(schemes).toHaveLength(2);
     expect(schemes.map((s) => s.schemeId)).toEqual(

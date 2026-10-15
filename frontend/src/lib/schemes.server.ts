@@ -204,23 +204,31 @@ async function processInBatches<T, R>(
   return results;
 }
 
-export const getSchemesForSitemap = cache(async (): Promise<Scheme[]> => {
-  const catalogSchemes = (await getAllCatalogSchemes()).filter(
-    (scheme) =>
-      !scheme.status || !PUBLIC_BUILD_EXCLUDED_STATUSES.has(scheme.status),
-  );
+// Every publishable scheme. The scheme route prerenders from this, so thin
+// schemes still get a page; they are noindexed there, not dropped.
+export const getSchemesForSitemap = cache(
+  async (): Promise<Scheme[]> =>
+    (await getAllCatalogSchemes()).filter(
+      (scheme) =>
+        !scheme.status || !PUBLIC_BUILD_EXCLUDED_STATUSES.has(scheme.status),
+    ),
+);
 
-  const enriched = await processInBatches(
-    catalogSchemes,
-    10,
-    enrichSchemeForSitemap,
-  );
-
-  return enriched.filter(
-    (scheme): scheme is Scheme =>
-      scheme !== null && hasIndexableContent(scheme),
-  );
-});
+// The subset worth listing in the sitemap, decided on full records because the
+// catalog projection omits eligibility and application text.
+export const getIndexableSchemesForSitemap = cache(
+  async (): Promise<Scheme[]> => {
+    const enriched = await processInBatches(
+      await getSchemesForSitemap(),
+      10,
+      enrichSchemeForSitemap,
+    );
+    return enriched.filter(
+      (scheme): scheme is Scheme =>
+        scheme !== null && hasIndexableContent(scheme),
+    );
+  },
+);
 
 export const getSchemeById = cache(
   async (schemeId: string): Promise<Scheme | null> => {

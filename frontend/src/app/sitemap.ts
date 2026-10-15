@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getSchemesForSitemap } from "@/lib/schemes.server";
+import { getIndexableSchemesForSitemap } from "@/lib/schemes.server";
 import { CATALOG_ROUTE_PATHS } from "@/lib/catalog-seo";
 
 const SITE_URL = "https://schemes.sg";
@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${SITE_URL}${route}`,
   }));
 
-  const schemes = await getSchemesForSitemap();
+  const schemes = await getIndexableSchemesForSitemap();
   const schemeRoutes: MetadataRoute.Sitemap = schemes.map((scheme) => ({
     url: `${SITE_URL}/schemes/${scheme.schemeId}`,
     lastModified: getLastModified(scheme.lastUpdated),
