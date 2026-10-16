@@ -7,6 +7,12 @@ import { makeScheme } from "@/test/fixtures/scheme";
 import type { FilterObjType } from "@/types/types";
 import SchemesFilter from "./schemes-filter";
 
+const trackMock = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/analytics", () => ({
+  track: trackMock,
+}));
+
 const originalMatchMedia = Object.getOwnPropertyDescriptor(
   window,
   "matchMedia",
@@ -100,5 +106,54 @@ describe("SchemesFilter", () => {
     await user.click(screen.getAllByRole("button", { name: "Dismiss" })[0]);
     expect(results().getByText("Jurong Support")).toBeVisible();
     expect(results().queryByText("Bedok Support")).not.toBeInTheDocument();
+  });
+
+  it("sends filter_apply events with correct filter_name and no selected values", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+
+    trackMock.mockClear();
+    const user = userEvent.setup();
+    render(<FilterHarness />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Filter by Location" }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Bedok" }));
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    expect(trackMock).toHaveBeenCalledWith("filter_apply", {
+      filter_name: "location",
+    });
+
+    const callArgs = trackMock.mock.calls[0];
+    const params = callArgs[1] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("planning_area");
+    expect(params).not.toHaveProperty("location");
+    expect(params).not.toHaveProperty("value");
+    expect(JSON.stringify(params)).not.toContain("Bedok");
+
+    await user.click(screen.getAllByRole("button", { name: "Dismiss" })[0]);
+    trackMock.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Filter by Agency" }));
+    await user.click(await screen.findByRole("button", { name: "Agency A" }));
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    expect(trackMock).toHaveBeenCalledWith("filter_apply", {
+      filter_name: "agency",
+    });
+
+    const agencyCallArgs = trackMock.mock.calls[0];
+    const agencyParams = agencyCallArgs[1] as Record<string, unknown>;
+    expect(agencyParams).not.toHaveProperty("agency_name");
+    expect(agencyParams).not.toHaveProperty("value");
+    expect(JSON.stringify(agencyParams)).not.toContain("Agency A");
   });
 });
