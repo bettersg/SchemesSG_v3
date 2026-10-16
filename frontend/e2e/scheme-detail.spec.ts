@@ -13,6 +13,9 @@ test("user can open a catalog scheme and continue to its official website", asyn
   context,
   page,
 }) => {
+  // Three first visits (catalog, scheme page, agency site), each of which
+  // `next dev` may still be compiling under a full parallel run.
+  test.setTimeout(60_000);
   const network = await interceptCatalogSchemeJourney(page);
   await interceptSchemeDetailJourney(context);
   await page.goto("/catalog");
