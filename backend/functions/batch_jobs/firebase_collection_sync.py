@@ -21,7 +21,7 @@ def client(project_id):
 
 def retrieve_firebase_collection(project, collection_name):
     docs = {d.id: d.to_dict() for d in project.collection(collection_name).stream()}
-    logger.info(f"Retrieved {len(docs)} docs from {collection_name}")
+    logger.info(f"Retrieved {len(docs)} docs from {project.project}/{collection_name}")
     return docs
 
 
