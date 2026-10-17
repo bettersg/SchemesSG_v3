@@ -17,6 +17,10 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}", "staging-smoke/**/*.test.ts"],
     clearMocks: true,
     restoreMocks: true,
+    // The 5s default is too tight for the jsdom integration specs under full
+    // parallelism: they pass alone but fail intermittently in a full run.
+    testTimeout: 20000,
+    hookTimeout: 20000,
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "20"
+    "node": "24"
   },
   "devEngines": {
     "runtime": {
@@ -34,6 +34,7 @@
     "build:staging": "cross-env APP_ENV=staging next build",
     "build:prod": "cross-env APP_ENV=production next build",
     "build:public": "node scripts/run-public-build.mjs",
+    "seo:images": "node scripts/generate-seo-images.mjs",
     "test:build-fixture": "node --test scripts/public-build-fixture.test.mjs",
     "test-build:staging": "npm run build:staging && npx serve@latest out",
     "test-build:prod": "npm run build:prod && npx serve@latest out",
@@ -67,7 +68,7 @@
     "@testing-library/user-event": "^14.6.6",
     "@types/lodash": "^4.17.24",
     "@types/matter-js": "^0.20.2",
-    "@types/node": "^20.17.10",
+    "@types/node": "^24.19.2",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18",
     "@vitest/coverage-v8": "^4.1.11",

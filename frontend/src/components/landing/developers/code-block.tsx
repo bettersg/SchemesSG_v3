@@ -3,6 +3,7 @@
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 /**
  * Dark code panel: a language pill and copy control in a caption bar, then the
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 export function CodeBlock({
   code,
   language,
+  operation,
   caption,
   copyLabel,
   copiedLabel,
@@ -22,6 +24,12 @@ export function CodeBlock({
 }: {
   code: string;
   language: string;
+  /**
+   * Which sample this is, for analytics. The partner API operation id where the
+   * sample belongs to one, otherwise the section it sits in. A stable
+   * identifier rather than the caption, which is translated.
+   */
+  operation: string;
   caption?: string;
   copyLabel: string;
   copiedLabel: string;
@@ -33,6 +41,9 @@ export function CodeBlock({
     void navigator.clipboard.writeText(code).then(() => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
+      // code_language, not language: GA4 collects `language` automatically for
+      // the browser locale, so a custom parameter of that name is shadowed.
+      track("code_sample_copy", { operation, code_language: language });
     });
   };
 

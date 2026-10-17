@@ -13,6 +13,10 @@ import {
 import { TEST_API_URL } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
 
+const analyticsMocks = vi.hoisted(() => ({ track: vi.fn() }));
+
+vi.mock("@/lib/analytics", () => analyticsMocks);
+
 vi.mock("@/lib/auth-gateway", () => ({
   getAuthToken: async () => "test-auth-token",
 }));
@@ -49,7 +53,10 @@ function ChatJourney({
   );
 }
 
-beforeEach(stubChatEnvironment);
+beforeEach(() => {
+  stubChatEnvironment();
+  analyticsMocks.track.mockClear();
+});
 
 describe("chat provider flow", () => {
   it("commits a streamed answer, schemes, follow-ups, and rating", async () => {
@@ -99,6 +106,15 @@ describe("chat provider flow", () => {
         name: /Test Support Scheme, Community Support Agency/,
       }).length,
     ).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(analyticsMocks.track).toHaveBeenCalledWith(
+        "chat_answer_shown",
+        expect.objectContaining({
+          schemes_found: 1,
+          ms_to_first_results: expect.any(Number),
+        }),
+      ),
+    );
 
     await user.click(
       screen.getAllByLabelText("Housing: Show housing support")[0],

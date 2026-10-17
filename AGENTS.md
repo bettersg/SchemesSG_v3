@@ -26,6 +26,9 @@ is exempt.
 - Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, …), imperative
   one-liner, no co-author/signature lines. Semantic-release bumps versions from
   `feat:`/`fix:` and breaking changes.
+- Delivery ends with a pushed branch and an open PR to `stg`, not a local commit;
+  open it once the change verifies rather than waiting to be asked. Review and
+  merge stay with the user.
 - For PRs, fill every section of `pull_request_template.md` with the required
   user flow, isolation, test impact, evidence, proof of fix, and caveats.
 - When the PR merges or closes, remove its worktree before the session ends:

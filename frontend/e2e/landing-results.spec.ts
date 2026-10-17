@@ -7,6 +7,7 @@ import {
   LANDING_QUERY,
   LANDING_SCHEMES,
   interceptLandingResultsJourney,
+  waitForHydration,
 } from "./fixtures/landing-results";
 
 test("user can search from the landing page and receive streamed results", async ({
@@ -25,6 +26,7 @@ test("user can search from the landing page and receive streamed results", async
   const searchInput = page.getByPlaceholder(
     "I'm a single parent looking for financial assistance...",
   );
+  await waitForHydration(searchInput);
   await searchInput.fill(LANDING_QUERY);
   await page.getByRole("button", { name: "Search" }).click();
 

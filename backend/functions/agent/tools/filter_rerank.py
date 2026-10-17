@@ -1,15 +1,16 @@
 """Tool to reorder/filter an existing schemes list using LLM-provided indices."""
 
-import asyncio
 import json
-from typing import Any
 from datetime import datetime, timezone
+from typing import Any
 
+from integrations import FirebaseManager, LLMManager
+from langchain_core.messages import HumanMessage
 from langchain_core.tools import StructuredTool
 from langgraph.config import get_stream_writer
+from langgraph.prebuilt import ToolRuntime
 from pydantic import BaseModel, Field
 from utils.logging_setup import setup_logging
-from integrations import FirebaseManager, LLMManager
 
 
 logger = setup_logging()
@@ -44,6 +45,17 @@ Your task is to filter and rerank this list based on the following directive:
 Return a JSON array of zero-based indices representing the new order and selection of schemes that best fulfills the directive.
 Only include indices of schemes that meet the criteria, and order them according to the directive. Do not include any indices of schemes that should be excluded based on the directive.
 """
+
+
+def _searched_in_current_turn(runtime: ToolRuntime | None) -> bool:
+    messages = getattr(runtime, "state", {}).get("messages", []) if runtime else []
+    for message in reversed(messages):
+        if isinstance(message, HumanMessage):
+            break
+        tool_calls = getattr(message, "tool_calls", [])
+        if any(call.get("name") == "search_schemes" for call in tool_calls):
+            return True
+    return False
 
 
 def _retrieve_search_results_by_doc_id(doc_id: str) -> str:
@@ -123,7 +135,12 @@ def _save_filtered_reranked_schemes(doc_id: str, schemes: list) -> None:
 def filter_rerank_by_directive(
     doc_id: str,
     directive: str,
+    runtime: ToolRuntime = None,
 ) -> dict[str, Any]:
+    if _searched_in_current_turn(runtime):
+        logger.info("Skipping filter/rerank after a fresh search in the same turn")
+        return {"error": "Fresh search results cannot be filtered in the same turn."}
+
     try:
         writer = get_stream_writer()
         writer(

@@ -6,11 +6,13 @@ import {
   LANDING_QUERY,
   LANDING_SCHEMES,
   interceptLandingResultsJourney,
+  waitForHydration,
 } from "./fixtures/landing-results";
 
 test("mobile navigation and chat result tabs remain usable", async ({ page }) => {
   await interceptLandingResultsJourney(page);
   await page.goto("/");
+  await waitForHydration(page.getByRole("textbox"));
 
   const header = page.getByRole("banner");
   await header.getByRole("button", { name: "Open menu" }).click();

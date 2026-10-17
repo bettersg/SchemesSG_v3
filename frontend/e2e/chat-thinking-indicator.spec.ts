@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { interceptChatStreamScenarios } from "./fixtures/chat-resilience";
-import { LANDING_QUERY } from "./fixtures/landing-results";
+import { LANDING_QUERY, waitForHydration } from "./fixtures/landing-results";
 import { THINKING_PHRASES } from "../src/components/chat/thinking-phrases";
 
 // Any of the 20 can open the rotation, so match the set rather than an index.
@@ -34,6 +34,7 @@ test("thinking indicator appears before the agent sends anything at all", async 
   await interceptChatStreamScenarios(page, [{ events: [], finish: "hold" }]);
 
   await page.goto("/");
+  await waitForHydration(page.getByRole("textbox"));
   await page.getByRole("textbox").fill(LANDING_QUERY);
   await page.getByRole("button", { name: "Search" }).click();
 
@@ -81,6 +82,7 @@ test.describe("with motion enabled", () => {
     ]);
 
     await page.goto("/");
+    await waitForHydration(page.getByRole("textbox"));
     await page.getByRole("textbox").fill(LANDING_QUERY);
     await page.getByRole("button", { name: "Search" }).click();
 

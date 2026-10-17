@@ -28,6 +28,7 @@ Object.defineProperties(globalThis, {
 class IntersectionObserverStub implements IntersectionObserver {
   readonly root = null;
   readonly rootMargin = "0px";
+  readonly scrollMargin = "0px";
   readonly thresholds = [0];
 
   disconnect() {}
@@ -43,6 +44,25 @@ class ResizeObserverStub implements ResizeObserver {
   observe() {}
   unobserve() {}
 }
+// jsdom ships no matchMedia. Resolve min-width queries against the jsdom
+// viewport so breakpoint-driven components render their desktop branch, which
+// is what a 1024px-wide window should produce.
+Object.defineProperty(globalThis, "matchMedia", {
+  configurable: true,
+  value: (query: string) => {
+    const minWidth = /\(min-width:\s*(\d+)px\)/.exec(query);
+    return {
+      media: query,
+      matches: minWidth ? window.innerWidth >= Number(minWidth[1]) : false,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    };
+  },
+});
 
 Object.defineProperty(globalThis, "IntersectionObserver", {
   configurable: true,
