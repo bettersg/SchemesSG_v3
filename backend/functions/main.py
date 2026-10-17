@@ -32,8 +32,8 @@ The following endpoints are available:
 6. Batch Jobs:
    - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
-   - scheduled_notion_link_queue_sync: Every 30 minutes, mirror failing-link schemes into the
-     Notion Link Queue (no-op unless NOTION_* is set; dev uses a QA-only Notion copy)
+   - scheduled_firebase_collection_sync: Dev only. Twice-monthly job that makes dev's
+     schemes collection an exact copy of prod's
 
 7. System:
    - health: Health check endpoint
@@ -53,10 +53,10 @@ Note: Do not deploy functions using firebase deploy. Deployment is handled by Gi
 """
 
 import json
+import os
 import sys
 
 from agent.handler import agent_chat_message  # noqa: F401
-from batch_jobs.notion_link_queue import scheduled_notion_link_queue_sync  # noqa: F401
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options
@@ -73,6 +73,11 @@ from slack_integration.slack import (  # noqa: F401
 )
 from update_scheme.update_scheme import update_scheme  # noqa: F401
 from utils.endpoints import keep_endpoints_warm  # noqa: F401
+
+
+# Dev-only: syncs prod's schemes into dev. Not imported, so never deployed, in prod.
+if os.getenv("GCLOUD_PROJECT") == "schemessg-v3-dev":
+    from batch_jobs.firebase_collection_sync import scheduled_firebase_collection_sync  # noqa: F401
 
 
 # Initialise logger
