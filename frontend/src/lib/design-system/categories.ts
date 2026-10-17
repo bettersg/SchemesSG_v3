@@ -191,6 +191,16 @@ export function getSchemeCategory(label: string): SchemeCategory | undefined {
   return canonicalCategory ?? SCHEME_TYPE_CATEGORY_MAP[normalized];
 }
 
+export function resolveSchemeCategory(
+  schemeTypes: string[],
+): SchemeCategory | undefined {
+  for (const type of schemeTypes) {
+    const category = getSchemeCategory(type);
+    if (category) return category;
+  }
+  return undefined;
+}
+
 export function getSchemeCategoryClassName(label: string) {
   const category = getSchemeCategory(label);
   if (category) {

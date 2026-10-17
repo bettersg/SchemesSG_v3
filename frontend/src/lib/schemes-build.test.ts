@@ -57,7 +57,7 @@ describe("public build-time scheme loading", () => {
 
     const [url, init] = vi.mocked(fetch).mock.calls[0];
     expect(String(url)).toBe(
-      "https://api.test/catalog?limit=20&category=Financial+Assistance",
+      "https://api.test/catalog?limit=60&category=Financial+Assistance",
     );
     expect(new Headers(init?.headers).has("Authorization")).toBe(false);
   });
@@ -87,25 +87,25 @@ describe("public build-time scheme loading", () => {
   });
 
   it("enumerates every catalog page and de-duplicates scheme ids", async () => {
-    const firstPage = Array.from({ length: 20 }, (_, index) => ({
+    const firstPage = Array.from({ length: 60 }, (_, index) => ({
       ...catalogScheme,
       scheme_id: `page-1-scheme-${index + 1}`,
     }));
     vi.mocked(fetch)
       .mockResolvedValueOnce(
-        catalogPage(firstPage, { total: 21, nextCursor: "cursor-2" }),
+        catalogPage(firstPage, { total: 61, nextCursor: "cursor-2" }),
       )
       .mockResolvedValueOnce(
         catalogPage(
-          [firstPage[0], { ...catalogScheme, scheme_id: "page-2-scheme-21" }],
-          { total: 21 },
+          [firstPage[0], { ...catalogScheme, scheme_id: "page-2-scheme-61" }],
+          { total: 61 },
         ),
       );
 
     const schemes = await getAllCatalogSchemes();
 
-    expect(schemes).toHaveLength(21);
-    expect(schemes.at(-1)?.schemeId).toBe("page-2-scheme-21");
+    expect(schemes).toHaveLength(61);
+    expect(schemes.at(-1)?.schemeId).toBe("page-2-scheme-61");
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
   });
 
@@ -124,7 +124,12 @@ describe("public build-time scheme loading", () => {
   it("omits inactive and retired schemes from sitemap routes", async () => {
     vi.mocked(fetch).mockResolvedValue(
       catalogPage([
-        { ...catalogScheme, scheme_id: "listed-scheme", status: "active" },
+        {
+          ...catalogScheme,
+          scheme_id: "listed-scheme",
+          status: "active",
+          description: "A valid scheme",
+        },
         { ...catalogScheme, scheme_id: "unlisted-scheme", status: "inactive" },
         { ...catalogScheme, scheme_id: "gone-scheme", status: "retired" },
       ]),

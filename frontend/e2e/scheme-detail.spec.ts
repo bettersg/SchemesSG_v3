@@ -13,10 +13,12 @@ test("user can open a catalog scheme and continue to its official website", asyn
   context,
   page,
 }) => {
+  // Three first visits (catalog, scheme page, agency site), each of which
+  // `next dev` may still be compiling under a full parallel run.
+  test.setTimeout(60_000);
   const network = await interceptCatalogSchemeJourney(page);
   await interceptSchemeDetailJourney(context);
   await page.goto("/catalog");
-  await page.getByRole("link", { name: "Financial Assistance" }).click();
 
   const schemeLink = page.getByRole("link", {
     name: `${CATALOG_SCHEMES[0].scheme}, ${CATALOG_SCHEMES[0].agency} (opens in new tab)`,
@@ -90,4 +92,49 @@ test("an inactive scheme's page warns that its website failed our check", async 
     .include("main")
     .analyze();
   expect(accessibilityScan.violations).toEqual([]);
+});
+
+test("scheme detail page shows a breadcrumb to catalog and category", async ({
+  context,
+  page,
+  request,
+}) => {
+  await interceptCatalogSchemeJourney(page);
+  await interceptSchemeDetailJourney(context);
+
+  await page.goto(`/schemes/${SCHEME_DETAIL_ID}`);
+  await expect(
+    page.getByRole("heading", { name: SCHEME_DETAIL.scheme }),
+  ).toBeVisible();
+
+  // After the page load, so `next dev` has compiled the route. Scoped to the
+  // breadcrumb because the footer links every category on this page too.
+  const rawHtml = await request.get(`/schemes/${SCHEME_DETAIL_ID}`);
+  expect(rawHtml.ok()).toBe(true);
+  const serverBreadcrumb = (await rawHtml.text()).match(
+    /<nav[^>]*aria-label="Breadcrumb"[^>]*>[\s\S]*?<\/nav>/,
+  )?.[0];
+  expect(serverBreadcrumb).toContain('href="/catalog"');
+  expect(serverBreadcrumb).toContain('href="/catalog/financial-assistance"');
+
+  const breadcrumb = page.getByLabel("Breadcrumb");
+  const catalogLink = breadcrumb.getByRole("link", { name: "Catalog" });
+  await expect(catalogLink).toBeVisible();
+  await expect(catalogLink).toHaveAttribute("href", "/catalog");
+
+  const schemeType = SCHEME_DETAIL.scheme_type;
+  expect(schemeType).toBeDefined();
+  expect(schemeType?.length).toBeGreaterThan(0);
+  const firstCategory = schemeType?.[0];
+  expect(firstCategory).toBeDefined();
+
+  const expectedCategory = firstCategory?.toLowerCase().replace(/\s+/g, "-");
+  const categoryLink = breadcrumb.getByRole("link", {
+    name: firstCategory,
+  });
+  await expect(categoryLink).toBeVisible();
+  await expect(categoryLink).toHaveAttribute(
+    "href",
+    `/catalog/${expectedCategory}`,
+  );
 });
