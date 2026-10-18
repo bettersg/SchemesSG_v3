@@ -14,7 +14,7 @@ type PackageRuntimeMetadata = {
 };
 
 const expectedRuntimeMetadata = {
-  engines: { node: "20" },
+  engines: { node: "24" },
   devEngines: {
     runtime: {
       name: "node",

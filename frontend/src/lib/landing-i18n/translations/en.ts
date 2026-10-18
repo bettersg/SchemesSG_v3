@@ -269,7 +269,8 @@ export const en: Translations = {
       {
         question: "Is my personal information safe?",
         answer:
-          "Your privacy is protected by design. We don't require any login or account, which means there's no way for us to know who you are. Your searches are encrypted in transit and at rest, and we never share your information with anyone.",
+          "Your privacy is protected by design. We don't require any login or account and we never ask for your name or NRIC, which means there's no way for us to know who you are. Your searches are encrypted in transit, we don't sell your information, and the measurements we use to improve the site never include what you typed.",
+        answerLink: { label: "Read our Privacy Policy.", href: "/privacy" },
       },
       {
         question: "How up-to-date is the information?",
@@ -305,7 +306,7 @@ export const en: Translations = {
       "Read access to the Schemes.sg catalogue, so partner organisations can surface the right scheme inside their own product.",
     accessBadge: "By request",
     requestAccess: "Request access",
-    contentsHeading: "On this page",
+    contentsHeading: "Contents",
     sections: {
       access: {
         heading: "Getting access",
@@ -388,21 +389,6 @@ export const en: Translations = {
       "X-RateLimit-Remaining": "What is left in the current minute.",
       "Retry-After": "Seconds to wait. Only sent with a 429.",
     },
-  },
-
-  legal: {
-    privacyHeading: "Privacy Policy",
-    termsHeading: "Terms of Service",
-    noticeTitle: "This policy is being written",
-    noticeBody:
-      "We are drafting it properly rather than posting boilerplate. This page exists so the link works and so you can see where we have got to.",
-    interimHeading: "What holds in the meantime",
-    interimBody:
-      "Schemes.sg is a free search tool over publicly published government and community scheme information. You can search and browse without an account. We do not sell your data. Search queries are stored so we can improve results, and the feedback you choose to send is stored with it.",
-    partnerHeading: "Sharing scheme data with partners",
-    partnerBody:
-      "We share scheme catalogue and search data with a small number of named partner organisations through our partner API, so they can help people find schemes inside their own services. This covers scheme information, not anything you type into Schemes.sg.",
-    contactCta: "Ask us a question",
   },
 
   footer: {

@@ -39,8 +39,13 @@ describe("analytics", () => {
       track("search", { result_count: 5, has_results: true });
       track("select_item", {
         item_list_id: "category_education",
-        index: 0,
-        items: [{ item_id: "scheme-123", item_name: "Education Grant" }],
+        items: [
+          {
+            item_id: "scheme-123",
+            item_name: "Education Grant",
+            index: 0,
+          },
+        ],
       });
       track("view_item", {
         items: [{ item_id: "scheme-123", item_name: "Education Grant" }],
@@ -89,7 +94,7 @@ describe("analytics", () => {
       track("search", { result_count: "5", has_results: true });
 
       // @ts-expect-error - missing required param
-      track("select_item", { item_list_id: "test", index: 0 });
+      track("select_item", { item_list_id: "test" });
     });
 
     it("rejects params belonging to a different event", () => {

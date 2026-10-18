@@ -41,6 +41,7 @@ import {
 } from "./developers/api-primitives";
 import { CodeBlock } from "./developers/code-block";
 import { DocsSidebar, type NavItem } from "./developers/docs-sidebar";
+import { ScrollToTop } from "./shared/scroll-to-top";
 
 const PROSE = "max-w-[62ch]";
 const BODY = "text-[15px] leading-[1.65]";
@@ -102,10 +103,10 @@ export default function DevelopersPageContent() {
 
   return (
     <div className="bg-(--schemes-bg)">
-      <div className="mx-auto w-full max-w-[100rem] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div className="mx-auto w-full max-w-7xl lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:px-6">
         <DocsSidebar heading={d.contentsHeading} items={navItems} />
 
-        <div className="min-w-0 px-4 sm:px-8 lg:px-10">
+        <div className="min-w-0 px-4 sm:px-8 lg:pr-0 lg:pl-10">
           {/* Header. No hero image and no orbs: the reader came for the endpoint.
               Only lg needs pt-nav: below it the sidebar strip sits above this and
               already carries the offset past the fixed navbar. */}
@@ -345,6 +346,7 @@ export default function DevelopersPageContent() {
           <div className="h-16" />
         </div>
       </div>
+      <ScrollToTop />
     </div>
   );
 }

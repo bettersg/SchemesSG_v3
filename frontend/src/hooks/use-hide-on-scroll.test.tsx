@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useHideOnScroll } from "./use-hide-on-scroll";
+import { REVEAL_CHROME_EVENT, useHideOnScroll } from "./use-hide-on-scroll";
 
 const originalInnerWidth = Object.getOwnPropertyDescriptor(
   window,
@@ -51,6 +51,48 @@ describe("useHideOnScroll", () => {
       vi.advanceTimersByTime(400);
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp" }));
       container.scrollTop = 80;
+      container.dispatchEvent(new Event("scroll"));
+    });
+    expect(result.current.isHidden).toBe(false);
+  });
+
+  it("reveals on request and stays shown while a scripted scroll runs", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000);
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    const container = document.createElement("div");
+    Object.defineProperties(container, {
+      scrollHeight: { configurable: true, value: 1_000 },
+      clientHeight: { configurable: true, value: 200 },
+    });
+    document.body.append(container);
+    const ref = { current: container };
+    const { result } = renderHook(() =>
+      useHideOnScroll({ scrollContainerRef: ref }),
+    );
+
+    act(() => {
+      container.scrollTop = 400;
+      window.dispatchEvent(new WheelEvent("wheel", { deltaY: 20 }));
+      container.dispatchEvent(new Event("scroll"));
+      container.scrollTop = 500;
+      container.dispatchEvent(new Event("scroll"));
+    });
+    expect(result.current.isHidden).toBe(true);
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+      window.dispatchEvent(new Event(REVEAL_CHROME_EVENT));
+    });
+    expect(result.current.isHidden).toBe(false);
+
+    // The back-to-top scroll itself moves upward with no user input.
+    act(() => {
+      vi.advanceTimersByTime(400);
+      container.scrollTop = 300;
       container.dispatchEvent(new Event("scroll"));
     });
     expect(result.current.isHidden).toBe(false);

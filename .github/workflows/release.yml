@@ -29,9 +29,9 @@ jobs:
 
       # 2. Use Node 20+ (semantic-release requires >= 20.8.1)
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: "24"
 
       # 3. Install dependencies
       - name: Install Dependencies

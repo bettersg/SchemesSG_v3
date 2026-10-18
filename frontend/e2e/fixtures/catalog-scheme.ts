@@ -102,7 +102,7 @@ async function resetPublicFixtureRequests(): Promise<void> {
  * an unhelpful "link not visible".
  */
 async function assertFixtureSchemesMatch(): Promise<void> {
-  const response = await fetch(`${E2E_API_ORIGIN}/catalog?limit=20`);
+  const response = await fetch(`${E2E_API_ORIGIN}/catalog?limit=60`);
   expect(response.ok).toBe(true);
   const payload = (await response.json()) as { data: RawSchemeData[] };
   for (const expected of CATALOG_SCHEMES) {

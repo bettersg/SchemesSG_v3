@@ -6,7 +6,10 @@ import { en } from "@/lib/landing-i18n/translations/en";
 import { zh } from "@/lib/landing-i18n/translations/zh";
 import { FAQSection } from "./faq-section";
 
-const apiItem = en.faq.items.find((item) => item.answerLink);
+// Selected by destination, not by "the first answer that has a link": more than
+// one FAQ answer carries a link now, and position is not a stable identifier.
+const linkedItem = (dict: typeof en, href: string) =>
+  dict.faq.items.find((item) => item.answerLink?.href === href);
 
 /**
  * The API answer shipped once with a bare "/developers" written into the prose,
@@ -14,6 +17,7 @@ const apiItem = en.faq.items.find((item) => item.answerLink);
  */
 describe("FAQ section", () => {
   it("links the API answer to the developer docs", async () => {
+    const apiItem = linkedItem(en, "/developers");
     const user = userEvent.setup();
     render(
       <LanguageProvider>
@@ -33,9 +37,20 @@ describe("FAQ section", () => {
     ["en", en],
     ["zh", zh],
   ])("names /developers in the %s API answer", (_lang, dict) => {
-    const apiItem = dict.faq.items.find((item) => item.answerLink);
-    expect(apiItem?.answerLink?.href).toBe("/developers");
+    const apiItem = linkedItem(dict, "/developers");
+    expect(apiItem).toBeDefined();
     // The link replaced a bare path in the prose; it must not come back.
     expect(apiItem?.answer).not.toContain("/developers");
+  });
+
+  // The privacy answer states what we do and do not share, so the policy has to
+  // be one click away in both languages rather than only in English.
+  it.each([
+    ["en", en],
+    ["zh", zh],
+  ])("links the %s privacy answer to the policy", (_lang, dict) => {
+    const privacyItem = linkedItem(dict, "/privacy");
+    expect(privacyItem).toBeDefined();
+    expect(privacyItem?.answerLink?.label).toBeTruthy();
   });
 });
