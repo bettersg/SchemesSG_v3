@@ -269,7 +269,8 @@ export const en: Translations = {
       {
         question: "Is my personal information safe?",
         answer:
-          "Your privacy is protected by design. We don't require any login or account, which means there's no way for us to know who you are. Your searches are encrypted in transit and at rest, and we never share your information with anyone.",
+          "Your privacy is protected by design. We don't require any login or account and we never ask for your name or NRIC, which means there's no way for us to know who you are. Your searches are encrypted in transit, we don't sell your information, and the measurements we use to improve the site never include what you typed.",
+        answerLink: { label: "Read our Privacy Policy.", href: "/privacy" },
       },
       {
         question: "How up-to-date is the information?",
