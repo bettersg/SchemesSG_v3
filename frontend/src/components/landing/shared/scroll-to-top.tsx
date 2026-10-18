@@ -31,7 +31,7 @@ export function ScrollToTop() {
           "(prefers-reduced-motion: reduce)",
         ).matches;
         window.dispatchEvent(new Event(REVEAL_CHROME_EVENT));
-        window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+        window.scrollTo({ top: 0, behavior: reduce ? "instant" : "smooth" });
       }}
       aria-label="Scroll to top"
       className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 inline-flex size-11 items-center justify-center rounded-full border border-(--schemes-border) bg-white/85 text-(--schemes-blue-600) shadow-[0_4px_14px_rgba(24,95,165,0.10)] backdrop-blur-md transition-[background-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) lg:hidden"

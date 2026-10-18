@@ -33,6 +33,23 @@ describe("ScrollToTop", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Scroll to top" }));
 
-    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
+  });
+
+  // "auto" would defer to the page's CSS scroll-behavior, which is smooth, so
+  // only "instant" actually skips the animation.
+  it("jumps without animating when the reader prefers reduced motion", () => {
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const matchMedia = window.matchMedia;
+    vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      ...matchMedia(query),
+      matches: query === "(prefers-reduced-motion: reduce)",
+    }));
+    render(<ScrollToTop />);
+    scrollWindowTo(window.innerHeight * 3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Scroll to top" }));
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
   });
 });
