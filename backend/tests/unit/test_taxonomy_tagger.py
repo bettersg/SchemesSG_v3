@@ -23,6 +23,13 @@ def _fake_openai(monkeypatch, content, seen):
         def __init__(self, **kwargs):
             seen["client"] = kwargs
             self.chat = types.SimpleNamespace(completions=Completions())
+            seen["closed"] = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            seen["closed"] = True
 
     monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(AzureOpenAI=FakeAzureOpenAI))
 
@@ -88,7 +95,10 @@ def test_client_has_an_explicit_timeout_and_bounded_retries(monkeypatch):
     _fake_openai(monkeypatch, json.dumps(payload), seen)
     tagger.tag_scheme({"agency": "AIC"})
     assert seen["client"]["timeout"] == tagger.TAGGING_TIMEOUT_SECONDS < 600
-    assert seen["client"]["max_retries"] == 2
+    assert seen["client"]["max_retries"] == 1
+    # worst case must stay well inside the 300 s Cloud Run request, which scrape and extraction already use part of
+    assert seen["client"]["timeout"] * (seen["client"]["max_retries"] + 1) <= 90
+    assert seen["closed"] is True  # client is closed after each call
 
 
 def test_tagging_resource_falls_back_to_the_shared_one(monkeypatch):

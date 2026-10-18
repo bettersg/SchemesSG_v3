@@ -114,6 +114,25 @@ def apply_plan(snapshot, results):
     return plan
 
 
+def stale_results(snapshot, results):
+    """[(id, reason)] for results that must not be applied: made from other text or prompt than the snapshot holds, or from another vocabulary."""
+    stale = []
+    for sid, scheme in snapshot.items():
+        result = results.get(sid)
+        if not result:
+            continue
+        if result.get("taxonomy_version") != tx.TAXONOMY["version"]:
+            stale.append((sid, "taxonomy_version"))
+        elif result.get("input_hash") != input_hash(scheme):
+            stale.append((sid, "input_hash"))
+    return stale
+
+
+def live_drift(snapshot_scheme, live):
+    """True when the live doc no longer matches the snapshot the plan was made from (an edit landed in between)."""
+    return input_hash(live) != input_hash(snapshot_scheme) or any((live.get(f) or None) != (snapshot_scheme.get(f) or None) for f in FIELDS)
+
+
 def empty_over_existing(snapshot, results):
     """[(id, field)] where the model returned nothing but the scheme already has tags (kept as is by apply_plan)."""
     return [(sid, f) for sid, scheme in snapshot.items() if (result := results.get(sid))
@@ -139,7 +158,8 @@ def _firestore(env):
 
     env_file, project = ENVS[env]
     e = dotenv_values(HERE / env_file)
-    assert e["FB_PROJECT_ID"] == project, f"{env_file} is not {project}"
+    if e["FB_PROJECT_ID"] != project:  # explicit raise: an assert is stripped under python -O and this guards writes
+        raise SystemExit(f"{env_file} points at {e['FB_PROJECT_ID']}, expected {project}")
     app = firebase_admin.initialize_app(credentials.Certificate({
         "type": e["FB_TYPE"], "project_id": e["FB_PROJECT_ID"], "private_key_id": e["FB_PRIVATE_KEY_ID"],
         "private_key": e["FB_PRIVATE_KEY"].replace("\\n", "\n"), "client_email": e["FB_CLIENT_EMAIL"],
@@ -283,21 +303,33 @@ def cmd_apply(a):
     snapshot, results = _snapshot(a.env), _latest_results()
     if not snapshot:  # dev snapshot not taken: classify ran on prod text; ids are identical while dev == prod
         sys.exit("take a dev snapshot first: reclassify.py snapshot dev (apply diffs against what dev holds now)")
-    plan = apply_plan(snapshot, results)
+    stale = stale_results(snapshot, results)
+    stale_ids = {sid for sid, _ in stale}
+    plan = apply_plan(snapshot, {i: r for i, r in results.items() if i not in stale_ids})
     kept = empty_over_existing(snapshot, results)
     print(f"{len(plan)} of {len(snapshot)} dev schemes would change; {sum(1 for i in snapshot if i not in results)} have no result; "
-          f"{len(kept)} empty model fields leave existing tags untouched: {kept[:10]}")
+          f"{len(stale)} stale results rejected {stale[:5]}; {len(kept)} empty model fields leave existing tags untouched: {kept[:10]}")
     if not a.write:
         print("dry run (add --write to back up and write)")
         return
+    print("note: scheduled_firebase_collection_sync overwrites dev from prod twice a month and would revert this write; pause it for the review window")
     db = _firestore("dev")
+    # Read each doc at write time: back up the LIVE tags and skip any doc edited since the snapshot.
+    live_docs = {d.id: d.to_dict() for d in db.get_all([db.collection("schemes").document(sid) for sid in plan]) if d.exists}
+    writable, drifted = {}, []
+    for sid, update in plan.items():
+        live = {"id": sid, **{k: (live_docs.get(sid) or {}).get(k) for k in SNAPSHOT_KEYS}}
+        if sid not in live_docs or live_drift(snapshot[sid], live):
+            drifted.append(sid)
+        else:
+            writable[sid] = update
     backup = OUT / f"backup-dev-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
     with open(backup, "w") as f:
-        for sid in plan:
-            f.write(json.dumps({"id": sid, **{k: snapshot[sid].get(k) for k in FIELDS}}) + "\n")
-    print("backup of old tags ->", backup)
+        for sid in writable:
+            f.write(json.dumps({"id": sid, **{k: live_docs[sid].get(k) for k in FIELDS}}) + "\n")
+    print(f"backup of live tags -> {backup}; skipped {len(drifted)} docs changed or missing since the snapshot {drifted[:10]}")
     batch, n = db.batch(), 0
-    for sid, update in plan.items():
+    for sid, update in writable.items():
         batch.update(db.collection("schemes").document(sid), update)
         n += 1
         if n % 400 == 0:

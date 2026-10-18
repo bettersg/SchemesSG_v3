@@ -15,7 +15,8 @@ from app import taxonomy as tx
 from loguru import logger
 
 TAGGING_EFFORT = "medium"
-TAGGING_TIMEOUT_SECONDS = 90  # measured calls take 3-9 s; the SDK default of 600 s would stall a scheme for ten minutes
+TAGGING_TIMEOUT_SECONDS = 30  # measured calls take 3-9 s; the SDK default of 600 s would stall a scheme for ten minutes
+TAGGING_MAX_RETRIES = 1  # worst case (timeout + 1 retry) is about 60 s, well inside the 300 s Cloud Run request after scrape and extraction
 SOURCE_TEXT_CHARS = 12000  # matches the extraction call, which reads up to 12k characters of the page
 MAX_TERMS = {"who_is_it_for": 8, "what_it_gives": 6, "scheme_type": 4}  # age terms are re-derived in code, so who has headroom
 
@@ -100,26 +101,31 @@ def parse_tagging_response(raw: str) -> Dict[str, Optional[list]]:
     return {f: (v or None) for f, v in out.items()}
 
 
-def request_tags(fields: Dict[str, Any], deployment: Optional[str] = None) -> str:
-    """Call the tagging model and return the raw JSON text. Raises on API errors; the caller decides whether to fall back."""
+def make_client():
+    """Azure client for the tagging deployment. The deployment may live on a different Azure resource than extraction:
+    AZURE_OPENAI_TAGGING_* override the shared vars. Shared with the eval gate so it measures the endpoint production uses."""
     from openai import AzureOpenAI
 
-    deployment = deployment or os.getenv("AZURE_OPENAI_TAGGING_DEPLOYMENT", "gpt-6-luna")
-    # The tagging deployment may live on a different Azure resource than extraction: AZURE_OPENAI_TAGGING_* override the shared vars.
-    client = AzureOpenAI(
+    return AzureOpenAI(
         api_key=os.getenv("AZURE_OPENAI_TAGGING_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY", ""),
         azure_endpoint=os.getenv("AZURE_OPENAI_TAGGING_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT", ""),
         api_version=os.getenv("AZURE_OPENAI_TAGGING_API_VERSION") or os.getenv("OPENAI_API_VERSION", "2025-04-01-preview"),
         timeout=TAGGING_TIMEOUT_SECONDS,
-        max_retries=2,
+        max_retries=TAGGING_MAX_RETRIES,
     )
-    response = client.chat.completions.create(
-        model=deployment,
-        messages=[{"role": "system", "content": build_system_prompt()}, {"role": "user", "content": build_user_text(fields)}],
-        response_format={"type": "json_schema", "json_schema": TAGGING_SCHEMA},
-        reasoning_effort=TAGGING_EFFORT,
-        max_completion_tokens=8000,
-    )
+
+
+def request_tags(fields: Dict[str, Any], deployment: Optional[str] = None) -> str:
+    """Call the tagging model and return the raw JSON text. Raises on API errors; the caller decides whether to fall back."""
+    deployment = deployment or os.getenv("AZURE_OPENAI_TAGGING_DEPLOYMENT", "gpt-6-luna")
+    with make_client() as client:  # closes the httpx pool instead of leaking one per scheme
+        response = client.chat.completions.create(
+            model=deployment,
+            messages=[{"role": "system", "content": build_system_prompt()}, {"role": "user", "content": build_user_text(fields)}],
+            response_format={"type": "json_schema", "json_schema": TAGGING_SCHEMA},
+            reasoning_effort=TAGGING_EFFORT,
+            max_completion_tokens=8000,
+        )
     content = response.choices[0].message.content or ""
     if not content:
         logger.error(f"Empty tagging response. Usage: {response.usage}")

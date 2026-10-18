@@ -73,3 +73,18 @@ def test_an_empty_model_field_never_wipes_existing_tags():
 def test_term_counts_count_each_scheme_once():
     counts = rc.term_counts([{"who_is_it_for": ["Youth", "Youth"]}, {"who_is_it_for": ["Youth"]}, {}])
     assert counts["who_is_it_for"]["Youth"] == 2
+
+
+def test_stale_results_are_rejected_by_hash_and_vocabulary_version():
+    fresh = {"id": "a1", "input_hash": rc.input_hash(SCHEME), "taxonomy_version": rc.tx.TAXONOMY["version"]}
+    edited = {"id": "a1", "input_hash": rc.input_hash({**SCHEME, "description": "Edited after the run"}), "taxonomy_version": rc.tx.TAXONOMY["version"]}
+    old_vocab = {**fresh, "taxonomy_version": "v1-old"}
+    assert rc.stale_results({"a1": SCHEME}, {"a1": fresh}) == []
+    assert rc.stale_results({"a1": SCHEME}, {"a1": edited}) == [("a1", "input_hash")]
+    assert rc.stale_results({"a1": SCHEME}, {"a1": old_vocab}) == [("a1", "taxonomy_version")]
+
+
+def test_live_drift_detects_an_edit_after_the_snapshot():
+    assert rc.live_drift(SCHEME, dict(SCHEME)) is False
+    assert rc.live_drift(SCHEME, {**SCHEME, "eligibility": "Everyone"}) is True
+    assert rc.live_drift(SCHEME, {**SCHEME, "who_is_it_for": ["Seniors"]}) is True

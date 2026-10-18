@@ -68,12 +68,16 @@ def prf(tp, fp, fn):
     p = tp / (tp + fp) if tp + fp else 0.0; r = tp / (tp + fn) if tp + fn else 0.0
     return p, r, (2 * p * r / (p + r) if p + r else 0.0)
 
+PARENT = {t.name: set(t.profile) for t in tx.WHO_IS_IT_FOR}
+def rolls_up(terms, profile):  # NCSS roll-up: a granular term (autism, special needs) counts as its parent profile
+    return any(profile in PARENT.get(t, ()) for t in terms)
+
 def rules(pred, g, d):
     """Rule checks return list of violations."""
     v = []
     who = pred["who_is_it_for"]
-    if "Persons with disabilities (PWDs)" in who and "Persons with mental health conditions" in g["who_is_it_for"] \
-            and "Persons with disabilities (PWDs)" not in g["who_is_it_for"]:
+    pwd = "Persons with disabilities"
+    if rolls_up(who, pwd) and "Persons with mental health conditions" in g["who_is_it_for"] and not rolls_up(g["who_is_it_for"], pwd):
         v.append("mental-health-as-disability")
     if who & set(tx.MOVED_OUT_OF_WHO): v.append("moved-out who term")
     if set(pred["scheme_type"]) & set(tx.REMOVED_FROM_SCHEME_TYPE): v.append("pop term in scheme_type")
