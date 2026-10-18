@@ -181,6 +181,7 @@ Separate service for heavy processing tasks.
 |----------|--------|-------------|
 | `/health` | GET | Health check |
 | `/process` | POST | Process new scheme submission |
+| `/content-check` | POST | Monthly content-change check for 1–10 schemes (see below) |
 
 ### Dual Crawler Strategy
 1. **crawl4ai** (Primary): BFS deep crawl
@@ -202,6 +203,45 @@ curl -X POST http://localhost:8081/process \
   -H "Content-Type: application/json" \
   -d '{"doc_id": "test", "scheme_name": "Test", "scheme_url": "https://example.com"}'
 ```
+
+### Content-change check (issue #407)
+
+`/content-check` re-scrapes each scheme and flags pages whose changes make the listing out of
+date. It never edits the listing: flags wait in `contentChecks` for a volunteer. The flow and
+Firestore layout are described at the top of `scheme-processor/app/content_check.py`.
+
+| Outcome | Meaning | Writes |
+|---------|---------|--------|
+| `baseline` | First check: no snapshot yet | `contentSnapshots/<scheme_id>/pages/*` |
+| `unchanged` | No diff, or the AI found nothing out of date | Snapshot updated |
+| `flagged` | AI suggestion or a contact gone | `contentChecks/<id>` (pending) + `pending_text` on the pages |
+| `skipped` | Link suspect/inactive/retired, no link, or a check pending < 2 months | Nothing |
+| `scrape_failed` | Scrape error or no page text | `content_check_fail_streak` +1 |
+| `not_found` / `error` | Unknown ID / AI or unexpected failure | Nothing |
+
+Every outcome except `skipped`, `scrape_failed` and `error` stamps `last_content_checked` on the scheme.
+
+Run it against the local stack (writes to the Firestore project in `functions/.env`, which must be
+development; the AI reviewer needs `AZURE_OPENAI_ENDPOINT_SEA` / `AZURE_OPENAI_API_KEY_SEA` there):
+```bash
+curl -X POST http://localhost:8081/content-check \
+  -H "Content-Type: application/json" \
+  -d '{"scheme_ids": ["<scheme doc id>"]}'
+```
+Run it twice on the same scheme: the first call saves a baseline, the second compares.
+
+### Tests
+
+scheme-processor tests live in `scheme-processor/tests/` (Firestore, scraper and AI replaced by
+fakes). They need the service's own dependencies, so run them in its image (rebuild it first if
+the image is old: `docker compose -f docker-compose-firebase.yml build scheme-processor`):
+```bash
+# From backend/scheme-processor/
+docker run --rm -v "$PWD/app:/app/app:ro" -v "$PWD/tests:/app/tests:ro" \
+  -v "$PWD/pyproject.toml:/app/pyproject.toml:ro" -e PYTHONPATH=/app -w /app \
+  scheme-processor uv run --no-sync --with pytest python -m pytest -q -p no:cacheprovider
+```
+These tests are not run by CI.
 
 ## New Scheme Flow
 
