@@ -126,3 +126,66 @@ def test_category_lists_fit_firestore_array_contains_any_limit():
 def test_every_scheme_type_term_belongs_to_a_category():
     in_category = {v for values in tx.TAXONOMY["category_mapping"].values() for v in values}
     assert set(tx.term_names("scheme_type")) <= in_category
+
+
+NCSS_14_OCT_REMOVED = [
+    "Homelessness Support", "Vocational Training", "Legal Aid", "Residential Care", "Counselling and Emotional Support",
+    "Traditional Chinese Medicine (TCM)", "Referral and Information Services", "Seniors Housing and Home Improvement",
+    "COVID-19 Support", "Abuse/Family Violence", "Loss of Breadwinner Support", "Mental Health Rehabilitation",
+]
+
+
+def test_ncss_14_oct_scheme_types_are_removed_from_the_vocabulary():
+    live = set(tx.term_names("scheme_type"))
+    assert not live & set(NCSS_14_OCT_REMOVED)
+    for flat in tx.TAXONOMY["category_mapping"].values():
+        assert not set(flat) & set(NCSS_14_OCT_REMOVED)
+
+
+def test_removed_scheme_types_move_to_the_ncss_destination():
+    doc = {
+        "scheme_type": ["Legal Aid", "Vocational Training", "Homelessness Support", "Referral and Information Services",
+                        "Mental Health Rehabilitation", "Healthcare"],
+        "what_it_gives": [],
+        "who_is_it_for": [],
+    }
+    out = tx.translate_legacy(doc)
+    assert out["what_it_gives"] == [
+        "Legal aid and services", "Vocational training", "Information and referral services",
+    ]
+    assert out["who_is_it_for"] == ["Homeless"]
+    assert out["scheme_type"] == ["Mental Health", "Healthcare"]
+
+
+def test_programme_level_retags_leave_nothing_behind():
+    out = tx.translate_legacy({"scheme_type": ["COVID-19 Support", "Abuse/Family Violence", "Loss of Breadwinner Support"]})
+    assert out == {"who_is_it_for": [], "what_it_gives": [], "scheme_type": []}
+
+
+def test_counselling_and_emotional_support_splits_by_intervention():
+    out = tx.translate_legacy({"scheme_type": ["Counselling and Emotional Support"]})
+    assert out["what_it_gives"] == ["Counselling", "Emotional care"]
+
+
+def test_respite_care_rename_keeps_old_term_as_alias():
+    assert "Respite care" in tx.term_names("what_it_gives")
+    assert "Respite care/Caregiver support" not in tx.term_names("what_it_gives")
+    assert tx.normalize_terms("what_it_gives", ["Respite care/Caregiver support"])[0] == ["Respite care"]
+    assert tx.parents("what_it_gives", ["Respite care"]) == {"intervention": ["Care Services"]}
+
+
+def test_ncss_14_oct_parent_changes():
+    need = lambda name: tx.parents("scheme_type", [name])["need"]  # noqa: E731
+    assert need("Protection from Violence") == ["Justice & Legal Protection"]
+    assert need("Student Care Support") == ["Caregiving Support"]
+    assert need("End-of-Life/Palliative Care") == ["Healthcare & Well-Being"]
+    assert need("General Healthcare Subsidies") == ["Financial & Material Support"]
+    for provisional in ("Transport Support", "Technology Support", "Community Funding"):
+        assert tx.is_provisional("scheme_type", provisional)
+
+
+def test_ncss_5_oct_profiles():
+    assert tx.parents("who_is_it_for", ["Homeless"])["profile"] == ["Persons Experiencing Homelessness"]
+    assert tx.parents("who_is_it_for", ["Inmates"]) == {"age_group": [], "profile": []}
+    assert tx.is_provisional("who_is_it_for", "Inmates")
+    assert "Victims of abuse or harassment" in tx.term_names("who_is_it_for")

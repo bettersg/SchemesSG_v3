@@ -29,13 +29,12 @@ PROFILES = {
     "Migrant individuals": "Persons not native to Singapore who may face language, cultural or legal barriers to settling here, e.g. for employment or studies.",
     "Families": "Families in general, incl. preventive, parenting, marriage and family programmes not limited to multi-stressed families. (NCSS asked to add as broad profile.)",
     # NCSS suggested adding these three; parent unconfirmed.
-    "Homeless": "Persons without access to stable and safe accommodation, who may sleep in public spaces or move between temporary housing. (NCSS definition, xlsx Sheet3.)",
-    "Inmates / persons in custody": "Persons currently in custody or incarcerated.",
+    "Persons Experiencing Homelessness": "Persons without access to stable and safe accommodation, who may sleep in public spaces or move between temporary housing. (NCSS definition, xlsx Sheet3.)",
     "Victims of abuse or harassment": "Persons who have experienced abuse, family violence or harassment.",
 }
 
 NEEDS = [
-    "Caregiving", "Community participation/Engagement", "Counselling & Crisis Support", "Education and Learning",
+    "Caregiving Support", "Community participation/Engagement", "Counselling & Crisis Support", "Education and Learning",
     "Work & Employment", "Financial & Material Support", "Fostering & Alternative Care", "Healthcare & Well-Being",
     "Home maintenance", "Housing & Shelter Support", "Intrapersonal Challenges", "Retirement & Legacy Planning",
     "Justice & Legal Protection", "Family, Parenting & Relationships", "Mental Health Services", "Disability Support",
@@ -105,14 +104,14 @@ WHO_IS_IT_FOR = [
     T("Facing financial hardship", "Persons or households in temporary or acute financial difficulty (job loss, debt, emergencies).", profile=["Persons with financial difficulties"]),
     T("Unemployed", "Persons not in paid work, available for and seeking work.", profile=["Unemployed"]),
     T("Retrenched", "Persons who lost their job through retrenchment.", profile=["Unemployed"]),
-    T("Homeless", "Persons without stable, safe accommodation, sleeping rough or moving between temporary housing.", profile=["Homeless"], provisional=True, fallback=["Persons with financial difficulties"]),
+    T("Homeless", "Persons without stable, safe accommodation, sleeping rough or moving between temporary housing.", profile=["Persons Experiencing Homelessness"], note="NCSS 5 Oct: creates parent profile Persons Experiencing Homelessness"),
     T("Foreign domestic workers/maids", "Foreign domestic workers (maids) employed in Singapore households, and their employers when the scheme is for FDW matters.", profile=["Migrant individuals"]),
     T("Migrant workers/Foreign workers", "Foreign workers in Singapore on work passes (e.g. construction, marine).", profile=["Migrant individuals"]),
     T("Transnational families/Foreign spouses", "Foreign spouses of Singaporeans and cross-border families.", profile=["Migrant individuals", "Families"]),
     T("Ex-offenders", "Persons who completed a sentence and are reintegrating.", profile=["Ex-offender"]),
-    T("Inmates", "Persons currently in prison or custody.", profile=["Inmates / persons in custody"], provisional=True, fallback=["Ex-offender"]),
+    T("Inmates", "Persons currently in prison or custody.", provisional=True, note="NCSS 5 Oct: keep as profile, no parent until NCSS names one"),
     T("Families of inmates or ex-offenders", "Family members of inmates or ex-offenders.", profile=["Families"]),
-    T("Victims of abuse or harassment", "Persons experiencing or who experienced abuse, family violence, or harassment.", profile=["Victims of abuse or harassment"], provisional=True, fallback=["Multi-stressed family"]),
+    T("Victims of abuse or harassment", "Persons experiencing or who experienced abuse, family violence, or harassment.", profile=["Victims of abuse or harassment"], provisional=True, fallback=["Multi-stressed family"], note="NCSS 5 Oct: a need, not a profile; 14 Oct Q6.1 our proposal: keep here + need Protection from Violence"),
     T("Facing end of life", "Persons with a life-limiting illness nearing end of life, and their families.", note="NCSS: circumstance; review under needs, no profile parent until needs mapping arrives"),
     T("Individuals struggling with loss", "Persons bereaved or grieving. Circumstance, not a population.", note="NCSS: review under needs; no profile parent"),
     T("Malay/Muslim community", "Programme targeted at Malay/Muslim community. Demographic marker.", note="NCSS: metadata"),
@@ -155,7 +154,7 @@ WHAT_IT_GIVES = [
     G("Burial and emergency assistance", "Funeral or emergency cash aid.", "Financial/Material Assistance", provisional=True, note="NCSS: no match, programme review pending"),
     G("Food support", "Food distribution, vouchers, meals.", "Financial/Material Assistance"),
     G("Housing/Shelter", "Temporary or transitional shelter or housing help.", "Housing & Shelter Support"),
-    G("Respite care/Caregiver support", "Temporary relief, training or support for caregivers, including support services offered to family caregivers alongside the main service.", "Care Services"),
+    G("Respite care", "Temporary relief care so that a caregiver can rest. Not for general caregiver training or support (caregiver support is a service user need, not an intervention).", "Care Services"),
     G("Senior sitting and caregiving services", "Home or centre sitting/caregiving for seniors / the elderly.", "Care Services"),
     G("Childcare services", "Care for children while parents are away.", "Care Services"),
     G("Babysitting/Childcare services", "Babysitting and childcare.", "Care Services"),
@@ -195,39 +194,27 @@ SCHEME_TYPE = [
     N("Disability Support", "Support for persons with disabilities: mobility, daily living, centre/home-based care, accessibility.", "Disability Support"),
     N("Active Ageing and Social Activities", "Social, recreational and active-ageing activities that keep seniors (or others) engaged and connected.", "Recreational Activities", "Social support"),
     N("Child and Youth Services", "Care, protection, development and support programmes for children and youths (residential care, youth centres, mentoring, child welfare).", "Fostering & Alternative Care", "Personal Development"),
-    N("Caregiver Support", "Training, respite and support for caregivers.", "Caregiving"),
+    N("Caregiver Support", "Training, respite and support for caregivers.", "Caregiving Support"),
     N("Ex-offender Support", "Reintegration support for ex-offenders.", "Reintegration/Transition Services"),
     N("Education Support", "Tuition, learning support, school-related help.", "Education and Learning"),
-    N("Student Care Support", "After-school and student care.", "Education and Learning", "Family, Parenting & Relationships"),
+    N("Student Care Support", "After-school and student care. Some programmes also meet educational needs (NCSS: review at programme level).", "Caregiving Support"),
     N("Healthcare", "Treatment and prevention of physical health issues.", "Healthcare & Well-Being"),
     N("Dental Healthcare", "Dental care.", "Healthcare & Well-Being"),
-    N("Traditional Chinese Medicine (TCM)", "TCM services.", "Healthcare & Well-Being"),
-    N("General Healthcare Subsidies", "Subsidies for medical costs.", "Healthcare & Well-Being", "Financial & Material Support"),
+    N("General Healthcare Subsidies", "Subsidies for medical costs. Granular need: Healthcare support under Financial & Material Support.", "Financial & Material Support"),
     N("Chronic or Terminal Illness Support", "Support for long-term/terminal illness.", "Healthcare & Well-Being"),
-    N("Mental Health", "Emotional support and treatment for mental health.", "Mental Health Services"),
-    N("Mental Health Rehabilitation", "Recovery and rehabilitation for mental health.", "Mental Health Services", "Reintegration/Transition Services"),
-    N("Counselling and Emotional Support", "Counselling and emotional support.", "Counselling & Crisis Support", "Mental Health Services"),
-    N("End-of-Life/Palliative Care", "Palliative and end-of-life care.", "Healthcare & Well-Being", "Retirement & Legacy Planning"),
+    N("Mental Health", "Emotional support, treatment and rehabilitation for mental health conditions (rehabilitation is an intervention approach, not a separate need).", "Mental Health Services"),
+    N("End-of-Life/Palliative Care", "Palliative and end-of-life care.", "Healthcare & Well-Being"),
     N("Food Support", "Food and meals.", "Financial & Material Support"),
     N("Housing/Shelter", "Shelter and housing.", "Housing & Shelter Support"),
-    N("Homelessness Support", "Support for homeless persons.", "Housing & Shelter Support"),
-    N("Seniors Housing and Home Improvement", "Home upgrades/repairs for seniors / the elderly.", "Home maintenance", "Housing & Shelter Support"),
     N("Employment Support", "Help finding and keeping work.", "Work & Employment"),
-    N("Vocational Training", "Job skills training.", "Work & Employment", "Education and Learning"),
     N("Financial Assistance", "Cash or material aid.", "Financial & Material Support"),
     N("Debt Assistance", "Debt management.", "Financial & Material Support"),
-    N("Loss of Breadwinner Support", "Support after loss of family income earner.", "Financial & Material Support"),
     N("Financial Planning and Retirement Support", "Retirement and financial planning.", "Retirement & Legacy Planning"),
-    N("Transport Support", "Transport help.", "Disability Support", "Financial & Material Support"),
-    N("Technology Support", "Digital access and assistive tech.", "Disability Support", "Education and Learning"),
-    N("Legal Aid", "Legal advice and aid.", "Justice & Legal Protection"),
-    N("Abuse/Family Violence", "Family violence and abuse response.", "Counselling & Crisis Support"),
-    N("Protection from Violence", "Protection against violence.", "Counselling & Crisis Support"),
-    N("COVID-19 Support", "COVID-19 relief (legacy).", "Financial & Material Support"),
-    N("Community Funding", "Funding for community projects.", "Community participation/Engagement"),
-    N("Residential Care", "Live-in care.", "Disability Support", "Caregiving"),
+    N("Transport Support", "Transport help.", "Disability Support", "Financial & Material Support", provisional=True, note="NCSS 14 Oct: no matching need; parents are our fallback"),
+    N("Technology Support", "Digital access and assistive tech.", "Disability Support", "Education and Learning", provisional=True, note="NCSS 14 Oct: no matching need; parents are our fallback"),
+    N("Protection from Violence", "Protection against violence.", "Justice & Legal Protection"),
+    N("Community Funding", "Funding for community projects.", "Community participation/Engagement", provisional=True, note="NCSS 14 Oct: may be a funder mechanism, not a need"),
     N("Addictions Rehabilitation", "Addiction recovery.", "Substance and Behavioral Addictions recovery"),
-    N("Referral and Information Services", "Information and referrals.", "Social support"),
 ]
 
 REMOVED_FROM_SCHEME_TYPE = [
@@ -236,13 +223,18 @@ REMOVED_FROM_SCHEME_TYPE = [
     "Migrant Workers/Foreign Workers", "Foreign Spouse/Transnational Family Support",
     "Incarcerated/Inmate Family Support", "General Public Support",
 ]
+REMOVED_FROM_SCHEME_TYPE_2026_10_14 = [  # NCSS 14 Oct mapping sheet; meaning moves per LEGACY_ALIASES["scheme_type"]
+    "Homelessness Support", "Vocational Training", "Legal Aid", "Residential Care", "Counselling and Emotional Support",
+    "Traditional Chinese Medicine (TCM)", "Referral and Information Services", "Seniors Housing and Home Improvement",
+    "COVID-19 Support", "Abuse/Family Violence", "Loss of Breadwinner Support",
+]
 MOVED_OUT_OF_WHO = {  # who term -> what_it_gives term
     "Need shelter": "Housing/Shelter", "Need food support": "Food support",
     "Need mortgage support": "Mortgage assistance", "Individuals needing legal aid": "Legal aid and services",
 }
 
 RENAMES = {  # old term -> new term (2026-10-04, Step 0). Used to map old gold/prod tags and as the migration alias seed.
-    "Elderly": "Seniors", **{'Elderly with dementia': 'Seniors with dementia', 'Low income elderly': 'Low income seniors', 'Elderly Housing and Home Improvement': 'Seniors Housing and Home Improvement', 'Elder sitting and caregiving services': 'Senior sitting and caregiving services', 'Persons with mental health issues': 'Persons with mental health conditions'},
+    "Elderly": "Seniors", **{'Elderly with dementia': 'Seniors with dementia', 'Low income elderly': 'Low income seniors', 'Elder sitting and caregiving services': 'Senior sitting and caregiving services', 'Persons with mental health issues': 'Persons with mental health conditions'},
 }
 MOVED_OUT_NEED_PARENT = {  # moved who term -> NCSS Service User Need parent (NCSS 1 Oct email)
     "Need shelter": "Housing & Shelter Support", "Need food support": "Financial & Material Support",
@@ -291,19 +283,18 @@ def age_terms(age_min, age_max):
 # Old mapping used population terms in scheme_type (removed). v2 is built from need-domain terms only.
 # Firestore array-contains-any allows <=30 values per query: keep each list well under that.
 SCHEME_CATEGORY_MAPPING_V2 = {
-    "Financial Assistance": ["Financial Assistance", "Debt Assistance", "Loss of Breadwinner Support", "COVID-19 Support",
-                             "Financial Planning and Retirement Support"],
+    "Financial Assistance": ["Financial Assistance", "Debt Assistance", "Financial Planning and Retirement Support"],
     "Family & Children": ["Family and Parenting Support", "Child and Youth Services"],
-    "Health & Wellbeing": ["Healthcare", "Dental Healthcare", "Traditional Chinese Medicine (TCM)", "General Healthcare Subsidies",
-                           "Chronic or Terminal Illness Support", "Mental Health", "Mental Health Rehabilitation",
-                           "End-of-Life/Palliative Care", "Counselling and Emotional Support", "Addictions Rehabilitation"],
-    "Housing & Food": ["Housing/Shelter", "Homelessness Support", "Food Support", "Seniors Housing and Home Improvement"],
+    "Health & Wellbeing": ["Healthcare", "Dental Healthcare", "General Healthcare Subsidies",
+                           "Chronic or Terminal Illness Support", "Mental Health",
+                           "End-of-Life/Palliative Care", "Addictions Rehabilitation"],
+    "Housing & Food": ["Housing/Shelter", "Food Support"],
     "Education": ["Education Support", "Student Care Support"],
-    "Employment & Training": ["Employment Support", "Vocational Training", "Ex-offender Support"],
-    "Seniors & Caregiving": ["Caregiver Support", "Residential Care", "Active Ageing and Social Activities"],
+    "Employment & Training": ["Employment Support", "Ex-offender Support"],
+    "Seniors & Caregiving": ["Caregiver Support", "Active Ageing and Social Activities"],
     "Disability & Transport": ["Disability Support", "Transport Support", "Technology Support"],
-    "Legal & Safety": ["Legal Aid", "Abuse/Family Violence", "Protection from Violence"],
-    "Community Support": ["Referral and Information Services", "Community Funding"],
+    "Legal & Safety": ["Protection from Violence"],
+    "Community Support": ["Community Funding"],
 }
 
 
@@ -321,6 +312,7 @@ LEGACY_ALIASES = {
         "Information services": {"to": ["Information and referral services"]},
         "Rehabilitation services": {"to": ["Rehabilitation services (Physiotherapy/Occupational therapy)"]},  # live-data drift
         "Technology assistance": {"to": ["Technology assistance (internet/computers)"]},  # live-data drift
+        "Respite care/Caregiver support": {"to": ["Respite care"], "review": True},  # NCSS 5 Oct; re-tag programmes giving no respite by intervention (R5)
         "Tuition/Enrichment programmes": {"to": ["Tuition", "Enrichment programmes"], "review": True},
         "Home retrofitting and assistive technology": {"to": ["Home retrofitting", "Assistive technology"], "review": True},
         "Child protection services": {"moved": {"scheme_type": ["Child and Youth Services"]}},
@@ -328,7 +320,20 @@ LEGACY_ALIASES = {
         "Identification and safety tagging": {"to": []},
         "COVID-19 support": {"to": [], "review": True},
     },
-    "scheme_type": {  # removed population terms -> who_is_it_for terms
+    "scheme_type": {  # removed population terms -> who_is_it_for terms; 14 Oct removals -> what_it_gives / who / re-tag
+        "Homelessness Support": {"moved": {"who_is_it_for": ["Homeless"]}},
+        "Vocational Training": {"moved": {"what_it_gives": ["Vocational training"]}},
+        "Legal Aid": {"moved": {"what_it_gives": ["Legal aid and services"]}},  # 14 Oct sheet supersedes 8 Oct (Justice & Legal Protection)
+        "Residential Care": {"moved": {"what_it_gives": ["Residential care/programmes"]}},
+        "Counselling and Emotional Support": {"moved": {"what_it_gives": ["Counselling", "Emotional care"]}, "review": True},
+        "Traditional Chinese Medicine (TCM)": {"moved": {"what_it_gives": ["Traditional Chinese Medicine (TCM)"]}},
+        "Referral and Information Services": {"moved": {"what_it_gives": ["Information and referral services"]}},
+        "Seniors Housing and Home Improvement": {"moved": {"what_it_gives": ["Home retrofitting"]}, "review": True},
+        "Elderly Housing and Home Improvement": {"moved": {"what_it_gives": ["Home retrofitting"]}, "review": True},
+        "COVID-19 Support": {"to": [], "review": True},
+        "Abuse/Family Violence": {"to": [], "review": True},
+        "Loss of Breadwinner Support": {"to": [], "review": True},
+        "Mental Health Rehabilitation": {"to": ["Mental Health"]},
         "Low Income": {"moved": {"who_is_it_for": ["Low income"]}},
         "Family": {"moved": {"who_is_it_for": ["Families"]}},
         "Children": {"moved": {"who_is_it_for": ["Children"]}},

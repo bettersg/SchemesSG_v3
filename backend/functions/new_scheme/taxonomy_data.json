@@ -398,15 +398,13 @@
   {
    "name": "Homeless",
    "definition": "Persons without stable, safe accommodation, sleeping rough or moving between temporary housing.",
-   "provisional": true,
-   "note": "",
+   "provisional": false,
+   "note": "NCSS 5 Oct: creates parent profile Persons Experiencing Homelessness",
    "age_group": [],
    "profile": [
-    "Homeless"
+    "Persons Experiencing Homelessness"
    ],
-   "fallback_profile": [
-    "Persons with financial difficulties"
-   ]
+   "fallback_profile": []
   },
   {
    "name": "Foreign domestic workers/maids",
@@ -457,14 +455,10 @@
    "name": "Inmates",
    "definition": "Persons currently in prison or custody.",
    "provisional": true,
-   "note": "",
+   "note": "NCSS 5 Oct: keep as profile, no parent until NCSS names one",
    "age_group": [],
-   "profile": [
-    "Inmates / persons in custody"
-   ],
-   "fallback_profile": [
-    "Ex-offender"
-   ]
+   "profile": [],
+   "fallback_profile": []
   },
   {
    "name": "Families of inmates or ex-offenders",
@@ -481,7 +475,7 @@
    "name": "Victims of abuse or harassment",
    "definition": "Persons experiencing or who experienced abuse, family violence, or harassment.",
    "provisional": true,
-   "note": "",
+   "note": "NCSS 5 Oct: a need, not a profile; 14 Oct Q6.1 our proposal: keep here + need Protection from Violence",
    "age_group": [],
    "profile": [
     "Victims of abuse or harassment"
@@ -786,8 +780,8 @@
    ]
   },
   {
-   "name": "Respite care/Caregiver support",
-   "definition": "Temporary relief, training or support for caregivers, including support services offered to family caregivers alongside the main service.",
+   "name": "Respite care",
+   "definition": "Temporary relief care so that a caregiver can rest. Not for general caregiver training or support (caregiver support is a service user need, not an intervention).",
    "provisional": false,
    "note": "",
    "intervention": [
@@ -1079,7 +1073,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Caregiving"
+    "Caregiving Support"
    ]
   },
   {
@@ -1102,12 +1096,11 @@
   },
   {
    "name": "Student Care Support",
-   "definition": "After-school and student care.",
+   "definition": "After-school and student care. Some programmes also meet educational needs (NCSS: review at programme level).",
    "provisional": false,
    "note": "",
    "need": [
-    "Education and Learning",
-    "Family, Parenting & Relationships"
+    "Caregiving Support"
    ]
   },
   {
@@ -1129,21 +1122,11 @@
    ]
   },
   {
-   "name": "Traditional Chinese Medicine (TCM)",
-   "definition": "TCM services.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Healthcare & Well-Being"
-   ]
-  },
-  {
    "name": "General Healthcare Subsidies",
-   "definition": "Subsidies for medical costs.",
+   "definition": "Subsidies for medical costs. Granular need: Healthcare support under Financial & Material Support.",
    "provisional": false,
    "note": "",
    "need": [
-    "Healthcare & Well-Being",
     "Financial & Material Support"
    ]
   },
@@ -1158,30 +1141,10 @@
   },
   {
    "name": "Mental Health",
-   "definition": "Emotional support and treatment for mental health.",
+   "definition": "Emotional support, treatment and rehabilitation for mental health conditions (rehabilitation is an intervention approach, not a separate need).",
    "provisional": false,
    "note": "",
    "need": [
-    "Mental Health Services"
-   ]
-  },
-  {
-   "name": "Mental Health Rehabilitation",
-   "definition": "Recovery and rehabilitation for mental health.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Mental Health Services",
-    "Reintegration/Transition Services"
-   ]
-  },
-  {
-   "name": "Counselling and Emotional Support",
-   "definition": "Counselling and emotional support.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Counselling & Crisis Support",
     "Mental Health Services"
    ]
   },
@@ -1191,8 +1154,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Healthcare & Well-Being",
-    "Retirement & Legacy Planning"
+    "Healthcare & Well-Being"
    ]
   },
   {
@@ -1214,41 +1176,12 @@
    ]
   },
   {
-   "name": "Homelessness Support",
-   "definition": "Support for homeless persons.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Housing & Shelter Support"
-   ]
-  },
-  {
-   "name": "Seniors Housing and Home Improvement",
-   "definition": "Home upgrades/repairs for seniors / the elderly.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Home maintenance",
-    "Housing & Shelter Support"
-   ]
-  },
-  {
    "name": "Employment Support",
    "definition": "Help finding and keeping work.",
    "provisional": false,
    "note": "",
    "need": [
     "Work & Employment"
-   ]
-  },
-  {
-   "name": "Vocational Training",
-   "definition": "Job skills training.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Work & Employment",
-    "Education and Learning"
    ]
   },
   {
@@ -1270,15 +1203,6 @@
    ]
   },
   {
-   "name": "Loss of Breadwinner Support",
-   "definition": "Support after loss of family income earner.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Financial & Material Support"
-   ]
-  },
-  {
    "name": "Financial Planning and Retirement Support",
    "definition": "Retirement and financial planning.",
    "provisional": false,
@@ -1290,8 +1214,8 @@
   {
    "name": "Transport Support",
    "definition": "Transport help.",
-   "provisional": false,
-   "note": "",
+   "provisional": true,
+   "note": "NCSS 14 Oct: no matching need; parents are our fallback",
    "need": [
     "Disability Support",
     "Financial & Material Support"
@@ -1300,29 +1224,11 @@
   {
    "name": "Technology Support",
    "definition": "Digital access and assistive tech.",
-   "provisional": false,
-   "note": "",
+   "provisional": true,
+   "note": "NCSS 14 Oct: no matching need; parents are our fallback",
    "need": [
     "Disability Support",
     "Education and Learning"
-   ]
-  },
-  {
-   "name": "Legal Aid",
-   "definition": "Legal advice and aid.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Justice & Legal Protection"
-   ]
-  },
-  {
-   "name": "Abuse/Family Violence",
-   "definition": "Family violence and abuse response.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Counselling & Crisis Support"
    ]
   },
   {
@@ -1331,35 +1237,16 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Counselling & Crisis Support"
-   ]
-  },
-  {
-   "name": "COVID-19 Support",
-   "definition": "COVID-19 relief (legacy).",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Financial & Material Support"
+    "Justice & Legal Protection"
    ]
   },
   {
    "name": "Community Funding",
    "definition": "Funding for community projects.",
-   "provisional": false,
-   "note": "",
+   "provisional": true,
+   "note": "NCSS 14 Oct: may be a funder mechanism, not a need",
    "need": [
     "Community participation/Engagement"
-   ]
-  },
-  {
-   "name": "Residential Care",
-   "definition": "Live-in care.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Disability Support",
-    "Caregiving"
    ]
   },
   {
@@ -1370,22 +1257,12 @@
    "need": [
     "Substance and Behavioral Addictions recovery"
    ]
-  },
-  {
-   "name": "Referral and Information Services",
-   "definition": "Information and referrals.",
-   "provisional": false,
-   "note": "",
-   "need": [
-    "Social support"
-   ]
   }
  ],
  "renames": {
   "Elderly": "Seniors",
   "Elderly with dementia": "Seniors with dementia",
   "Low income elderly": "Low income seniors",
-  "Elderly Housing and Home Improvement": "Seniors Housing and Home Improvement",
   "Elder sitting and caregiving services": "Senior sitting and caregiving services",
   "Persons with mental health issues": "Persons with mental health conditions"
  },
@@ -1441,6 +1318,12 @@
      "Technology assistance (internet/computers)"
     ]
    },
+   "Respite care/Caregiver support": {
+    "to": [
+     "Respite care"
+    ],
+    "review": true
+   },
    "Tuition/Enrichment programmes": {
     "to": [
      "Tuition",
@@ -1478,6 +1361,90 @@
    }
   },
   "scheme_type": {
+   "Homelessness Support": {
+    "moved": {
+     "who_is_it_for": [
+      "Homeless"
+     ]
+    }
+   },
+   "Vocational Training": {
+    "moved": {
+     "what_it_gives": [
+      "Vocational training"
+     ]
+    }
+   },
+   "Legal Aid": {
+    "moved": {
+     "what_it_gives": [
+      "Legal aid and services"
+     ]
+    }
+   },
+   "Residential Care": {
+    "moved": {
+     "what_it_gives": [
+      "Residential care/programmes"
+     ]
+    }
+   },
+   "Counselling and Emotional Support": {
+    "moved": {
+     "what_it_gives": [
+      "Counselling",
+      "Emotional care"
+     ]
+    },
+    "review": true
+   },
+   "Traditional Chinese Medicine (TCM)": {
+    "moved": {
+     "what_it_gives": [
+      "Traditional Chinese Medicine (TCM)"
+     ]
+    }
+   },
+   "Referral and Information Services": {
+    "moved": {
+     "what_it_gives": [
+      "Information and referral services"
+     ]
+    }
+   },
+   "Seniors Housing and Home Improvement": {
+    "moved": {
+     "what_it_gives": [
+      "Home retrofitting"
+     ]
+    },
+    "review": true
+   },
+   "Elderly Housing and Home Improvement": {
+    "moved": {
+     "what_it_gives": [
+      "Home retrofitting"
+     ]
+    },
+    "review": true
+   },
+   "COVID-19 Support": {
+    "to": [],
+    "review": true
+   },
+   "Abuse/Family Violence": {
+    "to": [],
+    "review": true
+   },
+   "Loss of Breadwinner Support": {
+    "to": [],
+    "review": true
+   },
+   "Mental Health Rehabilitation": {
+    "to": [
+     "Mental Health"
+    ]
+   },
    "Low Income": {
     "moved": {
      "who_is_it_for": [
@@ -1606,7 +1573,6 @@
   "Seniors": "Elderly",
   "Seniors with dementia": "Elderly with dementia",
   "Low income seniors": "Low income elderly",
-  "Seniors Housing and Home Improvement": "Elderly Housing and Home Improvement",
   "Senior sitting and caregiving services": "Elder sitting and caregiving services",
   "Persons with mental health conditions": "Persons with mental health issues"
  },
@@ -1614,8 +1580,6 @@
   "Financial Assistance": [
    "Financial Assistance",
    "Debt Assistance",
-   "Loss of Breadwinner Support",
-   "COVID-19 Support",
    "Financial Planning and Retirement Support"
   ],
   "Family & Children": [
@@ -1625,20 +1589,15 @@
   "Health & Wellbeing": [
    "Healthcare",
    "Dental Healthcare",
-   "Traditional Chinese Medicine (TCM)",
    "General Healthcare Subsidies",
    "Chronic or Terminal Illness Support",
    "Mental Health",
-   "Mental Health Rehabilitation",
    "End-of-Life/Palliative Care",
-   "Counselling and Emotional Support",
    "Addictions Rehabilitation"
   ],
   "Housing & Food": [
    "Housing/Shelter",
-   "Homelessness Support",
-   "Food Support",
-   "Seniors Housing and Home Improvement"
+   "Food Support"
   ],
   "Education": [
    "Education Support",
@@ -1646,12 +1605,10 @@
   ],
   "Employment & Training": [
    "Employment Support",
-   "Vocational Training",
    "Ex-offender Support"
   ],
   "Seniors & Caregiving": [
    "Caregiver Support",
-   "Residential Care",
    "Active Ageing and Social Activities"
   ],
   "Disability & Transport": [
@@ -1660,18 +1617,16 @@
    "Technology Support"
   ],
   "Legal & Safety": [
-   "Legal Aid",
-   "Abuse/Family Violence",
    "Protection from Violence"
   ],
   "Community Support": [
-   "Referral and Information Services",
    "Community Funding"
   ]
  },
  "legacy_category_mapping": {
   "Financial Assistance": [
-   "Low Income"
+   "Low Income",
+   "COVID-19 Support"
   ],
   "Family & Children": [
    "Family",
@@ -1681,10 +1636,14 @@
    "Single Parents",
    "Women"
   ],
-  "Health & Wellbeing": [],
+  "Health & Wellbeing": [
+   "Counselling and Emotional Support"
+  ],
   "Housing & Food": [],
   "Education": [],
-  "Employment & Training": [],
+  "Employment & Training": [
+   "Vocational Training"
+  ],
   "Seniors & Caregiving": [
    "Elderly"
   ],
@@ -1692,7 +1651,10 @@
    "Persons with Disabilities (PWD)",
    "Special Needs"
   ],
-  "Legal & Safety": [],
+  "Legal & Safety": [
+   "Legal Aid",
+   "Abuse/Family Violence"
+  ],
   "Community Support": [
    "General Public Support"
   ]
