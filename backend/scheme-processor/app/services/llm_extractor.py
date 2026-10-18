@@ -161,7 +161,7 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
         extracted = json.loads(response_content.strip())
 
         # Taxonomy tags come from a separate strict-schema call (see taxonomy_tagger); a failure leaves them empty
-        tags = await asyncio.to_thread(_tag_taxonomy, extracted, scheme_name)  # sync SDK call: keep it off the event loop
+        tags = await asyncio.to_thread(_tag_taxonomy, extracted, scheme_name, truncated_text)  # sync SDK call: keep it off the event loop
 
         # Extract and filter phone/email from LLM (fallback for regex)
         llm_phone = extracted.get("phone")
@@ -205,13 +205,14 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
         return {}
 
 
-def _tag_taxonomy(extracted: Dict[str, Any], scheme_name: str = "") -> Dict[str, Any]:
-    """Tag who_is_it_for / what_it_gives / scheme_type from the extracted descriptive fields. Never raises."""
+def _tag_taxonomy(extracted: Dict[str, Any], scheme_name: str = "", source_text: str = "") -> Dict[str, Any]:
+    """Tag who_is_it_for / what_it_gives / scheme_type from the source text and the extracted fields. Never raises."""
     try:
         return tag_scheme(
             {
                 "scheme": scheme_name,
                 "agency": extracted.get("agency"),
+                "description": source_text,
                 "llm_description": extracted.get("llm_description"),
                 "summary": extracted.get("summary"),
                 "eligibility": extracted.get("eligibility"),

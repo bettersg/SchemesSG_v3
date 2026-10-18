@@ -15,6 +15,7 @@ from app import taxonomy as tx
 from loguru import logger
 
 TAGGING_EFFORT = "medium"
+SOURCE_TEXT_CHARS = 12000  # matches the extraction call, which reads up to 12k characters of the page
 MAX_TERMS = {"who_is_it_for": 8, "what_it_gives": 6, "scheme_type": 4}  # age terms are re-derived in code, so who has headroom
 
 
@@ -71,14 +72,16 @@ def build_system_prompt() -> str:
 def build_user_text(fields: Dict[str, Any]) -> str:
     """Same shape as the eval's frozen input: name, agency and the descriptive fields only."""
     parts = [f"Scheme: {fields.get('scheme') or ''}", f"Agency: {fields.get('agency') or ''}"]
-    # Production passes the extracted llm_description (there is no separate stored description for a new scheme), so the
-    # eval and the migration use the same shape: the stored description only stands in when there is no llm_description.
+    # "description" is the source text: the page content the extraction call read for a new scheme (same 12k cap), the stored
+    # description for an existing one (eval and migration). llm_description is the extractor's rewrite of it.
+    desc = (fields.get("description") or "").strip()
     llm = (fields.get("llm_description") or "").strip()
-    desc = llm or (fields.get("description") or "").strip()
     if desc:
-        parts.append(f"Description: {desc[:3500]}")
+        parts.append(f"Description: {desc[:SOURCE_TEXT_CHARS]}")
+    if llm and llm != desc:
+        parts.append(f"Detailed description: {llm[:3500]}")
     summary = fields.get("summary")
-    if summary and str(summary).strip() != desc:
+    if summary and str(summary).strip() not in (desc, llm):
         parts.append(f"Summary: {str(summary)[:600]}")
     if fields.get("eligibility"):
         parts.append(f"Eligibility: {str(fields['eligibility'])[:1500]}")

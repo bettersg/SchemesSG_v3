@@ -93,9 +93,11 @@ def test_tagging_resource_falls_back_to_the_shared_one(monkeypatch):
     assert seen["client"]["azure_endpoint"] == "https://shared.example"
 
 
-def test_user_text_matches_the_production_shape_and_never_says_elderly():
-    text = tagger.build_user_text({"scheme": "S", "agency": "A", "llm_description": "Detailed text", "description": "Stored text",
+def test_user_text_carries_source_text_and_the_prompt_never_says_elderly():
+    text = tagger.build_user_text({"scheme": "S", "agency": "A", "description": "Source text", "llm_description": "Detailed text",
                                    "summary": "Short", "eligibility": "Aged 60+"})
-    assert text.splitlines() == ["Scheme: S", "Agency: A", "Description: Detailed text", "Summary: Short", "Eligibility: Aged 60+"]
-    assert "Description: Stored text" in tagger.build_user_text({"scheme": "S", "description": "Stored text"})
+    assert text.splitlines() == ["Scheme: S", "Agency: A", "Description: Source text", "Detailed description: Detailed text",
+                                 "Summary: Short", "Eligibility: Aged 60+"]
+    long = tagger.build_user_text({"scheme": "S", "description": "x" * 20000})
+    assert len(long) < 12100  # source text is capped like the extraction call
     assert "Elderly" not in tagger.build_system_prompt().split("WHO_IS_IT_FOR terms")[0]
