@@ -4,6 +4,8 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/feedback
 """
 
 import json
+import os
+import requests
 from datetime import datetime, timezone
 
 from fb_manager.firebaseManager import FirebaseManager
@@ -13,9 +15,87 @@ from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 
 
+FEEDBACK_CATEGORIES = {
+    "Report wrong / missing information",
+    "Report a bug",
+    "Suggest a feature",
+    "Partnerships & collaborations",
+    "General feedback",
+}
+
+
 def create_firebase_manager() -> FirebaseManager:
     """Create the Firestore adapter when a request needs it."""
     return FirebaseManager()
+
+
+def create_notion_feedback(feedback_id: str, feedback_data: dict):
+    """Create a feedback entry in the Notion database."""
+
+    def rich_text(value):
+        return [
+            {
+                "type": "text",
+                "text": {"content": value[i:i + 2000]},
+            }
+            for i in range(0, len(value), 2000)
+        ]
+
+    properties = {
+        "Name": {
+            "title": rich_text(feedback_data["userName"]),
+        },
+        "Email": {
+            "email": feedback_data["userEmail"],
+        },
+        "How can we serve you better?": {
+            "rich_text": rich_text(feedback_data["feedbackText"]),
+        },
+        "Feedback category": {
+            "select": {"name": feedback_data["feedbackCategory"]},
+        },
+        "Source": {
+            "select": {"name": feedback_data["source"]},
+        },
+        "Submission ID": {
+            "rich_text": rich_text(feedback_id),
+        },
+    }
+
+    if feedback_data.get("sentiment"):
+        properties["Sentiment"] = {
+            "select": {"name": feedback_data["sentiment"]},
+        }
+
+    if feedback_data.get("schemeId"):
+        properties["Scheme ID"] = {
+            "rich_text": rich_text(feedback_data["schemeId"]),
+        }
+
+    if feedback_data.get("schemeName"):
+        properties["Scheme Name"] = {
+            "rich_text": rich_text(feedback_data["schemeName"]),
+        }
+
+    response = requests.post(
+        "https://api.notion.com/v1/pages",
+        headers={
+            "Authorization": f"Bearer {os.environ['NOTION_FEEDBACK_API_KEY']}",
+            "Notion-Version": "2025-09-03",
+            "Content-Type": "application/json",
+        },
+        json={
+            "parent": {
+                "type": "data_source_id",
+                "data_source_id": os.environ["NOTION_FEEDBACK_DATA_SOURCE_ID"],
+            },
+            "properties": properties,
+        },
+        timeout=15,
+    )
+
+    response.raise_for_status()
+    return response.json()["id"]
 
 
 @https_fn.on_request(
@@ -63,6 +143,7 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         feedback_text = request_json.get("feedbackText")
         userName = request_json.get("userName")
         userEmail = request_json.get("userEmail")
+        feedback_category = request_json.get("feedbackCategory")
         is_warmup = request_json.get("is_warmup", False)
         timestamp = datetime.now(timezone.utc)
 
@@ -78,7 +159,13 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
         # Thumbs up/down on a chat response. Stored separately from free-text
         # feedback as a per-session map keyed by message index, so a repeated
         # click can overwrite and an undo (rating=None) can clear the entry.
-        if request_json.get("source") == "chat":
+        # Free-text feedback may also use source="chat".
+        if request_json.get("source") == "chat" and (
+            "rating" in request_json
+            or "sessionId" in request_json
+            or "messageIndex" in request_json
+            or "feedbackText" not in request_json
+        ):
             session_id = request_json.get("sessionId")
             message_index = request_json.get("messageIndex")
             rating = request_json.get("rating")  # "up", "down", or None to undo
@@ -108,9 +195,17 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
                 headers=headers,
             )
 
-        if not feedback_text:
+        if (
+            not feedback_text
+            or not isinstance(feedback_text, str)
+            or not isinstance(userName, str)
+            or not userName.strip()
+            or not isinstance(userEmail, str)
+            or not userEmail.strip()
+            or feedback_category not in FEEDBACK_CATEGORIES
+        ):
             return https_fn.Response(
-                response=json.dumps({"success": False, "message": "Missing required fields"}),
+                response=json.dumps({"success": False, "message": "Missing or invalid required fields"}),
                 status=400,
                 mimetype="application/json",
                 headers=headers,
@@ -122,11 +217,30 @@ def feedback(req: https_fn.Request) -> https_fn.Response:
             "timestamp": timestamp,
             "userName": userName,
             "userEmail": userEmail,
+            "feedbackCategory": feedback_category,
+            "source": request_json.get("source", "general"),
+            "sentiment": request_json.get("sentiment"),
+            "schemeId": request_json.get("schemeId"),
+            "schemeName": request_json.get("schemeName"),
+            "notionSyncStatus": "pending",
+            "notionPageId": None,
         }
 
         # Add the data to Firestore
         firebase_manager = create_firebase_manager()
-        firebase_manager.firestore_client.collection("userFeedback").add(feedback_data)
+        doc_ref = firebase_manager.firestore_client.collection("userFeedback").document()
+        doc_ref.set(feedback_data)
+
+        # Sync the feedback to Notion
+        try:
+            notion_page_id = create_notion_feedback(doc_ref.id, feedback_data)
+            doc_ref.update({
+                "notionSyncStatus": "synced",
+                "notionPageId": notion_page_id,
+            })
+        except Exception as e:
+            print(f"Notion sync error: {e}")
+            doc_ref.update({"notionSyncStatus": "failed"})
 
         # Return a success response
         return https_fn.Response(

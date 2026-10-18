@@ -1,7 +1,15 @@
 "use client";
 
-import { Button, Card, Input, Label, TextArea, TextField } from "@heroui/react";
+import {
+  Button,
+  Card,
+  Input,
+  Label,
+  TextArea,
+  TextField,
+} from "@heroui/react";
 import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
 import {
@@ -17,7 +25,16 @@ import {
   productSubheading,
 } from "@/lib/design-system/product-styles";
 import PageShell from "@/components/layout/page-shell";
-import { useSearchParams } from "next/navigation";
+
+const FEEDBACK_CATEGORIES = [
+  "Report wrong / missing information",
+  "Report a bug",
+  "Suggest a feature",
+  "Partnerships & collaborations",
+  "General feedback",
+] as const;
+
+type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number];
 
 function getFeedbackContext(searchParams: URLSearchParams) {
   const source = searchParams.get("source");
@@ -30,12 +47,20 @@ function getFeedbackContext(searchParams: URLSearchParams) {
     return {
       label: "Feedback about a chat response",
       draft: `Chat response feedback${sentimentContext}:\n\n`,
+      source: "chat",
+      sentiment:
+        sentiment === "positive" || sentiment === "negative"
+          ? sentiment
+          : null,
+      schemeId: null,
+      schemeName: null,
     };
   }
 
   if (source === "scheme") {
-    const schemeId = searchParams.get("schemeId")?.trim();
-    const schemeName = searchParams.get("scheme")?.trim();
+    const schemeId = searchParams.get("schemeId")?.trim() || null;
+    const schemeName = searchParams.get("scheme")?.trim() || null;
+
     const details = [
       schemeId ? `Scheme ID: ${schemeId}` : null,
       schemeName ? `Scheme: ${schemeName}` : null,
@@ -45,7 +70,13 @@ function getFeedbackContext(searchParams: URLSearchParams) {
       label: schemeName
         ? `Suggest a correction for ${schemeName}`
         : "Suggest a scheme correction",
-      draft: `Scheme correction${details.length ? `\n${details.join("\n")}` : ""}\n\n`,
+      draft: `Scheme correction${
+        details.length ? `\n${details.join("\n")}` : ""
+      }\n\n`,
+      source: "scheme",
+      sentiment: null,
+      schemeId,
+      schemeName,
     };
   }
 
@@ -60,6 +91,12 @@ function FeedbackForm() {
   );
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [feedbackCategory, setFeedbackCategory] =
+    useState<FeedbackCategory | "">(
+      feedbackContext?.source === "scheme"
+        ? "Report wrong / missing information"
+        : "General feedback",
+    );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
     type: "success" | "error";
@@ -67,7 +104,12 @@ function FeedbackForm() {
   } | null>(null);
 
   const validateForm = () => {
-    if (!userName.trim() || !userEmail.trim() || !feedbackText.trim()) {
+    if (
+      !userName.trim() ||
+      !userEmail.trim() ||
+      !feedbackText.trim() ||
+      !feedbackCategory
+    ) {
       setSubmitStatus({
         type: "error",
         message: "Please fill in all required fields",
@@ -75,7 +117,8 @@ function FeedbackForm() {
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userEmail)) {
+
+    if (!emailRegex.test(userEmail.trim())) {
       setSubmitStatus({
         type: "error",
         message: "Please enter a valid email address",
@@ -87,14 +130,26 @@ function FeedbackForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+
+    if (isSubmitting || !validateForm()) return;
+
     setIsSubmitting(true);
+    setSubmitStatus(null);
     try {
       const response = await fetchWithAuth(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback`,
         {
           method: "POST",
-          body: JSON.stringify({ feedbackText, userName, userEmail }),
+          body: JSON.stringify({
+            feedbackText: feedbackText.trim(),
+            userName: userName.trim(),
+            userEmail: userEmail.trim(),
+            feedbackCategory,
+            source: feedbackContext?.source ?? "general",
+            sentiment: feedbackContext?.sentiment ?? null,
+            schemeId: feedbackContext?.schemeId ?? null,
+            schemeName: feedbackContext?.schemeName ?? null,
+          }),
         },
       );
       const data = await response.json();
@@ -106,6 +161,7 @@ function FeedbackForm() {
         setFeedbackText("");
         setUserName("");
         setUserEmail("");
+        setFeedbackCategory("");
       } else {
         setSubmitStatus({
           type: "error",
@@ -161,6 +217,39 @@ function FeedbackForm() {
                 />
               </TextField>
             </div>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="feedback-category"
+                className={productFormLabel}
+              >
+                Feedback category
+                <span aria-hidden="true"> *</span>
+              </label>
+              <select
+                id="feedback-category"
+                required
+                value={feedbackCategory}
+                onChange={(e) =>
+                  setFeedbackCategory(
+                    e.target.value as FeedbackCategory | "",
+                  )
+                }
+                className={clsx(
+                  productInputSurface,
+                  productInputText,
+                  "w-full rounded-lg px-3 py-3",
+                )}
+              >
+                <option value="" disabled>
+                  Select a feedback category
+                </option>
+                {FEEDBACK_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
             <TextField isRequired>
               <Label className={productFormLabel}>Your feedback</Label>
               <TextArea
@@ -174,7 +263,9 @@ function FeedbackForm() {
             </TextField>
             {submitStatus && (
               <div
-                role={submitStatus.type === "success" ? "status" : "alert"}
+                role={
+                  submitStatus.type === "success" ? "status" : "alert"
+                }
                 className={clsx(
                   "leading-5",
                   submitStatus.type === "success"
