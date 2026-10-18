@@ -21,6 +21,7 @@ def _fake_openai(monkeypatch, content, seen):
 
     class FakeAzureOpenAI:
         def __init__(self, **kwargs):
+            seen["client"] = kwargs
             self.chat = types.SimpleNamespace(completions=Completions())
 
     monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(AzureOpenAI=FakeAzureOpenAI))
@@ -66,3 +67,27 @@ def test_empty_response_raises(monkeypatch):
     _fake_openai(monkeypatch, "", {})
     with pytest.raises(ValueError):
         tagger.tag_scheme({"agency": "x"})
+
+
+def test_tagging_resource_can_differ_from_the_shared_one(monkeypatch):
+    seen = {}
+    payload = {"who_is_it_for": [], "what_it_gives": [], "scheme_type": [], "age_min": None, "age_max": None, "rationale": "x"}
+    _fake_openai(monkeypatch, json.dumps(payload), seen)
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://shared.example")
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "shared-key")
+    monkeypatch.setenv("AZURE_OPENAI_TAGGING_ENDPOINT", "https://tagging.example")
+    monkeypatch.setenv("AZURE_OPENAI_TAGGING_API_KEY", "tagging-key")
+    tagger.tag_scheme({"agency": "AIC"})
+    assert seen["client"]["azure_endpoint"] == "https://tagging.example"
+    assert seen["client"]["api_key"] == "tagging-key"
+
+
+def test_tagging_resource_falls_back_to_the_shared_one(monkeypatch):
+    seen = {}
+    payload = {"who_is_it_for": [], "what_it_gives": [], "scheme_type": [], "age_min": None, "age_max": None, "rationale": "x"}
+    _fake_openai(monkeypatch, json.dumps(payload), seen)
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://shared.example")
+    for name in ("AZURE_OPENAI_TAGGING_ENDPOINT", "AZURE_OPENAI_TAGGING_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    tagger.tag_scheme({"agency": "AIC"})
+    assert seen["client"]["azure_endpoint"] == "https://shared.example"

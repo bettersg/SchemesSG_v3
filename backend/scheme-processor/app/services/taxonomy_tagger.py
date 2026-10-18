@@ -101,10 +101,11 @@ def tag_scheme(fields: Dict[str, Any], deployment: Optional[str] = None) -> Dict
     from openai import AzureOpenAI
 
     deployment = deployment or os.getenv("AZURE_OPENAI_TAGGING_DEPLOYMENT", "gpt-6-luna")
+    # The tagging deployment may live on a different Azure resource than extraction: AZURE_OPENAI_TAGGING_* override the shared vars.
     client = AzureOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
-        api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview"),
+        api_key=os.getenv("AZURE_OPENAI_TAGGING_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY", ""),
+        azure_endpoint=os.getenv("AZURE_OPENAI_TAGGING_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+        api_version=os.getenv("AZURE_OPENAI_TAGGING_API_VERSION") or os.getenv("OPENAI_API_VERSION", "2025-04-01-preview"),
     )
     response = client.chat.completions.create(
         model=deployment,
