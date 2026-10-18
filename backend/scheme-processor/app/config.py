@@ -26,5 +26,9 @@ class Settings:
     AZURE_OPENAI_DEPLOYMENT_NAME: str = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5")
     OPENAI_API_VERSION: str = os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
 
+    # Azure OpenAI, Southeast Asia: gpt-5.4-mini for the content-change reviewer (app/content_check.py)
+    AZURE_OPENAI_ENDPOINT_SEA: str = os.getenv("AZURE_OPENAI_ENDPOINT_SEA", "")
+    AZURE_OPENAI_API_KEY_SEA: str = os.getenv("AZURE_OPENAI_API_KEY_SEA", "")
+
 
 settings = Settings()

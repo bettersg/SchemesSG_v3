@@ -8,12 +8,17 @@ Full pipeline for processing new scheme submissions:
 4. Get planning area from OneMap API
 5. Update Firestore with results
 6. Post to Slack for human review
+
+Also runs the monthly content-change check (/content-check, see app/content_check.py).
 """
 
 import os
 
-from app.models import ProcessRequest, ProcessResponse
+from app.clients.firestore import get_firestore_client
+from app.content_check import ContentStore, check_scheme
+from app.models import ContentCheckRequest, ContentCheckResponse, ContentCheckResult, ProcessRequest, ProcessResponse
 from app.pipeline import process_scheme
+from app.services.scraper import scrape_url
 from fastapi import FastAPI, HTTPException
 from loguru import logger
 from pydantic import BaseModel
@@ -65,6 +70,28 @@ async def process(request: ProcessRequest):
     except Exception as e:
         logger.error(f"Processing failed for {request.doc_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/content-check", response_model=ContentCheckResponse)
+async def content_check(request: ContentCheckRequest):
+    """
+    Monthly content-change check for each scheme, one at a time: skip, scrape, then save a
+    baseline or diff against the snapshot and flag out-of-date fields for review.
+    One scheme failing doesn't stop the rest; it is reported as outcome "error".
+    """
+    db = get_firestore_client()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Firestore not configured")
+    store = ContentStore(db)
+
+    results = []
+    for scheme_id in request.scheme_ids:
+        try:
+            results.append(ContentCheckResult(**await check_scheme(scheme_id, store, scrape_url)))
+        except Exception as e:
+            logger.exception(f"Content check failed for {scheme_id}")
+            results.append(ContentCheckResult(scheme_id=scheme_id, outcome="error", detail=str(e)[:500]))
+    return ContentCheckResponse(results=results)
 
 
 if __name__ == "__main__":

@@ -26,7 +26,8 @@ async def scrape_url(url: str) -> Dict[str, Any]:
         url: URL to scrape
 
     Returns:
-        Dict with: content, images, logo_url, error
+        Dict with: content, images, logo_url, error, and pages ([{url, text}], one per
+        crawled page; only on success)
     """
     if _is_pdf(url):
         return await _scrape_pdf(url)
@@ -59,7 +60,13 @@ async def _scrape_pdf(url: str) -> Dict[str, Any]:
         if not text.strip():
             return {"content": "", "images": [], "logo_url": None, "error": "PDF Processing Error: No text extracted"}
 
-        return {"content": text.strip(), "images": [], "logo_url": None, "error": None}
+        return {
+            "content": text.strip(),
+            "images": [],
+            "logo_url": None,
+            "error": None,
+            "pages": [{"url": url, "text": text.strip()}],
+        }
 
     except Exception as e:
         return {"content": "", "images": [], "logo_url": None, "error": f"PDF Processing Error: {str(e)}"}
@@ -147,12 +154,14 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
     if isinstance(results, list):
         all_text = []
         all_images = []
+        all_pages = []
 
         for result in results:
             if result.success:
                 text = result.markdown or result.cleaned_html or ""
                 if text:
                     all_text.append(text)
+                    all_pages.append({"url": result.url or url, "text": text})
 
                 if hasattr(result, "media") and result.media:
                     images = result.media.get("images", [])
@@ -161,7 +170,13 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
         scraped_text = "\n\n---PAGE BREAK---\n\n".join(all_text)
         logo_url = select_best_logo(all_images, url) if all_images else None
 
-        return {"content": scraped_text, "images": all_images, "logo_url": logo_url, "error": None}
+        return {
+            "content": scraped_text,
+            "images": all_images,
+            "logo_url": logo_url,
+            "error": None,
+            "pages": all_pages,
+        }
 
     # Single result
     if not results.success:
@@ -178,7 +193,13 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
             logo_url = select_best_logo(images, url)
 
     logger.info(f"Crawl4ai completed for {url}: {len(scraped_text)} chars")
-    return {"content": scraped_text, "images": images, "logo_url": logo_url, "error": None}
+    return {
+        "content": scraped_text,
+        "images": images,
+        "logo_url": logo_url,
+        "error": None,
+        "pages": [{"url": results.url or url, "text": scraped_text}],
+    }
 
 
 async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
@@ -274,7 +295,13 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
                 logger.info(f"Pydoll succeeded for {url}: {len(page_content)} chars")
                 images = _extract_images_from_html(page_content, url)
                 logo_url = select_best_logo(images, url) if images else None
-                return {"content": page_content, "images": images, "logo_url": logo_url, "error": None}
+                return {
+                    "content": page_content,
+                    "images": images,
+                    "logo_url": logo_url,
+                    "error": None,
+                    "pages": [{"url": url, "text": page_content}],  # HTML; Pydoll saves the scheme link page only
+                }
             else:
                 return {
                     "content": "",
