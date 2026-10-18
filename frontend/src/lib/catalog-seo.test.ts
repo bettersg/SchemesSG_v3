@@ -14,7 +14,8 @@ describe("catalog SEO", () => {
     }).toEqual({
       title: "Health & Wellbeing Schemes in Singapore | Schemes.sg",
       description:
-        "Browse health & Wellbeing schemes in Singapore from government agencies and community organisations. Find eligibility, benefits, application links, and contact details.",
+        // Fully lowercased mid-sentence, not just the first character.
+        "Browse health & wellbeing schemes in Singapore from government agencies and community organisations. Find eligibility, benefits, application links, and contact details.",
     });
   });
 
@@ -44,5 +45,16 @@ describe("catalog SEO", () => {
         "@id": "https://schemes.sg/catalog/education#scheme-catalog",
       },
     });
+  });
+
+  // No route reads ?q=, and a search sent through one would put the search
+  // text into the analytics page URL, which the Privacy Policy rules out.
+  it("does not advertise a site search URL", () => {
+    const jsonLd = getCatalogJsonLd({
+      category: "Education",
+      path: "/catalog/education",
+    });
+
+    expect(JSON.stringify(jsonLd)).not.toContain("SearchAction");
   });
 });

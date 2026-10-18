@@ -27,13 +27,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version-file: 'backend/.python-version'
 
       # Step 3: Set up Node.js environment
       - name: Set up Node
-        uses: actions/setup-node@v4 # Updated to v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20' # Upgraded to 20 to meet firebase-tools@14.2.0 requirements
+          node-version: "24"
 
       # Step 4: Create Service Account Key and Set Env Variables
       - name: Create SA key and set env variables
@@ -45,10 +45,10 @@ jobs:
       - name: Prepare the environment
         working-directory: backend/functions
         run: |
-          python3.10 -m venv venv
+          python3.12 -m venv venv
           . venv/bin/activate
           npx firebase-tools --version
-          python3.10 -m pip install -r requirements.txt
+          python3.12 -m pip install -r requirements.txt
           npm install -g firebase-tools@14.2.0 # Install firebase-tools globally
           npx firebase-tools --version # Verify version
 

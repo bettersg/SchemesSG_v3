@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeScheme } from "@/test/fixtures/scheme";
 import SchemeDetail from "./scheme-detail";
+import { AppProviders } from "@/providers";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(
   navigator,
@@ -49,7 +50,11 @@ describe("SchemeDetail", () => {
       link: "https://example.test/family-support",
     });
 
-    render(<SchemeDetail scheme={scheme} />);
+    render(
+      <AppProviders>
+        <SchemeDetail scheme={scheme} />
+      </AppProviders>,
+    );
 
     expect(
       screen.getByRole("heading", { name: "Family Support Grant", level: 1 }),
@@ -61,9 +66,10 @@ describe("SchemeDetail", () => {
     expect(
       screen.getByRole("heading", { name: "Agency details" }),
     ).toBeVisible();
-    expect(screen.getByRole("list")).toHaveTextContent(
-      "Cash assistance Case guidance",
-    );
+    const benefitsList = screen
+      .getAllByRole("list")
+      .find((list) => list.textContent?.includes("Cash assistance"));
+    expect(benefitsList).toHaveTextContent("Cash assistance Case guidance");
     expect(screen.getByRole("link", { name: "6123 4567" })).toHaveAttribute(
       "href",
       "tel:6123 4567",
@@ -105,13 +111,15 @@ describe("SchemeDetail", () => {
 
   it("guides users to the agency when structured details are unavailable", () => {
     render(
-      <SchemeDetail
-        scheme={makeScheme({
-          schemeId: "sparse",
-          schemeName: "Sparse Scheme",
-          link: "https://example.test/sparse",
-        })}
-      />,
+      <AppProviders>
+        <SchemeDetail
+          scheme={makeScheme({
+            schemeId: "sparse",
+            schemeName: "Sparse Scheme",
+            link: "https://example.test/sparse",
+          })}
+        />
+      </AppProviders>,
     );
 
     expect(
@@ -124,4 +132,44 @@ describe("SchemeDetail", () => {
       screen.queryByRole("navigation", { name: "On this page" }),
     ).not.toBeInTheDocument();
   });
+
+  it("warns when the scheme's official website failed our last check", () => {
+    render(
+      <AppProviders>
+        <SchemeDetail
+          scheme={makeScheme({
+            schemeName: "Dead Link Scheme",
+            status: "inactive",
+            link: "https://example.test/gone",
+            contact: [{ phones: ["6123 4567"] }],
+          })}
+        />
+      </AppProviders>,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "We couldn't reach this scheme's website",
+        level: 2,
+      }),
+    ).toBeVisible();
+    expect(screen.getByText(/details below may be out of date/i)).toBeVisible();
+    // The agency's contact details stay, so people can still confirm with them.
+    expect(screen.getByText("6123 4567")).toBeVisible();
+  });
+
+  it.each([{ status: "active" as const }, { status: undefined }])(
+    "shows no website warning for a listed scheme (status $status)",
+    ({ status }) => {
+      render(
+        <AppProviders>
+          <SchemeDetail scheme={makeScheme({ status })} />
+        </AppProviders>,
+      );
+
+      expect(
+        screen.queryByText("We couldn't reach this scheme's website"),
+      ).not.toBeInTheDocument();
+    },
+  );
 });

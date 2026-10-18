@@ -1,24 +1,30 @@
-import CatalogDetail from "@/components/catalog/catalog-detail";
-import { getCatalogJsonLd, getCatalogMetadata } from "@/lib/catalog-seo";
-import { CATALOG_CATEGORY_ROUTES } from "@/lib/design-system/categories";
+import CatalogPageClient from "@/components/catalog/catalog-detail";
+import {
+  getCatalogCategoryPath,
+  getCatalogJsonLd,
+  getCatalogMetadata,
+} from "@/lib/catalog-seo";
+import { getCatalogData, isPublicApiConfigured } from "@/lib/schemes.server";
 
-export const metadata = getCatalogMetadata({
-  path: "/catalog",
-});
+const path = getCatalogCategoryPath("All");
 
-const jsonLd = getCatalogJsonLd({
-  path: "/catalog",
-});
+export const metadata = getCatalogMetadata({ category: "All", path });
 
-type CatalogPageProps = {
-  params: Promise<{ category: string }>;
-};
+// The unfiltered catalog view. There is no intermediate category picker: a
+// category is a filter on this page, reached through the dropdown in the
+// results header, so browsing starts with schemes on screen rather than a
+// taxonomy to classify yourself into.
+export default async function CatalogPage() {
+  const initialData = isPublicApiConfigured()
+    ? await getCatalogData("All")
+    : undefined;
 
-export default async function CatalogPage({ params }: CatalogPageProps) {
-  const { category } = await params;
-  const initialCategory = CATALOG_CATEGORY_ROUTES.find(
-    (route) => route.slug === category,
-  )?.category;
+  const jsonLd = getCatalogJsonLd({
+    category: "All",
+    path,
+    schemes: initialData?.schemes,
+  });
+
   return (
     <>
       <script
@@ -27,7 +33,7 @@ export default async function CatalogPage({ params }: CatalogPageProps) {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <CatalogDetail initialCategory={initialCategory} />
+      <CatalogPageClient initialCategory="All" initialData={initialData} />
     </>
   );
 }

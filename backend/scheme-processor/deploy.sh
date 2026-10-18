@@ -74,6 +74,8 @@ done < "$ENV_FILE"
 
 # Deploy to Cloud Run from source (auto-builds and creates repo)
 echo "Building and deploying to Cloud Run..."
+# One request per instance: each scrape runs a headless browser, and three at once
+# exceeded 2Gi and killed the instance (503s). Up to 10 scrapes run in parallel.
 gcloud run deploy $SERVICE_NAME \
     --source . \
     --region $REGION \
@@ -82,9 +84,9 @@ gcloud run deploy $SERVICE_NAME \
     --memory 2Gi \
     --cpu 2 \
     --timeout 300 \
-    --concurrency 10 \
+    --concurrency 1 \
     --min-instances 0 \
-    --max-instances 3 \
+    --max-instances 10 \
     --set-env-vars "$ENV_VARS" \
     --no-allow-unauthenticated
 

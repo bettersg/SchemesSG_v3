@@ -14,6 +14,7 @@ import {
   LANDING_ANSWER,
   LANDING_QUERY,
   LANDING_SCHEMES,
+  waitForHydration,
 } from "./fixtures/landing-results";
 
 test("user can stop a streaming response with the question ready to retry", async ({
@@ -32,6 +33,7 @@ test("user can stop a streaming response with the question ready to retry", asyn
   ]);
 
   await page.goto("/");
+  await waitForHydration(page.getByRole("textbox"));
   await page.getByRole("textbox").fill(CANCELLATION_QUERY);
   await page.getByRole("button", { name: "Search" }).click();
 
@@ -80,6 +82,7 @@ test("user can recover from a failed stream without losing prior results", async
   ]);
 
   await page.goto("/");
+  await waitForHydration(page.getByRole("textbox"));
   await page.getByRole("textbox").fill(LANDING_QUERY);
   await page.getByRole("button", { name: "Search" }).click();
   await expect(

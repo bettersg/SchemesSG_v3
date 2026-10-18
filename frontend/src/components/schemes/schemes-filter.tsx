@@ -1,6 +1,6 @@
 import { Button, Drawer, Popover, useOverlayState } from "@heroui/react";
 import { Scheme } from "@/types/types";
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import { FilterObjType } from "@/app/interfaces/filter";
 import {
   Building2,
@@ -13,21 +13,8 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { capitalize, parseArrayString } from "@/lib/utils";
-
-// True on tablet/desktop (>=768px), matching the app's `md` breakpoint. Drives
-// the filter affordance: a popover on desktop, a bottom-sheet drawer on mobile
-// where popover rows are too small to tap reliably.
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(true);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return isDesktop;
-}
+import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { track } from "@/lib/analytics";
 
 interface SchemesFilterProps {
   schemes: Scheme[];
@@ -356,13 +343,18 @@ function SchemesFilter({
 
   // Apply live: selecting in a chip immediately updates the results, so chips
   // and the list always reflect the same state (no separate Apply button).
+  // Reports the dimension, never the chosen values: an agency or planning area
+  // narrows towards a person, and the useful question is which dimension people
+  // reach for, not where they live.
   const applyLocations = (next: Set<string>) => {
     setSelectedLocations(next);
+    if (next.size > 0) track("filter_apply", { filter_name: "location" });
     if (next.size === 0 && selectedAgencies.size === 0) resetFilters();
     else setFilterObj({ planningArea: next, agency: selectedAgencies });
   };
   const applyAgencies = (next: Set<string>) => {
     setSelectedAgencies(next);
+    if (next.size > 0) track("filter_apply", { filter_name: "agency" });
     if (next.size === 0 && selectedLocations.size === 0) resetFilters();
     else setFilterObj({ planningArea: selectedLocations, agency: next });
   };

@@ -90,6 +90,7 @@ ipython_config.py
 
 # pyenv
 .python-version
+!backend/.python-version
 
 # celery beat schedule file
 celerybeat-schedule
@@ -277,6 +278,12 @@ landing/screenshot-*.png
 !frontend/src/lib/
 frontend/env.staging
 frontend/env.development
+
+# pnpm, for local builds only
+frontend/pnpm-lock.yaml
+frontend/pnpm-workspace.yaml
+.pnpm-store/
+.pnpm-debug.log*
 
 # AI Agents
 # configurations
