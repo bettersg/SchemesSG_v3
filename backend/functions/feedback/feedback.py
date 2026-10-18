@@ -7,13 +7,15 @@ import json
 import os
 import requests
 from datetime import datetime, timezone
-
+from dotenv import load_dotenv
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from google.cloud import firestore
 from utils.auth import verify_auth_token
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 
+
+load_dotenv()
 
 FEEDBACK_CATEGORIES = {
     "Report wrong / missing information",
@@ -80,14 +82,14 @@ def create_notion_feedback(feedback_id: str, feedback_data: dict):
     response = requests.post(
         "https://api.notion.com/v1/pages",
         headers={
-            "Authorization": f"Bearer {os.environ['NOTION_FEEDBACK_API_KEY']}",
+            "Authorization": f"Bearer {os.getenv('NOTION_FEEDBACK_API_KEY')}",
             "Notion-Version": "2025-09-03",
             "Content-Type": "application/json",
         },
         json={
             "parent": {
                 "type": "data_source_id",
-                "data_source_id": os.environ["NOTION_FEEDBACK_DATA_SOURCE_ID"],
+                "data_source_id": os.getenv("NOTION_FEEDBACK_DATA_SOURCE_ID"),
             },
             "properties": properties,
         },
