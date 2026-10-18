@@ -96,8 +96,8 @@ def parse_tagging_response(raw: str) -> Dict[str, Optional[list]]:
     return {f: (v or None) for f, v in out.items()}
 
 
-def tag_scheme(fields: Dict[str, Any], deployment: Optional[str] = None) -> Dict[str, Optional[list]]:
-    """Call the tagging model. Raises on API errors; the caller decides whether to fall back."""
+def request_tags(fields: Dict[str, Any], deployment: Optional[str] = None) -> str:
+    """Call the tagging model and return the raw JSON text. Raises on API errors; the caller decides whether to fall back."""
     from openai import AzureOpenAI
 
     deployment = deployment or os.getenv("AZURE_OPENAI_TAGGING_DEPLOYMENT", "gpt-6-luna")
@@ -118,4 +118,9 @@ def tag_scheme(fields: Dict[str, Any], deployment: Optional[str] = None) -> Dict
     if not content:
         logger.error(f"Empty tagging response. Usage: {response.usage}")
         raise ValueError("empty tagging response")
-    return parse_tagging_response(content)
+    return content
+
+
+def tag_scheme(fields: Dict[str, Any], deployment: Optional[str] = None) -> Dict[str, Optional[list]]:
+    """Tag one scheme: model call, vocabulary validation and code-derived age bands."""
+    return parse_tagging_response(request_tags(fields, deployment))

@@ -9,7 +9,7 @@ import taxonomy as tx
 BACKEND = Path(__file__).resolve().parents[2]
 TARGETS = [BACKEND / "scheme-processor/app/taxonomy_data.json", BACKEND / "functions/new_scheme/taxonomy_data.json"]
 LEGACY_CONSTANTS = BACKEND / "functions/new_scheme/constants.py"
-VERSION = "v2-draft-2026-10-04"  # bump when NCSS review / gate changes the vocabulary
+VERSION = "v2-draft-2026-10-18"  # bump when NCSS review / gate changes the vocabulary
 
 
 def legacy_category_mapping():
