@@ -41,6 +41,7 @@ import {
 } from "./developers/api-primitives";
 import { CodeBlock } from "./developers/code-block";
 import { DocsSidebar, type NavItem } from "./developers/docs-sidebar";
+import { ScrollToTop } from "./shared/scroll-to-top";
 
 const PROSE = "max-w-[62ch]";
 const BODY = "text-[15px] leading-[1.65]";
@@ -345,6 +346,7 @@ export default function DevelopersPageContent() {
           <div className="h-16" />
         </div>
       </div>
+      <ScrollToTop />
     </div>
   );
 }
