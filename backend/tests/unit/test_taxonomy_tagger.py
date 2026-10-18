@@ -82,6 +82,15 @@ def test_tagging_resource_can_differ_from_the_shared_one(monkeypatch):
     assert seen["client"]["api_key"] == "tagging-key"
 
 
+def test_client_has_an_explicit_timeout_and_bounded_retries(monkeypatch):
+    seen = {}
+    payload = {"who_is_it_for": [], "what_it_gives": [], "scheme_type": [], "age_min": None, "age_max": None, "rationale": "x"}
+    _fake_openai(monkeypatch, json.dumps(payload), seen)
+    tagger.tag_scheme({"agency": "AIC"})
+    assert seen["client"]["timeout"] == tagger.TAGGING_TIMEOUT_SECONDS < 600
+    assert seen["client"]["max_retries"] == 2
+
+
 def test_tagging_resource_falls_back_to_the_shared_one(monkeypatch):
     seen = {}
     payload = {"who_is_it_for": [], "what_it_gives": [], "scheme_type": [], "age_min": None, "age_max": None, "rationale": "x"}

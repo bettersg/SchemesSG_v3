@@ -63,6 +63,13 @@ def test_apply_plan_only_touches_schemes_whose_tags_differ():
     assert rc.apply_plan(snapshot, results) == {"b": {"what_it_gives": ["Counselling", "Befriending services"]}}
 
 
+def test_an_empty_model_field_never_wipes_existing_tags():
+    snapshot = {"a": {"who_is_it_for": ["Seniors"], "what_it_gives": ["Counselling"], "scheme_type": None}}
+    results = {"a": {"who_is_it_for": ["Seniors"], "what_it_gives": None, "scheme_type": ["Healthcare"]}}
+    assert rc.apply_plan(snapshot, results) == {"a": {"scheme_type": ["Healthcare"]}}
+    assert rc.empty_over_existing(snapshot, results) == [("a", "what_it_gives")]
+
+
 def test_term_counts_count_each_scheme_once():
     counts = rc.term_counts([{"who_is_it_for": ["Youth", "Youth"]}, {"who_is_it_for": ["Youth"]}, {}])
     assert counts["who_is_it_for"]["Youth"] == 2

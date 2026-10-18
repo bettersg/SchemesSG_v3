@@ -100,16 +100,24 @@ def term_counts(rows):
 
 
 def apply_plan(snapshot, results):
-    """{id: {field: terms}} for schemes whose new tags differ from the stored ones (exact lists, not just the vocabulary)."""
+    """{id: {field: terms}} for schemes whose new tags differ from the stored ones (exact lists, not just the vocabulary).
+
+    A field the model left empty never overwrites existing tags: those are returned by empty_over_existing for a human to look at."""
     plan = {}
     for sid, scheme in snapshot.items():
         result = results.get(sid)
         if not result:
             continue
-        update = {f: result[f] for f in FIELDS if (result.get(f) or None) != (scheme.get(f) or None)}
+        update = {f: result[f] for f in FIELDS if (result.get(f) or None) != (scheme.get(f) or None) and result.get(f)}
         if update:
             plan[sid] = update
     return plan
+
+
+def empty_over_existing(snapshot, results):
+    """[(id, field)] where the model returned nothing but the scheme already has tags (kept as is by apply_plan)."""
+    return [(sid, f) for sid, scheme in snapshot.items() if (result := results.get(sid))
+            for f in FIELDS if not result.get(f) and scheme.get(f)]
 
 
 # ------------------------------------------------------------------ io
@@ -276,7 +284,9 @@ def cmd_apply(a):
     if not snapshot:  # dev snapshot not taken: classify ran on prod text; ids are identical while dev == prod
         sys.exit("take a dev snapshot first: reclassify.py snapshot dev (apply diffs against what dev holds now)")
     plan = apply_plan(snapshot, results)
-    print(f"{len(plan)} of {len(snapshot)} dev schemes would change; {sum(1 for i in snapshot if i not in results)} have no result")
+    kept = empty_over_existing(snapshot, results)
+    print(f"{len(plan)} of {len(snapshot)} dev schemes would change; {sum(1 for i in snapshot if i not in results)} have no result; "
+          f"{len(kept)} empty model fields leave existing tags untouched: {kept[:10]}")
     if not a.write:
         print("dry run (add --write to back up and write)")
         return

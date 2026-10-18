@@ -15,6 +15,7 @@ from app import taxonomy as tx
 from loguru import logger
 
 TAGGING_EFFORT = "medium"
+TAGGING_TIMEOUT_SECONDS = 90  # measured calls take 3-9 s; the SDK default of 600 s would stall a scheme for ten minutes
 SOURCE_TEXT_CHARS = 12000  # matches the extraction call, which reads up to 12k characters of the page
 MAX_TERMS = {"who_is_it_for": 8, "what_it_gives": 6, "scheme_type": 4}  # age terms are re-derived in code, so who has headroom
 
@@ -109,6 +110,8 @@ def request_tags(fields: Dict[str, Any], deployment: Optional[str] = None) -> st
         api_key=os.getenv("AZURE_OPENAI_TAGGING_API_KEY") or os.getenv("AZURE_OPENAI_API_KEY", ""),
         azure_endpoint=os.getenv("AZURE_OPENAI_TAGGING_ENDPOINT") or os.getenv("AZURE_OPENAI_ENDPOINT", ""),
         api_version=os.getenv("AZURE_OPENAI_TAGGING_API_VERSION") or os.getenv("OPENAI_API_VERSION", "2025-04-01-preview"),
+        timeout=TAGGING_TIMEOUT_SECONDS,
+        max_retries=2,
     )
     response = client.chat.completions.create(
         model=deployment,
