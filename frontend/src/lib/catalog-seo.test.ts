@@ -46,4 +46,15 @@ describe("catalog SEO", () => {
       },
     });
   });
+
+  // No route reads ?q=, and a search sent through one would put the search
+  // text into the analytics page URL, which the Privacy Policy rules out.
+  it("does not advertise a site search URL", () => {
+    const jsonLd = getCatalogJsonLd({
+      category: "Education",
+      path: "/catalog/education",
+    });
+
+    expect(JSON.stringify(jsonLd)).not.toContain("SearchAction");
+  });
 });
