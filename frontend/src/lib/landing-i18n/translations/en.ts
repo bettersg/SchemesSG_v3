@@ -306,7 +306,7 @@ export const en: Translations = {
       "Read access to the Schemes.sg catalogue, so partner organisations can surface the right scheme inside their own product.",
     accessBadge: "By request",
     requestAccess: "Request access",
-    contentsHeading: "On this page",
+    contentsHeading: "Contents",
     sections: {
       access: {
         heading: "Getting access",
