@@ -1,12 +1,15 @@
 import json
+from time import perf_counter
 from typing import Annotated, Any, TypedDict
 
 from integrations import LLMManager
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langgraph.types import CachePolicy
+from utils.latency import log_elapsed
 from utils.logging_setup import setup_logging
 
 from .cache import InMemoryCacheWithMaxsize
@@ -86,9 +89,18 @@ class RouterAgentGraph:
         llm = llm_loader.get_llm()
         return llm.bind_tools(self._tools, parallel_tool_calls=True)
 
-    def call_chat_llm(self, state: RouterAgentState) -> dict[str, Any]:
+    def call_chat_llm(self, state: RouterAgentState, config: RunnableConfig | None = None) -> dict[str, Any]:
         llm_with_tools = self._build_llm_with_tools()
         all_messages = state.get("messages", [])
+        trace_id = (config or {}).get("configurable", {}).get("thread_id")
+        stage = "routing_model_call"
+        for message in reversed(all_messages):
+            if isinstance(message, HumanMessage):
+                break
+            if getattr(message, "type", "") == "tool":
+                stage = "answer_model_call"
+                break
+        started_at = perf_counter()
         try:
             response = llm_with_tools.invoke([SystemMessage(ROUTER_AGENT_SYSTEM_TEMPLATE)] + all_messages)
         except Exception as err:
@@ -99,6 +111,8 @@ class RouterAgentGraph:
                 logger.info("Content filter triggered; returning safe refusal")
                 return {"messages": [AIMessage(content=CONTENT_FILTER_REFUSAL)]}
             raise RuntimeError(f"LLM invocation failed: {err}") from err
+        finally:
+            log_elapsed(logger, trace_id, stage, started_at)
 
         return {"messages": [response]}
 
@@ -115,8 +129,11 @@ class RouterAgentGraph:
 
         followup_subgraph = FollowupSubgraph().get_subgraph()
 
-        def run_followup(state) -> dict[str, Any]:
+        def run_followup(state, config: RunnableConfig | None = None) -> dict[str, Any]:
+            started_at = perf_counter()
             result = followup_subgraph.invoke(state)
+            trace_id = (config or {}).get("configurable", {}).get("thread_id")
+            log_elapsed(logger, trace_id, "followup_generation", started_at)
             try:
                 writer = get_stream_writer()
                 writer(

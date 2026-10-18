@@ -1,7 +1,6 @@
 """Unit tests for batch_jobs.slack_blocks.build_link_check_summary_message."""
 
 import pytest
-
 from batch_jobs.slack_blocks import build_link_check_summary_message
 
 

@@ -4,6 +4,7 @@ import json
 from collections import Counter
 from types import SimpleNamespace
 
+import pytest
 from new_scheme.constants import LEGACY_CATEGORY_TERMS, SCHEME_CATEGORY_MAPPING, SCHEME_TYPE
 from schemes.catalog import (
     CatalogRequestParams,
@@ -113,7 +114,7 @@ def test_catalog_successful_category_fetch(mock_request, mock_https_response, mo
         ],
         "next_cursor": "next-page",
         "has_more": True,
-        "total_count": 6,
+        "total_count": 5,  # 7 minus one inactive and one retired
     }
     mock_auth.assert_not_called()
 
@@ -319,3 +320,37 @@ def test_legacy_category_terms_do_not_overlap_the_current_vocabulary():
     legacy = {t for terms in LEGACY_CATEGORY_TERMS.values() for t in terms}
 
     assert not legacy & set(SCHEME_TYPE)
+
+
+@pytest.mark.parametrize("filter_name, filter_value", [(None, None), ("category", ["Elderly"])])
+def test_handle_catalog_request_hides_inactive_and_retired_schemes(
+    filter_name, filter_value, mocker, mock_firebase_manager
+):
+    """The catalog lists only searchable schemes, and its total count agrees."""
+    mock_collection = mocker.MagicMock()
+    mock_query = mocker.MagicMock()
+    mock_collection.where.return_value = mock_query
+    mock_firebase_manager.firestore_client.collection.return_value = mock_collection
+    mocker.patch("schemes.catalog.FieldFilter", return_value="filter")
+    mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        return_value=PaginationResult(
+            data=[
+                {"scheme_name": "Active", "status": "active"},
+                {"scheme_name": "Legacy"},
+                {"scheme_name": "Dead link", "status": "inactive"},
+                {"scheme_name": "Ended", "status": "retired"},
+            ],
+            has_more=False,
+            total_count=10,
+        ),
+    )
+    mocker.patch("schemes.catalog._count_total", return_value=3)  # per hidden status
+
+    results = _handle_catalog_request(
+        mock_firebase_manager,
+        CatalogRequestParams(filter_name=filter_name, filter_value=filter_value, limit=10),
+    )
+
+    assert [item["scheme_name"] for item in results.data] == ["Active", "Legacy"]
+    assert results.total_count == 10 - 3 - 3  # inactive and retired both subtracted

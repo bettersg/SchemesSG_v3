@@ -18,8 +18,13 @@ type CatalogCategoryPageProps = {
 
 export const dynamicParams = false;
 
+// "All" is excluded: it is /catalog itself, not a slug below it. With
+// dynamicParams off, that also makes /catalog/all a 404, and next.config.mjs
+// redirects it permanently to /catalog.
 export function generateStaticParams() {
-  return CATALOG_CATEGORY_ROUTES.map(({ slug }) => ({
+  return CATALOG_CATEGORY_ROUTES.filter(
+    ({ category }) => category !== "All",
+  ).map(({ slug }) => ({
     category: slug,
   }));
 }
@@ -30,7 +35,7 @@ export async function generateMetadata({
   const { category: slug } = await params;
   const category = getCatalogCategoryFromSlug(slug);
 
-  if (!category) {
+  if (!category || category === "All") {
     return {
       title: "Catalog category not found | Schemes.sg",
       robots: {
@@ -52,20 +57,21 @@ export default async function CatalogCategoryPage({
   const { category: slug } = await params;
   const category = getCatalogCategoryFromSlug(slug);
 
-  if (!category) {
+  if (!category || category === "All") {
     notFound();
   }
+
+  // Every category route is prerendered, so a secretless build reaches this
+  // read with no API behind it and the client refetches after hydration.
+  const initialData = isPublicApiConfigured()
+    ? await getCatalogData(category)
+    : undefined;
 
   const jsonLd = getCatalogJsonLd({
     category,
     path: getCatalogCategoryPath(category),
+    schemes: initialData?.schemes,
   });
-  // Every category route is prerendered, so a secretless build reaches this read
-  // with no API behind it. Without initial data the client fetches the first page
-  // after hydration instead.
-  const initialData = isPublicApiConfigured()
-    ? await getCatalogData(category)
-    : undefined;
 
   return (
     <>

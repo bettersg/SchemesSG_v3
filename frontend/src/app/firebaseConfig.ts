@@ -4,11 +4,6 @@ import {
   initializeApp,
   type FirebaseApp,
 } from "firebase/app";
-import {
-  getAnalytics,
-  isSupported,
-  type Analytics,
-} from "firebase/analytics";
 import { getAuth, type Auth } from "firebase/auth";
 
 // TODO make it a configuration variable
@@ -21,41 +16,18 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp | undefined;
-let analyticsInitializationStarted = false;
 
-function getFirebaseApp(): FirebaseApp {
+export function getFirebaseApp(): FirebaseApp {
   if (!app) {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   }
   return app;
 }
 
-function initializeFirebaseAnalytics(firebaseApp: FirebaseApp) {
-  if (typeof window === "undefined" || analyticsInitializationStarted) return;
-
-  const globalForAnalytics = globalThis as typeof globalThis & {
-    __schemesSgAnalytics?: Analytics;
-  };
-
-  if (globalForAnalytics.__schemesSgAnalytics) return;
-
-  analyticsInitializationStarted = true;
-  void isSupported()
-    .then((supported) => {
-      if (supported) {
-        globalForAnalytics.__schemesSgAnalytics = getAnalytics(firebaseApp);
-      }
-    })
-    .catch((error) => {
-      console.error(
-        "Firebase Analytics is not supported in this environment.",
-        error,
-      );
-    });
-}
+// Analytics initialises in src/providers/analytics-provider.tsx, independently
+// of auth, so prerendered pages can track events.
 
 export function getFirebaseAuth(): Auth {
   const firebaseApp = getFirebaseApp();
-  initializeFirebaseAnalytics(firebaseApp);
   return getAuth(firebaseApp);
 }

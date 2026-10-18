@@ -7,7 +7,6 @@ the LLM can explain the gap rather than silently returning too few.
 
 import pandas as pd
 import pytest
-
 from search.handler import QueryHandler
 from search.types import PredictParams
 
@@ -26,14 +25,14 @@ def _ranked(n: int) -> pd.DataFrame:
     return pd.DataFrame({"scheme_id": [f"s{i}" for i in range(n)], "scheme": [f"S{i}" for i in range(n)]})
 
 
-def test_reports_no_shortfall_when_target_met(handler):
-    """User asked for 20, 20 relevant exist -> no shortfall."""
-    handler.search_model.aggregate_and_rank_results.return_value = _ranked(20)
+def test_fresh_top_ten_search_returns_ten_results(handler):
+    """A count on a fresh search limits its initial result set."""
+    handler.search_model.aggregate_and_rank_results.return_value = _ranked(10)
 
-    result = handler.predict_for_agent(PredictParams(query="healthcare", requested_target=20))
+    result = handler.predict_for_agent(PredictParams(query="healthcare", requested_target=10))
 
-    assert len(result["data"]) == 20
-    assert result["requested_target"] == 20
+    assert len(result["data"]) == 10
+    assert result["requested_target"] == 10
     assert result["shortfall"] is False
 
 

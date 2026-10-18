@@ -12,9 +12,11 @@
  */
 
 import Link from "next/link";
+import { useEffect } from "react";
 import StatusBanner from "@/components/feedback/status-banner";
 import { Body, Headline, Title } from "@/components/ui/typography";
 import { useLanguage } from "@/lib/landing-i18n";
+import { track } from "@/lib/analytics";
 import {
   API_ERRORS,
   API_KEY_HEADER,
@@ -70,6 +72,34 @@ export default function DevelopersPageContent() {
   const quickStart = `curl "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes?limit=1" \\
   -H "${API_KEY_HEADER}: $SCHEMES_API_KEY"`;
 
+  // Reports each section the reader actually reaches, once per visit, so the
+  // reference can be trimmed where nobody goes. Observed here rather than in
+  // DocsSidebar, which is deliberately a server component and ships no JS.
+  useEffect(() => {
+    const reported = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = entry.target.id;
+          if (!entry.isIntersecting || reported.has(id)) continue;
+          reported.add(id);
+          track("docs_section_view", { section_id: id });
+        }
+      },
+      // Half the section visible, so a scroll straight past does not count it.
+      { threshold: 0.5 },
+    );
+
+    for (const { id } of navItems) {
+      const node = document.getElementById(id);
+      if (node) observer.observe(node);
+    }
+
+    return () => observer.disconnect();
+    // navItems is rebuilt per render from static copy; the ids never change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="bg-(--schemes-bg)">
       <div className="mx-auto w-full max-w-[100rem] lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
@@ -95,6 +125,9 @@ export default function DevelopersPageContent() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
                   href="/feedback"
+                  onClick={() =>
+                    track("generate_lead", { method: "developers_page" })
+                  }
                   className={cn(
                     productButtonSolidAmber,
                     productButtonDefault,
@@ -122,6 +155,7 @@ export default function DevelopersPageContent() {
             heading={s.quickStart.heading}
             code={
               <CodeBlock
+                operation="quick-start"
                 language="cURL"
                 caption={l.exampleRequest}
                 code={quickStart}
@@ -138,6 +172,7 @@ export default function DevelopersPageContent() {
             heading={s.auth.heading}
             code={
               <CodeBlock
+                operation="authentication"
                 language="HTTP"
                 caption={l.header}
                 code={`${API_KEY_HEADER}: sk_schemes_xxxxxxxxxxxxxxxxxxxxxxxx`}
@@ -160,6 +195,7 @@ export default function DevelopersPageContent() {
             heading={s.baseUrl.heading}
             code={
               <CodeBlock
+                operation="base-url"
                 language="HTTP"
                 caption="base"
                 code={`${PARTNER_API_BASE}/${PARTNER_API_VERSION}`}
@@ -225,6 +261,7 @@ export default function DevelopersPageContent() {
             wide
             code={
               <CodeBlock
+                operation="errors"
                 language="JSON"
                 caption={l.exampleResponse}
                 code={ERROR_ENVELOPE}
@@ -293,6 +330,7 @@ export default function DevelopersPageContent() {
             heading={s.retired.heading}
             code={
               <CodeBlock
+                operation="retired"
                 language="JSON"
                 caption="404"
                 code={RETIRED_RESPONSE}
@@ -398,6 +436,7 @@ function OperationRow({
 
         <div className="min-w-0 space-y-4">
           <CodeBlock
+            operation={operation.id}
             language="cURL"
             caption={labels.exampleRequest}
             code={operation.request}
@@ -405,6 +444,7 @@ function OperationRow({
             copiedLabel={labels.copied}
           />
           <CodeBlock
+            operation={operation.id}
             language="JSON"
             caption={labels.exampleResponse}
             code={operation.response}

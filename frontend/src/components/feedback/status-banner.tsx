@@ -47,9 +47,9 @@ export default function StatusBanner({
         {icon ?? defaultIcon}
         <div className="flex flex-col gap-2">
           {title && (
-            <h3 className={`text-sm font-semibold ${v.titleColor}`}>
+            <h2 className={`text-sm font-semibold ${v.titleColor}`}>
               {title}
-            </h3>
+            </h2>
           )}
           <div className="text-sm leading-relaxed text-(--schemes-muted)">
             {children}
