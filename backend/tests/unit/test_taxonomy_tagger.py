@@ -91,3 +91,11 @@ def test_tagging_resource_falls_back_to_the_shared_one(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     tagger.tag_scheme({"agency": "AIC"})
     assert seen["client"]["azure_endpoint"] == "https://shared.example"
+
+
+def test_user_text_matches_the_production_shape_and_never_says_elderly():
+    text = tagger.build_user_text({"scheme": "S", "agency": "A", "llm_description": "Detailed text", "description": "Stored text",
+                                   "summary": "Short", "eligibility": "Aged 60+"})
+    assert text.splitlines() == ["Scheme: S", "Agency: A", "Description: Detailed text", "Summary: Short", "Eligibility: Aged 60+"]
+    assert "Description: Stored text" in tagger.build_user_text({"scheme": "S", "description": "Stored text"})
+    assert "Elderly" not in tagger.build_system_prompt().split("WHO_IS_IT_FOR terms")[0]

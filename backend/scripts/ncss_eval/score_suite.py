@@ -9,6 +9,9 @@ def rolls(terms, prof):  # NCSS roll-up: granular term counts if its parent prof
 PWD, MH = "Persons with disabilities", "Persons with mental health conditions"
 gold = {g["id"]: g for f in ("data/probes_gold.json", "data/disability_suite_gold.json") for g in json.load(open(f))} if True else {}
 runs = {json.load(open(p))["id"]: json.load(open(p)) for p in glob.glob(f"data/runs/luna-medium{tag}/*.json")}
+missing = [i for i in gold if i not in runs]
+if not runs or missing:
+    sys.exit(f"run dir data/runs/luna-medium{tag} has {len(runs)} runs; {len(missing)} gold ids missing: {missing[:10]}")
 def prf(tp, fp, fn):
     p = tp / (tp + fp) if tp + fp else 1.0; r = tp / (tp + fn) if tp + fn else 1.0; return p, r
 for name, term, key in (("PWD", PWD, "pwd"), ("Mental health", MH, "mental_health")):

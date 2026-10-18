@@ -4,6 +4,7 @@ LLM field extraction using Azure OpenAI.
 Extracts structured data from scraped web content.
 """
 
+import asyncio
 import json
 import os
 import re
@@ -127,7 +128,8 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
         last_error = None
         for attempt in range(2):
             try:
-                response = litellm.completion(
+                response = await asyncio.to_thread(
+                    litellm.completion,
                     model=f"azure/{deployment_name}",
                     messages=[{"role": "user", "content": prompt}],
                     api_key=azure_key,
@@ -142,7 +144,6 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
                 err_str = str(api_err).lower()
                 if attempt == 0 and ("timeout" in err_str or "rate" in err_str or "429" in err_str):
                     logger.warning(f"API call failed (attempt {attempt + 1}), retrying: {api_err}")
-                    import asyncio
                     await asyncio.sleep(2)
                     continue
                 raise
@@ -160,7 +161,7 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
         extracted = json.loads(response_content.strip())
 
         # Taxonomy tags come from a separate strict-schema call (see taxonomy_tagger); a failure leaves them empty
-        tags = _tag_taxonomy(extracted, scheme_name)
+        tags = await asyncio.to_thread(_tag_taxonomy, extracted, scheme_name)  # sync SDK call: keep it off the event loop
 
         # Extract and filter phone/email from LLM (fallback for regex)
         llm_phone = extracted.get("phone")

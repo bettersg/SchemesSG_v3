@@ -17,6 +17,7 @@ print(len(docs), "A", len(A), "B", len(B), "C", len(C))
 import random; random.seed(406)
 pick = [("A", x) for x in random.sample(A, min(14, len(A)))] + [("B", x) for x in random.sample(B, min(10, len(B)))] + [("C", x) for x in random.sample(C, min(6, len(C)))]
 keys = ["scheme", "agency", "description", "llm_description", "summary", "eligibility", "who_is_it_for", "status", "link", "what_it_gives", "scheme_type"]
+os.makedirs("data", exist_ok=True)
 with open("data/disability_suite_prod.jsonl", "w") as f:
     for g, (i, d) in pick: f.write(json.dumps({"id": i, "group": g, **{k: d.get(k) for k in keys}}, default=str) + "\n")
 print("wrote", len(pick))

@@ -74,7 +74,7 @@ def changed_fields(scheme, result):
 
 
 def review_flags(scheme, result):
-    """Reasons a scheme should be looked at first by NCSS: sensitive terms, provisional parents, empty output."""
+    """Reasons a scheme should be looked at first by NCSS: disability / mental health, abuse, retired old tags, empty output."""
     flags = []
     old_scheme_types = {t.lower() for t in scheme.get("scheme_type") or []}
     for term in ("covid-19 support", "abuse/family violence", "loss of breadwinner support"):
@@ -85,10 +85,6 @@ def review_flags(scheme, result):
         flags.append("disability / mental health")
     if "Victims of abuse or harassment" in who:
         flags.append("victims of abuse")
-    for field in FIELDS:
-        provisional = [t for t in result.get(field) or [] if tx.is_provisional(field, t)]
-        if provisional:
-            flags.append("provisional: " + ", ".join(provisional))
     if not any(result.get(f) for f in FIELDS):
         flags.append("no tags")
     return flags

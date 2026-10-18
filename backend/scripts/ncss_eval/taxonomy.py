@@ -91,7 +91,7 @@ WHO_IS_IT_FOR = [
     T("Seniors", "Seniors / elderly persons aged 60 and above (formerly 'Elderly').", age=["Seniors"]),
     T("Seniors with dementia", "Seniors / elderly persons aged 60+ diagnosed with dementia, and their care.", age=["Seniors"], profile=["Chronically ill"]),
     T("Persons with disabilities (PWDs)", "Persons with permanent intellectual or physical disabilities (e.g. mobility, vision, hearing, intellectual disability, cerebral palsy). Mental health conditions are NOT disabilities.", profile=["Persons with disabilities"]),
-    T("Persons with special needs", "Persons with developmental or learning needs (e.g. SPED students). Treat as disability only when the disability is permanent.", profile=["Persons with disabilities"]),
+    T("Persons with special needs", "Persons with developmental or learning needs (e.g. SPED students). Tag Persons with disabilities (PWDs) separately only when the disability is permanent.", note="NCSS 14 Oct row 11: do not equate with PWD; no PWD parent"),
     T("Persons on autism spectrum", "Persons diagnosed with autism spectrum disorder.", profile=["Persons with disabilities"]),
     T("Persons with chronic or terminal illnesses", "Persons with long-term, persistent or terminal illness requiring ongoing management (e.g. cancer, kidney failure, diabetes).", profile=["Chronically ill"]),
     T("Persons with mental health conditions", "Persons diagnosed with, or severely affected by, mental health conditions (e.g. depression, schizophrenia). Recoverable, so NOT persons with disabilities.", profile=["Persons with mental health conditions"]),

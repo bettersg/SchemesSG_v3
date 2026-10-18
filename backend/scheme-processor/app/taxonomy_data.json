@@ -251,13 +251,11 @@
   },
   {
    "name": "Persons with special needs",
-   "definition": "Persons with developmental or learning needs (e.g. SPED students). Treat as disability only when the disability is permanent.",
+   "definition": "Persons with developmental or learning needs (e.g. SPED students). Tag Persons with disabilities (PWDs) separately only when the disability is permanent.",
    "provisional": false,
-   "note": "",
+   "note": "NCSS 14 Oct row 11: do not equate with PWD; no PWD parent",
    "age_group": [],
-   "profile": [
-    "Persons with disabilities"
-   ],
+   "profile": [],
    "fallback_profile": []
   },
   {

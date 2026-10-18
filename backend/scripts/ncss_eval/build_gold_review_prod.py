@@ -16,7 +16,7 @@ for path, runs, tag in (("data/prod_latest100.jsonl", "data/runs/luna-medium-pro
         r = R[s["id"]]["result"]
         agree = {f: len(set(r[f]) & set(mig(s.get(f), f))) / max(1, len(set(r[f]) | set(mig(s.get(f), f)))) for f in ("who_is_it_for", "what_it_gives")}
         rows.append({"id": s["id"], "sample": tag, "scheme": s["scheme"], "agency": s["agency"], "link": s.get("link"),
-                     "text": c.frozen_state(s)[:2200],
+                     "text": c.frozen_state(s),
                      "luna_who": "; ".join(r["who_is_it_for"]), "luna_what": "; ".join(r["what_it_gives"]), "luna_type": "; ".join(r["scheme_type"]),
                      "age_min": r["age_min"], "age_max": r["age_max"], "luna_rationale": r["rationale"],
                      "prod_who": "; ".join(mig(s.get("who_is_it_for"), "who_is_it_for")), "prod_what": "; ".join(mig(s.get("what_it_gives"), "what_it_gives")),

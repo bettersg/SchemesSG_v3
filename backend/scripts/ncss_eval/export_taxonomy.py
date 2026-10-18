@@ -1,6 +1,6 @@
 """Generate the canonical taxonomy JSON from taxonomy.py and vendor it into both deploy units.
 Cloud Run (scheme-processor) and Firebase Functions each package only their own directory, so each gets a copy;
-tests/unit/test_taxonomy_sync.py asserts the copies equal this generator's output.
+tests/unit/test_taxonomy.py::test_vendored_copies_are_identical asserts the copies equal this generator's output.
 usage (from backend/scripts/ncss_eval): python export_taxonomy.py [--check]"""
 import ast, json, sys
 from pathlib import Path

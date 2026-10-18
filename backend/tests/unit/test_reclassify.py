@@ -49,7 +49,7 @@ def test_review_flags_put_sensitive_schemes_first():
     flags = rc.review_flags({**SCHEME, "scheme_type": ["COVID-19 Support"]}, result)
     assert any("covid-19" in f for f in flags)
     assert "victims of abuse" in flags
-    assert any(f.startswith("provisional:") for f in flags)
+    assert not any("provisional" in f for f in flags)  # provisional parents are listed on the Term counts sheet, not flagged per row
     assert rc.review_flags(SCHEME, {"who_is_it_for": ["Seniors"], "what_it_gives": ["Counselling"], "scheme_type": ["Healthcare"]}) == []
     assert rc.review_flags(SCHEME, {"who_is_it_for": None, "what_it_gives": None, "scheme_type": None}) == ["no tags"]
 
