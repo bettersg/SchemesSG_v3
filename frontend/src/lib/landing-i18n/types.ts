@@ -182,23 +182,6 @@ export interface Translations {
     rateLimitHeaderNotes: Record<string, string>;
   };
 
-  /**
-   * Privacy and terms pages. Both currently carry a drafting notice rather than
-   * policy text: the pages exist so the footer links resolve, and the real
-   * content is slotted in when it is ready.
-   */
-  legal: {
-    privacyHeading: string;
-    termsHeading: string;
-    noticeTitle: string;
-    noticeBody: string;
-    interimHeading: string;
-    interimBody: string;
-    partnerHeading: string;
-    partnerBody: string;
-    contactCta: string;
-  };
-
   footer: {
     tagline: string;
     schemesHeading: string;

@@ -391,21 +391,6 @@ export const en: Translations = {
     },
   },
 
-  legal: {
-    privacyHeading: "Privacy Policy",
-    termsHeading: "Terms of Service",
-    noticeTitle: "This policy is being written",
-    noticeBody:
-      "We are drafting it properly rather than posting boilerplate. This page exists so the link works and so you can see where we have got to.",
-    interimHeading: "What holds in the meantime",
-    interimBody:
-      "Schemes.sg is a free search tool over publicly published government and community scheme information. You can search and browse without an account. We do not sell your data. Search queries are stored so we can improve results, and the feedback you choose to send is stored with it.",
-    partnerHeading: "Sharing scheme data with partners",
-    partnerBody:
-      "We share scheme catalogue and search data with a small number of named partner organisations through our partner API, so they can help people find schemes inside their own services. This covers scheme information, not anything you type into Schemes.sg.",
-    contactCta: "Ask us a question",
-  },
-
   footer: {
     tagline: "Making social assistance accessible for everyone.",
     schemesHeading: "SCHEMES",
