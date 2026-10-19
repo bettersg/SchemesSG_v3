@@ -72,11 +72,15 @@ async def process(request: ProcessRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def scrape_for_content_check(url: str):
+    return await scrape_url(url, content_check=True)
+
+
 @app.post("/content-check", response_model=ContentCheckResponse)
 async def content_check(request: ContentCheckRequest):
     """
     Monthly content-change check for each scheme, one at a time: skip, scrape, then save a
-    baseline or diff against the snapshot and flag out-of-date fields for review.
+    baseline or compare page hashes and flag out-of-date fields for review.
     One scheme failing doesn't stop the rest; it is reported as outcome "error".
     """
     db = get_firestore_client()
@@ -87,7 +91,7 @@ async def content_check(request: ContentCheckRequest):
     results = []
     for scheme_id in request.scheme_ids:
         try:
-            results.append(ContentCheckResult(**await check_scheme(scheme_id, store, scrape_url)))
+            results.append(ContentCheckResult(**await check_scheme(scheme_id, store, scrape_for_content_check)))
         except Exception as e:
             logger.exception(f"Content check failed for {scheme_id}")
             results.append(ContentCheckResult(scheme_id=scheme_id, outcome="error", detail=str(e)[:500]))

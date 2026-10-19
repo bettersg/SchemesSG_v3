@@ -16,7 +16,7 @@ from app.services.extraction import select_best_logo
 from loguru import logger
 
 
-async def scrape_url(url: str) -> Dict[str, Any]:
+async def scrape_url(url: str, content_check: bool = False) -> Dict[str, Any]:
     """
     Scrape a URL and return content with images.
 
@@ -24,14 +24,16 @@ async def scrape_url(url: str) -> Dict[str, Any]:
 
     Args:
         url: URL to scrape
+        content_check: for the monthly content check: wait 2s before capturing each page
+            (fewer half-loaded menus) and add each page's main text (crawl4ai pruning filter)
 
     Returns:
-        Dict with: content, images, logo_url, error, and pages ([{url, text}], one per
-        crawled page; only on success)
+        Dict with: content, images, logo_url, error, and pages ([{url, text, main_text}], one per
+        crawled page; only on success; main_text only with content_check)
     """
     if _is_pdf(url):
         return await _scrape_pdf(url)
-    return await _scrape_html(url)
+    return await _scrape_html(url, content_check)
 
 
 def _is_pdf(url: str) -> bool:
@@ -72,9 +74,9 @@ async def _scrape_pdf(url: str) -> Dict[str, Any]:
         return {"content": "", "images": [], "logo_url": None, "error": f"PDF Processing Error: {str(e)}"}
 
 
-async def _scrape_html(url: str) -> Dict[str, Any]:
+async def _scrape_html(url: str, content_check: bool = False) -> Dict[str, Any]:
     """Scrape HTML with crawl4ai, fallback to Pydoll for Cloudflare."""
-    result = await _try_crawl4ai(url)
+    result = await _try_crawl4ai(url, content_check)
 
     # Check if blocked by Cloudflare - try Pydoll bypass
     if _is_cloudflare_blocked(result):
@@ -105,7 +107,7 @@ def _is_cloudflare_blocked(result: Dict[str, Any]) -> bool:
     return any(ind in content_lower for ind in CLOUDFLARE_INDICATORS)
 
 
-async def _try_crawl4ai(url: str) -> Dict[str, Any]:
+async def _try_crawl4ai(url: str, content_check: bool = False) -> Dict[str, Any]:
     """Try scraping with crawl4ai."""
     try:
         from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
@@ -124,10 +126,22 @@ async def _try_crawl4ai(url: str) -> Dict[str, Any]:
             ],
         )
 
+        content_check_options = {}
+        if content_check:
+            from crawl4ai import DefaultMarkdownGenerator
+            from crawl4ai.content_filter_strategy import PruningContentFilter
+
+            # Pruning only adds markdown.fit_markdown; result.markdown stays the full page text.
+            content_check_options = {
+                "delay_before_return_html": 2.0,
+                "markdown_generator": DefaultMarkdownGenerator(content_filter=PruningContentFilter()),
+            }
+
         crawl_config = CrawlerRunConfig(
             deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=5),
             cache_mode=CacheMode.BYPASS,
             verbose=False,
+            **content_check_options,
         )
 
         logger.info(f"Starting crawl4ai for: {url}")
@@ -161,7 +175,7 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
                 text = result.markdown or result.cleaned_html or ""
                 if text:
                     all_text.append(text)
-                    all_pages.append({"url": result.url or url, "text": text})
+                    all_pages.append({"url": result.url or url, "text": text, "main_text": _main_text(result)})
 
                 if hasattr(result, "media") and result.media:
                     images = result.media.get("images", [])
@@ -198,8 +212,13 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
         "images": images,
         "logo_url": logo_url,
         "error": None,
-        "pages": [{"url": results.url or url, "text": scraped_text}],
+        "pages": [{"url": results.url or url, "text": scraped_text, "main_text": _main_text(results)}],
     }
+
+
+def _main_text(result) -> str:
+    """The pruned main text (no menus, sidebars, footers), when the pruning filter ran."""
+    return getattr(result.markdown, "fit_markdown", None) or ""
 
 
 async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:

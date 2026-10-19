@@ -6,32 +6,34 @@ For one scheme:
    check still waits for a volunteer and is less than 2 months old.
 2. Scrape the scheme link. A failed scrape adds 1 to ``content_check_fail_streak``; nothing else
    changes and the AI is not called.
-3. No snapshot yet: save every page as the baseline (no diff, no AI).
-4. Otherwise diff each page against its snapshot (pages matched by URL) and ask the AI reviewer
-   which stored fields are now out of date. Phone/email are checked by regex instead.
-5. Not flagged: the new text becomes the snapshot. Flagged: the snapshot keeps the reviewed text,
-   the new text waits in ``pending_text``, and a ``contentChecks`` record holds the diff and the
-   AI's suggestions for a volunteer.
+3. Fingerprint each page: a SHA-256 hash of its main text (crawl4ai's pruning filter drops menus,
+   sidebars and footers), normalised to lowercase words and numbers. The phones/emails on the
+   full page text are kept too, because footers often hold them.
+4. No hashes stored yet: save them as the baseline (no AI).
+5. Otherwise a page is changed when its hash differs or its URL is new. Only changed pages go to
+   the AI reviewer, as full text, with the stored fields; it says which fields are now out of
+   date. Phone/email are checked by regex on every run, even when no hash changed.
+6. Not flagged: the new hashes and contacts are saved. Flagged: the old ones stay, so the change
+   is found again until a volunteer acts, and a ``contentChecks`` record holds the AI's
+   suggestions.
 
 Firestore:
-- ``contentSnapshots/<scheme_id>/pages/<hash of page URL>``: url, text, pending_text. One doc per
-  page because a whole scheme can pass Firestore's 1 MiB document limit.
-- ``contentChecks/<id>``: one record per flag. No full-text copies.
-- ``schemes/<id>``: last_content_checked, content_check_fail_streak (only while failing).
+- ``schemes/<id>``: content_pages ([{url, hash, contacts}]), last_content_checked,
+  content_check_fail_streak (only while failing). Page text is never stored.
   ``scraped_text`` and ``last_scraped_update`` are never touched.
+- ``contentChecks/<id>``: one record per flag.
 
-Prompt, filters and contact check were chosen in the trial (Notion "#407 AI reviewer test").
+Prompt, filters and contact check were chosen in the trial (Notion "#407 AI reviewer test");
+the prompt was adapted from reading a diff to reading whole changed pages.
 """
 
 import asyncio
-import difflib
 import hashlib
 import json
 import os
 import re
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from app.services.extraction import extract_contacts
@@ -39,17 +41,16 @@ from loguru import logger
 
 
 SCHEMES = "schemes"
-SNAPSHOTS = "contentSnapshots"
 CHECKS = "contentChecks"
 
 SKIP_STATUSES = ("inactive", "retired")
 # A pending check blocks new checks for this long; after that the scheme is checked again.
 PENDING_GRACE = timedelta(days=60)
-# Stored diff is capped so a contentChecks record stays far below the 1 MiB document limit.
-MAX_STORED_DIFF = 200_000
+# Page text sent to the reviewer is capped; one long page (e.g. a doctors list) can reach ~900k chars.
+MAX_REVIEW_CHARS = 200_000
 
 REVIEW_MODEL = "gpt-5.4-mini"
-PROMPT_VERSION = "v3"
+PROMPT_VERSION = "v4-pages"
 # Fields the reviewer sees and may update: the extractor's content fields plus regex phone/email.
 CONTENT_FIELDS = (
     "llm_description",
@@ -76,19 +77,19 @@ IMAGES = re.compile(r"!\[[^\]]*\]\([^)]*\)")
 WORDS = re.compile(r"\$?[^\W_]+(?:[.,][0-9]+)*")  # words and numbers; keeps $3,500 / 1.50 intact
 CONTACT_JUNK = re.compile(r"sentry|wixpress|example\.", re.I)  # tracking-code "emails", placeholders
 
-REVIEW_SYSTEM = """You review changes to the source web pages of a Singapore social service scheme listed on SchemesSG.
+REVIEW_SYSTEM = """You review the source web pages of a Singapore social service scheme listed on SchemesSG.
 
-The user message gives the scheme's currently stored fields and a diff of its source pages since those fields were stored. In the diff, "Page:" names the page, lines starting with "-" were removed and lines starting with "+" were added.
+The user message gives the scheme's currently stored fields and the current text of the source pages that changed since those fields were last checked. Each page starts with "Page: <URL>".
 
-Decide which stored fields are now out of date because of the changes. For each one, give the updated value, a short quote from the page text that shows the change, and the URL of the page it came from. If no stored field needs updating, return an empty list.
+Decide which stored fields are now out of date because of what the pages say. For each one, give the updated value, a short quote from the page text that shows the change, and the URL of the page it came from. If no stored field needs updating, return an empty list.
 
-Only suggest a change to a field when the diff shows that a fact about this scheme has changed, or when it adds information about this scheme that the stored field lacks. Do not suggest changes for rewording or formatting, or for information about other programmes or the organisation in general.
+Only suggest a change to a field when the page text shows that a stored fact about this scheme is no longer true, or when the page gives important information about this scheme that the stored field lacks. Do not suggest changes for rewording or formatting, or for information about other programmes or the organisation in general.
 
 When suggesting a change, keep the stored field's structure and wording and change only what is needed. If the stored field is empty, use your own structure.
 
 Do not suggest changes to phone or email; those are checked separately.
 
-The quote must be copied from an added line (starting with "+") and must show the change.
+The quote must be copied from the page text and must show the change.
 
 Field definitions:
 {field_defs}
@@ -101,15 +102,15 @@ REVIEW_USER = """Scheme: {name} ({agency})
 Stored fields:
 {fields}
 
-Diff:
-{diff}"""
+Changed pages:
+{pages}"""
 
 
 class ReviewError(Exception):
     """The AI reviewer gave no usable answer (API error, bad JSON, input too large)."""
 
 
-#### Pages and diffs
+#### Pages and hashes
 
 
 def norm_url(url: str) -> str:
@@ -119,13 +120,8 @@ def norm_url(url: str) -> str:
     return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), query, ""))
 
 
-def page_doc_id(url: str) -> str:
-    """Firestore doc IDs can't contain '/', so a page doc is named by a hash of its URL."""
-    return hashlib.sha1(norm_url(url).encode()).hexdigest()
-
-
 def clean_text(text: str) -> str:
-    """Page text as compared month to month. HTML (Pydoll fallback) is converted to words first,
+    """Page text as checked month to month. HTML (Pydoll fallback) is converted to words first,
     the same way the extractor does; tracker lines are dropped."""
     if HTML_TAG.search(text or ""):
         from app.services.llm_extractor import _html_to_text
@@ -134,88 +130,87 @@ def clean_text(text: str) -> str:
     return "\n".join(line for line in (text or "").splitlines() if not any(t in line for t in TRACKER_PATTERNS))
 
 
-def scraped_pages(scrape_result: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
-    """{normalised URL: {url, text}}. A URL crawled twice keeps its longest copy."""
-    pages: Dict[str, Dict[str, str]] = {}
+def _words(value: Any) -> str:
+    """Lowercase words and numbers only: no links, punctuation, spacing or line breaks."""
+    text = ", ".join(map(str, value)) if isinstance(value, list) else str(value or "")
+    return " ".join(WORDS.findall(URLS.sub(" ", text).lower()))
+
+
+def page_hash(text: str) -> str:
+    return hashlib.sha256(_words(text).encode()).hexdigest()
+
+
+def scraped_pages(scrape_result: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """{normalised URL: {url, text, hash}}. `text` is the full page; `hash` is of the main text
+    (the full text when the scraper gave none, e.g. PDFs or the Pydoll fallback).
+    A URL crawled twice keeps its longest copy."""
+    pages: Dict[str, Dict[str, Any]] = {}
     for page in scrape_result.get("pages") or []:
         text = clean_text(page.get("text") or "")
+        main = clean_text(page.get("main_text") or "") or text
         key = norm_url(page.get("url") or "")
         if text.strip() and (key not in pages or len(text) > len(pages[key]["text"])):
-            pages[key] = {"url": page["url"], "text": text}
+            pages[key] = {"url": page["url"], "text": text, "hash": page_hash(main)}
     return pages
 
 
-@dataclass
-class PageDiff:
-    url: str
-    change: str  # "changed", "added" or "removed"
-    removed: List[str]
-    added: List[str]
+def stored_pages(scheme: Dict[str, Any]) -> Optional[Dict[str, Dict[str, Any]]]:
+    """{normalised URL: {url, hash, contacts}} from the scheme, or None before the baseline."""
+    entries = scheme.get("content_pages")
+    if not isinstance(entries, list):
+        return None
+    return {norm_url(e["url"]): e for e in entries if isinstance(e, dict) and e.get("url")}
 
 
-def diff_pages(old: Dict[str, Dict[str, str]], new: Dict[str, Dict[str, str]]) -> List[PageDiff]:
-    """Pages matched by normalised URL. A page only in `new` is added (all lines +), a page only
-    in `old` is removed (all lines -). Unchanged pages are left out."""
-    diffs = []
-    for key in sorted(old.keys() | new.keys()):
-        a = old[key]["text"].splitlines() if key in old else []
-        b = new[key]["text"].splitlines() if key in new else []
-        removed, added = [], []
-        for line in difflib.unified_diff(a, b, lineterm="", n=0):
-            if line.startswith(("---", "+++")):
-                continue
-            if line.startswith("-"):
-                removed.append(line[1:])
-            elif line.startswith("+"):
-                added.append(line[1:])
-        if removed or added:
-            change = "added" if key not in old else "removed" if key not in new else "changed"
-            diffs.append(PageDiff((new.get(key) or old[key])["url"], change, removed, added))
-    return diffs
+def changed_pages(old: Dict[str, Dict[str, Any]], new: Dict[str, Dict[str, Any]]) -> List[Dict[str, str]]:
+    """Pages whose hash differs ("changed") or whose URL is new ("added"). Pages no longer
+    crawled are left out: there is no text to review."""
+    return [
+        {"url": new[k]["url"], "change": "added" if k not in old else "changed"}
+        for k in sorted(new)
+        if k not in old or old[k].get("hash") != new[k]["hash"]
+    ]
 
 
-def format_diff(diffs: List[PageDiff]) -> str:
-    """The diff as the reviewer reads it: "Page: <url>" then -/+ lines."""
-    return "\n\n".join(
-        f"Page: {d.url}\n" + "\n".join([f"-{x}" for x in d.removed] + [f"+{x}" for x in d.added]) for d in diffs
-    )
+def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]]) -> Tuple[str, bool]:
+    """Changed pages as the reviewer reads them: "Page: <url>" then the text. Returns (text, cut)."""
+    text = "\n\n".join(f"Page: {url}\n{new[norm_url(url)]['text']}" for url in urls)
+    return text[:MAX_REVIEW_CHARS], len(text) > MAX_REVIEW_CHARS
 
 
 #### Regex contact check
 
 
-def _contacts(text: str) -> set:
+def contacts(text: str) -> List[str]:
+    """Emails (lowercase) and phones (last 8 digits) on a page, sorted."""
     # Links and image URLs out first: IDs like .../487c6111-2149-.../ otherwise read as phone numbers.
     found = extract_contacts(URLS.sub(" ", IMAGES.sub(" ", text)), max_text_length=10**7)
-    return {e.lower() for e in found.emails if not CONTACT_JUNK.search(e)} | {
-        re.sub(r"\D", "", p)[-8:] for p in found.phones
-    }
+    emails = {e.lower() for e in found.emails if not CONTACT_JUNK.search(e)}
+    return sorted(emails | {re.sub(r"\D", "", p)[-8:] for p in found.phones})
 
 
-def contact_check(diffs: List[PageDiff], new: Dict[str, Dict[str, str]]) -> List[Dict[str, Any]]:
-    """Flag an email/phone that was on a removed line of a page present in both scrapes and is gone
-    from the whole new scrape. Added contacts don't flag (extra crawled pages add many), but
-    contacts added on the same page are offered as replacements."""
-    everywhere = _contacts("\n".join(p["text"] for p in new.values()))
+def contact_check(old: Dict[str, Dict[str, Any]], new: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Flag an email/phone that was on a page crawled both times and is gone from the whole new
+    scrape. Added contacts don't flag (extra crawled pages add many), but contacts new on the same
+    page are offered as replacements."""
+    new_contacts = {k: set(contacts(p["text"])) for k, p in new.items()}
+    everywhere = set().union(*new_contacts.values())
     found: Dict[str, Dict[str, Any]] = {}
-    for d in diffs:
-        if d.change != "changed":
-            continue
-        removed = _contacts("\n".join(d.removed))
-        added = _contacts("\n".join(d.added)) - removed
-        for contact in removed - everywhere:
+    for key in sorted(old.keys() & new.keys()):
+        before = set(old[key].get("contacts") or [])
+        for contact in before - everywhere:
             entry = found.setdefault(contact, {"contact": contact, "pages": [], "replacements": set()})
-            entry["pages"].append(d.url)
-            entry["replacements"] |= added
+            entry["pages"].append(new[key]["url"])
+            entry["replacements"] |= new_contacts[key] - before
     return [{**e, "replacements": sorted(e["replacements"])} for _, e in sorted(found.items())]
 
 
+def page_entries(new: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """What is stored per page on the scheme: URL, hash and contacts, no text."""
+    return [{"url": p["url"], "hash": p["hash"], "contacts": contacts(p["text"])} for _, p in sorted(new.items())]
+
+
 #### AI reviewer
-
-
-def _words(value: Any) -> str:
-    text = ", ".join(map(str, value)) if isinstance(value, list) else str(value or "")
-    return " ".join(WORDS.findall(URLS.sub(" ", text).lower()))
 
 
 def filter_suggestions(changes: Any, stored: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -230,7 +225,7 @@ def filter_suggestions(changes: Any, stored: Dict[str, Any]) -> List[Dict[str, A
     ]
 
 
-def review_messages(scheme: Dict[str, Any], diff: str) -> List[Dict[str, str]]:
+def review_messages(scheme: Dict[str, Any], pages: str) -> List[Dict[str, str]]:
     from app.services.llm_extractor import FIELD_DEFINITIONS
 
     stored = {k: scheme.get(k) for k in CONTENT_FIELDS}
@@ -238,7 +233,7 @@ def review_messages(scheme: Dict[str, Any], diff: str) -> List[Dict[str, str]]:
         name=scheme.get("scheme") or "",
         agency=scheme.get("agency") or "",
         fields=json.dumps(stored, indent=2, ensure_ascii=False, default=str),
-        diff=diff,
+        pages=pages,
     )
     return [
         {"role": "system", "content": REVIEW_SYSTEM.format(field_defs=FIELD_DEFINITIONS)},
@@ -246,8 +241,8 @@ def review_messages(scheme: Dict[str, Any], diff: str) -> List[Dict[str, str]]:
     ]
 
 
-async def review_changes(scheme: Dict[str, Any], diff: str) -> List[Dict[str, Any]]:
-    """Ask gpt-5.4-mini which stored fields the diff makes out of date. Returns its raw
+async def review_changes(scheme: Dict[str, Any], pages: str) -> List[Dict[str, Any]]:
+    """Ask gpt-5.4-mini which stored fields the changed pages make out of date. Returns its raw
     suggestions; raises ReviewError when there is no usable answer."""
     import litellm
 
@@ -261,7 +256,7 @@ async def review_changes(scheme: Dict[str, Any], diff: str) -> List[Dict[str, An
         try:
             response = await litellm.acompletion(
                 model=f"azure/{REVIEW_MODEL}",
-                messages=review_messages(scheme, diff),
+                messages=review_messages(scheme, pages),
                 api_key=api_key,
                 api_base=endpoint,
                 api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview"),
@@ -286,8 +281,8 @@ async def review_changes(scheme: Dict[str, Any], diff: str) -> List[Dict[str, An
 
 
 class ContentStore:
-    """Firestore reads and writes for the content check. Each outcome is one batch, so a scheme is
-    never left half-updated."""
+    """Firestore reads and writes for the content check. Each outcome is one write or batch, so a
+    scheme is never left half-updated."""
 
     def __init__(self, db):
         self.db = db
@@ -309,65 +304,26 @@ class ContentStore:
         dates = [d.to_dict().get("created_at") for d in docs]
         return max((x for x in dates if x), default=None)
 
-    def load_snapshot(self, scheme_id: str) -> Dict[str, Dict[str, str]]:
-        pages = self.db.collection(SNAPSHOTS).document(scheme_id).collection("pages").stream()
-        out = {}
-        for doc in pages:
-            data = doc.to_dict()
-            out[norm_url(data["url"])] = {"url": data["url"], "text": data.get("text") or ""}
-        return out
-
-    def _page_ref(self, scheme_id: str, url: str):
-        return self.db.collection(SNAPSHOTS).document(scheme_id).collection("pages").document(page_doc_id(url))
-
-    def _stamp(self, batch, scheme_id: str, now: datetime):
+    def _stamp(self, now: datetime, **fields) -> Dict[str, Any]:
         from firebase_admin import firestore
 
-        batch.update(
-            self.db.collection(SCHEMES).document(scheme_id),
-            {"last_content_checked": now, "content_check_fail_streak": firestore.DELETE_FIELD},
-        )
+        return {"last_content_checked": now, "content_check_fail_streak": firestore.DELETE_FIELD, **fields}
 
     def record_failure(self, scheme_id: str) -> None:
         from firebase_admin import firestore
 
         self.db.collection(SCHEMES).document(scheme_id).update({"content_check_fail_streak": firestore.Increment(1)})
 
-    def save_snapshot(self, scheme_id: str, pages: Dict[str, Dict[str, str]], removed: List[str], now: datetime):
-        """Baseline or not flagged: the new text becomes the reviewed text."""
-        from firebase_admin import firestore
+    def save_pages(self, scheme_id: str, pages: List[Dict[str, Any]], now: datetime) -> None:
+        """Baseline or not flagged: the new hashes and contacts become the reference."""
+        self.db.collection(SCHEMES).document(scheme_id).update(self._stamp(now, content_pages=pages))
 
+    def save_flagged(self, scheme_id: str, record: Dict[str, Any], now: datetime) -> str:
+        """Flagged: the stored hashes stay as they are. Returns the contentChecks id."""
         batch = self.db.batch()
-        for page in pages.values():
-            batch.set(
-                self._page_ref(scheme_id, page["url"]),
-                {"url": page["url"], "text": page["text"], "pending_text": firestore.DELETE_FIELD, "updated_at": now},
-                merge=True,
-            )
-        for url in removed:
-            batch.delete(self._page_ref(scheme_id, url))
-        self._stamp(batch, scheme_id, now)
-        batch.commit()
-
-    def save_flagged(
-        self,
-        scheme_id: str,
-        diffs: List[PageDiff],
-        new: Dict[str, Dict[str, str]],
-        record: Dict[str, Any],
-        now: datetime,
-    ) -> str:
-        """Flagged: `text` stays as reviewed; each changed page gets `pending_text` (empty for a
-        removed page). A new page starts with empty `text`. Returns the contentChecks id."""
-        batch = self.db.batch()
-        for d in diffs:
-            fields = {"url": d.url, "pending_text": new.get(norm_url(d.url), {}).get("text", ""), "updated_at": now}
-            if d.change == "added":
-                fields["text"] = ""
-            batch.set(self._page_ref(scheme_id, d.url), fields, merge=True)
         check_ref = self.db.collection(CHECKS).document()
         batch.set(check_ref, record)
-        self._stamp(batch, scheme_id, now)
+        batch.update(self.db.collection(SCHEMES).document(scheme_id), self._stamp(now))
         batch.commit()
         return check_ref.id
 
@@ -414,28 +370,30 @@ async def check_scheme(
         store.record_failure(scheme_id)
         return done("scrape_failed", scrape_result.get("error") or "no page text")
 
-    old = store.load_snapshot(scheme_id)
-    if not old:
-        store.save_snapshot(scheme_id, new, [], now)
+    old = stored_pages(scheme)
+    if old is None:
+        store.save_pages(scheme_id, page_entries(new), now)
         return done("baseline", f"{len(new)} page(s) saved")
 
-    diffs = diff_pages(old, new)
-    removed_urls = [old[k]["url"] for k in old.keys() - new.keys()]
-    if not diffs:
-        store.save_snapshot(scheme_id, new, removed_urls, now)
+    changed = changed_pages(old, new)
+    contacts_gone = contact_check(old, new)
+    if not changed and not contacts_gone:
+        store.save_pages(scheme_id, page_entries(new), now)
         return done("unchanged")
 
-    diff = format_diff(diffs)
-    try:
-        suggestions = filter_suggestions(await review(scheme, diff), scheme)
-    except ReviewError as e:
-        # Nothing written: the snapshot keeps last month's text and the scheme is retried next run.
-        return done("error", str(e))
-    contacts = contact_check(diffs, new)
+    suggestions: List[Dict[str, Any]] = []
+    cut = False
+    if changed:
+        pages, cut = format_pages([c["url"] for c in changed], new)
+        try:
+            suggestions = filter_suggestions(await review(scheme, pages), scheme)
+        except ReviewError as e:
+            # Nothing written: the stored hashes stay and the scheme is retried next run.
+            return done("error", str(e))
 
-    if not suggestions and not contacts:
-        store.save_snapshot(scheme_id, new, removed_urls, now)
-        return done("unchanged", f"{len(diffs)} page(s) differ, nothing out of date")
+    if not suggestions and not contacts_gone:
+        store.save_pages(scheme_id, page_entries(new), now)
+        return done("unchanged", f"{len(changed)} page(s) changed, nothing out of date")
 
     record = {
         "scheme_id": scheme_id,
@@ -443,14 +401,13 @@ async def check_scheme(
         "link": scheme["link"],
         "status": "pending",
         "created_at": now,
-        "pages": [{"url": d.url, "change": d.change} for d in diffs],
-        "diff": diff[:MAX_STORED_DIFF],
-        "diff_truncated": len(diff) > MAX_STORED_DIFF,
+        "pages": changed,
+        "review_input_truncated": cut,
         "suggestions": suggestions,
-        "contact_check": contacts,
+        "contact_check": contacts_gone,
         "model": REVIEW_MODEL,
         "prompt_version": PROMPT_VERSION,
     }
-    check_id = store.save_flagged(scheme_id, diffs, new, record, now)
+    check_id = store.save_flagged(scheme_id, record, now)
     result["check_id"] = check_id
-    return done("flagged", f"{len(suggestions)} suggestion(s), {len(contacts)} contact(s) gone")
+    return done("flagged", f"{len(suggestions)} suggestion(s), {len(contacts_gone)} contact(s) gone")

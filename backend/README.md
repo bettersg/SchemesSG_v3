@@ -207,14 +207,16 @@ curl -X POST http://localhost:8081/process \
 ### Content-change check (issue #407)
 
 `/content-check` re-scrapes each scheme and flags pages whose changes make the listing out of
-date. It never edits the listing: flags wait in `contentChecks` for a volunteer. The flow and
-Firestore layout are described at the top of `scheme-processor/app/content_check.py`.
+date. It never edits the listing: flags wait in `contentChecks` for a volunteer. It stores no page
+text, only a hash of each page's main text plus the phones/emails found on it
+(`content_pages` on the scheme). The flow is described at the top of
+`scheme-processor/app/content_check.py`.
 
 | Outcome | Meaning | Writes |
 |---------|---------|--------|
-| `baseline` | First check: no snapshot yet | `contentSnapshots/<scheme_id>/pages/*` |
-| `unchanged` | No diff, or the AI found nothing out of date | Snapshot updated |
-| `flagged` | AI suggestion or a contact gone | `contentChecks/<id>` (pending) + `pending_text` on the pages |
+| `baseline` | First check: no `content_pages` yet | `content_pages` on the scheme |
+| `unchanged` | Same hashes, or the AI found nothing out of date in the changed pages | `content_pages` updated |
+| `flagged` | AI suggestion or a contact gone | `contentChecks/<id>` (pending); `content_pages` kept |
 | `skipped` | Link suspect/inactive/retired, no link, or a check pending < 2 months | Nothing |
 | `scrape_failed` | Scrape error or no page text | `content_check_fail_streak` +1 |
 | `not_found` / `error` | Unknown ID / AI or unexpected failure | Nothing |
