@@ -198,13 +198,14 @@ def select_best_logo(images: List[Dict], base_url: str = "", validate: bool = Tr
     scored_candidates = []
 
     for img in images:
-        src = img.get("src", "")
+        # crawl4ai can return None for these fields, so `or ""` rather than a get() default
+        src = img.get("src") or ""
         if not src or src.startswith("data:"):
             continue
 
         src_lower = src.lower()
-        alt_lower = img.get("alt", "").lower()
-        desc_lower = img.get("desc", "").lower()
+        alt_lower = (img.get("alt") or "").lower()
+        desc_lower = (img.get("desc") or "").lower()
         score = img.get("score", 0) or 0
 
         # Strong boost for logo patterns in URL or alt
