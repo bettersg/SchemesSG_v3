@@ -3,6 +3,7 @@ Build a Slack message with a Review button for a given row in the scraping error
 """
 
 from new_scheme.constants import SCHEME_TYPE, WHAT_IT_GIVES, WHO_IS_IT_FOR
+from new_scheme.taxonomy import translate_legacy
 
 
 def build_review_message(doc_id: str, data: dict) -> dict:
@@ -76,6 +77,16 @@ def build_review_modal(metadata: str, data: dict) -> dict:
     who_is_it_for = to_list(who_is_it_for)
     what_it_gives = to_list(what_it_gives)
     scheme_type = to_list(scheme_type)
+
+    # Existing schemes still carry pre-v2 terms until their data is migrated; translate so the pre-selected options match
+    translated = translate_legacy(
+        {"who_is_it_for": who_is_it_for, "what_it_gives": what_it_gives, "scheme_type": scheme_type}
+    )
+    who_is_it_for, what_it_gives, scheme_type = (
+        translated["who_is_it_for"],
+        translated["what_it_gives"],
+        translated["scheme_type"],
+    )
 
     # Build options from shared constants (same lists used by new_scheme pipeline)
     who_is_it_for_options = [
