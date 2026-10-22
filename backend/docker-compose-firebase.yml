@@ -6,6 +6,7 @@ services:
     image: schemessg-backend
     volumes:
       - ./functions:/app/functions
+      - ./scheme-processor:/app/scheme-processor
       - ./start.sh:/start.sh
       - ./functions/.env:/app/functions/.env
       - ./firebase.json:/app/firebase.json
