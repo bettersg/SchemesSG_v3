@@ -29,6 +29,11 @@ def _configure_litellm():
 # Run configuration once at module load
 _configure_litellm()
 
+# Completion budgets per attempt; reasoning tokens count against them. Two calls at the limit plus the scrape
+# stay inside the 300 s Cloud Run and caller timeouts.
+LLM_MAX_TOKENS = (8000, 16000)
+LLM_CALL_TIMEOUT_SECONDS = 90
+
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 
 
@@ -68,7 +73,7 @@ async def extract_with_llm(content: str, scheme_name: str = "") -> Dict[str, Any
         azure_key = os.getenv("AZURE_OPENAI_API_KEY", "")
         azure_base = os.getenv("AZURE_OPENAI_ENDPOINT", "")
         azure_version = os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
-        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5")
+        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-6-luna")
 
         if not azure_key or not azure_base:
             logger.warning("Azure OpenAI not configured, skipping LLM extraction")
@@ -124,9 +129,11 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
 
         logger.info("Calling Azure OpenAI for extraction...")
 
-        # Retry once for transient API errors
-        last_error = None
-        for attempt in range(2):
+        # gpt-5 spends reasoning tokens from the same completion budget: a 3000 cap was fully consumed by
+        # reasoning on prod (reasoning_tokens=3000), leaving an empty reply. Retry once with a larger budget.
+        extracted = None
+        for attempt, max_tokens in enumerate(LLM_MAX_TOKENS):
+            is_last = attempt == len(LLM_MAX_TOKENS) - 1
             try:
                 response = await asyncio.to_thread(
                     litellm.completion,
@@ -135,30 +142,38 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
                     api_key=azure_key,
                     api_base=azure_base,
                     api_version=azure_version,
-                    max_tokens=3000,
+                    max_completion_tokens=max_tokens,
                     reasoning_effort="low",
+                    timeout=LLM_CALL_TIMEOUT_SECONDS,
                 )
-                break
             except Exception as api_err:
-                last_error = api_err
                 err_str = str(api_err).lower()
-                if attempt == 0 and ("timeout" in err_str or "rate" in err_str or "429" in err_str):
+                if not is_last and ("timeout" in err_str or "rate" in err_str or "429" in err_str):
                     logger.warning(f"API call failed (attempt {attempt + 1}), retrying: {api_err}")
                     await asyncio.sleep(2)
                     continue
                 raise
-        else:
-            raise last_error
 
-        response_content = response.choices[0].message.content or ""
-        logger.info(f"LLM extraction response: {len(response_content)} chars")
-        if not response_content:
-            logger.error(f"Empty response from LLM. Usage: {response.usage}")
+            choice = response.choices[0]
+            response_content = choice.message.content or ""
+            logger.info(f"LLM extraction response: {len(response_content)} chars (max_tokens={max_tokens})")
+            if not response_content or (choice.finish_reason == "length" and not is_last):
+                logger.warning(
+                    f"LLM reply empty or cut off (finish_reason={choice.finish_reason}), usage: {response.usage}"
+                )
+                continue
+
+            # Parse JSON from response (robust code fence stripping)
+            try:
+                extracted = json.loads(_strip_code_fences(response_content).strip())
+            except json.JSONDecodeError as je:
+                logger.warning(f"Failed to parse LLM JSON response (attempt {attempt + 1}): {je}")
+                continue
+            break
+
+        if extracted is None:
+            logger.error("LLM extraction produced no usable reply after all attempts")
             return {}
-
-        # Parse JSON from response (robust code fence stripping)
-        response_content = _strip_code_fences(response_content)
-        extracted = json.loads(response_content.strip())
 
         # Taxonomy tags come from a separate strict-schema call (see taxonomy_tagger); a failure leaves them empty
         tags = await asyncio.to_thread(_tag_taxonomy, extracted, scheme_name, truncated_text)  # sync SDK call: keep it off the event loop

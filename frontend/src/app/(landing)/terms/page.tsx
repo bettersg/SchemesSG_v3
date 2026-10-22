@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import LegalPageContent from "@/components/landing/legal-page-content";
+import LegalDocument from "@/components/landing/legal/legal-document";
+import { getLegalDocument } from "@/lib/legal-content";
 import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -26,5 +27,12 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  return <LegalPageContent document="terms" />;
+  const doc = getLegalDocument("terms");
+  return (
+    <LegalDocument
+      heading="Terms of Service"
+      effectiveDate={doc.effectiveDate}
+      markdown={doc.content}
+    />
+  );
 }

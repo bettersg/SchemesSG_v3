@@ -33,7 +33,7 @@ export function DocsSidebar({
   return (
     <nav
       aria-label={heading}
-      className="thin-scrollbar min-w-0 border-(--schemes-border) px-4 pt-nav sm:px-8 lg:sticky lg:top-nav lg:h-[calc(100vh-var(--spacing-nav))] lg:overflow-y-auto lg:border-r lg:px-0 lg:pt-0 lg:py-8"
+      className="thin-scrollbar min-w-0 border-(--schemes-border) px-4 pt-nav sm:px-8 lg:sticky lg:top-nav lg:h-[calc(100vh-var(--spacing-nav))] lg:overflow-y-auto lg:border-r lg:px-0 lg:pt-10 lg:pb-8"
     >
       <h2 className="mb-2 hidden px-3 text-[10px] font-semibold tracking-widest text-(--schemes-muted) uppercase lg:block">
         {heading}

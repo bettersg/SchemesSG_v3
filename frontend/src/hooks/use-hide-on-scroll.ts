@@ -7,6 +7,13 @@ const SCROLL_SUPPRESSION_MS = 360;
 const USER_INTENT_WINDOW_MS = 900;
 const IGNORE_SCROLL_SELECTOR = "[data-hide-on-scroll-ignore]";
 
+/**
+ * Dispatch on `window` to bring hidden chrome back, e.g. from a back-to-top
+ * button: a scroll started by code carries no user intent, so it would
+ * otherwise reach the top with the navbar still hidden.
+ */
+export const REVEAL_CHROME_EVENT = "schemes:reveal-chrome";
+
 function getEventElement(event: Event) {
   return event.target instanceof Element ? event.target : null;
 }
@@ -135,6 +142,11 @@ export function useHideOnScroll({
         markIntent("up");
       }
     };
+    const onReveal = () => {
+      // Drop the stale intent so the programmatic scroll cannot re-hide it.
+      lastIntentDirectionRef.current = null;
+      setHidden(false);
+    };
     const onScroll = (event: Event) => {
       if (shouldIgnoreEvent(event, scrollContainerRef)) return;
 
@@ -176,6 +188,7 @@ export function useHideOnScroll({
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener(REVEAL_CHROME_EVENT, onReveal);
     document.addEventListener("scroll", onScroll, {
       capture: true,
       passive: true,
@@ -186,6 +199,7 @@ export function useHideOnScroll({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(REVEAL_CHROME_EVENT, onReveal);
       document.removeEventListener("scroll", onScroll, { capture: true });
     };
   }, [disabled, scrollContainerRef]);
