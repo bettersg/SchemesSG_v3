@@ -3,24 +3,24 @@ Monthly content-change check (issue #407).
 
 For one scheme:
 1. Skip it when the weekly link check marked the link suspect or inactive, or when an earlier
-   check still waits for a volunteer and is less than 2 months old.
+check still waits for a volunteer and is less than 2 months old.
 2. Scrape the scheme link. A failed scrape adds 1 to ``content_check_fail_streak``; nothing else
-   changes and the AI is not called.
+changes and the AI is not called.
 3. Fingerprint each page: a SHA-256 hash of its main text (crawl4ai's pruning filter drops menus,
-   sidebars and footers), normalised to lowercase words and numbers. The phones/emails on the
-   full page text are kept too, because footers often hold them.
+sidebars and footers), normalised to lowercase words and numbers. The phones/emails on the
+full page text are kept too, because footers often hold them.
 4. No hashes stored yet: save them as the baseline (no AI).
 5. Otherwise a page is changed when its hash differs or its URL is new. Only changed pages go to
-   the AI reviewer, as full text, with the stored fields; it says which fields are now out of
-   date. Phone/email are checked by regex on every run, even when no hash changed.
+the AI reviewer, as full text, with the stored fields; it says which fields are now out of
+date. Phone/email are checked by regex on every run, even when no hash changed.
 6. Not flagged: the new hashes and contacts are saved. Flagged: the old ones stay, so the change
-   is found again until a volunteer acts, and a ``contentChecks`` record holds the AI's
-   suggestions.
+is found again until a volunteer acts, and a ``contentChecks`` record holds the AI's
+suggestions.
 
 Firestore:
 - ``schemes/<id>``: content_pages ([{url, hash, contacts}]), last_content_checked,
-  content_check_fail_streak (only while failing). Page text is never stored.
-  ``scraped_text`` and ``last_scraped_update`` are never touched.
+content_check_fail_streak (only while failing). Page text is never stored.
+``scraped_text`` and ``last_scraped_update`` are never touched.
 - ``contentChecks/<id>``: one record per flag.
 
 Prompt, filters and contact check were chosen in the trial (Notion "#407 AI reviewer test");
@@ -44,8 +44,7 @@ SCHEMES = "schemes"
 CHECKS = "contentChecks"
 
 SKIP_STATUSES = ("inactive", "retired")
-# A pending check blocks new checks for this long; after that the scheme is checked again.
-PENDING_GRACE = timedelta(days=60)
+
 # Page text sent to the reviewer is capped; one long page (e.g. a doctors list) can reach ~900k chars.
 MAX_REVIEW_CHARS = 200_000
 
@@ -291,19 +290,6 @@ class ContentStore:
         doc = self.db.collection(SCHEMES).document(scheme_id).get()
         return doc.to_dict() if doc.exists else None
 
-    def latest_pending_check(self, scheme_id: str) -> Optional[datetime]:
-        """created_at of the newest pending check, or None when nothing is pending."""
-        from google.cloud.firestore_v1.base_query import FieldFilter
-
-        docs = (
-            self.db.collection(CHECKS)
-            .where(filter=FieldFilter("scheme_id", "==", scheme_id))
-            .where(filter=FieldFilter("status", "==", "pending"))
-            .stream()
-        )
-        dates = [d.to_dict().get("created_at") for d in docs]
-        return max((x for x in dates if x), default=None)
-
     def _stamp(self, now: datetime, **fields) -> Dict[str, Any]:
         from firebase_admin import firestore
 
@@ -342,7 +328,7 @@ async def check_scheme(
     review: ReviewFn = review_changes,
     now: Optional[datetime] = None,
 ) -> Dict[str, Any]:
-    """Run the monthly check for one scheme. Returns {scheme_id, outcome, detail, check_id}, where
+    """Run a content check for one scheme. Returns {scheme_id, outcome, detail, check_id}, where
     outcome is one of: not_found, skipped, scrape_failed, baseline, unchanged, flagged, error."""
     now = now or datetime.now(timezone.utc)
     result: Dict[str, Any] = {"scheme_id": scheme_id, "outcome": "", "detail": None, "check_id": None}
@@ -360,10 +346,6 @@ async def check_scheme(
         return done("skipped", "link suspect")
     if scheme.get("status") in SKIP_STATUSES:
         return done("skipped", f"status {scheme['status']}")
-    pending_since = store.latest_pending_check(scheme_id)
-    if pending_since and now - pending_since < PENDING_GRACE:
-        return done("skipped", f"check pending since {pending_since.date()}")
-
     scrape_result = await scrape(scheme["link"])
     new = scraped_pages(scrape_result)
     if scrape_result.get("error") or not new:
