@@ -63,9 +63,11 @@ async def process_scheme(
 
         # Step 2: Extract fields with LLM
         llm_fields = {}
+        llm_failed = False
         if scraped_text and len(scraped_text) > 500:
             logger.info(f"Step 2: Extracting fields with LLM ({len(scraped_text)} chars)")
             llm_fields = await extract_with_llm(scraped_text)
+            llm_failed = not llm_fields
 
         # Step 3: Extract contacts with regex (more reliable than LLM)
         if scraped_text:
@@ -97,6 +99,10 @@ async def process_scheme(
                 processing_status = "needs_review"
             elif "Error" in error_msg:
                 processing_status = "scraping_failed"
+        elif llm_failed:
+            # Regex contacts alone must not pass for a completed extraction
+            error_msg = "MANUAL_REVIEW_NEEDED: LLM extraction returned no fields, only regex contacts"
+            processing_status = "needs_review"
 
         processed_data = {
             "doc_id": doc_id,
