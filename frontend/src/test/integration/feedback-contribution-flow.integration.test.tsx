@@ -80,6 +80,9 @@ describe("feedback and contribution flows", () => {
     expect(feedback).toHaveValue(
       "Scheme correction\nScheme ID: child-care-subsidy\nScheme: Child Care Subsidy\n\n",
     );
+    expect(
+      screen.getByRole("combobox", { name: /feedback category/i }),
+    ).toHaveValue("Report wrong / missing information");
     await user.type(feedback, "The eligibility information is outdated.");
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Aisha");
     await user.type(
@@ -97,10 +100,15 @@ describe("feedback and contribution flows", () => {
     expect(feedbackRequests[0]).toEqual({
       authorization: "Bearer test-auth-token",
       body: {
+        feedbackCategory: "Report wrong / missing information",
         feedbackText:
           "Scheme correction\nScheme ID: child-care-subsidy\nScheme: Child Care Subsidy\n\nThe eligibility information is outdated.",
-        userName: "Aisha",
+        schemeId: "child-care-subsidy",
+        schemeName: "Child Care Subsidy",
+        sentiment: null,
+        source: "scheme",
         userEmail: "aisha@example.com",
+        userName: "Aisha",
       },
     });
   });
@@ -123,6 +131,9 @@ describe("feedback and contribution flows", () => {
     expect(feedback).toHaveValue(
       "Chat response feedback (not helpful):\n\n",
     );
+    expect(
+      screen.getByRole("combobox", { name: /feedback category/i }),
+    ).toHaveValue("General feedback");
     await user.type(feedback, "The response missed the relevant scheme.");
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Ben");
     await user.type(
@@ -140,10 +151,15 @@ describe("feedback and contribution flows", () => {
     expect(feedbackRequests[0]).toEqual({
       authorization: "Bearer test-auth-token",
       body: {
+        feedbackCategory: "General feedback",
         feedbackText:
           "Chat response feedback (not helpful):\n\nThe response missed the relevant scheme.",
-        userName: "Ben",
+        schemeId: null,
+        schemeName: null,
+        sentiment: "negative",
+        source: "chat",
         userEmail: "ben@example.com",
+        userName: "Ben",
       },
     });
   });
@@ -157,6 +173,9 @@ describe("feedback and contribution flows", () => {
     const feedback = screen.getByRole("textbox", { name: "Your feedback" });
 
     expect(feedback).toHaveValue("Chat response feedback:\n\n");
+    expect(
+      screen.getByRole("combobox", { name: /feedback category/i }),
+    ).toHaveValue("General feedback");
     await user.type(feedback, "Please explain why this scheme was suggested.");
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Devi");
     await user.type(
@@ -172,10 +191,15 @@ describe("feedback and contribution flows", () => {
     );
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
     expect(feedbackRequests[0].body).toEqual({
+      feedbackCategory: "General feedback",
       feedbackText:
         "Chat response feedback:\n\nPlease explain why this scheme was suggested.",
-      userName: "Devi",
+      schemeId: null,
+      schemeName: null,
+      sentiment: null,
+      source: "chat",
       userEmail: "devi@example.com",
+      userName: "Devi",
     });
   });
 
@@ -186,11 +210,15 @@ describe("feedback and contribution flows", () => {
     const user = userEvent.setup();
     const name = screen.getByRole("textbox", { name: "Name" });
     const email = screen.getByRole("textbox", { name: "Email" });
+    const category = screen.getByRole("combobox", {
+      name: /feedback category/i,
+    });
     const feedback = screen.getByRole("textbox", { name: "Your feedback" });
     const submit = screen.getByRole("button", { name: "Submit Feedback" });
 
     expect(name).toBeRequired();
     expect(email).toBeRequired();
+    expect(category).toBeRequired();
     expect(feedback).toBeRequired();
     await user.click(submit);
     expect(name).toBeInvalid();
@@ -203,6 +231,50 @@ describe("feedback and contribution flows", () => {
 
     expect(email).toBeInvalid();
     expect(feedbackRequests).toEqual([]);
+  });
+
+  it("submits general feedback with a selected category", async () => {
+    window.history.replaceState({}, "", "/feedback");
+    mockSubmission("feedback", feedbackRequests);
+
+    renderWithProviders(<FeedbackPage />);
+    const user = userEvent.setup();
+    const category = screen.getByRole("combobox", {
+      name: /feedback category/i,
+    });
+    expect(category).toHaveValue("General feedback");
+
+    await user.selectOptions(category, "Suggest a feature");
+    await user.type(screen.getByRole("textbox", { name: "Name" }), "Dana");
+    await user.type(
+      screen.getByRole("textbox", { name: "Email" }),
+      "dana@example.com",
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Your feedback" }),
+      "It would be great to have SMS notifications.",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Submit Feedback" }),
+    );
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Thank you for your feedback!",
+    );
+    await waitFor(() => expect(feedbackRequests).toHaveLength(1));
+    expect(feedbackRequests[0]).toEqual({
+      authorization: "Bearer test-auth-token",
+      body: {
+        feedbackCategory: "Suggest a feature",
+        feedbackText: "It would be great to have SMS notifications.",
+        schemeId: null,
+        schemeName: null,
+        sentiment: null,
+        source: "general",
+        userEmail: "dana@example.com",
+        userName: "Dana",
+      },
+    });
   });
 
   it("enforces required contribution fields before the API", async () => {
