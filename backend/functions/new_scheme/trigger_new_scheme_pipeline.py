@@ -167,6 +167,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         doc_id: Document ID from schemeEntries
         data: Document data
     """
+    started = time.monotonic()
     logger.info(f"Processing scheme entry: {doc_id}")
     logger.info(f"Data: {json.dumps(data, default=str)[:500]}")
 
@@ -245,6 +246,7 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
                 "target_scheme_id": target_scheme_id,
             },
             headers,
+            started,
         )
         if response is None:
             return
@@ -271,14 +273,15 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
         _fail_entry(doc_id, data, str(e))
 
 
-def _post_to_processor(doc_id: str, payload: dict, headers: dict) -> requests.Response | None:
+def _post_to_processor(doc_id: str, payload: dict, headers: dict, started: float) -> requests.Response | None:
     """
     POST to scheme-processor, retrying 429, 503 and connection errors while the function has time.
+
+    `started` is the function's own start (time.monotonic()), so earlier work counts against the budget.
 
     Returns None when a retryable error arrives after the review card was posted: the
     processor finished, so the entry must not be retried or marked failed.
     """
-    started = time.monotonic()
     for attempt in range(1, PROCESSOR_MAX_ATTEMPTS + 1):
         try:
             response = requests.post(
