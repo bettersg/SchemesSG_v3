@@ -80,12 +80,30 @@ export async function getSchemesCategory(
   category = "",
   cursor = "",
 ): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
+  return getCatalogSchemes({ categories: [category] }, cursor);
+}
+
+/**
+ * One catalog page. Repeated `category` / `area` values match any of them, and
+ * the two filters combine: a scheme must match a category and an area.
+ */
+export async function getCatalogSchemes(
+  filters: { categories?: string[]; areas?: string[] },
+  cursor = "",
+): Promise<{ schemes: Scheme[]; nextCursor: string; total: number }> {
   const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/catalog`);
-  const normalizedCategory = category.replace(/\+/g, " ").trim();
 
   url.searchParams.set("limit", "20");
-  if (normalizedCategory) {
-    url.searchParams.set("category", normalizedCategory);
+  for (const category of filters.categories ?? []) {
+    const normalizedCategory = category.replace(/\+/g, " ").trim();
+    if (normalizedCategory) {
+      url.searchParams.append("category", normalizedCategory);
+    }
+  }
+  for (const area of filters.areas ?? []) {
+    if (area.trim()) {
+      url.searchParams.append("area", area.trim());
+    }
   }
   if (cursor) {
     url.searchParams.set("cursor", cursor);

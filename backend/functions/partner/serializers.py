@@ -15,6 +15,8 @@ this module, so there is no cycle and no third file to keep in step.
 
 from typing import Any
 
+from utils.catalog_filtering import updated_at
+
 
 MAX_LIMIT = 50
 
@@ -84,6 +86,20 @@ PUBLIC_FIELDS = (
     "planning_area",
     "image",
     "status",
+    "updated_at",
+)
+
+# Computed in to_public_scheme rather than stored.
+_COMPUTED_FIELDS = ("scheme_id", "updated_at")
+
+# What a list query projects onto: every stored public field, plus the two
+# timestamps `updated_at` is computed from. Without this the list served the
+# catalog card projection, so phone, email, address, eligibility and
+# service_area always came back null in lists but not in detail.
+LIST_FIELDS = (
+    *(field for field in PUBLIC_FIELDS if field not in _COMPUTED_FIELDS),
+    "last_scraped_update",
+    "status_updated_at",
 )
 
 
@@ -99,6 +115,8 @@ def to_public_scheme(doc_id: str | None, data: dict[str, Any]) -> dict[str, Any]
     """
     public = {field: data.get(field) for field in PUBLIC_FIELDS}
     public["scheme_id"] = doc_id or data.get("scheme_id")
+    stamp = updated_at(data)
+    public["updated_at"] = stamp.isoformat() if stamp else None
     return public
 
 

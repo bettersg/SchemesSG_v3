@@ -3,7 +3,7 @@
 import { Button, Drawer, Popover, useOverlayState } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, MapPin } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
 import { useIsDesktop } from "@/hooks/use-is-desktop";
@@ -11,26 +11,97 @@ import {
   CATALOG_CATEGORY_ICON_SRC,
   CATALOG_CATEGORY_OPTIONS,
   type CatalogCategory,
+  type SchemeCategory,
 } from "@/lib/design-system/categories";
-import { getCatalogCategoryPath } from "@/lib/catalog-seo";
+import {
+  PLANNING_AREAS,
+  formatPlanningArea,
+  getCatalogFilterHref,
+  toggleValue,
+} from "@/lib/catalog-filters";
+
+type CatalogFilterKind = "category" | "area";
 
 type CatalogCategorySelectProps = {
-  activeCategory: CatalogCategory;
+  /** Which list this control picks from. */
+  kind?: CatalogFilterKind;
+  /** Every selected category, the route's first; empty means all. */
+  selectedCategories: SchemeCategory[];
+  selectedAreas: string[];
   className?: string;
 };
 
 const categoryLabel = (cat: CatalogCategory) =>
   cat === "All" ? "All Schemes" : cat;
 
-// Single-select list of every catalog category. Each row is a Link to that
-// category's static route, so per-category prerendering and SEO are untouched;
-// this is only a different shape over the same navigation.
-function CategoryList({
-  activeCategory,
+function OptionRow({
+  href,
+  label,
+  isSelected,
+  icon,
+  onNavigate,
+  lg,
+}: {
+  href: string;
+  label: string;
+  isSelected: boolean;
+  icon?: string;
+  onNavigate?: () => void;
+  lg: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      onClick={onNavigate}
+      className={clsx(
+        "flex w-full items-center rounded-lg no-underline transition-colors",
+        lg ? "min-h-12 gap-3 px-3 text-base" : "min-h-9 gap-2.5 px-2 text-sm",
+        isSelected
+          ? "bg-(--schemes-blue-50) font-semibold text-(--schemes-blue-600)"
+          : "text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50)",
+      )}
+    >
+      {icon && (
+        <Image
+          src={icon}
+          alt=""
+          width={lg ? 24 : 20}
+          height={lg ? 24 : 20}
+          aria-hidden="true"
+          className={clsx("shrink-0", lg ? "size-6" : "size-5")}
+        />
+      )}
+      <span className="min-w-0 flex-1 truncate">
+        {label}
+        {isSelected && <span className="sr-only">, selected</span>}
+      </span>
+      {isSelected && (
+        <Check
+          size={lg ? 18 : 15}
+          strokeWidth={2.5}
+          aria-hidden="true"
+          className="shrink-0 text-(--schemes-blue-600)"
+        />
+      )}
+    </Link>
+  );
+}
+
+// Multi-select list of categories or of planning areas. Each row is a Link to
+// the catalog with that value toggled: the first category keeps its static
+// route, so per-category prerendering and SEO are untouched, and the rest ride
+// in the query string.
+function FilterList({
+  kind,
+  selectedCategories,
+  selectedAreas,
   onNavigate,
   size,
 }: {
-  activeCategory: CatalogCategory;
+  kind: CatalogFilterKind;
+  selectedCategories: SchemeCategory[];
+  selectedAreas: string[];
   onNavigate: () => void;
   size: "sm" | "lg";
 }) {
@@ -43,54 +114,61 @@ function CategoryList({
         lg ? "p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]" : "p-1",
       )}
     >
-      {CATALOG_CATEGORY_OPTIONS.map((cat) => {
-        const isActive = cat === activeCategory;
-        return (
-          <Link
+      {kind === "category" ? (
+        CATALOG_CATEGORY_OPTIONS.map((cat) => (
+          <OptionRow
             key={cat}
-            href={getCatalogCategoryPath(cat)}
-            onClick={onNavigate}
-            aria-current={isActive ? "page" : undefined}
-            className={clsx(
-              "flex w-full items-center rounded-lg no-underline transition-colors",
-              lg
-                ? "min-h-12 gap-3 px-3 text-base"
-                : "min-h-9 gap-2.5 px-2 text-sm",
-              isActive
-                ? "bg-(--schemes-blue-50) font-semibold text-(--schemes-blue-600)"
-                : "text-(--schemes-ink-soft) hover:bg-(--schemes-blue-50)",
+            lg={lg}
+            label={categoryLabel(cat)}
+            icon={CATALOG_CATEGORY_ICON_SRC[cat]}
+            isSelected={
+              cat === "All"
+                ? selectedCategories.length === 0
+                : selectedCategories.includes(cat)
+            }
+            href={getCatalogFilterHref(
+              cat === "All" ? [] : toggleValue(selectedCategories, cat),
+              selectedAreas,
             )}
-          >
-            <Image
-              src={CATALOG_CATEGORY_ICON_SRC[cat]}
-              alt=""
-              width={lg ? 24 : 20}
-              height={lg ? 24 : 20}
-              aria-hidden="true"
-              className={clsx("shrink-0", lg ? "size-6" : "size-5")}
+            // A category change can change the route, which remounts the page.
+            onNavigate={onNavigate}
+          />
+        ))
+      ) : (
+        <>
+          <OptionRow
+            lg={lg}
+            label="All areas"
+            isSelected={selectedAreas.length === 0}
+            href={getCatalogFilterHref(selectedCategories, [])}
+          />
+          {/* Area rows keep the panel open: the route stays the same, so
+              several areas can be picked in one go. */}
+          {PLANNING_AREAS.map((area) => (
+            <OptionRow
+              key={area}
+              lg={lg}
+              label={formatPlanningArea(area)}
+              isSelected={selectedAreas.includes(area)}
+              href={getCatalogFilterHref(
+                selectedCategories,
+                toggleValue(selectedAreas, area),
+              )}
             />
-            <span className="min-w-0 flex-1 truncate">
-              {categoryLabel(cat)}
-            </span>
-            {isActive && (
-              <Check
-                size={lg ? 18 : 15}
-                strokeWidth={2.5}
-                className="shrink-0 text-(--schemes-blue-600)"
-              />
-            )}
-          </Link>
-        );
-      })}
+          ))}
+        </>
+      )}
     </div>
   );
 }
 
-// Category picker for the catalog results header. Mirrors the schemes-filter
-// affordance: a popover on desktop, a bottom-sheet drawer on mobile where
-// popover rows are too small to tap reliably.
+// Category or planning-area picker for the catalog results header. Mirrors
+// the schemes-filter affordance: a popover on desktop, a bottom-sheet drawer
+// on mobile where popover rows are too small to tap reliably.
 function CatalogCategorySelect({
-  activeCategory,
+  kind = "category",
+  selectedCategories,
+  selectedAreas,
   className,
 }: CatalogCategorySelectProps) {
   const isDesktop = useIsDesktop();
@@ -99,27 +177,62 @@ function CatalogCategorySelect({
   // than the overlay state object Drawer takes.
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  const isCategory = kind === "category";
+  const primary: CatalogCategory = selectedCategories[0] ?? "All";
+  const selected = isCategory ? selectedCategories : selectedAreas;
+  const extraCount = Math.max(selected.length - 1, 0);
+  const label = isCategory
+    ? categoryLabel(primary)
+    : selectedAreas[0]
+      ? formatPlanningArea(selectedAreas[0])
+      : "All areas";
+
   const trigger = (
     <Button
-      aria-label={`${categoryLabel(activeCategory)}: browse by category`}
+      aria-label={`${label}${extraCount ? ` and ${extraCount} more` : ""}: ${isCategory ? "browse by category" : "filter by planning area"}`}
       className={clsx(
         "inline-flex min-h-11 items-center gap-2 rounded-full border border-(--schemes-border-neutral) bg-white px-4 py-2 text-sm font-semibold text-(--schemes-ink-soft) transition-[background-color,border-color,color] hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
         className,
       )}
     >
-      <Image
-        src={CATALOG_CATEGORY_ICON_SRC[activeCategory]}
-        alt=""
-        width={20}
-        height={20}
-        aria-hidden="true"
-        className="size-5 shrink-0"
-      />
-      <span className="min-w-0 flex-1 truncate text-left">
-        {categoryLabel(activeCategory)}
-      </span>
+      {isCategory ? (
+        <Image
+          src={CATALOG_CATEGORY_ICON_SRC[primary]}
+          alt=""
+          width={20}
+          height={20}
+          aria-hidden="true"
+          className="size-5 shrink-0"
+        />
+      ) : (
+        <MapPin
+          size={18}
+          strokeWidth={2}
+          aria-hidden="true"
+          className="shrink-0 text-(--schemes-blue-600)"
+        />
+      )}
+      <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+      {extraCount > 0 && (
+        <span
+          aria-hidden="true"
+          className="shrink-0 rounded-full bg-(--schemes-blue-50) px-2 text-xs font-semibold text-(--schemes-blue-600)"
+        >
+          +{extraCount}
+        </span>
+      )}
       <ChevronDown size={14} strokeWidth={2} className="shrink-0 opacity-70" />
     </Button>
+  );
+
+  const list = (size: "sm" | "lg", close: () => void) => (
+    <FilterList
+      kind={kind}
+      selectedCategories={selectedCategories}
+      selectedAreas={selectedAreas}
+      onNavigate={close}
+      size={size}
+    />
   );
 
   if (isDesktop) {
@@ -133,11 +246,7 @@ function CatalogCategorySelect({
           className="z-50 w-[min(80vw,260px)] rounded-xl border border-(--schemes-border) bg-(--schemes-surface) p-0 shadow-sm"
         >
           <Popover.Dialog className="m-0 flex max-h-[min(60vh,420px)] flex-col p-0 outline-none">
-            <CategoryList
-              activeCategory={activeCategory}
-              onNavigate={() => setPopoverOpen(false)}
-              size="sm"
-            />
+            {list("sm", () => setPopoverOpen(false))}
           </Popover.Dialog>
         </Popover.Content>
       </Popover>
@@ -152,13 +261,9 @@ function CatalogCategorySelect({
           <Drawer.Dialog className="flex max-h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) pt-3 outline-none">
             <Drawer.Handle />
             <h2 className="shrink-0 px-4 pb-2 pt-1 font-(--font-head) text-lg font-semibold text-(--schemes-blue-900)">
-              Categories
+              {isCategory ? "Categories" : "Planning area"}
             </h2>
-            <CategoryList
-              activeCategory={activeCategory}
-              onNavigate={() => drawerState.close()}
-              size="lg"
-            />
+            {list("lg", () => drawerState.close())}
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>

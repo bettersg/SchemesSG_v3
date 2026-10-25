@@ -33,14 +33,15 @@ from typing import Any
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
-from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
 from schemes.catalog import (
     DEFAULT_LIMIT,
     FILTER_SPECS,
-    _filter_scheme_types_for_category,
-    _get_listed_paginated_results,
+    build_catalog_filters,
+    list_schemes,
+    normalize_filter_values,
 )
+from utils.catalog_filtering import parse_updated_since
 from utils.catalog_pagination import is_valid_cursor
 from utils.json_utils import safe_json_dumps
 from utils.partner_auth import AuthError, check_and_increment_rate_limit, verify_partner_key
@@ -49,6 +50,7 @@ from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES, RETIRED_STATUS
 from .routing import Route, RouteError, resolve_route
 from .serializers import (
     CURSOR_ERROR_MESSAGE,
+    LIST_FIELDS,
     PartnerRequestError,
     clamp_limit,
     error_body,
@@ -58,9 +60,9 @@ from .serializers import (
 
 SCHEMES_COLLECTION = "schemes"
 
-# Partner list params: the shared catalog filters plus pagination. Notably no
-# `is_warmup` and no `sort`, unlike the frontend's /catalog.
-LIST_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor"}
+# Partner list params: the shared catalog filters, updated_since and pagination.
+# Notably no `is_warmup` and no `sort`, unlike the frontend's /catalog.
+LIST_QUERY_PARAMS = set(FILTER_SPECS) | {"updated_since", "limit", "cursor"}
 
 
 def create_firebase_manager() -> FirebaseManager:
@@ -157,14 +159,10 @@ def _dispatch(route: Route, req: https_fn.Request, db: Any, headers: dict[str, s
 
 
 def _handle_list(db: Any, args: Any) -> dict[str, Any]:
-    """List schemes with optional single-filter pagination."""
+    """List schemes; filters combine (AND) and each takes several values (OR)."""
     unknown = set(args.keys()) - LIST_QUERY_PARAMS
     if unknown:
         raise PartnerRequestError(f"Unsupported query parameter(s): {', '.join(sorted(unknown))}")
-
-    selected = [name for name in FILTER_SPECS if args.get(name)]
-    if len(selected) > 1:
-        raise PartnerRequestError(f"{', '.join(repr(name) for name in selected)} cannot be used together")
 
     # No `or None`: `?cursor=` present but empty is a cursor truncated to nothing,
     # and the docs promise a 400 for a truncated cursor. Only an absent parameter
@@ -173,40 +171,44 @@ def _handle_list(db: Any, args: Any) -> dict[str, Any]:
     if cursor is not None and not is_valid_cursor(cursor):
         raise PartnerRequestError(CURSOR_ERROR_MESSAGE)
 
-    filter_name = selected[0] if selected else None
-    collection = db.collection(SCHEMES_COLLECTION)
-
-    base_query = None
-    matched_types: list[str] | None = None
-    if filter_name:
-        raw_value = args.get(filter_name).strip()
-        spec = FILTER_SPECS[filter_name]
+    values: dict[str, list[str]] = {}
+    for filter_name in FILTER_SPECS:
+        raw_values = [value.strip() for value in args.getlist(filter_name) if value.strip()]
+        if not raw_values:
+            continue
         # Only `normalize` is wrapped, because it is the only client-driven call
         # here. A ValueError raised deeper — inside Firestore or pagination — must
         # stay a logged 500 rather than have its internal message restated to a
         # partner. The message below is ours, not the catalog's.
         try:
-            filter_value = spec.normalize(raw_value)
+            values[filter_name] = normalize_filter_values(filter_name, raw_values)
         except ValueError as exc:
-            raise PartnerRequestError(f"Invalid value for {filter_name!r}: {raw_value!r}") from exc
-        if filter_name == "category" and isinstance(filter_value, list):
-            matched_types = filter_value
-        base_query = collection.where(
-            filter=FieldFilter(spec.firestore_field, spec.operator, filter_value)
-        )
+            shown = raw_values[0] if len(raw_values) == 1 else raw_values
+            raise PartnerRequestError(f"Invalid value for {filter_name!r}: {shown!r}") from exc
 
-    # Partners never see retired *or* inactive. Passing the set down rather than
-    # filtering the returned page keeps pages full and total_count honest.
-    results = _get_listed_paginated_results(
-        collection_ref=collection,
-        base_query=base_query,
+    updated_since = None
+    raw_since = args.get("updated_since")
+    if raw_since is not None:
+        try:
+            updated_since = parse_updated_since(raw_since)
+        except ValueError as exc:
+            raise PartnerRequestError(
+                f"Invalid value for 'updated_since': {raw_since!r}. Use ISO 8601, e.g. 2026-10-01T00:00:00Z"
+            ) from exc
+
+    collection = db.collection(SCHEMES_COLLECTION)
+    filters = build_catalog_filters(collection, values, updated_since)
+
+    # Partners never see retired *or* inactive in a listing. With updated_since they
+    # do, carrying their status, so an incremental sync learns what to drop.
+    results = list_schemes(
+        collection,
+        filters,
         cursor=cursor,
         limit=clamp_limit(args.get("limit"), default=DEFAULT_LIMIT),
-        exclude_statuses=NON_SEARCHABLE_STATUSES,
+        exclude_statuses=frozenset() if updated_since else NON_SEARCHABLE_STATUSES,
+        fields=LIST_FIELDS,
     )
-
-    if matched_types is not None:
-        results = _filter_scheme_types_for_category(results, matched_types)
 
     return {
         "data": [to_public_scheme(item.get("scheme_id"), item) for item in results.data],

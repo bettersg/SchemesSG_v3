@@ -12,9 +12,9 @@ from schemes.catalog import (
     _parse_query_params,
     catalog,
 )
-from utils.catalog_pagination import PaginationResult
+from utils.catalog_filtering import CatalogFilters
+from utils.catalog_pagination import CATALOG_FIELDS, PaginationResult
 from werkzeug.datastructures import MultiDict
-
 
 
 # v2 terms (SCHEME_CATEGORY_MAPPING) first, then pre-v2 terms still carried by un-migrated schemes
@@ -52,11 +52,11 @@ def test_catalog_invalid_method(mock_request, mock_https_response, mock_auth, mo
 
 
 def test_catalog_invalid_query(mock_request, mock_https_response, mock_auth, mocker):
-    """Test catalog endpoint with multiple filters supplied together."""
+    """An invalid value is still a 400 when it is combined with a valid filter."""
     mock_manager = mocker.MagicMock()
     mocker.patch("schemes.catalog.create_firebase_manager", return_value=mock_manager)
 
-    request = mock_request(method="GET", args={"area": "TAMPINES", "category": "health & wellbeing"})
+    request = mock_request(method="GET", args={"area": "TAMPINES", "category": "bogus"})
 
     response = catalog(request)
 
@@ -169,25 +169,41 @@ def test_parse_query_params_category():
     params = _parse_query_params(MultiDict([("category", "health & wellbeing"), ("limit", "5"), ("cursor", "abc")]))
 
     assert isinstance(params, CatalogRequestParams)
-    assert params.filter_name == "category"
-    assert params.filter_value == _HEALTH_CATEGORY_TERMS
+    assert params.filters == {"category": _HEALTH_CATEGORY_TERMS}
     assert params.limit == 5
     assert params.cursor == "abc"
 
 
-def test_parse_query_params_rejects_multiple_filters():
-    """Reject requests that mix catalog filter types."""
-    try:
-        _parse_query_params(MultiDict([("area", "TAMPINES"), ("category", "health & wellbeing")]))
-        assert False, "Expected ValueError for multiple filters"
-    except ValueError as exc:
-        assert "'area', 'category'" in str(exc)
+def test_parse_query_params_accepts_combined_and_repeated_filters():
+    """Filters combine, and a repeated parameter carries several values (#484)."""
+    params = _parse_query_params(
+        MultiDict(
+            [
+                ("area", "tampines"),
+                ("area", "Bedok"),
+                ("category", "health & wellbeing"),
+                ("category", "Education"),
+            ]
+        )
+    )
+
+    assert params.filters["area"] == ["TAMPINES", "BEDOK"]
+    assert params.filters["category"] == [
+        *_HEALTH_CATEGORY_TERMS,
+        *SCHEME_CATEGORY_MAPPING["Education"],
+        *LEGACY_CATEGORY_TERMS.get("Education", []),
+    ]
+
+
+def test_parse_query_params_rejects_an_empty_filter_value():
+    with pytest.raises(ValueError, match="'area' must be a non-empty value"):
+        _parse_query_params(MultiDict([("area", " ")]))
 
 
 def test_parse_query_params_category_lookup_is_case_insensitive():
     """Category lookup accepts any casing from the client."""
     params = _parse_query_params(MultiDict([("category", "HEALTH & WELLBEING")]))
-    assert params.filter_value == _HEALTH_CATEGORY_TERMS
+    assert params.filters["category"] == _HEALTH_CATEGORY_TERMS
 
 
 def test_category_mapping_covers_each_scheme_type_once():
@@ -238,8 +254,7 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(mocker, moc
     )
 
     query_params = CatalogRequestParams(
-        filter_name="category",
-        filter_value=["Elderly", "Caregiver Support"],
+        filters={"category": ["Elderly", "Caregiver Support"]},
         limit=1,
         cursor="next-page",
     )
@@ -258,6 +273,7 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(mocker, moc
         base_query=mock_query,
         cursor="next-page",
         limit=1,
+        fields=CATALOG_FIELDS,
     )
     assert results.data == [{"scheme_name": "Test Scheme", "scheme_type": ["Caregiver Support"]}]
     assert results.next_cursor is None
@@ -265,55 +281,83 @@ def test_handle_catalog_request_uses_array_contains_any_for_category(mocker, moc
 
 
 def test_handle_catalog_request_preserves_scheme_types_for_area_filter(mocker, mock_firebase_manager):
-    """Only category catalog requests trim scheme_type values."""
+    """Area goes through the in-memory path (planning_area is a string or a list), and is not trimmed."""
     mock_collection = mocker.MagicMock()
-    mock_query = mocker.MagicMock()
-    mock_collection.where.return_value = mock_query
     mock_firebase_manager.firestore_client.collection.return_value = mock_collection
 
-    field_filter = mocker.patch("schemes.catalog.FieldFilter", return_value="area-filter")
-    get_paginated_results = mocker.patch(
-        "schemes.catalog.get_paginated_results",
+    get_filtered_results = mocker.patch(
+        "schemes.catalog.get_filtered_results",
         return_value=PaginationResult(
-            data=[
-                {
-                    "scheme_name": "Test Scheme",
-                    "scheme_type": ["Children", "Caregiver Support"],
-                }
-            ],
+            data=[{"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}],
             next_cursor="next-page",
             has_more=True,
+            total_count=3,
         ),
     )
 
-    query_params = CatalogRequestParams(
-        filter_name="area",
-        filter_value="TAMPINES",
-        limit=1,
-        cursor="next-page",
+    results = _handle_catalog_request(
+        mock_firebase_manager,
+        CatalogRequestParams(filters={"area": ["TAMPINES"]}, limit=1, cursor="next-page"),
     )
 
-    results = _handle_catalog_request(mock_firebase_manager, query_params)
-
-    field_filter.assert_called_once_with("planning_area", "array_contains", "TAMPINES")
-    get_paginated_results.assert_called_once_with(
-        collection_ref=mock_collection,
-        base_query=mock_query,
-        cursor="next-page",
-        limit=1,
-    )
+    filters = get_filtered_results.call_args.args[1]
+    assert filters == CatalogFilters(area=("TAMPINES",))
+    assert get_filtered_results.call_args.kwargs["cursor"] == "next-page"
     assert results.data == [{"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}]
-    assert results.next_cursor is None
-    assert results.has_more is False
+    assert results.next_cursor == "next-page"
+
+
+def test_handle_catalog_request_trims_scheme_types_for_combined_category_filter(mocker, mock_firebase_manager):
+    """Category plus area: in-memory path, and the website still sees only the matched scheme types."""
+    mock_firebase_manager.firestore_client.collection.return_value = mocker.MagicMock()
+    get_filtered_results = mocker.patch(
+        "schemes.catalog.get_filtered_results",
+        return_value=PaginationResult(
+            data=[{"scheme_name": "Test Scheme", "scheme_type": ["Children", "Caregiver Support"]}],
+            total_count=1,
+        ),
+    )
+
+    results = _handle_catalog_request(
+        mock_firebase_manager,
+        CatalogRequestParams(filters={"area": ["BEDOK"], "category": ["Caregiver Support"]}),
+    )
+
+    assert get_filtered_results.call_args.args[1] == CatalogFilters(
+        area=("BEDOK",), scheme_types=("Caregiver Support",)
+    )
+    assert results.data == [{"scheme_name": "Test Scheme", "scheme_type": ["Caregiver Support"]}]
+
+
+def test_handle_catalog_request_resolves_agency_spellings(mocker, mock_firebase_manager):
+    """`.title()` used to turn PAVE into Pave, so 220 of 425 agencies matched nothing (#484)."""
+    mock_collection = mocker.MagicMock()
+    mock_firebase_manager.firestore_client.collection.return_value = mock_collection
+    mocker.patch(
+        "schemes.catalog.known_agencies",
+        return_value=["PAVE", "TOUCH Community Services", "Touch Community Services", "Ministry of Health (MOH)"],
+    )
+    field_filter = mocker.patch("schemes.catalog.FieldFilter", return_value="agency-filter")
+    mocker.patch(
+        "schemes.catalog.get_paginated_results",
+        return_value=PaginationResult(data=[{"scheme_name": "Hit", "agency": "TOUCH Community Services"}]),
+    )
+    mocker.patch("schemes.catalog._count_excluded_schemes", return_value=0)
+
+    _handle_catalog_request(mock_firebase_manager, CatalogRequestParams(filters={"agency": ["touch community services"]}))
+
+    field_filter.assert_called_once_with(
+        "agency", "in", ["TOUCH Community Services", "Touch Community Services"]
+    )
 
 
 def test_legacy_scheme_types_still_resolve_to_their_category():
     """Un-migrated schemes keep pre-v2 terms (e.g. 'Low Income'); category filters must still reach them."""
     params = _parse_query_params(MultiDict([("category", "Financial Assistance")]))
 
-    assert "Low Income" in params.filter_value
-    assert set(LEGACY_CATEGORY_TERMS["Financial Assistance"]) <= set(params.filter_value)
-    assert len(params.filter_value) <= 30  # Firestore array-contains-any limit
+    assert "Low Income" in params.filters["category"]
+    assert set(LEGACY_CATEGORY_TERMS["Financial Assistance"]) <= set(params.filters["category"])
+    assert len(params.filters["category"]) <= 30  # Firestore array-contains-any limit
 
 
 def test_legacy_category_terms_do_not_overlap_the_current_vocabulary():
@@ -322,10 +366,8 @@ def test_legacy_category_terms_do_not_overlap_the_current_vocabulary():
     assert not legacy & set(SCHEME_TYPE)
 
 
-@pytest.mark.parametrize("filter_name, filter_value", [(None, None), ("category", ["Elderly"])])
-def test_handle_catalog_request_hides_inactive_and_retired_schemes(
-    filter_name, filter_value, mocker, mock_firebase_manager
-):
+@pytest.mark.parametrize("filters", [{}, {"category": ["Elderly"]}])
+def test_handle_catalog_request_hides_inactive_and_retired_schemes(filters, mocker, mock_firebase_manager):
     """The catalog lists only searchable schemes, and its total count agrees."""
     mock_collection = mocker.MagicMock()
     mock_query = mocker.MagicMock()
@@ -349,7 +391,7 @@ def test_handle_catalog_request_hides_inactive_and_retired_schemes(
 
     results = _handle_catalog_request(
         mock_firebase_manager,
-        CatalogRequestParams(filter_name=filter_name, filter_value=filter_value, limit=10),
+        CatalogRequestParams(filters=filters, limit=10),
     )
 
     assert [item["scheme_name"] for item in results.data] == ["Active", "Legacy"]

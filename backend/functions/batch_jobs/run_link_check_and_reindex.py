@@ -225,7 +225,9 @@ def run_link_check_and_reindex_core(db=None) -> Dict[str, Any]:
                         {
                             "status": firestore.DELETE_FIELD,
                             "status_reason": firestore.DELETE_FIELD,
-                            "status_updated_at": firestore.DELETE_FIELD,
+                            # Kept, not cleared: partners syncing with updated_since
+                            # must see the scheme come back.
+                            "status_updated_at": now_iso,
                             "link_check_error": firestore.DELETE_FIELD,
                         }
                     )
