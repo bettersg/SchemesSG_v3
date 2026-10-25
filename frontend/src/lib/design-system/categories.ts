@@ -103,6 +103,29 @@ const SCHEME_TYPE_CATEGORY_MAP: Record<string, SchemeCategory> = {
   "abuse/family violence": "Legal & Safety",
 
   "general public support": "Community Support",
+
+  // NCSS-aligned vocabulary (v2)
+  "debt assistance": "Financial Assistance",
+  "loss of breadwinner support": "Financial Assistance",
+  "financial planning and retirement support": "Financial Assistance",
+  "family and parenting support": "Family & Children",
+  "child and youth services": "Family & Children",
+  "dental healthcare": "Health & Wellbeing",
+  "traditional chinese medicine (tcm)": "Health & Wellbeing",
+  "general healthcare subsidies": "Health & Wellbeing",
+  "chronic or terminal illness support": "Health & Wellbeing",
+  "mental health rehabilitation": "Health & Wellbeing",
+  "addictions rehabilitation": "Health & Wellbeing",
+  "homelessness support": "Housing & Food",
+  "seniors housing and home improvement": "Housing & Food",
+  "student care support": "Education",
+  "residential care": "Seniors & Caregiving",
+  "active ageing and social activities": "Seniors & Caregiving",
+  "disability support": "Disability & Transport",
+  "technology support": "Disability & Transport",
+  "protection from violence": "Legal & Safety",
+  "referral and information services": "Community Support",
+  "community funding": "Community Support",
 };
 
 // const CATEGORY_ALIASES: Record<string, SchemeCategory> = {
