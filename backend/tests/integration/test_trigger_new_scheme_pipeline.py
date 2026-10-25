@@ -234,3 +234,58 @@ def test_503_is_not_retried_without_time_for_another_attempt(mocker):
 
     assert post_mock.call_count == 1
     assert len(_failed_updates(entry_ref)) == 1
+
+
+def test_connection_reset_after_processor_started_is_not_retried(mocker):
+    """`requests` raises ConnectionError for a reset after the POST was sent; the processor keeps running."""
+    import requests
+
+    mod, post_mock, entry_ref, slack_client = _patch_retry(
+        mocker, entry={"pipeline_status": "processing", "pipeline_started_at": "2999-01-01T00:00:00+00:00"}
+    )
+    post_mock.side_effect = [
+        requests.exceptions.ConnectionError("Connection aborted: RemoteDisconnected"),
+        _response(200, {"success": True}),
+    ]
+
+    mod.process_new_scheme_entry("entry-reset", NEW_DATA)
+
+    assert post_mock.call_count == 1
+    assert _failed_updates(entry_ref) == []
+    alert = slack_client.chat_postMessage.call_args.kwargs["text"]
+    assert "entry-reset" in alert
+    assert "not retried" in alert
+
+
+def test_connection_error_after_an_earlier_attempt_started_is_retried(mocker):
+    """A `pipeline_started_at` left by an earlier attempt does not mean this attempt reached the processor."""
+    import requests
+
+    mod, post_mock, entry_ref, _ = _patch_retry(
+        mocker, entry={"pipeline_status": "processing", "pipeline_started_at": "2000-01-01T00:00:00+00:00"}
+    )
+    post_mock.side_effect = [requests.exceptions.ConnectionError("refused"), _response(200, {"success": True})]
+
+    mod.process_new_scheme_entry("entry-refused", NEW_DATA)
+
+    assert post_mock.call_count == 2
+    assert _failed_updates(entry_ref) == []
+
+
+def test_503_after_review_card_still_warns_about_shared_link(mocker, update_data):
+    mod, post_mock, _, slack_client = _patch_retry(
+        mocker, entry={"slack_channel": "C9", "slack_message_ts": "171.1", "targetSchemeId": "scheme-abc"}
+    )
+    mocker.patch.object(
+        mod,
+        "check_duplicate_scheme",
+        return_value={"doc_id": "scheme-other", "scheme": "Other", "link": "https://example.com/foo"},
+    )
+    post_mock.return_value = _response(503)
+
+    mod.process_new_scheme_entry("entry-shared", update_data)
+
+    assert post_mock.call_count == 1
+    warning = slack_client.chat_postMessage.call_args.kwargs
+    assert warning["thread_ts"] == "171.1"
+    assert "scheme-other" in warning["text"]

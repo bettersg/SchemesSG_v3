@@ -44,6 +44,10 @@ PROCESSOR_RETRY_DELAYS_SEC = (15, 45)
 PROCESSOR_RETRY_STATUSES = {429, 503}
 
 
+class ProcessorStillRunning(Exception):
+    """The connection dropped after the processor started this attempt, so it may still finish."""
+
+
 def get_identity_token(audience: str) -> str:
     """Get identity token for Cloud Run authentication."""
     # Try to get credentials from GOOGLE_APPLICATION_CREDENTIALS (service account)
@@ -249,6 +253,8 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
             started,
         )
         if response is None:
+            if duplicate:
+                _warn_shared_link(doc_id, duplicate)
             return
 
         result = response.json()
@@ -259,6 +265,10 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
             _alert_pipeline_failure(doc_id, data, result.get("error") or "Unknown processor error")
         elif duplicate:
             _warn_shared_link(doc_id, duplicate)
+
+    except ProcessorStillRunning as e:
+        logger.warning(f"Scheme-processor connection for {doc_id} dropped after it started: {e}")
+        _alert_outcome_unknown(doc_id, data, str(e), duplicate)
 
     except requests.exceptions.Timeout:
         logger.error(f"Scheme-processor timeout for {doc_id}")
@@ -281,8 +291,13 @@ def _post_to_processor(doc_id: str, payload: dict, headers: dict, started: float
 
     Returns None when a retryable error arrives after the review card was posted: the
     processor finished, so the entry must not be retried or marked failed.
+
+    Raises ProcessorStillRunning when a connection error arrives after the processor started
+    this attempt: `requests` also raises ConnectionError for a reset after the POST was sent,
+    and the processor keeps running, so a retry would process the entry twice.
     """
     for attempt in range(1, PROCESSOR_MAX_ATTEMPTS + 1):
+        attempt_started = datetime.now(timezone.utc)
         try:
             response = requests.post(
                 f"{PROCESSOR_SERVICE_URL}/process", json=payload, headers=headers, timeout=PROCESSOR_TIMEOUT_SEC
@@ -291,12 +306,15 @@ def _post_to_processor(doc_id: str, payload: dict, headers: dict, started: float
             return response
         except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
             status = getattr(e.response, "status_code", None)
-            retryable = isinstance(e, requests.exceptions.ConnectionError) or status in PROCESSOR_RETRY_STATUSES
-            if not retryable:
+            connection_error = isinstance(e, requests.exceptions.ConnectionError)
+            if not (connection_error or status in PROCESSOR_RETRY_STATUSES):
                 raise
-            if _review_card_posted(doc_id):
+            entry = _read_entry(doc_id)
+            if entry.get("slack_message_ts"):
                 logger.warning(f"Scheme-processor error for {doc_id} after its review card was posted: {e}")
                 return None
+            if connection_error and _started_since(entry, attempt_started):
+                raise ProcessorStillRunning(str(e)) from e
             if attempt == PROCESSOR_MAX_ATTEMPTS:
                 raise
             delay = PROCESSOR_RETRY_DELAYS_SEC[attempt - 1]
@@ -307,13 +325,20 @@ def _post_to_processor(doc_id: str, payload: dict, headers: dict, started: float
             time.sleep(delay)
 
 
-def _review_card_posted(doc_id: str) -> bool:
+def _read_entry(doc_id: str) -> dict:
     try:
-        entry = get_firestore_client().collection("schemeEntries").document(doc_id).get().to_dict() or {}
+        return get_firestore_client().collection("schemeEntries").document(doc_id).get().to_dict() or {}
     except Exception as e:
         logger.error(f"Failed to read {doc_id} before retrying: {e}")
+        return {}
+
+
+def _started_since(entry: dict, attempt_started: datetime) -> bool:
+    """Whether the processor wrote `pipeline_started_at` at or after this attempt began."""
+    try:
+        return datetime.fromisoformat(entry["pipeline_started_at"]) >= attempt_started
+    except (KeyError, TypeError, ValueError):
         return False
-    return bool(entry.get("slack_message_ts"))
 
 
 def _fail_entry(doc_id: str, data: dict, error_msg: str) -> None:
@@ -336,6 +361,29 @@ def _alert_pipeline_failure(doc_id: str, data: dict, error_msg: str) -> None:
         )
     except Exception as e:
         logger.error(f"Failed to post pipeline failure alert for {doc_id}: {e}")
+
+
+def _alert_outcome_unknown(doc_id: str, data: dict, error_msg: str, duplicate: dict | None) -> None:
+    """Tell maintainers the processor may still finish, so they check before re-driving."""
+    shared_link = (
+        f"\n:warning: This link also belongs to *{duplicate['scheme']}* (`{duplicate['doc_id']}`)."
+        if duplicate
+        else ""
+    )
+    try:
+        get_slack_client().chat_postMessage(
+            channel=get_slack_channel(),
+            text=(
+                f":hourglass: *Lost the connection to the scheme processor after it started.* `{doc_id}`\n"
+                f"*{data.get('Scheme', 'Unknown')}*: {data.get('Link', '')}\n"
+                f"Error: {error_msg}\n"
+                "It was not retried, to avoid processing twice. It may still post a review card. "
+                f"If none appears and the entry stays `processing`, re-drive it.{shared_link}"
+            ),
+            unfurl_links=False,
+        )
+    except Exception as e:
+        logger.error(f"Failed to post outcome-unknown alert for {doc_id}: {e}")
 
 
 def _warn_shared_link(doc_id: str, duplicate: dict) -> None:
