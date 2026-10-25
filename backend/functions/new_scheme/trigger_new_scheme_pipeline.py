@@ -7,6 +7,7 @@ Calls the scheme-processor Cloud Run service for processing.
 
 import json
 import os
+import time
 from datetime import datetime, timezone
 
 import google.auth
@@ -30,6 +31,17 @@ from new_scheme.url_utils import check_duplicate_scheme
 # In local dev: http://scheme-processor:8081 (docker network)
 # In production: Cloud Run URL
 PROCESSOR_SERVICE_URL = os.getenv("PROCESSOR_SERVICE_URL", "http://localhost:8081")
+
+# Firestore-triggered functions cap out at 540s.
+FUNCTION_TIMEOUT_SEC = 540
+# Above the processor's 300s Cloud Run timeout, so its own timeout response arrives first.
+PROCESSOR_TIMEOUT_SEC = 330
+PROCESSOR_MAX_ATTEMPTS = 3
+PROCESSOR_RETRY_DELAYS_SEC = (15, 45)
+# 503: instance killed (out of memory) or not ready. 429: every instance busy. The processor
+# posts the review card last, so these are retried unless that card already exists. Timeouts
+# and 504s are not retried: the processor may still be running and would process twice.
+PROCESSOR_RETRY_STATUSES = {429, 503}
 
 
 def get_identity_token(audience: str) -> str:
@@ -222,9 +234,9 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
             except Exception as auth_error:
                 logger.error(f"Failed to get identity token: {auth_error}")
 
-        response = requests.post(
-            f"{PROCESSOR_SERVICE_URL}/process",
-            json={
+        response = _post_to_processor(
+            doc_id,
+            {
                 "doc_id": doc_id,
                 "scheme_name": data.get("Scheme", "Unknown"),
                 "scheme_url": data.get("Link", ""),
@@ -232,30 +244,95 @@ def process_new_scheme_entry(doc_id: str, data: dict) -> None:
                 "type_of_request": type_of_request,
                 "target_scheme_id": target_scheme_id,
             },
-            headers=headers,
-            timeout=300,  # 5 minute timeout
+            headers,
         )
-        response.raise_for_status()
+        if response is None:
+            return
 
         result = response.json()
         logger.info(f"Scheme-processor result for {doc_id}: {result}")
 
         if not result.get("success"):
             logger.error(f"Scheme-processor failed for {doc_id}: {result.get('error')}")
+            _alert_pipeline_failure(doc_id, data, result.get("error") or "Unknown processor error")
         elif duplicate:
             _warn_shared_link(doc_id, duplicate)
 
     except requests.exceptions.Timeout:
         logger.error(f"Scheme-processor timeout for {doc_id}")
-        _update_error_status(doc_id, "Processing timeout - service did not respond in time")
+        _fail_entry(doc_id, data, "Processing timeout - service did not respond in time")
 
     except requests.exceptions.ConnectionError as e:
         logger.error(f"Scheme-processor connection error for {doc_id}: {e}")
-        _update_error_status(doc_id, f"Could not connect to processor service: {e}")
+        _fail_entry(doc_id, data, f"Could not connect to processor service: {e}")
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Scheme-processor error for {doc_id}: {e}")
-        _update_error_status(doc_id, str(e))
+        _fail_entry(doc_id, data, str(e))
+
+
+def _post_to_processor(doc_id: str, payload: dict, headers: dict) -> requests.Response | None:
+    """
+    POST to scheme-processor, retrying 429, 503 and connection errors while the function has time.
+
+    Returns None when a retryable error arrives after the review card was posted: the
+    processor finished, so the entry must not be retried or marked failed.
+    """
+    started = time.monotonic()
+    for attempt in range(1, PROCESSOR_MAX_ATTEMPTS + 1):
+        try:
+            response = requests.post(
+                f"{PROCESSOR_SERVICE_URL}/process", json=payload, headers=headers, timeout=PROCESSOR_TIMEOUT_SEC
+            )
+            response.raise_for_status()
+            return response
+        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
+            status = getattr(e.response, "status_code", None)
+            retryable = isinstance(e, requests.exceptions.ConnectionError) or status in PROCESSOR_RETRY_STATUSES
+            if not retryable:
+                raise
+            if _review_card_posted(doc_id):
+                logger.warning(f"Scheme-processor error for {doc_id} after its review card was posted: {e}")
+                return None
+            if attempt == PROCESSOR_MAX_ATTEMPTS:
+                raise
+            delay = PROCESSOR_RETRY_DELAYS_SEC[attempt - 1]
+            if time.monotonic() - started + delay + PROCESSOR_TIMEOUT_SEC > FUNCTION_TIMEOUT_SEC:
+                logger.error(f"No time left to retry scheme-processor for {doc_id}")
+                raise
+            logger.warning(f"Scheme-processor attempt {attempt} for {doc_id} failed ({e}); retrying in {delay}s")
+            time.sleep(delay)
+
+
+def _review_card_posted(doc_id: str) -> bool:
+    try:
+        entry = get_firestore_client().collection("schemeEntries").document(doc_id).get().to_dict() or {}
+    except Exception as e:
+        logger.error(f"Failed to read {doc_id} before retrying: {e}")
+        return False
+    return bool(entry.get("slack_message_ts"))
+
+
+def _fail_entry(doc_id: str, data: dict, error_msg: str) -> None:
+    _update_error_status(doc_id, error_msg)
+    _alert_pipeline_failure(doc_id, data, error_msg)
+
+
+def _alert_pipeline_failure(doc_id: str, data: dict, error_msg: str) -> None:
+    """Tell maintainers a submission failed, so it is re-driven instead of silently dropped."""
+    try:
+        get_slack_client().chat_postMessage(
+            channel=get_slack_channel(),
+            text=(
+                f":rotating_light: *Scheme submission failed processing.* `{doc_id}`\n"
+                f"*{data.get('Scheme', 'Unknown')}*: {data.get('Link', '')}\n"
+                f"Error: {error_msg}\n"
+                "The entry is marked `failed` and has no review card. Re-drive it once the processor is healthy."
+            ),
+            unfurl_links=False,
+        )
+    except Exception as e:
+        logger.error(f"Failed to post pipeline failure alert for {doc_id}: {e}")
 
 
 def _warn_shared_link(doc_id: str, duplicate: dict) -> None:
@@ -321,7 +398,7 @@ def post_duplicate_to_slack(doc_id: str, data: dict, duplicate_info: dict) -> No
     document="schemeEntries/{docId}",
     region="asia-southeast1",
     memory=options.MemoryOption.GB_1,  # Lightweight - just calls Cloud Run service
-    timeout_sec=540,  # 9 minutes max - includes waiting for Cloud Run response
+    timeout_sec=FUNCTION_TIMEOUT_SEC,  # Includes waiting for Cloud Run response and retries
 )
 def on_new_scheme_entry(event: firestore_fn.Event[DocumentSnapshot]) -> None:
     """
