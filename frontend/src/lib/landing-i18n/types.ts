@@ -158,6 +158,7 @@ export interface Translations {
       fields: { heading: string; body: string; omitted: string };
       errors: { heading: string; body: string };
       rateLimits: { heading: string; body: string };
+      sync: { heading: string; body: string };
       retired: { heading: string; body: string };
     };
     labels: {

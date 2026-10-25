@@ -53,10 +53,12 @@ def test_healthy_link_restores_inactive_scheme_and_clears_quarantine(
     assert result["link_check"]["restored_count"] == 1
     stored = fake_firestore.get_document("schemes", "scheme-restored")
     assert stored["link_check_status_code"] == 200
+    # The restore is a status change partners sync on (updated_since), so it is stamped, not cleared.
+    assert stored["status_updated_at"] not in (None, "earlier")
+    assert stored["status_updated_at"] == stored["last_link_check"]
     for cleared_field in (
         "status",
         "status_reason",
-        "status_updated_at",
         "link_check_error",
         "link_check_fail_streak",
         "link_check_fail_class",

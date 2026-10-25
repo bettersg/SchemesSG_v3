@@ -2,6 +2,7 @@
 
 import pytest
 from firebase_functions import https_fn
+from werkzeug.datastructures import MultiDict
 
 
 @pytest.fixture
@@ -22,7 +23,8 @@ def mock_request():
             self.method = method
             self._json = json_data or {}
             self.headers = headers or {"Authorization": "Bearer mock-token", "Origin": "http://localhost:3000"}
-            self.args = args or {}
+            # werkzeug's request.args is a MultiDict: repeated keys carry several values.
+            self.args = MultiDict(args or {})
             self.path = "/"
 
         def get_json(self, silent=False):

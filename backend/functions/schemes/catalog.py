@@ -6,18 +6,27 @@ http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?agency=<agency>
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?area=<area>
 http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?category=<category>
+http://127.0.0.1:5001/schemessg-v3-dev/asia-southeast1/catalog?category=<a>&category=<b>&area=<area>
 """
 
 import json
-from dataclasses import asdict, dataclass
-from typing import Any, Callable
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from typing import Any, Callable, Sequence
 
 from fb_manager.firebaseManager import FirebaseManager
 from firebase_functions import https_fn, options
 from google.cloud.firestore_v1 import FieldFilter
 from loguru import logger
 from new_scheme.constants import LEGACY_CATEGORY_TERMS, SCHEME_CATEGORY_MAPPING
-from utils.catalog_pagination import PaginationResult, _count_total, get_paginated_results
+from utils.catalog_filtering import (
+    MAX_DISJUNCTION_VALUES,
+    CatalogFilters,
+    get_filtered_results,
+    known_agencies,
+    resolve_agencies,
+)
+from utils.catalog_pagination import CATALOG_FIELDS, PaginationResult, _count_total, get_paginated_results
 from utils.cors_config import get_cors_headers, handle_cors_preflight
 from utils.json_utils import safe_json_dumps
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
@@ -38,12 +47,11 @@ class CatalogFilterSpec:
 
 @dataclass(kw_only=True)
 class CatalogRequestParams:
-    """Parsed catalog request parameters with an optional active filter."""
+    """Parsed catalog request parameters: normalized values per active filter."""
 
     limit: int = DEFAULT_LIMIT
     cursor: str | None = None
-    filter_name: str | None = None
-    filter_value: str | list[str] | None = None
+    filters: dict[str, list[str]] = field(default_factory=dict)
 
 
 # v2 terms first, then pre-v2 terms so schemes that still carry the old vocabulary stay reachable until migrated
@@ -126,6 +134,7 @@ def _get_listed_paginated_results(
     cursor: str | None = None,
     limit: int = DEFAULT_LIMIT,
     exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+    fields: Sequence[str] = CATALOG_FIELDS,
 ) -> PaginationResult:
     """Fill a page to ``limit``, skipping documents with an excluded status.
 
@@ -145,6 +154,7 @@ def _get_listed_paginated_results(
             base_query=base_query,
             cursor=current_cursor,
             limit=limit - len(data),
+            fields=fields,
         )
         data.extend(_keep_listed_schemes(last_result, exclude_statuses).data)
 
@@ -173,10 +183,11 @@ def _get_listed_paginated_results(
 
 
 FILTER_SPECS = {
+    # Kept as given: list_schemes resolves it against the stored spellings.
     "agency": CatalogFilterSpec(
         firestore_field="agency",
-        operator="==",
-        normalize=lambda value: value.title(),
+        operator="in",
+        normalize=lambda value: value,
     ),
     "area": CatalogFilterSpec(
         firestore_field="planning_area",
@@ -192,6 +203,74 @@ FILTER_SPECS = {
 ALLOWED_QUERY_PARAMS = set(FILTER_SPECS) | {"limit", "cursor", "is_warmup", "sort"}
 
 
+def normalize_filter_values(name: str, raw_values: Sequence[str]) -> list[str]:
+    """Normalize every value of one filter; a category expands to its scheme types.
+
+    Raises:
+        ValueError: If a value is not valid for the filter (e.g. an unknown category).
+    """
+    normalized: list[str] = []
+    for raw in raw_values:
+        value = FILTER_SPECS[name].normalize(raw)
+        normalized.extend(value if isinstance(value, list) else [value])
+    return list(dict.fromkeys(normalized))
+
+
+def build_catalog_filters(
+    collection_ref, values: dict[str, list[str]], updated_since: datetime | None = None
+) -> CatalogFilters:
+    """Turn normalized request values into filters, resolving agency spellings against the stored names."""
+    agency = values.get("agency", [])
+    return CatalogFilters(
+        agency=tuple(resolve_agencies(agency, known_agencies(collection_ref))) if agency else (),
+        area=tuple(values.get("area", [])),
+        scheme_types=tuple(values.get("category", [])),
+        updated_since=updated_since,
+    )
+
+
+def list_schemes(
+    collection_ref,
+    filters: CatalogFilters,
+    *,
+    cursor: str | None = None,
+    limit: int = DEFAULT_LIMIT,
+    exclude_statuses: frozenset[str] = _CATALOG_EXCLUDED_STATUSES,
+    fields: Sequence[str] = CATALOG_FIELDS,
+) -> PaginationResult:
+    """List schemes for the catalog and the partner API.
+
+    No filter, or a single agency or category filter, pages in Firestore. Anything
+    else (several filters, area, updated_since) fetches one filter's candidates from
+    Firestore and applies the rest in memory: see ``utils.catalog_filtering``.
+    """
+    active = filters.active
+    single_db_filter = None
+    if active == ["agency"] and len(filters.agency) <= MAX_DISJUNCTION_VALUES:
+        single_db_filter = FieldFilter("agency", "in", list(filters.agency))
+    elif active == ["scheme_types"] and len(filters.scheme_types) <= MAX_DISJUNCTION_VALUES:
+        single_db_filter = FieldFilter("scheme_type", "array_contains_any", list(filters.scheme_types))
+
+    if not active or single_db_filter is not None:
+        return _get_listed_paginated_results(
+            collection_ref=collection_ref,
+            base_query=collection_ref.where(filter=single_db_filter) if single_db_filter is not None else None,
+            cursor=cursor,
+            limit=limit,
+            exclude_statuses=exclude_statuses,
+            fields=fields,
+        )
+
+    return get_filtered_results(
+        collection_ref,
+        filters,
+        fields=fields,
+        cursor=cursor,
+        limit=limit,
+        exclude_statuses=exclude_statuses,
+    )
+
+
 def create_firebase_manager() -> FirebaseManager:
     """Factory function to create a FirebaseManager instance."""
 
@@ -205,7 +284,10 @@ def _supported_catalog_query_message() -> str:
         "/catalog",
         *[f"/catalog?{name}=<{name}>" for name in FILTER_SPECS],
     ]
-    return f"Error parsing query parameters; only {', '.join(supported_queries)} are supported"
+    return (
+        f"Error parsing query parameters; only {', '.join(supported_queries)} are supported. "
+        "Filters combine, and each may repeat to match any of several values."
+    )
 
 
 @https_fn.on_request(region="asia-southeast1", memory=options.MemoryOption.GB_1)
@@ -296,9 +378,11 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
       - /catalog?agency=<name>
       - /catalog?area=<name>
       - /catalog?category=<name>
+      - any combination, each repeatable: /catalog?category=<a>&category=<b>&area=<name>
+        (OR within a filter, AND across filters)
 
     Raises:
-        ValueError: If unsupported query parameters are provided.
+        ValueError: If unsupported query parameters or invalid values are provided.
     """
 
     # Validate unknown query parameters
@@ -306,31 +390,20 @@ def _parse_query_params(query_params: MultiDict[str, str]) -> CatalogRequestPara
     if unknown_params:
         raise ValueError(f"Unsupported query parameter(s): {', '.join(sorted(unknown_params))}")
 
-    selected_filters = [name for name in FILTER_SPECS if query_params.get(name)]
-    if len(selected_filters) > 1:
-        raise ValueError(
-            f"Invalid query; {', '.join(repr(name) for name in selected_filters)} cannot be used together"
-        )
-
     # Retrieve limit and cursor from query parameters
     limit = int(query_params.get("limit", DEFAULT_LIMIT))
     cursor = query_params.get("cursor", "")
 
-    if not selected_filters:
-        return CatalogRequestParams(limit=limit, cursor=cursor)
+    filters: dict[str, list[str]] = {}
+    for name in FILTER_SPECS:
+        if name not in query_params:
+            continue
+        raw_values = [value.strip() for value in query_params.getlist(name) if value.strip()]
+        if not raw_values:
+            raise ValueError(f"Invalid query; '{name}' must be a non-empty value")
+        filters[name] = normalize_filter_values(name, raw_values)
 
-    filter_name = selected_filters[0]
-    raw_value = query_params.get(filter_name, "")
-    if not raw_value.strip():
-        raise ValueError(f"Invalid query; '{filter_name}' must be a non-empty value")
-
-    spec = FILTER_SPECS[filter_name]
-    return CatalogRequestParams(
-        filter_name=filter_name,
-        filter_value=spec.normalize(raw_value.strip()),
-        limit=limit,
-        cursor=cursor,
-    )
+    return CatalogRequestParams(filters=filters, limit=limit, cursor=cursor)
 
 
 def _handle_catalog_request(
@@ -341,7 +414,7 @@ def _handle_catalog_request(
 
     Args:
         firebase_manager: Firebase manager providing Firestore access.
-        query_params: Parsed catalog parameters, including any active filter.
+        query_params: Parsed catalog parameters, including any active filters.
 
     Returns:
         PaginationResult:
@@ -350,25 +423,11 @@ def _handle_catalog_request(
             has_more: Whether more results exist.
     """
     col = firebase_manager.firestore_client.collection("schemes")
+    filters = build_catalog_filters(col, query_params.filters)
 
-    if not query_params.filter_name or query_params.filter_value is None:
-        return _get_listed_paginated_results(
-            collection_ref=col,
-            cursor=query_params.cursor,
-            limit=query_params.limit,
-        )
+    results = list_schemes(col, filters, cursor=query_params.cursor, limit=query_params.limit)
 
-    spec = FILTER_SPECS[query_params.filter_name]
-    query = col.where(filter=FieldFilter(spec.firestore_field, spec.operator, query_params.filter_value))
-
-    results = _get_listed_paginated_results(
-        collection_ref=col,
-        base_query=query,
-        cursor=query_params.cursor,
-        limit=query_params.limit,
-    )
-
-    if query_params.filter_name == "category" and isinstance(query_params.filter_value, list):
-        return _filter_scheme_types_for_category(results, query_params.filter_value)
+    if filters.scheme_types:
+        return _filter_scheme_types_for_category(results, list(filters.scheme_types))
 
     return results
