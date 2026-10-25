@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 
 import pytest
+from utils import catalog_filtering
 from utils.catalog_filtering import (
     CatalogFilters,
     agency_key,
@@ -10,12 +11,20 @@ from utils.catalog_filtering import (
     get_filtered_results,
     parse_updated_since,
     resolve_agencies,
+    resolve_areas,
     updated_at,
 )
 from utils.catalog_pagination import _decode_cursor, _encode_cursor
 
 
 UTC = timezone.utc
+
+
+@pytest.fixture(autouse=True)
+def _clear_known_values_cache():
+    catalog_filtering._known_cache.clear()
+    yield
+    catalog_filtering._known_cache.clear()
 
 
 class _Doc:
@@ -54,7 +63,7 @@ class _Query:
     def stream(self):
         f = self._filter
         for doc_id, data in self._docs.items():
-            if f.field_path in data and _firestore_match(data[f.field_path], f.op_string, f.value):
+            if f is None or (f.field_path in data and _firestore_match(data[f.field_path], f.op_string, f.value)):
                 yield _Doc(doc_id, {k: v for k, v in data.items() if k in self.projection})
 
 
@@ -66,6 +75,9 @@ class _Collection:
     def where(self, *, filter):
         self.filters.append(filter)
         return _Query(self.docs, filter)
+
+    def select(self, fields):
+        return _Query(self.docs).select(fields)
 
 
 def _ts(day):
@@ -172,6 +184,12 @@ def test_resolve_agencies_returns_every_stored_spelling():
     assert resolve_agencies(["Nobody"], known) == ["Nobody"]
 
 
+def test_resolve_areas_adds_every_stored_spelling():
+    known = ["BEDOK", "Bedok", "bedok", "TAMPINES"]
+    assert resolve_areas(["BEDOK"], known) == ["BEDOK", "Bedok", "bedok"]
+    assert resolve_areas(["TUAS"], known) == ["TUAS"]
+
+
 # ------------------------------------------------------------------ filtered listing
 
 
@@ -260,3 +278,44 @@ def test_more_than_thirty_values_are_split_across_queries():
 def test_needs_an_active_filter():
     with pytest.raises(ValueError):
         get_filtered_results(_Collection(DOCS), CatalogFilters(), fields=FIELDS)
+
+
+MIXED_CASE_DOCS = {
+    # The Slack approval modal stores planning area as typed.
+    "title-case": {
+        "agency": "PAVE",
+        "planning_area": "Bedok",
+        "scheme_type": ["Healthcare"],
+        "status": "active",
+        "last_scraped_update": _ts(10),
+    },
+    "title-case-list": {
+        "agency": "PAVE",
+        "planning_area": ["Bedok"],
+        "scheme_type": ["Healthcare"],
+        "status": "active",
+        "last_scraped_update": _ts(9),
+    },
+    "upper-case": {
+        "agency": "Other",
+        "planning_area": "BEDOK",
+        "scheme_type": ["Healthcare"],
+        "status": "active",
+        "last_scraped_update": _ts(8),
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "filters, expected",
+    [
+        (CatalogFilters(area=("BEDOK",)), ["title-case", "title-case-list", "upper-case"]),
+        (CatalogFilters(agency=("PAVE",), area=("BEDOK",)), ["title-case", "title-case-list"]),
+    ],
+    ids=["area-only", "area-and-agency"],
+)
+def test_area_matches_stored_spellings_whichever_filter_fetches_candidates(filters, expected):
+    """The result must not depend on whether area or agency drives the Firestore query."""
+    result = get_filtered_results(_Collection(MIXED_CASE_DOCS), filters, fields=FIELDS)
+
+    assert _ids(result) == expected

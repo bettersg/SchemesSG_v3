@@ -6,7 +6,8 @@ A single agency or category filter still pages in Firestore (see
 * several filters at once. Firestore allows one ``in`` / ``array_contains_any``
   per query, and an ordered query on two fields needs a composite index per pair;
 * ``planning_area``, stored as a plain string on most schemes and as a list on the
-  rest, so ``array_contains`` alone misses the string ones;
+  rest, so ``array_contains`` alone misses the string ones, and in whatever case the
+  approver typed, so requested areas resolve against the stored spellings;
 * ``updated_since``, whose source fields carry three types from different writers
   (``Timestamp``, a ``{"_seconds", "_nanoseconds"}`` map from a 2025 import, an ISO
   string). The map-typed ``last_scraped_update`` cannot be range-queried, so those
@@ -115,22 +116,49 @@ def resolve_agencies(requested: Iterable[str], known: Iterable[str]) -> list[str
     return list(dict.fromkeys(resolved))
 
 
-_agency_cache: dict[str, Any] = {"names": None, "at": 0.0}
+def resolve_areas(requested: Iterable[str], known: Iterable[str]) -> list[str]:
+    """Map upper-cased planning areas to every stored spelling that matches them, ignoring case.
 
-
-def known_agencies(collection_ref: Any) -> list[str]:
-    """Distinct stored agency names, cached per instance for a few minutes."""
-    now = time.monotonic()
-    if _agency_cache["names"] is None or now - _agency_cache["at"] > AGENCY_CACHE_TTL_SECONDS:
-        names = {(doc.to_dict() or {}).get("agency") for doc in collection_ref.select(["agency"]).stream()}
-        _agency_cache.update(names=sorted(name for name in names if isinstance(name, str)), at=now)
-    return _agency_cache["names"]
+    The Slack approval modal takes planning area as free text, so "Bedok" is stored
+    beside "BEDOK". The requested values are kept, so an area with no stored match
+    still queries and returns nothing.
+    """
+    wanted = set(requested)
+    return list(dict.fromkeys([*requested, *(name for name in known if name.upper() in wanted)]))
 
 
 def _as_list(value: Any) -> list[str]:
     if isinstance(value, list):
         return [item for item in value if isinstance(item, str)]
     return [value] if isinstance(value, str) else []
+
+
+_known_cache: dict[str, tuple[float, list[str]]] = {}
+
+
+def _known_values(collection_ref: Any, field: str) -> list[str]:
+    """Distinct stored values of ``field`` (list items included), cached per instance for a few minutes."""
+    now = time.monotonic()
+    cached = _known_cache.get(field)
+    if cached is None or now - cached[0] > AGENCY_CACHE_TTL_SECONDS:
+        values = {
+            value
+            for doc in collection_ref.select([field]).stream()
+            for value in _as_list((doc.to_dict() or {}).get(field))
+        }
+        cached = (now, sorted(values))
+        _known_cache[field] = cached
+    return cached[1]
+
+
+def known_agencies(collection_ref: Any) -> list[str]:
+    """Distinct stored agency names, cached per instance for a few minutes."""
+    return _known_values(collection_ref, "agency")
+
+
+def known_planning_areas(collection_ref: Any) -> list[str]:
+    """Distinct stored planning area spellings, cached per instance for a few minutes."""
+    return _known_values(collection_ref, "planning_area")
 
 
 def matches(doc: dict[str, Any], filters: CatalogFilters) -> bool:
@@ -152,7 +180,7 @@ def _chunks(values: Sequence[str]) -> list[list[str]]:
     return [list(values[i : i + MAX_DISJUNCTION_VALUES]) for i in range(0, len(values), MAX_DISJUNCTION_VALUES)]
 
 
-def _candidate_filters(filters: CatalogFilters) -> list[FieldFilter]:
+def _candidate_filters(collection_ref: Any, filters: CatalogFilters) -> list[FieldFilter]:
     """Firestore filters for the most selective active filter; their results are unioned."""
     if filters.updated_since:
         since = filters.updated_since
@@ -167,10 +195,11 @@ def _candidate_filters(filters: CatalogFilters) -> list[FieldFilter]:
     if filters.agency:
         return [FieldFilter("agency", "in", chunk) for chunk in _chunks(filters.agency)]
     if filters.area:
-        # planning_area is a string on some schemes and a list on others.
+        # planning_area is a string on some schemes and a list on others, in any case.
+        areas = resolve_areas(filters.area, known_planning_areas(collection_ref))
         return [
-            *(FieldFilter("planning_area", "array_contains_any", chunk) for chunk in _chunks(filters.area)),
-            *(FieldFilter("planning_area", "in", chunk) for chunk in _chunks(filters.area)),
+            *(FieldFilter("planning_area", "array_contains_any", chunk) for chunk in _chunks(areas)),
+            *(FieldFilter("planning_area", "in", chunk) for chunk in _chunks(areas)),
         ]
     return [FieldFilter("scheme_type", "array_contains_any", chunk) for chunk in _chunks(filters.scheme_types)]
 
@@ -198,7 +227,7 @@ def get_filtered_results(
     projection = list(dict.fromkeys([*fields, "status", "last_scraped_update", "status_updated_at"]))
 
     candidates: dict[str, dict[str, Any]] = {}
-    for field_filter in _candidate_filters(filters):
+    for field_filter in _candidate_filters(collection_ref, filters):
         for doc in collection_ref.where(filter=field_filter).select(projection).stream():
             candidates.setdefault(doc.id, {"scheme_id": doc.id, **(doc.to_dict() or {})})
 

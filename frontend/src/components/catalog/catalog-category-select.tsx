@@ -106,6 +106,11 @@ function FilterList({
   size: "sm" | "lg";
 }) {
   const lg = size === "lg";
+  // Area rows keep the panel open, so a second tap can land before the first
+  // navigation commits. Building hrefs from the committed selection would drop
+  // the first area; this local copy updates on click. The list remounts each
+  // time the panel opens, so it starts from the committed selection.
+  const [areas, setAreas] = useState(selectedAreas);
 
   return (
     <div
@@ -139,8 +144,9 @@ function FilterList({
           <OptionRow
             lg={lg}
             label="All areas"
-            isSelected={selectedAreas.length === 0}
+            isSelected={areas.length === 0}
             href={getCatalogFilterHref(selectedCategories, [])}
+            onNavigate={() => setAreas([])}
           />
           {/* Area rows keep the panel open: the route stays the same, so
               several areas can be picked in one go. */}
@@ -149,11 +155,12 @@ function FilterList({
               key={area}
               lg={lg}
               label={formatPlanningArea(area)}
-              isSelected={selectedAreas.includes(area)}
+              isSelected={areas.includes(area)}
               href={getCatalogFilterHref(
                 selectedCategories,
-                toggleValue(selectedAreas, area),
+                toggleValue(areas, area),
               )}
+              onNavigate={() => setAreas(toggleValue(areas, area))}
             />
           ))}
         </>

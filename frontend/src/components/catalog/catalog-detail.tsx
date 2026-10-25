@@ -32,10 +32,7 @@ import { Search } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
 
 type CatalogLoadState =
-  | "loadingInitial"
-  | "ready"
-  | "loadingMore"
-  | "exhausted";
+  "loadingInitial" | "ready" | "loadingMore" | "exhausted";
 
 type CatalogPageClientProps = {
   initialCategory: CatalogCategory;
@@ -333,13 +330,15 @@ export default function CatalogPageClient({
             productPageContent (max-w-5xl) on purpose: that cap protects the
             65-75ch reading measure on prose pages, and a card grid has no prose
             to protect. Prose routes stay at 5xl. */}
-        <div className="mx-auto max-w-7xl flex-1 px-4 sm:px-6">
+        <div className="mx-auto min-w-0 max-w-7xl flex-1 px-4 sm:px-6">
           <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-4 pt-2 sm:pb-3">
             {/* The count reads first on desktop and the controls sit opposite
-                it; on mobile the controls come first, so the count stays
-                directly above the grid it describes. */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-              <h1 className="order-2 font-(--font-head) text-xl font-semibold text-(--schemes-blue-900) sm:order-none sm:text-2xl">
+                it; below lg the controls come first, so the count stays
+                directly above the grid it describes. Side by side needs lg:
+                long picker values leave a 640-1000px heading a few words wide
+                and push Search out of view. */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+              <h1 className="order-2 font-(--font-head) text-xl font-semibold text-(--schemes-blue-900) sm:text-2xl lg:order-none">
                 {isLoadingInitial ? (
                   <StatusTextShimmer>
                     {selectedCategories.length === 0 &&
@@ -360,16 +359,17 @@ export default function CatalogPageClient({
               </h1>
               {/* Mobile: category takes a full row, area and search share the
                   next, so neither picker is truncated or pushes search off
-                  screen. From sm up it is the original content-width row. */}
-              <div className="order-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:order-none sm:flex sm:shrink-0">
+                  screen. From sm up it is one content-width row whose pickers
+                  shrink and truncate before it overflows. */}
+              <div className="order-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex lg:order-none lg:shrink-0">
                 {/* Names the dimension: the h1 already states the active
                     category, so an unlabelled trigger reads as a badge. */}
                 <span className="hidden shrink-0 text-xs font-semibold uppercase tracking-wide text-(--schemes-muted) sm:inline">
                   Category
                 </span>
-                {/* Fills the row on mobile, content-width from sm up. Width
-                    rather than flex-basis: HeroUI's button base is w-fit, and a
-                    flex-1 basis of 0 fights it. */}
+                {/* Fills the row on mobile, content-width (capped) from sm up.
+                    Width rather than flex-basis: HeroUI's button base is w-fit,
+                    and a flex-1 basis of 0 fights it. */}
                 <Suspense fallback={null}>
                   <CatalogQueryReader
                     routeCategory={activeCategory}
@@ -379,14 +379,14 @@ export default function CatalogPageClient({
                 <CatalogCategorySelect
                   selectedCategories={selectedCategories}
                   selectedAreas={selectedAreas}
-                  className="col-span-2 w-full min-w-0 sm:w-auto"
+                  className="col-span-2 w-full min-w-0 sm:w-auto sm:max-w-64"
                 />
                 {/* The map pin names this dimension, so it needs no label. */}
                 <CatalogCategorySelect
                   kind="area"
                   selectedCategories={selectedCategories}
                   selectedAreas={selectedAreas}
-                  className="w-full min-w-0 sm:w-auto"
+                  className="w-full min-w-0 sm:w-auto sm:max-w-64"
                 />
                 <Link
                   href="/"
