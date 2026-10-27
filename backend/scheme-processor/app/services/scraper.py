@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 import requests
 from app.constants import BOT_PROTECTION_INDICATORS, CLOUDFLARE_INDICATORS
 from app.services.extraction import select_best_logo
+from app.services.cfemail import extract_cf_protected_emails
 from loguru import logger
 
 
@@ -159,6 +160,14 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
                     all_images.extend(images)
 
         scraped_text = "\n\n---PAGE BREAK---\n\n".join(all_text)
+
+        # Decode any Cloudflare-protected emails from raw HTML
+        for result in results:
+            if hasattr(result, 'html') and result.html:
+                cf_emails = extract_cf_protected_emails(result.html)
+                if cf_emails:
+                    scraped_text += "\n" + " ".join(cf_emails)
+
         logo_url = select_best_logo(all_images, url) if all_images else None
 
         return {"content": scraped_text, "images": all_images, "logo_url": logo_url, "error": None}
@@ -169,6 +178,13 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
         return {"content": "", "images": [], "logo_url": None, "error": error_msg}
 
     scraped_text = results.markdown or results.cleaned_html or ""
+
+    # Decode any Cloudflare-protected emails from raw HTML
+    if hasattr(results, 'html') and results.html:
+        cf_emails = extract_cf_protected_emails(results.html)
+        if cf_emails:
+            scraped_text += "\n" + " ".join(cf_emails)
+
     images = []
     logo_url = None
 
