@@ -213,6 +213,8 @@ def test_flagged_keeps_old_hashes_and_writes_record():
     assert record["status"] == "pending" and record["suggestions"] == [change]
     assert record["pages"] == [{"url": LINK, "change": "changed"}]
     assert record["review_input_truncated"] is False
+    # The new hashes travel with the flag, to be saved once a volunteer decides.
+    assert record["new_pages"] == baseline({LINK: "Age 65 and above"})
 
 
 def test_review_error_writes_nothing():

@@ -29,6 +29,8 @@ from firebase_functions import options, scheduler_fn
 from google.oauth2 import service_account
 from loguru import logger
 
+from batch_jobs.notion_content_review import push_flagged
+
 
 # URL for scheme-processor service
 # In local dev: http://scheme-processor:8081 (docker network)
@@ -312,6 +314,16 @@ def run_content_check_core(
 
         logger.info(f"Content check complete in {duration_seconds}s. Total: {total_count}. Outcomes: {outcomes}")
 
+        # Step 3: Queue flagged schemes for volunteer review in Notion (no-op without NOTION_* env)
+        notion_push: Dict[str, Any] = {}
+        check_ids = [f["check_id"] for f in flagged_schemes if f.get("check_id")]
+        if check_ids:
+            try:
+                notion_push = push_flagged(check_ids, db=db, now=now)
+            except Exception as e:
+                logger.error(f"Notion review push failed: {e}")
+                notion_push = {"error": str(e)}
+
         return {
             "success": True,
             "total_checked": total_count,
@@ -319,6 +331,7 @@ def run_content_check_core(
             "flagged_schemes": flagged_schemes,
             "failed_schemes": failed_schemes,
             "results": results,
+            "notion_push": notion_push,
             "duration_seconds": duration_seconds,
         }
 

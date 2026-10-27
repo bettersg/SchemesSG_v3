@@ -387,6 +387,8 @@ async def check_scheme(
         "review_input_truncated": cut,
         "suggestions": suggestions,
         "contact_check": contacts_gone,
+        # The hashes this check saw; saved on the scheme once a volunteer approves or rejects.
+        "new_pages": page_entries(new),
         "model": REVIEW_MODEL,
         "prompt_version": PROMPT_VERSION,
     }

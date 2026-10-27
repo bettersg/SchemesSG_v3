@@ -148,6 +148,29 @@ def test_run_content_check_core_with_scheme_ids(monkeypatch):
     assert result["failed_schemes"][0]["doc_id"] == "s5"
 
 
+def test_run_content_check_core_pushes_flagged_checks_to_notion(monkeypatch):
+    """Flagged schemes' contentChecks ids go to the Notion review push; a push error doesn't fail the job."""
+    results = {
+        "s1": {"scheme_id": "s1", "outcome": "flagged", "detail": "1 suggestion", "check_id": "chk-1"},
+        "s2": {"scheme_id": "s2", "outcome": "unchanged", "detail": None, "check_id": None},
+    }
+    monkeypatch.setattr(content_job, "check_single_scheme", lambda doc_id, *a, **k: results[doc_id])
+    pushed = []
+    monkeypatch.setattr(content_job, "push_flagged", lambda ids, **kwargs: pushed.append(ids) or {"created": 1})
+
+    result = content_job.run_content_check_core(db=FakeDb([]), scheme_ids=["s1", "s2"])
+    assert pushed == [["chk-1"]]
+    assert result["notion_push"] == {"created": 1}
+
+    def failing_push(ids, **kwargs):
+        raise RuntimeError("Notion down")
+
+    monkeypatch.setattr(content_job, "push_flagged", failing_push)
+    result = content_job.run_content_check_core(db=FakeDb([]), scheme_ids=["s1"])
+    assert result["success"] is True
+    assert result["notion_push"] == {"error": "Notion down"}
+
+
 def test_run_content_check_core_streams_from_firestore(monkeypatch):
     """When scheme_ids is omitted, schemes are streamed from db.collection('schemes')."""
     docs = [FakeDoc("s1"), FakeDoc("s2")]
