@@ -241,7 +241,6 @@ def run_content_check_core(
         flagged_schemes: List[Dict[str, Any]] = []
         failed_schemes: List[Dict[str, Any]] = []
         results: List[Dict[str, Any]] = []
-
         if total_count == 0:
             end_time = time.time()
             return {
@@ -255,7 +254,7 @@ def run_content_check_core(
             }
 
         # Step 2: Check schemes concurrently
-        max_workers = max(1, min(20, total_count))  # Cap at 20 concurrent requests
+        max_workers = max(1, min(4, total_count))  # Cap at 4 concurrent requests
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
                 executor.submit(

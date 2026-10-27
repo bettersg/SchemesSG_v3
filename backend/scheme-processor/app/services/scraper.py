@@ -11,6 +11,8 @@ import subprocess
 from typing import Any, Dict, List
 
 import requests
+import re
+from bs4 import BeautifulSoup
 from app.constants import BOT_PROTECTION_INDICATORS, CLOUDFLARE_INDICATORS
 from app.services.extraction import select_best_logo
 from loguru import logger
@@ -129,16 +131,16 @@ async def _try_crawl4ai(url: str, content_check: bool = False) -> Dict[str, Any]
         content_check_options = {}
         if content_check:
             from crawl4ai import DefaultMarkdownGenerator
-            from crawl4ai.content_filter_strategy import PruningContentFilter
+            from crawl4ai.content_filter_strategy import PruningContentFilterLXML
 
             # Pruning only adds markdown.fit_markdown; result.markdown stays the full page text.
             content_check_options = {
                 "delay_before_return_html": 2.0,
-                "markdown_generator": DefaultMarkdownGenerator(content_filter=PruningContentFilter()),
+                "markdown_generator": DefaultMarkdownGenerator(content_filter=PruningContentFilterLXML()),
             }
 
         crawl_config = CrawlerRunConfig(
-            deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=5),
+            deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=1 if content_check else 5),
             cache_mode=CacheMode.BYPASS,
             verbose=False,
             **content_check_options,
@@ -309,8 +311,9 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
 
             # Extract page content
             page_content = await _extract_pydoll_content(tab)
+            page_content = extract_meaningful_text(page_content)
 
-            if page_content and len(page_content) > 500:
+            if page_content and len(page_content) >= 300:
                 logger.info(f"Pydoll succeeded for {url}: {len(page_content)} chars")
                 images = _extract_images_from_html(page_content, url)
                 logo_url = select_best_logo(images, url) if images else None
@@ -421,3 +424,42 @@ def _extract_images_from_html(html: str, base_url: str) -> List[Dict]:
         images.append({"src": src, "alt": img.get("alt", ""), "desc": " ".join(desc_parts), "score": 0})
 
     return images
+
+
+def extract_meaningful_text(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Remove non-content elements
+    for tag in soup([
+        "script",
+        "style",
+        "noscript",
+        "iframe",
+        "svg",
+        "template",
+    ]):
+        tag.decompose()
+
+    # Remove hidden elements
+    for tag in soup.select(
+        '[hidden], [aria-hidden="true"], '
+        '[style*="display:none"], '
+        '[style*="display: none"], '
+        '[style*="visibility:hidden"], '
+        '[style*="visibility: hidden"]'
+    ):
+        tag.decompose()
+
+    # Prefer the main content region
+    main = (
+        soup.select_one("main")
+        or soup.select_one("article")
+        or soup.select_one(".main-content-wrapper")
+        or soup.body
+        or soup
+    )
+
+    text = main.get_text(separator=" ", strip=True)
+
+    return re.sub(r"\s+", " ", text).strip()
+
