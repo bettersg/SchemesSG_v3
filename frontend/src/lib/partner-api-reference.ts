@@ -81,7 +81,7 @@ export const OPERATIONS: ApiOperation[] = [
     method: "GET",
     path: `/${PARTNER_API_VERSION}/schemes`,
     summary:
-      "Page through active schemes. Pass at most one filter at a time. Results exclude retired and inactive schemes.",
+      "Page through active schemes. Filters combine (a scheme must match each one), and repeating a filter matches any of its values: ?category=Education&category=Financial%20Assistance&area=BEDOK. Results exclude retired and inactive schemes, except with updated_since.",
     paramsLabel: "query",
     params: [
       {
@@ -89,7 +89,7 @@ export const OPERATIONS: ApiOperation[] = [
         type: "string",
         required: false,
         description:
-          `One of: ${CATEGORIES.join(", ")}. Case-insensitive, but the name must match exactly — a slug such as "financial-assistance" is rejected. Cannot be combined with agency or area.`,
+          `One of: ${CATEGORIES.join(", ")}. Case-insensitive, but the name must match exactly — a slug such as "financial-assistance" is rejected. Repeat to match any of several categories.`,
         example: "Financial Assistance",
       },
       {
@@ -97,16 +97,24 @@ export const OPERATIONS: ApiOperation[] = [
         type: "string",
         required: false,
         description:
-          "Filter by the agency that runs the scheme. Cannot be combined with category or area.",
-        example: "MSF",
+          'Filter by the agency that runs the scheme. Case, punctuation and a bracketed abbreviation are ignored, so "Agency for Integrated Care" also matches "Agency for Integrated Care (AIC)". Repeat to match any of several agencies.',
+        example: "Agency for Integrated Care",
       },
       {
         name: "area",
         type: "string",
         required: false,
         description:
-          "Filter by planning area. Cannot be combined with category or agency.",
+          "Filter by planning area, case-insensitive. Repeat to match any of several areas.",
         example: "BEDOK",
+      },
+      {
+        name: "updated_since",
+        type: "string",
+        required: false,
+        description:
+          "ISO 8601 date or time; without an offset it is read as UTC. Returns only schemes whose updated_at is at or after it, including retired and inactive ones with their status, so an incremental sync can drop them. Combines with the other filters.",
+        example: "2026-10-01T00:00:00Z",
       },
       {
         name: "limit",
@@ -144,7 +152,8 @@ ${AUTH_HEADER_LINE}`,
       "service_area": "Nationwide",
       "planning_area": ["BEDOK", "TAMPINES"],
       "image": "https://.../comcare.png",
-      "status": "active"
+      "status": "active",
+      "updated_at": "2026-10-12T09:06:27.534414+00:00"
     }
   ],
   "next_cursor": "eyJkb2NfaWQiOiIwa1oy...",
@@ -166,7 +175,7 @@ ${AUTH_HEADER_LINE}`,
         type: "string",
         required: true,
         description:
-          "The scheme's id, as returned in scheme_id by list or search.",
+          "The scheme's id, as returned in scheme_id by list or search. Ids are stable and the same in the development and production APIs, so store them as your key.",
         example: "0kZ2mQ1xVbN4pR7t",
       },
     ],
@@ -180,7 +189,8 @@ ${AUTH_HEADER_LINE}`,
     "eligibility": "Singapore Citizen or PR, little or no income ...",
     "agency": "Ministry Of Social And Family Development",
     "link": "https://www.msf.gov.sg/...",
-    "status": "active"
+    "status": "active",
+    "updated_at": "2026-10-12T09:06:27.534414+00:00"
   }
 }`,
   },
@@ -256,8 +266,11 @@ export type SchemeField = {
  * document because they were written by different ingestion vintages. A partner
  * generating a typed client from the old list broke on the first page.
  *
- * Keys are always all 17 — `to_public_scheme` fills a missing value with null
+ * Keys are always all 18 — `to_public_scheme` fills a missing value with null
  * rather than dropping the key — so only the value types vary.
+ *
+ * `updated_at` is computed, not stored: the later of the last scrape and the last
+ * status change, or null when a scheme has neither.
  */
 export const SCHEME_FIELDS: SchemeField[] = [
   { name: "scheme_id", type: "string" },
@@ -277,6 +290,7 @@ export const SCHEME_FIELDS: SchemeField[] = [
   { name: "planning_area", type: "string | string[]" },
   { name: "image", type: "string" },
   { name: "status", type: "string" },
+  { name: "updated_at", type: "string | null" },
 ];
 
 export type ApiError = {
@@ -311,6 +325,9 @@ export const RETIRED_RESPONSE = `{
     "merged_into": "9fH1jK8sZxC5vB2n"
   }
 }`;
+
+export const SYNC_REQUEST = `curl "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes?updated_since=2026-10-01T00:00:00Z&limit=50" \\
+${AUTH_HEADER_LINE}`;
 
 export const RATE_LIMIT_HEADERS = [
   "X-RateLimit-Limit",

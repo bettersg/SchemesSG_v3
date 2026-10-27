@@ -15,9 +15,11 @@ test("deployed staging renders the landing and catalog routes without writes", a
   await page.getByRole("link", { name: "Catalog", exact: true }).first().click();
   await expect(page).toHaveURL(`${STAGING_ORIGIN}/catalog`);
   await expect(
-    page.getByRole("heading", { name: "Explore our schemes collection" }),
+    page.getByRole("heading", { level: 1, name: /All schemes/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Financial Assistance" }),
+    page
+      .locator("footer")
+      .getByRole("link", { name: "Financial Assistance", exact: true }),
   ).toBeVisible();
 });

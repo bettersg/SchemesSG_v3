@@ -27,6 +27,7 @@ import {
   RATE_LIMIT_HEADERS,
   RETIRED_RESPONSE,
   SCHEME_FIELDS,
+  SYNC_REQUEST,
   type ApiOperation,
 } from "@/lib/partner-api-reference";
 import {
@@ -67,6 +68,7 @@ export default function DevelopersPageContent() {
     { id: "fields", label: s.fields.heading },
     { id: "errors", label: s.errors.heading },
     { id: "rate-limits", label: s.rateLimits.heading },
+    { id: "sync", label: s.sync.heading },
     { id: "retired", label: s.retired.heading },
   ];
 
@@ -324,6 +326,22 @@ export default function DevelopersPageContent() {
                 </div>
               ))}
             </dl>
+          </Row>
+
+          <Row
+            id="sync"
+            heading={s.sync.heading}
+            code={
+              <CodeBlock
+                operation="sync"
+                language="cURL"
+                code={SYNC_REQUEST}
+                copyLabel={l.copy}
+                copiedLabel={l.copied}
+              />
+            }
+          >
+            <Body className={cn(BODY, PROSE)}>{s.sync.body}</Body>
           </Row>
 
           <Row

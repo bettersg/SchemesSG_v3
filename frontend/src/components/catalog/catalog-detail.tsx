@@ -1,12 +1,27 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getSchemesCategory } from "@/lib/schemes";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useSearchParams } from "next/navigation";
+import { getCatalogSchemes } from "@/lib/schemes";
 import type { CatalogPageData, Scheme } from "@/types/types";
 import { Skeleton, Spinner } from "@heroui/react";
 import Link from "next/link";
 import SchemeCard from "@/components/schemes/scheme-card";
 import { type CatalogCategory } from "@/lib/design-system/categories";
 import CatalogCategorySelect from "@/components/catalog/catalog-category-select";
+import {
+  type CatalogFilterState,
+  catalogFilterKey,
+  formatPlanningArea,
+  getSelectedCategories,
+  parseCatalogQuery,
+} from "@/lib/catalog-filters";
 import {
   productCard,
   productPageShell,
@@ -17,15 +32,33 @@ import { Search } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
 
 type CatalogLoadState =
-  | "loadingInitial"
-  | "ready"
-  | "loadingMore"
-  | "exhausted";
+  "loadingInitial" | "ready" | "loadingMore" | "exhausted";
 
 type CatalogPageClientProps = {
   initialCategory: CatalogCategory;
   initialData?: CatalogPageData;
 };
+
+const NO_EXTRA_FILTERS: CatalogFilterState = { categories: [], areas: [] };
+
+// Reads `?category=` / `?area=` on the client. Its own Suspense boundary keeps
+// the statically rendered page (and its first page of schemes) out of the
+// client-only bailout that useSearchParams triggers on a prerendered route.
+function CatalogQueryReader({
+  routeCategory,
+  onChange,
+}: {
+  routeCategory: CatalogCategory;
+  onChange: (filters: CatalogFilterState) => void;
+}) {
+  const searchParams = useSearchParams();
+  // null outside the App Router (e.g. component tests): no query, no extra filters.
+  const query = searchParams?.toString() ?? "";
+  useEffect(() => {
+    onChange(parseCatalogQuery(new URLSearchParams(query), routeCategory));
+  }, [query, routeCategory, onChange]);
+  return null;
+}
 
 function CatalogGridSkeleton() {
   return (
@@ -63,6 +96,31 @@ export default function CatalogPageClient({
   initialData,
 }: CatalogPageClientProps) {
   const activeCategory = initialCategory;
+  const [extraFilters, setExtraFilters] =
+    useState<CatalogFilterState>(NO_EXTRA_FILTERS);
+  const selectedCategories = useMemo(
+    () => getSelectedCategories(activeCategory, extraFilters.categories),
+    [activeCategory, extraFilters.categories],
+  );
+  const selectedAreas = extraFilters.areas;
+  // Lower-cased as the catalog has always been requested; the API ignores case.
+  const requestCategories = useMemo(
+    () => selectedCategories.map((category) => category.toLowerCase()),
+    [selectedCategories],
+  );
+  // The route's server read covers only the route's own category; anything in
+  // the query string needs a client read.
+  const hasExtraFilters =
+    extraFilters.categories.length > 0 || selectedAreas.length > 0;
+  const filterKey = catalogFilterKey(selectedCategories, selectedAreas);
+  const handleQueryChange = useCallback((next: CatalogFilterState) => {
+    setExtraFilters((prev) =>
+      catalogFilterKey(prev.categories, prev.areas) ===
+      catalogFilterKey(next.categories, next.areas)
+        ? prev
+        : next,
+    );
+  }, []);
   // The route hands over its server read, so hydration can render the first
   // page without fetching it again.
   const hasInitialData = initialData !== undefined;
@@ -105,9 +163,10 @@ export default function CatalogPageClient({
     hasUserScrolledRef.current = false;
     setLoadState("loadingMore");
 
-    const category =
-      activeCategory === "All" ? "" : activeCategory.toLowerCase();
-    getSchemesCategory(category, cursor)
+    getCatalogSchemes(
+      { categories: requestCategories, areas: selectedAreas },
+      cursor,
+    )
       .then((r) => {
         if (requestIdRef.current !== requestId) return;
         setSchemes((prev) => [...prev, ...r.schemes]);
@@ -120,7 +179,8 @@ export default function CatalogPageClient({
         }
       });
   }, [
-    activeCategory,
+    requestCategories,
+    selectedAreas,
     loadState,
     // searchQuery
   ]);
@@ -175,7 +235,7 @@ export default function CatalogPageClient({
     hasUserScrolledRef.current = false;
     scrollRef.current?.scrollTo({ top: 0 });
 
-    if (hasInitialData && initialData) {
+    if (hasInitialData && initialData && !hasExtraFilters) {
       setSchemes(initialData.schemes);
       setTotalCount(initialData.total);
       cursorRef.current = initialData.nextCursor;
@@ -186,16 +246,28 @@ export default function CatalogPageClient({
     cursorRef.current = "";
     setLoadState("loadingInitial");
     setTotalCount(null);
-    getSchemesCategory(
-      activeCategory === "All" ? "" : activeCategory.toLowerCase(),
-    ).then((r) => {
+    getCatalogSchemes({
+      categories: requestCategories,
+      areas: selectedAreas,
+    }).then((r) => {
       if (requestIdRef.current !== requestId) return;
       setSchemes(r.schemes);
       setTotalCount(r.total);
       cursorRef.current = r.nextCursor;
       setLoadState(r.nextCursor ? "ready" : "exhausted");
     });
-  }, [activeCategory, hasInitialData, initialData]);
+    // filterKey stands for selectedCategories and selectedAreas, which are
+    // fresh arrays on every query change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, hasInitialData, initialData]);
+
+  const heading =
+    (selectedCategories.length
+      ? selectedCategories.join(", ")
+      : "All schemes") +
+    (selectedAreas.length
+      ? ` in ${selectedAreas.map(formatPlanningArea).join(", ")}`
+      : "");
 
   // search feature (tbc)
   return (
@@ -258,22 +330,25 @@ export default function CatalogPageClient({
             productPageContent (max-w-5xl) on purpose: that cap protects the
             65-75ch reading measure on prose pages, and a card grid has no prose
             to protect. Prose routes stay at 5xl. */}
-        <div className="mx-auto max-w-7xl flex-1 px-4 sm:px-6">
+        <div className="mx-auto min-w-0 max-w-7xl flex-1 px-4 sm:px-6">
           <div className="sticky top-0 z-20 bg-(--schemes-bg) pb-4 pt-2 sm:pb-3">
             {/* The count reads first on desktop and the controls sit opposite
-                it; on mobile the controls come first, so the count stays
-                directly above the grid it describes. */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-              <h1 className="order-2 font-(--font-head) text-xl font-semibold text-(--schemes-blue-900) sm:order-none sm:text-2xl">
+                it; below lg the controls come first, so the count stays
+                directly above the grid it describes. Side by side needs lg:
+                long picker values leave a 640-1000px heading a few words wide
+                and push Search out of view. */}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+              <h1 className="order-2 font-(--font-head) text-xl font-semibold text-(--schemes-blue-900) sm:text-2xl lg:order-none">
                 {isLoadingInitial ? (
                   <StatusTextShimmer>
-                    {activeCategory === "All"
+                    {selectedCategories.length === 0 &&
+                    selectedAreas.length === 0
                       ? "Finding schemes across all categories..."
-                      : `Finding ${activeCategory} schemes...`}
+                      : `Finding ${heading} schemes...`}
                   </StatusTextShimmer>
                 ) : (
                   <>
-                    {activeCategory === "All" ? "All schemes" : activeCategory}
+                    {heading}
                     <span className="ml-2 align-middle text-sm font-semibold text-(--schemes-blue-600)">
                       {totalCount !== null && schemes.length < totalCount
                         ? `(${schemes.length} of ${totalCount})`
@@ -282,18 +357,36 @@ export default function CatalogPageClient({
                   </>
                 )}
               </h1>
-              <div className="order-1 flex shrink-0 items-center gap-2 sm:order-none">
+              {/* Mobile: category takes a full row, area and search share the
+                  next, so neither picker is truncated or pushes search off
+                  screen. From sm up it is one content-width row whose pickers
+                  shrink and truncate before it overflows. */}
+              <div className="order-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex lg:order-none lg:shrink-0">
                 {/* Names the dimension: the h1 already states the active
                     category, so an unlabelled trigger reads as a badge. */}
-                <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-(--schemes-muted)">
+                <span className="hidden shrink-0 text-xs font-semibold uppercase tracking-wide text-(--schemes-muted) sm:inline">
                   Category
                 </span>
-                {/* Fills the row on mobile, content-width from sm up. Width
-                    rather than flex-basis: HeroUI's button base is w-fit, and a
-                    flex-1 basis of 0 fights it. */}
+                {/* Fills the row on mobile, content-width (capped) from sm up.
+                    Width rather than flex-basis: HeroUI's button base is w-fit,
+                    and a flex-1 basis of 0 fights it. */}
+                <Suspense fallback={null}>
+                  <CatalogQueryReader
+                    routeCategory={activeCategory}
+                    onChange={handleQueryChange}
+                  />
+                </Suspense>
                 <CatalogCategorySelect
-                  activeCategory={activeCategory}
-                  className="w-full sm:w-auto"
+                  selectedCategories={selectedCategories}
+                  selectedAreas={selectedAreas}
+                  className="col-span-2 w-full min-w-0 sm:w-auto sm:max-w-64"
+                />
+                {/* The map pin names this dimension, so it needs no label. */}
+                <CatalogCategorySelect
+                  kind="area"
+                  selectedCategories={selectedCategories}
+                  selectedAreas={selectedAreas}
+                  className="w-full min-w-0 sm:w-auto sm:max-w-64"
                 />
                 <Link
                   href="/"
