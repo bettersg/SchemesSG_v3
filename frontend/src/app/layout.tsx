@@ -1,40 +1,39 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import {
-  Open_Sans,
-  Lexend,
-  Plus_Jakarta_Sans,
-  DM_Serif_Display,
-} from "next/font/google";
 import React from "react";
 import "@/globals.css";
 import { AppProviders } from "@/providers";
 import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
-const openSans = Open_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+// The Google Fonts latin files, kept in the repo. `next/font/google` downloads
+// them on every dev start and build, and a failed download silently swaps in
+// the fallback font.
+const openSans = localFont({
+  src: "../assets/fonts/OpenSansVF-latin.woff2",
+  weight: "300 600",
   variable: "--font-body",
   preload: false,
 });
 
-const lexend = Lexend({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const lexend = localFont({
+  src: "../assets/fonts/LexendVF-latin.woff2",
+  weight: "400 800",
   variable: "--font-head",
   preload: false,
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+const plusJakartaSans = localFont({
+  src: "../assets/fonts/PlusJakartaSansVF-latin.woff2",
+  weight: "200 800",
   variable: "--font-sans",
   preload: false,
 });
 
-const dmSerifDisplay = DM_Serif_Display({
+const dmSerifDisplay = localFont({
+  src: "../assets/fonts/DMSerifDisplay-latin.woff2",
   weight: "400",
-  subsets: ["latin"],
   variable: "--font-serif",
+  adjustFontFallback: "Times New Roman",
   preload: false,
 });
 
