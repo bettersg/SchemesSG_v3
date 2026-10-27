@@ -51,13 +51,13 @@ jobs:
         run: |
           lane_started_at=$(date +%s)
           set +e
-          timeout -s INT --kill-after=10s 120s npm run test:e2e:nightly -- --project="$BROWSER"
+          timeout -s INT --kill-after=10s 180s npm run test:e2e:nightly -- --project="$BROWSER"
           lane_status=$?
           set -e
           lane_duration=$(( $(date +%s) - lane_started_at ))
-          echo "Nightly ${BROWSER} smoke: ${lane_duration}s / 120s" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Nightly ${BROWSER} smoke: ${lane_duration}s / 180s" | tee -a "$GITHUB_STEP_SUMMARY"
           if [ "$lane_status" -eq 124 ] || [ "$lane_status" -eq 137 ]; then
-            echo "::error title=Cross-browser runtime budget exceeded::${BROWSER} smoke reached the 120s limit. Run 'npm run test:e2e:nightly -- --project=${BROWSER}' in frontend."
+            echo "::error title=Cross-browser runtime budget exceeded::${BROWSER} smoke reached the 180s limit. Run 'npm run test:e2e:nightly -- --project=${BROWSER}' in frontend."
             exit 1
           fi
           if [ "$lane_status" -ne 0 ]; then

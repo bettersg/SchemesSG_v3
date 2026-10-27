@@ -43,9 +43,16 @@ describe("nightly browser controls", () => {
     expect(workflow).not.toContain("secrets.");
     // SIGINT, not timeout's default SIGTERM: Playwright only prints its failure
     // report when interrupted, so a budget overrun still shows the assertions.
+    // Cross-browser lanes get 180s: a clean WebKit run under `next dev` takes
+    // up to ~117s, so 120s left no room for a single retry.
+    expect(
+      workflow.match(
+        /timeout -s INT --kill-after=10s 180s npm run test:e2e:nightly/g,
+      ),
+    ).toHaveLength(1);
     expect(
       workflow.match(/timeout -s INT --kill-after=10s 120s/g),
-    ).toHaveLength(3);
+    ).toHaveLength(2);
     expect(workflow).toContain("Staging availability/configuration failed");
     expect(workflow).toContain("Staging product assertions failed");
     const errorAnnotations = workflow
