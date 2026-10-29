@@ -229,9 +229,24 @@ def _paragraph_text(label: str, value: str) -> List[dict]:
 def review_blocks(
     scheme: Dict[str, Any], changes: Dict[str, Dict[str, Any]], contact_check: List[Dict[str, Any]]
 ) -> List[dict]:
-    """Row body: one ✏️ box per changed field (previous value + source), a note for contacts gone
-    from the site that are not in the phone/email fields, then a how-to note."""
-    blocks = []
+    """Row body: a how-to note, a note for contacts gone from the site that are not in the
+    phone/email fields, then one ✏️ box per changed field (new value, old value, source)."""
+    blocks = [
+        {
+            "type": "callout",
+            "callout": {
+                "icon": {"type": "emoji", "emoji": "ℹ️"},
+                "color": "gray_background",
+                "rich_text": rich_text(
+                    "Fields marked ✏️ already show the AI's new value. Compare each with its box below: to keep "
+                    "the old value, copy it back into the field. Fix any other field you notice. New in the box "
+                    "is what the AI suggested; if you edit the field, the field is what gets saved. Then set "
+                    "Status to Approved (saves all fields) or Rejected (SchemesSG stays as it was). Text in "
+                    "this section is not saved."
+                ),
+            },
+        }
+    ]
     unlisted = [e["contact"] for e in contact_check if not ({"phone", "email"} & changes.keys())]
     if unlisted:
         blocks.append(
@@ -250,7 +265,9 @@ def review_blocks(
     for field in FIELD_COLUMNS.values():
         if field not in changes:
             continue
-        previous = _as_text(stored_value(scheme, field)) or "(empty)"
+        new = changes[field]["new_value"]
+        new = _as_text(allowed_tags(field, new) if field in LIST_FIELDS else new) or "(empty)"
+        old = _as_text(stored_value(scheme, field)) or "(empty)"
         source = changes[field].get("page_url") or scheme.get("link") or ""
         blocks.append(
             {
@@ -264,7 +281,8 @@ def review_blocks(
                             "text": {"content": f"{FIELD_TO_COLUMN[field]}: changed by AI\n"},
                             "annotations": {"bold": True},
                         },
-                        *_paragraph_text("↩️ Previous: ", previous + "\n"),
+                        *_paragraph_text("🆕 New: ", new + "\n"),
+                        *_paragraph_text("↩️ Old: ", old + "\n"),
                         {"type": "text", "text": {"content": "🔗 Source: "}, "annotations": {"bold": True}},
                         {
                             "type": "text",
@@ -274,21 +292,6 @@ def review_blocks(
                 },
             }
         )
-    blocks.append(
-        {
-            "type": "callout",
-            "callout": {
-                "icon": {"type": "emoji", "emoji": "ℹ️"},
-                "color": "gray_background",
-                "rich_text": rich_text(
-                    "Fields marked ✏️ already show the AI's new value. Compare each with its box: to keep the "
-                    "previous value, copy it back into the field. Fix any other field you notice. Then set "
-                    "Status to Approved (saves all fields) or Rejected (SchemesSG stays as it was). Text in "
-                    "this section is not saved."
-                ),
-            },
-        }
-    )
     return blocks
 
 

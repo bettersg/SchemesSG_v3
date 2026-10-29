@@ -156,7 +156,7 @@ def sweep(db, notion, now=NOW + timedelta(days=3)):
 #### Monthly push
 
 
-def test_push_creates_row_with_new_value_prefilled_and_previous_in_box():
+def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     db, notion = setup()
     flag(db)
     assert push(db, notion) == {"created": 1, "updated": 0, "skipped_approved": 0, "failed": 0}
@@ -169,7 +169,9 @@ def test_push_creates_row_with_new_value_prefilled_and_previous_in_box():
     assert row["Changed by AI"] == ["Eligibility"]
     assert (row["Status"], row["Scheme ID"], row["Check ID"]) == ("Pending", "s1", "check-1")
     body = notion.body_text("page-1")
-    assert "🎯 Eligibility: changed by AI" in body and "Citizens aged 65 and above." in body and LINK in body
+    assert body.startswith("Fields marked ✏️")  # how-to note first, right under the fields
+    assert "🎯 Eligibility: changed by AI" in body and LINK in body
+    assert "🆕 New: Citizens and PRs aged 60 and above.\n↩️ Old: Citizens aged 65 and above." in body
     record = db.get_document("contentChecks", "check-1")
     assert (record["notion_page_id"], record["pushed_at"]) == ("page-1", NOW)
 
