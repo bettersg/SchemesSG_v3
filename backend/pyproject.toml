@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
     # Keep runtime dependencies in sync with functions/requirements.txt.
+    "beautifulsoup4==4.13.2",
     "ddgs>=9.6.1",
     "firebase-admin>=6.0.0",
     "firebase-functions~=0.5.0",
