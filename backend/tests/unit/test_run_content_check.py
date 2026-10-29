@@ -92,8 +92,8 @@ def test_check_single_scheme_via_processor(monkeypatch):
 
 
 def test_check_single_scheme_raises_when_no_scraper(monkeypatch):
-    """check_single_scheme raises ValueError when scrape_fn and default_scrape are None."""
-    monkeypatch.setattr(content_job, "default_scrape", None)
+    """check_single_scheme raises ValueError when scrape_fn and scrape_url are None."""
+    monkeypatch.setattr(content_job, "scrape_url", None)
     monkeypatch.setattr(content_job, "PROCESSOR_SERVICE_URL", "")
     mock_store = MagicMock()
 

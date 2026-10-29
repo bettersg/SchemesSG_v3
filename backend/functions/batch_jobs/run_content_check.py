@@ -42,8 +42,8 @@ _scheme_processor_dir = str(Path(__file__).resolve().parents[2] / "scheme-proces
 if _scheme_processor_dir not in sys.path:
     sys.path.insert(0, _scheme_processor_dir)
 
-from app.content_check import ContentStore, check_scheme
-from app.services.scraper import scrape_url
+from app.content_check import ContentStore, check_scheme  # noqa: E402
+from app.services.scraper import scrape_url  # noqa: E402
 
 
 def get_identity_token(audience: str) -> str:
@@ -173,7 +173,7 @@ def check_single_scheme(
     if store is None:
         store = ContentStore(get_firestore_client())
 
-    scrape = scrape_url
+    scrape = scrape_fn or scrape_url
     if scrape is None:
         raise ValueError("No scraper function available for content check")
 
