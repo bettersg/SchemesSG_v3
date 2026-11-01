@@ -115,7 +115,7 @@ the query **from each scheme's description, not its category tag**.
 
 Why "not the category tag" matters — the circularity trap:
 `scheme_type` is **concatenated into the text that gets embedded**
-(`scripts/populate_embeddings.py::build_desc_booster` includes `scheme_type`). So
+(`functions/utils/reindex_embeddings.py::build_desc_booster` includes `scheme_type`). So
 "a scheme is relevant iff it carries category X" is *partly circular* — you're
 asking the embedding to find schemes whose embedded text literally contains X.
 That inflates precision. The gold set is judged independently of both the tag and
