@@ -8,7 +8,7 @@ Two relevance signals per query, kept separate:
    `gold_relevant` is a hand-picked set of scheme_ids that a caseworker would
    consider genuinely on-target for the query, judged from each scheme's
    DESCRIPTION — NOT from its category tag. This matters because `scheme_type`
-   is concatenated into the text that gets embedded (see populate_embeddings.py
+   is concatenated into the text that gets embedded (see utils/reindex_embeddings.py
    `build_desc_booster`), so category-match relevance is partly circular. The
    gold set is judged independently of both the tag and the ranking, so metrics
    over it are not circular. It is deliberately small and precise.
