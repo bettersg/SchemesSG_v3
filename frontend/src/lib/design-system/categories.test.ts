@@ -54,4 +54,14 @@ describe("NCSS-aligned (v2) scheme types", () => {
     );
     expect(getSchemeCategory("Elderly")).toBe("Seniors & Caregiving");
   });
+
+  it("maps the NCSS v1.1 split of Child and Youth Services", () => {
+    for (const type of [
+      "Fostering and alternative care",
+      "Youth development",
+      "Child and youth emotional support",
+    ]) {
+      expect(getSchemeCategory(type)).toBe("Family & Children");
+    }
+  });
 });
