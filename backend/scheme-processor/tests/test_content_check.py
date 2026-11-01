@@ -295,6 +295,7 @@ def test_filter_drops_contacts_copy_backs_and_unknown_fields():
         {"field": "phone", "new_value": "6999 8888"},
         {"field": "eligibility", "new_value": "age 60 and above"},  # same words: copy-back
         {"field": "not_a_field", "new_value": "x"},
+        {"field": "who_is_it_for", "new_value": ["Seniors"]},  # tags belong to the taxonomy tagger
         "not a dict",
         {"field": "summary", "new_value": "Helps seniors and caregivers"},
     ]

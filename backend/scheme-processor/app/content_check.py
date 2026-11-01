@@ -49,8 +49,9 @@ SKIP_STATUSES = ("inactive", "retired")
 MAX_REVIEW_CHARS = 200_000
 
 REVIEW_MODEL = "gpt-5.4-mini"
-PROMPT_VERSION = "v4-pages"
+PROMPT_VERSION = "v5-no-tags"
 # Fields the reviewer sees and may update: the extractor's content fields plus regex phone/email.
+# Taxonomy tags are left out: the taxonomy tagger owns them, and volunteers can still edit them in Notion.
 CONTENT_FIELDS = (
     "llm_description",
     "summary",
@@ -60,9 +61,6 @@ CONTENT_FIELDS = (
     "address",
     "phone",
     "email",
-    "who_is_it_for",
-    "what_it_gives",
-    "scheme_type",
     "service_area",
     "search_booster",
 )
