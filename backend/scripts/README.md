@@ -6,7 +6,9 @@ This document covers all utility scripts for the SchemesSG backend.
 
 | Script | Location | Purpose | When to Use |
 |--------|----------|---------|-------------|
-| `populate_embeddings.py` | `functions/scripts/` | Initial vector embeddings setup | **One-time** per environment |
+| `populate_embeddings.py` | `functions/scripts/` | Rebuild vector embeddings (same as the weekly reindex) | First setup, or after a bulk data change |
+| `firestore_peek.py` | `functions/scripts/` | Read-only document lookup, JSON lines | Before any data fix; checking pipeline entries |
+| `patch_schemes.py` | `functions/scripts/` | Guarded field corrections with backup and restore | Content corrections (see `docs/data-changes.md`) |
 | `test_vector_search.py` | `functions/scripts/` | Test vector search queries | Development/debugging |
 | `scan_duplicate_schemes.py` | `functions/scripts/` | Read-only duplicate cluster report | Human triage |
 | `run_link_check_and_reindex.py` | `functions/scripts/` | Manual link check + reindex | Ad-hoc maintenance |
