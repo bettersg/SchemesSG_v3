@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from batch_jobs import notion_content_review as review
 from batch_jobs.notion_client import NotionClient, decode_row
 
@@ -22,6 +23,7 @@ class FakeNotion(NotionClient):
     def __init__(self):
         self.pages = {}
         self.children = {}
+        self.schema = {}
         self.trashed = []
         self.calls = []
 
@@ -40,6 +42,9 @@ class FakeNotion(NotionClient):
                 "has_more": more,
                 "next_cursor": str(start + 2) if more else None,
             }
+        if method == "PATCH" and parts[1] == "data_sources":
+            self.schema.update(deepcopy(body["properties"]))
+            return {}
         if method == "POST" and path == "/pages":
             page_id = f"page-{len(self.pages) + 1}"
             self.pages[page_id] = {"id": page_id, "parent": body["parent"]["data_source_id"], "properties": {}}
@@ -159,7 +164,7 @@ def sweep(db, notion, now=NOW + timedelta(days=3)):
 def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     db, notion = setup()
     flag(db)
-    assert push(db, notion) == {"created": 1, "updated": 0, "skipped_approved": 0, "failed": 0}
+    assert push(db, notion) == {"created": 1, "updated": 0, "skipped_decided": 0, "failed": 0}
 
     row = notion.row("page-1")
     assert row[C["eligibility"]] == "Citizens and PRs aged 60 and above."  # AI's new value
@@ -174,6 +179,52 @@ def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     assert "🆕 New: Citizens and PRs aged 60 and above.\n↩️ Old: Citizens aged 65 and above." in body
     record = db.get_document("contentChecks", "check-1")
     assert (record["notion_page_id"], record["pushed_at"]) == ("page-1", NOW)
+
+
+def test_push_shows_old_vocabulary_tags_translated():
+    db, notion = setup(scheme_type=["Financial Assistance", "Legal Aid"])
+    flag(db)
+    push(db, notion)
+
+    row = notion.row("page-1")
+    assert row[C["scheme_type"]] == ["Financial Assistance"]
+    assert row[C["what_it_gives"]] == ["Financial assistance (general)", "Legal aid and services"]  # moved field
+
+
+def test_push_shows_when_the_listing_was_last_updated_in_either_stored_form():
+    db, notion = setup(last_scraped_update=datetime(2025, 3, 4, 2, 0, tzinfo=timezone.utc))
+    db.seed("schemes", "s2", scheme(last_scraped_update={"_seconds": 1700000000, "_nanoseconds": 0}))  # old import
+    flag(db)
+    flag(db, "check-2", scheme_id="s2")
+    push(db, notion, ["check-1", "check-2"])
+
+    assert notion.row("page-1")["Last updated"] == "2025-03-04"  # listing date, not the push date
+    assert notion.row("page-2")["Last updated"] == "2023-11-14"
+
+
+def test_push_sets_tag_dropdowns_to_the_allowed_lists_without_commas():
+    db, notion = setup()
+    flag(db)
+    push(db, notion)
+
+    for field, allowed in review.TAG_OPTIONS.items():
+        options = [o["name"] for o in notion.schema[C[field]]["multi_select"]["options"]]
+        assert options == [review.notion_option(tag) for tag in allowed]
+        assert not any("," in option for option in options)  # Notion rejects commas in option names
+
+
+def test_comma_tag_shows_with_slashes_in_notion_and_saves_with_commas():
+    tag = "Benefits and perks for PWDs (transport, discounts, facilities)"
+    db, notion = setup(what_it_gives=[tag])
+    flag(db)
+    push(db, notion)
+    assert notion.row("page-1")[C["what_it_gives"]] == [
+        "Benefits and perks for PWDs (transport / discounts / facilities)"
+    ]
+
+    notion.set_values("page-1", Status="Approved")
+    sweep(db, notion)
+    assert db.get_document("schemes", "s1")["what_it_gives"] == [tag]
 
 
 def test_push_refreshes_pending_row_and_deletes_replaced_check():
@@ -197,14 +248,16 @@ def test_push_refreshes_pending_row_and_deletes_replaced_check():
     assert db.get_document("contentChecks", "check-2")["notion_page_id"] == "page-1"
 
 
-def test_push_leaves_approved_row_for_the_sweep():
+@pytest.mark.parametrize("status", ["Approved", "Rejected"])
+def test_push_leaves_decided_row_for_the_sweep(status):
     db, notion = setup()
     flag(db)
     push(db, notion)
-    notion.set_values("page-1", Status="Approved", **{C["eligibility"]: "Volunteer text"})
+    notion.set_values("page-1", Status=status, **{C["eligibility"]: "Volunteer text"})
     flag(db, "check-2")
 
-    assert push(db, notion, ["check-2"])["skipped_approved"] == 1
+    assert push(db, notion, ["check-2"])["skipped_decided"] == 1
+    assert notion.row("page-1")["Status"] == status
     assert notion.row("page-1")[C["eligibility"]] == "Volunteer text"
     assert "notion_page_id" not in db.get_document("contentChecks", "check-2")
 
@@ -279,6 +332,7 @@ def test_approved_row_writes_every_field_and_new_hashes_then_trashes_row():
     assert saved["who_is_it_for"] == ["Seniors", "Caregivers"]  # tags not on the allowed list dropped
     assert saved["service_area"] == "Islandwide"
     assert saved["content_pages"] == NEW_PAGES
+    assert saved["last_scraped_update"] == NOW + timedelta(days=3)  # website "Last updated" = approval time
     record = db.get_document("contentChecks", "check-1")
     assert (record["status"], record["decided_by"]) == ("approved", "Alex Tan")
     assert record["expires_at"] > record["decided_at"]
@@ -295,6 +349,7 @@ def test_rejected_row_keeps_fields_but_saves_new_hashes():
     saved = db.get_document("schemes", "s1")
     assert saved["eligibility"] == "Citizens aged 65 and above."  # AI's value not applied
     assert saved["content_pages"] == NEW_PAGES  # same change won't flag again
+    assert saved["last_scraped_update"] == NOW + timedelta(days=3)  # reviewed: listing confirmed as is
     assert db.get_document("contentChecks", "check-1")["status"] == "rejected"
     assert notion.trashed == ["page-1"]
 

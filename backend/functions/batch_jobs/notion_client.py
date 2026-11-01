@@ -76,6 +76,10 @@ class NotionClient:
             body["children"] = children
         return self._call("POST", "/pages", body)
 
+    def update_data_source(self, data_source_id: str, properties: dict) -> dict:
+        """Change column settings, e.g. a multi_select column's options."""
+        return self._call("PATCH", f"/data_sources/{data_source_id}", {"properties": properties})
+
     def update_page(self, page_id: str, properties: dict) -> dict:
         return self._call("PATCH", f"/pages/{page_id}", {"properties": properties})
 

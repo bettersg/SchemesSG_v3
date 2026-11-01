@@ -12,6 +12,8 @@ Two jobs, both plain Notion API calls (no Notion AI):
    to Firestore, recorded on their ``contentChecks`` record, then moved to Notion's trash.
    - Approved: every field in the row is written to the scheme, plus the new page hashes.
    - Rejected: only the new page hashes are saved, so the same change is not flagged again.
+   - Both: last_scraped_update (the website's "Last updated") becomes the decision time, since a
+     volunteer has confirmed the listing.
    - Scheme retired, or replaced through a Slack update since the push: nothing is written.
    A row whose Firestore write fails stays in Notion and is retried next hour.
 
@@ -28,6 +30,8 @@ from fb_manager.firebaseManager import get_firestore_client
 from firebase_functions import options, scheduler_fn
 from loguru import logger
 from new_scheme.constants import SCHEME_TYPE, WHAT_IT_GIVES, WHO_IS_IT_FOR
+from new_scheme.taxonomy import translate_legacy
+from utils.catalog_filtering import as_datetime
 
 from batch_jobs.notion_client import NotionClient, decode_row, encode_properties, rich_text
 
@@ -98,12 +102,17 @@ COLUMN_TYPES = {
 }
 COLUMN_TYPES.update({column: "rich_text" for column in FIELD_COLUMNS if column not in COLUMN_TYPES})
 # Tag fields only take these options; anything else a volunteer adds is dropped on write.
-ALLOWED_OPTIONS = {
-    "who_is_it_for": set(WHO_IS_IT_FOR),
-    "what_it_gives": set(WHAT_IT_GIVES),
-    "scheme_type": set(SCHEME_TYPE),
-}
+TAG_OPTIONS = {"who_is_it_for": WHO_IS_IT_FOR, "what_it_gives": WHAT_IT_GIVES, "scheme_type": SCHEME_TYPE}
+ALLOWED_OPTIONS = {field: set(tags) for field, tags in TAG_OPTIONS.items()}
 LIST_FIELDS = tuple(ALLOWED_OPTIONS)
+
+
+def notion_option(tag: str) -> str:
+    """Notion option names can't contain commas, so "a, b" shows as "a / b"."""
+    return tag.replace(", ", " / ").replace(",", " / ")
+
+
+NOTION_TO_TAG = {notion_option(tag): tag for tags in TAG_OPTIONS.values() for tag in tags}
 
 
 def notion_config() -> Optional[Dict[str, str]]:
@@ -129,20 +138,11 @@ def _as_text(value: Any) -> str:
     return ", ".join(_as_list(value)) if isinstance(value, (list, tuple)) else str(value or "")
 
 
-def _as_datetime(value: Any) -> Optional[datetime]:
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    if isinstance(value, str):
-        try:
-            return _as_datetime(datetime.fromisoformat(value.replace("Z", "+00:00")))
-        except ValueError:
-            return None
-    return None
-
-
 def allowed_tags(field: str, value: Any) -> List[str]:
-    """A tag field's options that are on the allowed list (new_scheme/constants.py), in order."""
-    return [option for option in _as_list(value) if option in ALLOWED_OPTIONS[field]]
+    """A tag field's options that are on the allowed list (new_scheme/constants.py), in order.
+    Accepts Firestore names or Notion's comma-free names."""
+    tags = (NOTION_TO_TAG.get(option, option) for option in _as_list(value))
+    return [tag for tag in tags if tag in ALLOWED_OPTIONS[field]]
 
 
 def stored_value(scheme: Dict[str, Any], field: str) -> Any:
@@ -202,19 +202,24 @@ def row_properties(
     check_id: str,
     scheme: Dict[str, Any],
     changes: Dict[str, Dict[str, Any]],
-    today: str,
 ) -> Dict[str, Any]:
-    """Plain row values: every field pre-filled, changed fields holding the new value."""
+    """Plain row values: every field pre-filled, changed fields holding the new value.
+    "Last updated" is when the listing was last saved (the website's "Last updated"), so the
+    review board can sort the stalest listings first."""
+    listed = as_datetime(scheme.get("last_scraped_update"))
     values: Dict[str, Any] = {}
     for column, field in FIELD_COLUMNS.items():
         value = changes[field]["new_value"] if field in changes else stored_value(scheme, field)
         # Tag fields show only allowed options, so the row holds exactly what an approval saves.
-        values[column] = allowed_tags(field, value) if field in LIST_FIELDS else _as_text(value)
+        if field in LIST_FIELDS:
+            values[column] = [notion_option(tag) for tag in allowed_tags(field, value)]
+        else:
+            values[column] = _as_text(value)
     values.update(
         {
             "Status": STATUS_PENDING,
             "Changed by AI": [FIELD_LABELS[field] for field in FIELD_COLUMNS.values() if field in changes],
-            "Last updated": today,
+            "Last updated": listed.date().isoformat() if listed else None,
             "Scheme ID": scheme_id,
             "Check ID": check_id,
         }
@@ -309,6 +314,18 @@ def existing_rows(notion: NotionClient, data_source: str) -> Dict[str, Dict[str,
     return rows
 
 
+def sync_tag_options(notion: NotionClient, data_source: str) -> None:
+    """Set the tag columns' dropdowns to exactly the allowed lists, so volunteers only see tags
+    an approval saves. Runs at the start of every push, so taxonomy updates reach Notion."""
+    notion.update_data_source(
+        data_source,
+        {
+            FIELD_TO_COLUMN[field]: {"multi_select": {"options": [{"name": notion_option(tag)} for tag in tags]}}
+            for field, tags in TAG_OPTIONS.items()
+        },
+    )
+
+
 def push_flagged(
     check_ids: List[str],
     db=None,
@@ -324,8 +341,12 @@ def push_flagged(
     db = db or get_firestore_client()
     notion = notion or NotionClient(cfg["token"])
     now = now or datetime.now(timezone.utc)
-    counts = {"created": 0, "updated": 0, "skipped_approved": 0, "failed": 0}
+    counts = {"created": 0, "updated": 0, "skipped_decided": 0, "failed": 0}
 
+    try:
+        sync_tag_options(notion, cfg["data_source"])
+    except Exception as e:
+        logger.error(f"Notion tag dropdown sync failed (push continues): {e}")
     rows = existing_rows(notion, cfg["data_source"])
     for check_id in check_ids:
         try:
@@ -334,16 +355,16 @@ def push_flagged(
                 raise ValueError(f"contentChecks/{check_id} not found")
             scheme_id = record["scheme_id"]
             scheme = db.collection(SCHEMES).document(scheme_id).get().to_dict() or {}
+            # Old-vocabulary tags shown in today's terms (some move field); approving saves them that way.
+            scheme.update(translate_legacy({field: _as_list(scheme.get(field)) for field in LIST_FIELDS}))
             changes = suggested_changes(scheme, record)
-            props = encode_properties(
-                row_properties(scheme_id, check_id, scheme, changes, now.date().isoformat()), COLUMN_TYPES
-            )
+            props = encode_properties(row_properties(scheme_id, check_id, scheme, changes), COLUMN_TYPES)
             blocks = review_blocks(scheme, changes, record.get("contact_check") or [])
             row = rows.get(scheme_id)
-            if row and row["status"] == STATUS_APPROVED:
-                # The hourly sweep is about to apply it; the next monthly check catches anything newer.
-                logger.warning(f"Notion row for {scheme_id} is Approved; not refreshed with check {check_id}")
-                counts["skipped_approved"] += 1
+            if row and row["status"] in (STATUS_APPROVED, STATUS_REJECTED):
+                # The hourly sweep is about to apply the verdict; the next monthly check catches anything newer.
+                logger.warning(f"Notion row for {scheme_id} is {row['status']}; not refreshed with check {check_id}")
+                counts["skipped_decided"] += 1
                 continue
             batch = db.batch()
             if row:
@@ -392,7 +413,7 @@ def approved_update(values: Dict[str, Any], scheme: Dict[str, Any]) -> Dict[str,
 def replaced_since_push(scheme: Dict[str, Any], record: Dict[str, Any]) -> bool:
     """True when a Slack update-in-place (dead-link replacement) was approved after the push:
     the volunteer reviewed the old site."""
-    approved_at, pushed_at = _as_datetime(scheme.get("approved_at")), _as_datetime(record.get("pushed_at"))
+    approved_at, pushed_at = as_datetime(scheme.get("approved_at")), as_datetime(record.get("pushed_at"))
     return bool(approved_at and pushed_at and approved_at > pushed_at)
 
 
@@ -430,7 +451,12 @@ def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple
         check_ref.update(decision)
         return outcome, detail
 
-    scheme_update: Dict[str, Any] = {"content_pages": record.get("new_pages") or scheme.get("content_pages") or []}
+    # Approved or Rejected, a volunteer has confirmed the listing, so the website's "Last updated"
+    # (last_scraped_update, as a Slack approval sets it) becomes the decision time.
+    scheme_update: Dict[str, Any] = {
+        "content_pages": record.get("new_pages") or scheme.get("content_pages") or [],
+        "last_scraped_update": now,
+    }
     if outcome == "approved":
         scheme_update.update(approved_update(values, scheme))
     batch = db.batch()
