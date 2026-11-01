@@ -349,7 +349,7 @@ export const en: Translations = {
       },
       sync: {
         heading: "Keeping in sync",
-        body: "Scheme ids are stable and the same in the development and production APIs, so use scheme_id as your key. Every scheme carries updated_at: the later of its last scrape and its last status change. Do one full sync, then ask only for what changed with updated_since. Those results also include schemes that were retired or went inactive, with their status, so you know what to drop. Tag changes from a re-tagging run do not move updated_at; we announce those, and you resync in full once.",
+        body: "Scheme ids are stable and the same in the development and production APIs, so use scheme_id as your key. Every scheme carries updated_at: the latest of its last scrape, its last status change and its last bulk re-tag. Do one full sync, then ask only for what changed with updated_since. Those results also include schemes that were retired or went inactive, with their status, so you know what to drop. A bulk re-tagging run moves updated_at too, so updated_since picks up the new tags.",
       },
       retired: {
         heading: "When a scheme goes away",

@@ -88,3 +88,87 @@ def test_live_drift_detects_an_edit_after_the_snapshot():
     assert rc.live_drift(SCHEME, dict(SCHEME)) is False
     assert rc.live_drift(SCHEME, {**SCHEME, "eligibility": "Everyone"}) is True
     assert rc.live_drift(SCHEME, {**SCHEME, "who_is_it_for": ["Seniors"]}) is True
+
+
+class _Doc:
+    def __init__(self, sid, data):
+        self.id, self._data, self.exists = sid, data, True
+
+    def to_dict(self):
+        return dict(self._data)
+
+
+class _Db:
+    """Just enough Firestore for cmd_apply: get_all, document refs and a batch that records updates."""
+
+    def __init__(self, docs):
+        self.docs, self.updates = docs, {}
+
+    def collection(self, _name):
+        return self
+
+    def document(self, sid):
+        return sid
+
+    def get_all(self, refs):
+        return [_Doc(sid, self.docs[sid]) for sid in refs if sid in self.docs]
+
+    def batch(self):
+        return self
+
+    def update(self, sid, data):
+        self.updates[sid] = data
+
+    def commit(self):
+        pass
+
+
+def _apply_args(env, write=True, confirm=None):
+    return rc.argparse.Namespace(env=env, write=write, confirm_project=confirm)
+
+
+def _stub_apply(monkeypatch, tmp_path, db=None):
+    snapshot = {"a1": SCHEME}
+    result = {"id": "a1", "who_is_it_for": ["Seniors"], "what_it_gives": ["Information and referral services"],
+              "scheme_type": ["Healthcare"], "taxonomy_version": rc.tx.TAXONOMY["version"], "input_hash": rc.input_hash(SCHEME)}
+    monkeypatch.setattr(rc, "OUT", tmp_path)
+    monkeypatch.setattr(rc, "_snapshot", lambda env="prod": snapshot)
+    monkeypatch.setattr(rc, "_latest_results", lambda: {"a1": result})
+
+    def firestore(env):
+        if db is None:
+            raise AssertionError(f"_firestore({env}) must not be reached")
+        return db
+
+    monkeypatch.setattr(rc, "_firestore", firestore)
+
+
+def test_prod_write_needs_the_project_named(monkeypatch, tmp_path):
+    _stub_apply(monkeypatch, tmp_path)
+    for confirm in (None, "schemessg-v3-dev"):
+        try:
+            rc.cmd_apply(_apply_args("prod", confirm=confirm))
+        except SystemExit as stop:
+            assert "--confirm-project schemessg" in str(stop)
+        else:
+            raise AssertionError("prod write ran without --confirm-project schemessg")
+        try:
+            rc.cmd_restore(rc.argparse.Namespace(env="prod", backup=str(tmp_path / "none.jsonl"), write=True, confirm_project=confirm))
+        except SystemExit as stop:
+            assert "--confirm-project schemessg" in str(stop)
+        else:
+            raise AssertionError("prod restore ran without --confirm-project schemessg")
+
+
+def test_apply_stamps_tags_updated_at_and_backs_up_the_live_tags(monkeypatch, tmp_path):
+    from firebase_admin import firestore
+
+    db = _Db({"a1": {k: SCHEME.get(k) for k in rc.SNAPSHOT_KEYS}})
+    _stub_apply(monkeypatch, tmp_path, db)
+    rc.cmd_apply(_apply_args("prod", confirm="schemessg"))
+
+    assert db.updates["a1"]["tags_updated_at"] is firestore.SERVER_TIMESTAMP
+    assert db.updates["a1"]["who_is_it_for"] == ["Seniors"]
+    (backup,) = tmp_path.glob("backup-prod-*.jsonl")
+    row = json.loads(backup.read_text())
+    assert row["who_is_it_for"] == ["Elderly"] and row["tags_updated_at"] is None

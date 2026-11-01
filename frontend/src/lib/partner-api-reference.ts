@@ -269,8 +269,8 @@ export type SchemeField = {
  * Keys are always all 18 — `to_public_scheme` fills a missing value with null
  * rather than dropping the key — so only the value types vary.
  *
- * `updated_at` is computed, not stored: the later of the last scrape and the last
- * status change, or null when a scheme has neither.
+ * `updated_at` is computed, not stored: the latest of the last scrape, the last
+ * status change and the last bulk re-tag, or null when a scheme has none.
  */
 export const SCHEME_FIELDS: SchemeField[] = [
   { name: "scheme_id", type: "string" },
