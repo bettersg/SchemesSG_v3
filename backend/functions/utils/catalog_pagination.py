@@ -6,9 +6,11 @@ import hmac
 import json
 import os
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
+
 from google.cloud.firestore_v1 import CollectionReference, Query
 from loguru import logger
+
 
 # Secret key for cursor signature
 # In a production environment, this should be stored in environment variables
@@ -132,6 +134,7 @@ def _get_paginated_query(
     base_query: Optional[Query] = None,
     cursor: Optional[str] = None,
     limit: int = 10,
+    fields: Sequence[str] = CATALOG_FIELDS,
 ) -> Query:
     """Build a Firestore query with ordering, limit, and optional cursor.
 
@@ -152,6 +155,8 @@ def _get_paginated_query(
         cursor: Optional signed cursor token from a previous page.
         limit: Number of documents requested by the caller before the extra
             lookahead document is applied.
+        fields: Field paths to project onto; the partner API asks for more
+            than the catalog card needs.
 
     Returns:
         A Firestore query ready to execute.
@@ -160,7 +165,7 @@ def _get_paginated_query(
     # query so large detail-only fields such as scraped_text are never fetched.
     source = base_query if base_query is not None else collection_ref
     # select() takes one iterable of field paths, not varargs.
-    q = source.select(CATALOG_FIELDS).order_by("last_scraped_update", direction=Query.DESCENDING).limit(limit + 1)
+    q = source.select(fields).order_by("last_scraped_update", direction=Query.DESCENDING).limit(limit + 1)
 
     if not cursor:
         return q
@@ -214,6 +219,7 @@ def get_paginated_results(
     base_query: Optional[Query] = None,
     cursor: Optional[str] = None,
     limit: int = 10,
+    fields: Sequence[str] = CATALOG_FIELDS,
 ) -> PaginationResult:
     """Execute a paginated catalog query and serialize the result page.
 
@@ -222,6 +228,7 @@ def get_paginated_results(
         base_query: Optional filtered query to paginate.
         cursor: Optional signed cursor token from a previous response.
         limit: Maximum number of results to return in this page.
+        fields: Field paths to project onto (defaults to the catalog card fields).
 
     The function fetches `limit + 1` documents internally to determine whether
     another page exists. Returned documents are converted to dictionaries with
@@ -235,7 +242,7 @@ def get_paginated_results(
     has_more = False
     next_cursor = None
 
-    ref = _get_paginated_query(collection_ref, base_query, cursor, limit)
+    ref = _get_paginated_query(collection_ref, base_query, cursor, limit, fields)
 
     docs = ref.get()
 

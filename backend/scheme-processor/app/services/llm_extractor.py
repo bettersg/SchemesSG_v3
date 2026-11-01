@@ -4,18 +4,15 @@ LLM field extraction using Azure OpenAI.
 Extracts structured data from scraped web content.
 """
 
+import asyncio
 import json
 import os
 import re
 from typing import Any, Dict
 
-from app.constants import (
-    EXTRACTION_INSTRUCTION,
-    SCHEME_TYPE,
-    WHAT_IT_GIVES,
-    WHO_IS_IT_FOR,
-)
-from app.services.extraction import is_generic_email, normalize_categories
+from app.constants import EXTRACTION_INSTRUCTION
+from app.services.extraction import is_generic_email
+from app.services.taxonomy_tagger import tag_scheme
 from loguru import logger
 
 
@@ -32,11 +29,16 @@ def _configure_litellm():
 # Run configuration once at module load
 _configure_litellm()
 
+# Completion budgets per attempt; reasoning tokens count against them. Two calls at the limit plus the scrape
+# stay inside the 300 s Cloud Run and caller timeouts.
+LLM_MAX_TOKENS = (8000, 16000)
+LLM_CALL_TIMEOUT_SECONDS = 90
+
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 
 # The fields the extractor fills, one "- name: definition" line each. The content-change
 # reviewer (app/content_check.py) sends the same list, so both read fields the same way.
-FIELD_DEFINITIONS = f"""- llm_description: A comprehensive description of the scheme/service using newlines and bullet point lists for readability. Do NOT duplicate information from the eligibility, how_to_apply, or agency fields. Focus on what the scheme does, who it helps, and key benefits.
+FIELD_DEFINITIONS = """- llm_description: A comprehensive description of the scheme/service using newlines and bullet point lists for readability. Do NOT duplicate information from the eligibility, how_to_apply, or agency fields. Focus on what the scheme does, who it helps, and key benefits.
 - summary: A brief 1-2 sentence summary (string)
 - eligibility: Eligibility criteria and requirements (string)
 - how_to_apply: Steps to apply for this scheme (string)
@@ -44,9 +46,6 @@ FIELD_DEFINITIONS = f"""- llm_description: A comprehensive description of the sc
 - address: Full physical address including postal code if available (string)
 - phone: Phone number(s) found on the page, including hotlines and toll-free numbers. Comma-separated if multiple (string or null)
 - email: Contact email address(es) found on the page. Comma-separated if multiple (string or null)
-- who_is_it_for: Target audiences as array, select ONLY from: {", ".join(WHO_IS_IT_FOR)}
-- what_it_gives: Benefits/services as array, select ONLY from: {", ".join(WHAT_IT_GIVES)}
-- scheme_type: Scheme categories as array, select ONLY from: {", ".join(SCHEME_TYPE)}
 - service_area: Geographic service area (string)
 - search_booster: Comma-separated keywords for search (string)"""
 
@@ -66,12 +65,13 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
-async def extract_with_llm(content: str) -> Dict[str, Any]:
+async def extract_with_llm(content: str, scheme_name: str = "") -> Dict[str, Any]:
     """
     Extract structured fields from content using Azure OpenAI.
 
     Args:
         content: Scraped text content (HTML or plain text)
+        scheme_name: Submitted scheme name, passed to taxonomy tagging (the gate measured it as input)
 
     Returns:
         Dict with extracted fields
@@ -86,7 +86,7 @@ async def extract_with_llm(content: str) -> Dict[str, Any]:
         azure_key = os.getenv("AZURE_OPENAI_API_KEY", "")
         azure_base = os.getenv("AZURE_OPENAI_ENDPOINT", "")
         azure_version = os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
-        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5")
+        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-6-luna")
 
         if not azure_key or not azure_base:
             logger.warning("Azure OpenAI not configured, skipping LLM extraction")
@@ -133,52 +133,54 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
 
         logger.info("Calling Azure OpenAI for extraction...")
 
-        # Retry once for transient API errors
-        last_error = None
-        for attempt in range(2):
+        # gpt-5 spends reasoning tokens from the same completion budget: a 3000 cap was fully consumed by
+        # reasoning on prod (reasoning_tokens=3000), leaving an empty reply. Retry once with a larger budget.
+        extracted = None
+        for attempt, max_tokens in enumerate(LLM_MAX_TOKENS):
+            is_last = attempt == len(LLM_MAX_TOKENS) - 1
             try:
-                response = litellm.completion(
+                response = await asyncio.to_thread(
+                    litellm.completion,
                     model=f"azure/{deployment_name}",
                     messages=[{"role": "user", "content": prompt}],
                     api_key=azure_key,
                     api_base=azure_base,
                     api_version=azure_version,
-                    max_tokens=3000,
+                    max_completion_tokens=max_tokens,
                     reasoning_effort="low",
+                    timeout=LLM_CALL_TIMEOUT_SECONDS,
                 )
-                break
             except Exception as api_err:
-                last_error = api_err
                 err_str = str(api_err).lower()
-                if attempt == 0 and ("timeout" in err_str or "rate" in err_str or "429" in err_str):
+                if not is_last and ("timeout" in err_str or "rate" in err_str or "429" in err_str):
                     logger.warning(f"API call failed (attempt {attempt + 1}), retrying: {api_err}")
-                    import asyncio
                     await asyncio.sleep(2)
                     continue
                 raise
-        else:
-            raise last_error
 
-        response_content = response.choices[0].message.content or ""
-        logger.info(f"LLM extraction response: {len(response_content)} chars")
-        if not response_content:
-            logger.error(f"Empty response from LLM. Usage: {response.usage}")
+            choice = response.choices[0]
+            response_content = choice.message.content or ""
+            logger.info(f"LLM extraction response: {len(response_content)} chars (max_tokens={max_tokens})")
+            if not response_content or (choice.finish_reason == "length" and not is_last):
+                logger.warning(
+                    f"LLM reply empty or cut off (finish_reason={choice.finish_reason}), usage: {response.usage}"
+                )
+                continue
+
+            # Parse JSON from response (robust code fence stripping)
+            try:
+                extracted = json.loads(_strip_code_fences(response_content).strip())
+            except json.JSONDecodeError as je:
+                logger.warning(f"Failed to parse LLM JSON response (attempt {attempt + 1}): {je}")
+                continue
+            break
+
+        if extracted is None:
+            logger.error("LLM extraction produced no usable reply after all attempts")
             return {}
 
-        # Parse JSON from response (robust code fence stripping)
-        response_content = _strip_code_fences(response_content)
-        extracted = json.loads(response_content.strip())
-
-        # Normalize categories
-        who_is_it_for = normalize_categories(
-            extracted.get("who_is_it_for") if isinstance(extracted.get("who_is_it_for"), list) else [], WHO_IS_IT_FOR
-        )
-        what_it_gives = normalize_categories(
-            extracted.get("what_it_gives") if isinstance(extracted.get("what_it_gives"), list) else [], WHAT_IT_GIVES
-        )
-        scheme_type = normalize_categories(
-            extracted.get("scheme_type") if isinstance(extracted.get("scheme_type"), list) else [], SCHEME_TYPE
-        )
+        # Taxonomy tags come from a separate strict-schema call (see taxonomy_tagger); a failure leaves them empty
+        tags = await asyncio.to_thread(_tag_taxonomy, extracted, scheme_name, truncated_text)  # sync SDK call: keep it off the event loop
 
         # Extract and filter phone/email from LLM (fallback for regex)
         llm_phone = extracted.get("phone")
@@ -198,9 +200,9 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
             "eligibility": extracted.get("eligibility"),
             "how_to_apply": extracted.get("how_to_apply"),
             "agency": extracted.get("agency"),
-            "who_is_it_for": who_is_it_for if who_is_it_for else None,
-            "what_it_gives": what_it_gives if what_it_gives else None,
-            "scheme_type": scheme_type if scheme_type else None,
+            "who_is_it_for": tags["who_is_it_for"],
+            "what_it_gives": tags["what_it_gives"],
+            "scheme_type": tags["scheme_type"],
             "service_area": extracted.get("service_area"),
             "search_booster": extracted.get("search_booster"),
         }
@@ -220,6 +222,24 @@ Return ONLY valid JSON, no markdown code blocks or explanation."""
 
         traceback.print_exc()
         return {}
+
+
+def _tag_taxonomy(extracted: Dict[str, Any], scheme_name: str = "", source_text: str = "") -> Dict[str, Any]:
+    """Tag who_is_it_for / what_it_gives / scheme_type from the source text and the extracted fields. Never raises."""
+    try:
+        return tag_scheme(
+            {
+                "scheme": scheme_name,
+                "agency": extracted.get("agency"),
+                "description": source_text,
+                "llm_description": extracted.get("llm_description"),
+                "summary": extracted.get("summary"),
+                "eligibility": extracted.get("eligibility"),
+            }
+        )
+    except Exception as e:
+        logger.error(f"Taxonomy tagging failed, leaving tags empty: {e}")
+        return {"who_is_it_for": None, "what_it_gives": None, "scheme_type": None}
 
 
 def _html_to_text(html: str) -> str:

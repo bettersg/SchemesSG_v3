@@ -28,7 +28,7 @@ SchemesSG uses Firestore Vector Search for semantic search. The `schemes_embeddi
 
 **Script:** `functions/scripts/populate_embeddings.py`
 
-Run this **once** to create the initial embeddings for a new environment:
+Run this to create the initial embeddings for a new environment, or to rebuild them after a bulk data change (e.g. a re-tag). It runs the same reindex as the weekly scheduled job (`utils/reindex_embeddings.py`):
 
 ```bash
 cd backend/functions

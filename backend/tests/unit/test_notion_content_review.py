@@ -106,7 +106,7 @@ def scheme(**overrides):
         "summary": "Up to $300 a month.",
         "eligibility": "Citizens aged 65 and above.",
         "how_to_apply": "Apply online.",
-        "who_is_it_for": ["Elderly", "Legacy tag"],
+        "who_is_it_for": ["Seniors", "Legacy tag"],
         "what_it_gives": ["Financial assistance (general)"],
         "scheme_type": ["Financial Assistance"],
         "agency": "Care FSC",
@@ -165,7 +165,7 @@ def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     assert row[C["eligibility"]] == "Citizens and PRs aged 60 and above."  # AI's new value
     assert row[C["summary"]] == "Up to $300 a month."  # unchanged field = stored value
     assert row[C["llm_description"]] == "Monthly cash help for seniors."  # llm_description, not legacy
-    assert row[C["who_is_it_for"]] == ["Elderly"]  # tag no longer on the allowed list is not shown
+    assert row[C["who_is_it_for"]] == ["Seniors"]  # tag no longer on the allowed list is not shown
     assert row["Changed by AI"] == ["Eligibility"]
     assert (row["Status"], row["Scheme ID"], row["Check ID"]) == ("Pending", "s1", "check-1")
     body = notion.body_text("page-1")
@@ -266,7 +266,7 @@ def test_approved_row_writes_every_field_and_new_hashes_then_trashes_row():
         **{
             C["summary"]: "Up to $350 a month.",  # a fix the AI did not suggest
             C["llm_description"]: "New description.",
-            C["who_is_it_for"]: ["Elderly", "Legacy tag", "Made-up tag", "Caregivers"],
+            C["who_is_it_for"]: ["Seniors", "Legacy tag", "Made-up tag", "Caregivers"],
             C["service_area"]: "Islandwide",
         },
     )
@@ -276,7 +276,7 @@ def test_approved_row_writes_every_field_and_new_hashes_then_trashes_row():
     assert saved["eligibility"] == "Citizens and PRs aged 60 and above."
     assert saved["summary"] == "Up to $350 a month."
     assert saved["llm_description"] == saved["description"] == "New description."
-    assert saved["who_is_it_for"] == ["Elderly", "Caregivers"]  # tags not on the allowed list dropped
+    assert saved["who_is_it_for"] == ["Seniors", "Caregivers"]  # tags not on the allowed list dropped
     assert saved["service_area"] == "Islandwide"
     assert saved["content_pages"] == NEW_PAGES
     record = db.get_document("contentChecks", "check-1")

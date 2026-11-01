@@ -78,6 +78,9 @@ seam that owns the behavior.
   Run it in the target platform, inspect the image diff, and commit the result
   explicitly. Linux baselines retain Playwright's existing `-linux.png`
   convention and must be generated in a matching Linux environment.
+- Web fonts load from `src/assets/fonts` through `next/font/local`, never
+  `next/font/google`. A failed Google Fonts download makes `next dev` render
+  the fallback font, which breaks every baseline on both attempts.
 
 ## Nightly and deployed-staging policy
 
@@ -90,6 +93,9 @@ seam that owns the behavior.
 - `.github/workflows/nightly-browser.yml` has only `schedule` and
   `workflow_dispatch` triggers. It does not add Firefox, WebKit, or deployed
   staging to ordinary pull-request runs.
+- Each cross-browser lane is bounded to 180 seconds and each deployed-staging
+  phase to 120 seconds. A clean WebKit run under `next dev` took 96-117
+  seconds in October 2026, so 120 seconds left no room for one retry.
 - Deployed staging is fixed to `https://schemessg-v3-dev.web.app`. The smoke
   accepts no environment override, credentials, secrets, or production host.
   Service workers are blocked. Browser routing aborts all off-origin traffic
