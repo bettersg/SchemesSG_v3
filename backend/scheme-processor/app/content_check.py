@@ -2,8 +2,7 @@
 Monthly content-change check (issue #407).
 
 For one scheme:
-1. Skip it when the weekly link check marked the link suspect or inactive, or when an earlier
-check still waits for a volunteer and is less than 2 months old.
+1. Skip it when the weekly link check marked the link suspect or inactive.
 2. Scrape the scheme link. A failed scrape adds 1 to ``content_check_fail_streak``; nothing else
 changes and the AI is not called.
 3. Fingerprint each page: a SHA-256 hash of its main text (crawl4ai's pruning filter drops menus,
@@ -32,7 +31,7 @@ import hashlib
 import json
 import os
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -49,9 +48,10 @@ SKIP_STATUSES = ("inactive", "retired")
 MAX_REVIEW_CHARS = 200_000
 
 REVIEW_MODEL = "gpt-5.4-mini"
-PROMPT_VERSION = "v5-no-tags"
+PROMPT_VERSION = "v6-strict"
 # Fields the reviewer sees and may update: the extractor's content fields plus regex phone/email.
 # Taxonomy tags are left out: the taxonomy tagger owns them, and volunteers can still edit them in Notion.
+# search_booster is left out: it is search keywords, so the reviewer always finds more to add.
 CONTENT_FIELDS = (
     "llm_description",
     "summary",
@@ -62,7 +62,6 @@ CONTENT_FIELDS = (
     "phone",
     "email",
     "service_area",
-    "search_booster",
 )
 REGEX_FIELDS = ("phone", "email")
 
@@ -81,6 +80,13 @@ The user message gives the scheme's currently stored fields and the current text
 Decide which stored fields are now out of date because of what the pages say. For each one, give the updated value, a short quote from the page text that shows the change, and the URL of the page it came from. If no stored field needs updating, return an empty list.
 
 Only suggest a change to a field when the page text shows that a stored fact about this scheme is no longer true, or when the page gives important information about this scheme that the stored field lacks. Do not suggest changes for rewording or formatting, or for information about other programmes or the organisation in general.
+
+Rules for these fields:
+- agency: only change it when a different organisation now runs the scheme. Do not change it for legal suffixes (Ltd, Pte Ltd, Limited), short forms or abbreviations (SG / Singapore, AIC / Agency for Integrated Care), capitalisation, or another way of writing the same organisation's name.
+- address: only change it when the location is different (another street, block, unit or postal code), or when the stored address is empty. Do not change it to add or remove "Singapore", to reorder parts, or for punctuation or abbreviations (Rd / Road, Ave / Avenue).
+- summary and llm_description: only change them when a fact in the stored text is wrong or missing and it matters to someone applying, such as amounts or fees, who is eligible, age limits, services added or stopped, location, dates or deadlines, how to apply, or the stored text describing the wrong programme. Do not rewrite to make the text fuller, clearer or more up to date in tone. Do not change how partner organisations are named. When you change one, copy the stored text and edit only the sentences with the changed fact.
+
+Before including a change, ask: would someone reading the stored value be misled, or miss something they need? If not, leave it out.
 
 When suggesting a change, keep the stored field's structure and wording and change only what is needed. If the stored field is empty, use your own structure.
 

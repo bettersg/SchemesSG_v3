@@ -4,7 +4,7 @@ Firestore, the scraper and the AI reviewer are replaced by in-memory fakes.
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import pytest
 from app.content_check import (
@@ -29,18 +29,14 @@ LINK = "https://example.org/aid"
 class FakeStore:
     """Same methods as ContentStore, backed by dicts."""
 
-    def __init__(self, scheme=None, pending_since=None):
+    def __init__(self, scheme=None):
         self.scheme = scheme
-        self.pending_since = pending_since
         self.fail_streak = 0
         self.stamped = None
         self.records = []
 
     def get_scheme(self, scheme_id):
         return self.scheme
-
-    def latest_pending_check(self, scheme_id):
-        return self.pending_since
 
     def record_failure(self, scheme_id):
         self.fail_streak += 1
@@ -114,16 +110,6 @@ def test_skips_without_scraping(fields, detail):
     result = run(store, scrape=scraper(error="should not scrape"))
     assert (result["outcome"], result["detail"]) == ("skipped", detail)
     assert store.fail_streak == 0 and store.stamped is None
-
-
-def test_pending_check_under_two_months_skips():
-    store = FakeStore(scheme({LINK: "old"}), pending_since=NOW - timedelta(days=30))
-    assert run(store)["outcome"] == "skipped"
-
-
-def test_pending_check_over_two_months_is_checked_again():
-    store = FakeStore(scheme({LINK: "old"}), pending_since=NOW - timedelta(days=61))
-    assert run(store, scrape=scraper({LINK: "old"}))["outcome"] == "unchanged"
 
 
 def test_missing_scheme():
