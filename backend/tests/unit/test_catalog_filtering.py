@@ -234,9 +234,33 @@ def test_updated_since_unions_both_timestamps_and_keeps_removed_schemes():
     col = _Collection(DOCS)
     result = get_filtered_results(col, CatalogFilters(updated_since=_ts(11)), fields=FIELDS)
 
-    assert [f.field_path for f in col.filters] == ["last_scraped_update", "status_updated_at", "status_updated_at"]
+    assert [f.field_path for f in col.filters] == [
+        "last_scraped_update",
+        "status_updated_at",
+        "status_updated_at",
+        "tags_updated_at",
+    ]
     assert set(_ids(result)) == {"list-area", "other-area", "inactive", "retired"}
     assert all("status_updated_at" in item for item in result.data if item["scheme_id"] == "inactive")
+
+
+def test_bulk_retag_counts_as_an_update():
+    """A re-tag changes only the tag fields, so partners syncing with updated_since must still see it."""
+    retagged = {
+        "agency": "PAVE",
+        "planning_area": "BEDOK",
+        "scheme_type": ["Youth development"],
+        "status": "active",
+        "last_scraped_update": {"_seconds": 1758460098, "_nanoseconds": 0},
+        "tags_updated_at": _ts(25),
+    }
+    assert updated_at(retagged) == _ts(25)
+
+    col = _Collection({"retagged": retagged})
+    result = get_filtered_results(col, CatalogFilters(updated_since=_ts(24)), fields=FIELDS)
+
+    assert _ids(result) == ["retagged"]
+    assert result.data[0]["tags_updated_at"] == _ts(25)
 
 
 def test_paging_in_memory_walks_every_result_once():

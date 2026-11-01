@@ -15,7 +15,7 @@ this module, so there is no cycle and no third file to keep in step.
 
 from typing import Any
 
-from utils.catalog_filtering import updated_at
+from utils.catalog_filtering import UPDATED_AT_SOURCES, updated_at
 
 
 MAX_LIMIT = 50
@@ -92,14 +92,13 @@ PUBLIC_FIELDS = (
 # Computed in to_public_scheme rather than stored.
 _COMPUTED_FIELDS = ("scheme_id", "updated_at")
 
-# What a list query projects onto: every stored public field, plus the two
+# What a list query projects onto: every stored public field, plus the
 # timestamps `updated_at` is computed from. Without this the list served the
 # catalog card projection, so phone, email, address, eligibility and
 # service_area always came back null in lists but not in detail.
 LIST_FIELDS = (
     *(field for field in PUBLIC_FIELDS if field not in _COMPUTED_FIELDS),
-    "last_scraped_update",
-    "status_updated_at",
+    *UPDATED_AT_SOURCES,
 )
 
 

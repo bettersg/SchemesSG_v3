@@ -110,6 +110,10 @@ const SCHEME_TYPE_CATEGORY_MAP: Record<string, SchemeCategory> = {
   "financial planning and retirement support": "Financial Assistance",
   "family and parenting support": "Family & Children",
   "child and youth services": "Family & Children",
+  // NCSS v1.1 split of Child and Youth Services
+  "fostering and alternative care": "Family & Children",
+  "youth development": "Family & Children",
+  "child and youth emotional support": "Family & Children",
   "dental healthcare": "Health & Wellbeing",
   "traditional chinese medicine (tcm)": "Health & Wellbeing",
   "general healthcare subsidies": "Health & Wellbeing",

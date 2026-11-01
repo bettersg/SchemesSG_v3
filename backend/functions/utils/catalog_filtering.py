@@ -12,6 +12,8 @@ A single agency or category filter still pages in Firestore (see
   (``Timestamp``, a ``{"_seconds", "_nanoseconds"}`` map from a 2025 import, an ISO
   string). The map-typed ``last_scraped_update`` cannot be range-queried, so those
   schemes surface through ``updated_since`` only after a status change or rescrape.
+  ``tags_updated_at`` (a ``Timestamp``) marks a bulk re-tag (scripts/ncss_eval/reclassify.py
+  apply), which changes the tag fields without a rescrape or status change.
 
 The most selective filter fetches candidates from Firestore without ``order_by``
 (single-field indexes only, so nothing to deploy), the remaining filters apply in
@@ -72,9 +74,13 @@ def as_datetime(value: Any) -> datetime | None:
     return None
 
 
+# Stored timestamps that `updated_at` is computed from.
+UPDATED_AT_SOURCES = ("last_scraped_update", "status_updated_at", "tags_updated_at")
+
+
 def updated_at(doc: dict[str, Any]) -> datetime | None:
-    """Last content or status change: the later of the last scrape and the last status change."""
-    stamps = [as_datetime(doc.get("last_scraped_update")), as_datetime(doc.get("status_updated_at"))]
+    """Last content, status or tag change: the latest of the scrape, status change and bulk re-tag stamps."""
+    stamps = [as_datetime(doc.get(field)) for field in UPDATED_AT_SOURCES]
     present = [stamp for stamp in stamps if stamp]
     return max(present) if present else None
 
@@ -191,6 +197,7 @@ def _candidate_filters(collection_ref: Any, filters: CatalogFilters) -> list[Fie
             FieldFilter("last_scraped_update", ">=", since),
             FieldFilter("status_updated_at", ">=", since),
             FieldFilter("status_updated_at", ">=", since.astimezone(timezone.utc).isoformat()),
+            FieldFilter("tags_updated_at", ">=", since),
         ]
     if filters.agency:
         return [FieldFilter("agency", "in", chunk) for chunk in _chunks(filters.agency)]
@@ -224,7 +231,7 @@ def get_filtered_results(
     """
     if not filters.active:
         raise ValueError("get_filtered_results needs at least one active filter")
-    projection = list(dict.fromkeys([*fields, "status", "last_scraped_update", "status_updated_at"]))
+    projection = list(dict.fromkeys([*fields, "status", *UPDATED_AT_SOURCES]))
 
     candidates: dict[str, dict[str, Any]] = {}
     for field_filter in _candidate_filters(collection_ref, filters):

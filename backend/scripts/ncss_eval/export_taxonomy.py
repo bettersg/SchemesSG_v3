@@ -9,7 +9,7 @@ import taxonomy as tx
 BACKEND = Path(__file__).resolve().parents[2]
 TARGETS = [BACKEND / "scheme-processor/app/taxonomy_data.json", BACKEND / "functions/new_scheme/taxonomy_data.json"]
 LEGACY_CONSTANTS = BACKEND / "functions/new_scheme/constants.py"
-VERSION = "v2-draft-2026-10-18"  # bump when NCSS review / gate changes the vocabulary
+VERSION = "v3-ncss-v1.1-2026-11-01"  # bump when NCSS review / gate changes the vocabulary
 
 
 def legacy_category_mapping():
@@ -44,6 +44,8 @@ def build():
         "legacy_aliases": tx.LEGACY_ALIASES,
         "moved_out_need_parent": tx.MOVED_OUT_NEED_PARENT,
         "provisional_intervention_parents": sorted(tx.PROVISIONAL_INTERVENTION_PARENTS),
+        # Schemes SG profiles NCSS asked to keep; not NCSS v1.1 categories, so exports label them apart
+        "extension_profiles": sorted(tx.EXTENSION_PROFILES),
         # embedding text keeps the pre-rename word next to the new term so search recall does not drop
         "embed_synonyms": {new: old for old, new in tx.RENAMES.items()},
         "category_mapping": v2,

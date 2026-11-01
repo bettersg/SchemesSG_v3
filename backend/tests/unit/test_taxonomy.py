@@ -171,21 +171,60 @@ def test_respite_care_rename_keeps_old_term_as_alias():
     assert "Respite care" in tx.term_names("what_it_gives")
     assert "Respite care/Caregiver support" not in tx.term_names("what_it_gives")
     assert tx.normalize_terms("what_it_gives", ["Respite care/Caregiver support"])[0] == ["Respite care"]
-    assert tx.parents("what_it_gives", ["Respite care"]) == {"intervention": ["Care Services"]}
+    assert tx.parents("what_it_gives", ["Respite care"]) == {"intervention": ["Care services"]}
 
 
 def test_ncss_14_oct_parent_changes():
     need = lambda name: tx.parents("scheme_type", [name])["need"]  # noqa: E731
-    assert need("Protection from Violence") == ["Justice & Legal Protection"]
-    assert need("Student Care Support") == ["Caregiving Support"]
-    assert need("End-of-Life/Palliative Care") == ["Healthcare & Well-Being"]
-    assert need("General Healthcare Subsidies") == ["Financial & Material Support"]
+    assert need("Protection from Violence") == ["Justice and legal protection"]
+    assert need("Student Care Support") == ["Caregiving support"]
+    assert need("End-of-Life/Palliative Care") == ["Healthcare and well-being"]
+    assert need("General Healthcare Subsidies") == ["Financial and material support"]
     for provisional in ("Transport Support", "Technology Support", "Community Funding"):
         assert tx.is_provisional("scheme_type", provisional)
 
 
 def test_ncss_5_oct_profiles():
-    assert tx.parents("who_is_it_for", ["Homeless"])["profile"] == ["Persons Experiencing Homelessness"]
+    assert tx.parents("who_is_it_for", ["Homeless"])["profile"] == ["Persons experiencing homelessness"]
     assert tx.parents("who_is_it_for", ["Inmates"]) == {"age_group": [], "profile": []}
     assert tx.is_provisional("who_is_it_for", "Inmates")
     assert "Victims of abuse or harassment" in tx.term_names("who_is_it_for")
+
+
+CHILD_AND_YOUTH_SPLIT = {  # NCSS 28 Oct: one NCSS v1.1 need each
+    "Fostering and alternative care": ["Fostering and alternative care"],
+    "Youth development": ["Personal development"],
+    "Child and youth emotional support": ["Intrapersonal challenges"],
+}
+
+
+def test_ncss_v1_1_child_and_youth_services_split():
+    names = tx.term_names("scheme_type")
+    assert "Child and Youth Services" not in names
+    for term, need in CHILD_AND_YOUTH_SPLIT.items():
+        assert term in names
+        assert tx.parents("scheme_type", [term])["need"] == need
+        assert term in tx.TAXONOMY["category_mapping"]["Family & Children"]
+    # one old term cannot alias to three: each scheme is re-tagged instead
+    assert tx.normalize_terms("scheme_type", ["Child and Youth Services"])[0] == []
+    assert tx.translate_legacy({"what_it_gives": ["Child protection services"]})["scheme_type"] == ["Protection from Violence"]
+
+
+def test_ncss_v1_1_annex_labels():
+    assert tx.parents("scheme_type", ["Mental Health"])["need"] == ["Mental health"]
+    assert tx.parents("scheme_type", ["Addictions Rehabilitation"])["need"] == ["Substance and behavioural addictions recovery"]
+    assert tx.parents("what_it_gives", ["Housing/Shelter"])["intervention"] == ["Shelter provision"]
+    assert tx.parents("what_it_gives", ["Home retrofitting"])["intervention"] == ["Home maintenance services"]
+    assert tx.parents("who_is_it_for", ["Migrant workers/Foreign workers"])["profile"] == ["Migrant individual"]
+    parents = {p for f in tx.FIELDS for t in tx.TAXONOMY[f] for k in ("age_group", "profile", "intervention", "need") for p in t.get(k, [])}
+    assert not {p for p in parents if "&" in p}
+
+
+def test_learning_intervention_is_confirmed_and_covers_early_intervention():
+    assert not tx.is_provisional("what_it_gives", "Learning intervention")
+    assert "Learning intervention" not in tx.TAXONOMY["provisional_intervention_parents"]
+    assert "early intervention" in tx.TAXONOMY["what_it_gives"][[t["name"] for t in tx.TAXONOMY["what_it_gives"]].index("Learning intervention")]["definition"]
+
+
+def test_schemes_sg_extension_profiles_are_marked():
+    assert tx.TAXONOMY["extension_profiles"] == ["Families", "Persons experiencing homelessness", "Victims of abuse or harassment"]

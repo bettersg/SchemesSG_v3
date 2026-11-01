@@ -10,8 +10,12 @@ usage (from backend/scripts/ncss_eval):
                                             --ids = targeted re-run for NCSS feedback; --force ignores existing results
   reclassify.py report                      per-term old/new counts, changed schemes -> report.md
   reclassify.py xlsx                        NCSS/partner review workbook -> ncss_review.xlsx
-  reclassify.py apply dev [--write]         dry-run by default; --write backs up the old tags then updates the 3 fields
-Prod writes are refused here: they run only after NCSS + partner sign-off, from the frozen results file.
+  reclassify.py apply dev|prod [--write] [--confirm-project ID]
+                                            dry-run by default; --write backs up the live tags, then updates the 3 fields
+                                            and stamps tags_updated_at (partner updated_since sees the re-tag).
+                                            prod --write also needs --confirm-project schemessg; take a fresh prod snapshot first.
+  reclassify.py restore dev|prod BACKUP [--write] [--confirm-project ID]
+                                            rollback: writes a backup-<env>-*.jsonl back (same prod guard)
 """
 import argparse
 import hashlib
@@ -21,6 +25,7 @@ import sys
 import time
 import types
 from collections import Counter
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -265,10 +270,12 @@ def cmd_xlsx(a):
         rows.append((not flags, s.get("scheme") or "", sid, s, r, flags))
     rows.sort(key=lambda x: (x[0], x[1].lower()))  # flagged first
     join = lambda v: "; ".join(v or [])  # noqa: E731
+    ext = set(tx.TAXONOMY["extension_profiles"])
+    mark = lambda v: [f"{p} (Schemes SG extension)" if p in ext else p for p in v]  # noqa: E731
     for _, _, sid, s, r, flags in rows:
         pw, pi, pn = tx.parents("who_is_it_for", r["who_is_it_for"] or []), tx.parents("what_it_gives", r["what_it_gives"] or []), tx.parents("scheme_type", r["scheme_type"] or [])
         ws.append([sid, s.get("scheme"), s.get("agency"), s.get("link"), s.get("status") or "active", join(flags), join(changed_fields(s, r)),
-                   join(s.get("who_is_it_for")), join(r["who_is_it_for"]), join(pw["age_group"] + pw["profile"]),
+                   join(s.get("who_is_it_for")), join(r["who_is_it_for"]), join(pw["age_group"] + mark(pw["profile"])),
                    join(s.get("what_it_gives")), join(r["what_it_gives"]), join(pi["intervention"]),
                    join(s.get("scheme_type")), join(r["scheme_type"]), join(pn["need"]), r.get("rationale"), ""])
     for cell in ws[1]:
@@ -286,6 +293,11 @@ def cmd_xlsx(a):
     for f in FIELDS:
         for term in sorted(set(old[f]) | set(new[f]), key=lambda t: -new[f][t]):
             counts.append([f, term, old[f][term], new[f][term], "yes" if tx.is_provisional(f, term) else ""])
+    ref = wb.create_sheet("Reference")
+    ref.append(["field", "term", "definition", "NCSS parent(s)", "provisional", "note"])
+    for f, keys in (("who_is_it_for", ("age_group", "profile")), ("what_it_gives", ("intervention",)), ("scheme_type", ("need",))):
+        for t in tx.TAXONOMY[f]:
+            ref.append([f, t["name"], t["definition"], join(mark([p for k in keys for p in t[k]])), "yes" if t["provisional"] else "", t["note"]])
     notes = wb.create_sheet("Read me")
     for line in ("Old = current tags translated into the v2 vocabulary. New = gpt-6-luna output, validated against the v2 vocabulary.",
                  "Parents (NCSS age group / profile, intervention, need) come from the static table, never from the model.",
@@ -298,11 +310,12 @@ def cmd_xlsx(a):
 
 
 def cmd_apply(a):
-    if a.env != "dev":
-        sys.exit("prod writes are not wired here: they run after NCSS + partner sign-off (see docs/plans)")
+    project = ENVS[a.env][1]
+    if a.write and a.env == "prod" and a.confirm_project != project:  # explicit: a prod write must name the project
+        sys.exit(f"prod write refused: pass --confirm-project {project}")
     snapshot, results = _snapshot(a.env), _latest_results()
-    if not snapshot:  # dev snapshot not taken: classify ran on prod text; ids are identical while dev == prod
-        sys.exit("take a dev snapshot first: reclassify.py snapshot dev (apply diffs against what dev holds now)")
+    if not snapshot:  # classify ran on prod text; ids are identical while dev == prod
+        sys.exit(f"take a {a.env} snapshot first: reclassify.py snapshot {a.env} (apply diffs against what {a.env} holds now)")
     stale = stale_results(snapshot, results)
     stale_ids = {sid for sid, _ in stale}
     plan = apply_plan(snapshot, {i: r for i, r in results.items() if i not in stale_ids})
@@ -312,8 +325,11 @@ def cmd_apply(a):
     if not a.write:
         print("dry run (add --write to back up and write)")
         return
-    print("note: scheduled_firebase_collection_sync overwrites dev from prod twice a month and would revert this write; pause it for the review window")
-    db = _firestore("dev")
+    if a.env == "dev":
+        print("note: scheduled_firebase_collection_sync overwrites dev from prod twice a month and would revert this write; pause it for the review window")
+    from firebase_admin import firestore
+
+    db = _firestore(a.env)
     # Read each doc at write time: back up the LIVE tags and skip any doc edited since the snapshot.
     live_docs = {d.id: d.to_dict() for d in db.get_all([db.collection("schemes").document(sid) for sid in plan]) if d.exists}
     writable, drifted = {}, []
@@ -323,20 +339,48 @@ def cmd_apply(a):
             drifted.append(sid)
         else:
             writable[sid] = update
-    backup = OUT / f"backup-dev-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
+    backup = OUT / f"backup-{a.env}-{time.strftime('%Y%m%d-%H%M%S')}.jsonl"
     with open(backup, "w") as f:
         for sid in writable:
-            f.write(json.dumps({"id": sid, **{k: live_docs[sid].get(k) for k in FIELDS}}) + "\n")
+            f.write(json.dumps({"id": sid, **{k: live_docs[sid].get(k) for k in (*FIELDS, "tags_updated_at")}}, default=str) + "\n")
     print(f"backup of live tags -> {backup}; skipped {len(drifted)} docs changed or missing since the snapshot {drifted[:10]}")
     batch, n = db.batch(), 0
     for sid, update in writable.items():
-        batch.update(db.collection("schemes").document(sid), update)
+        batch.update(db.collection("schemes").document(sid), {**update, "tags_updated_at": firestore.SERVER_TIMESTAMP})
         n += 1
         if n % 400 == 0:
             batch.commit()
             batch = db.batch()
     batch.commit()
-    print(f"wrote {n} schemes to dev")
+    print(f"wrote {n} schemes to {a.env} ({project})")
+
+
+def cmd_restore(a):
+    """Rollback: write the backed-up tags (and the previous tags_updated_at) back to each scheme in the backup file."""
+    project = ENVS[a.env][1]
+    rows = list(_read_jsonl(Path(a.backup)).values())
+    print(f"{len(rows)} schemes in {a.backup} would be restored on {a.env} ({project})")
+    if not a.write:
+        print("dry run (add --write to restore)")
+        return
+    if a.env == "prod" and a.confirm_project != project:
+        sys.exit(f"prod restore refused: pass --confirm-project {project}")
+    from firebase_admin import firestore
+
+    db = _firestore(a.env)
+    batch, n = db.batch(), 0
+    for row in rows:
+        stamp = row.get("tags_updated_at")
+        update = {f: row.get(f) for f in FIELDS}
+        # backup stores str(datetime); write it back as a Timestamp so updated_since range queries still match
+        update["tags_updated_at"] = datetime.fromisoformat(stamp) if stamp else firestore.DELETE_FIELD
+        batch.update(db.collection("schemes").document(row["id"]), update)
+        n += 1
+        if n % 400 == 0:
+            batch.commit()
+            batch = db.batch()
+    batch.commit()
+    print(f"restored {n} schemes on {a.env} ({project})")
 
 
 if __name__ == "__main__":
@@ -347,6 +391,9 @@ if __name__ == "__main__":
     p.add_argument("--workers", type=int, default=8); p.set_defaults(fn=cmd_classify)
     p = sub.add_parser("report"); p.set_defaults(fn=cmd_report)
     p = sub.add_parser("xlsx"); p.set_defaults(fn=cmd_xlsx)
-    p = sub.add_parser("apply"); p.add_argument("env", choices=["dev", "prod"]); p.add_argument("--write", action="store_true"); p.set_defaults(fn=cmd_apply)
+    p = sub.add_parser("apply"); p.add_argument("env", choices=["dev", "prod"]); p.add_argument("--write", action="store_true")
+    p.add_argument("--confirm-project", help="required with prod --write: the Firebase project id"); p.set_defaults(fn=cmd_apply)
+    p = sub.add_parser("restore"); p.add_argument("env", choices=["dev", "prod"]); p.add_argument("backup"); p.add_argument("--write", action="store_true")
+    p.add_argument("--confirm-project", help="required with prod --write: the Firebase project id"); p.set_defaults(fn=cmd_restore)
     args = ap.parse_args()
     args.fn(args)

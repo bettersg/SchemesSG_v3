@@ -32,7 +32,7 @@ WHO_IS_IT_FOR terms:
 - Seniors: Seniors / elderly persons aged 60 and above (formerly 'Elderly').
 - Seniors with dementia: Seniors / elderly persons aged 60+ diagnosed with dementia, and their care.
 - Persons with disabilities (PWDs): Persons with permanent intellectual or physical disabilities (e.g. mobility, vision, hearing, intellectual disability, cerebral palsy). Mental health conditions are NOT disabilities.
-- Persons with special needs: Persons with developmental or learning needs (e.g. SPED students). Treat as disability only when the disability is permanent.
+- Persons with special needs: Persons with developmental or learning needs (e.g. SPED students). Tag Persons with disabilities (PWDs) separately only when the disability is permanent.
 - Persons on autism spectrum: Persons diagnosed with autism spectrum disorder.
 - Persons with chronic or terminal illnesses: Persons with long-term, persistent or terminal illness requiring ongoing management (e.g. cancer, kidney failure, diabetes).
 - Persons with mental health conditions: Persons diagnosed with, or severely affected by, mental health conditions (e.g. depression, schizophrenia). Recoverable, so NOT persons with disabilities.
@@ -70,7 +70,7 @@ WHAT_IT_GIVES terms:
 - Helpline services: Phone/digital helpline support.
 - Information and referral services: Information, guidance or referral/signposting to other services as a main function of the scheme (not just a passing mention).
 - Educational programmes: Structured teaching of knowledge or awareness (courses, workshops, talks, parent education) as a main component. Not for counselling or support services that merely include some sessions.
-- Learning intervention: Structured support that builds learning skills or academic/learning outcomes for learners (e.g. learning support, literacy/numeracy help). Use Tuition for school-subject tuition.
+- Learning intervention: Targeted, structured educational or developmental support for learning or developmental difficulties (e.g. early intervention, educational therapy, learning support, literacy/numeracy intervention). Use Tuition for school-subject tuition.
 - Vocational training: Skills training for employment.
 - Employment assistance: Job search help, placement, job coaching or employer matching. Skills courses are Vocational training instead.
 - Skills training and job matching: Skills upgrading with job placement.
@@ -119,14 +119,16 @@ SCHEME_TYPE terms (needs addressed):
 - Family and Parenting Support: Parenting, marriage, family relationship and family life support.
 - Disability Support: Support for persons with disabilities: mobility, daily living, centre/home-based care, accessibility.
 - Active Ageing and Social Activities: Social, recreational and active-ageing activities that keep seniors (or others) engaged and connected.
-- Child and Youth Services: Care, protection, development and support programmes for children and youths (residential care, youth centres, mentoring, child welfare).
+- Fostering and alternative care: Foster care, adoption, kinship care and children's homes for children who cannot live with their own family. Child protection is Protection from Violence.
+- Youth development: Personal growth of children and youths: mentoring, leadership, youth centres, life skills and enrichment. Tuition and learning support are Education Support.
+- Child and youth emotional support: Counselling, emotional regulation and coping support for children and youths, incl. youth at risk.
 - Caregiver Support: Training, respite and support for caregivers.
 - Ex-offender Support: Reintegration support for ex-offenders.
 - Education Support: Tuition, learning support, school-related help.
 - Student Care Support: After-school and student care. Some programmes also meet educational needs (NCSS: review at programme level).
 - Healthcare: Treatment and prevention of physical health issues.
 - Dental Healthcare: Dental care.
-- General Healthcare Subsidies: Subsidies for medical costs. Granular need: Healthcare support under Financial & Material Support.
+- General Healthcare Subsidies: Subsidies for medical costs. Granular need: Healthcare support under Financial and material support.
 - Chronic or Terminal Illness Support: Support for long-term/terminal illness.
 - Mental Health: Emotional support, treatment and rehabilitation for mental health conditions (rehabilitation is an intervention approach, not a separate need).
 - End-of-Life/Palliative Care: Palliative and end-of-life care.

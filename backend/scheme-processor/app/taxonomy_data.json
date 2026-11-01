@@ -1,5 +1,5 @@
 {
- "version": "v2-draft-2026-10-18",
+ "version": "v3-ncss-v1.1-2026-11-01",
  "age_bands": [
   {
    "term": "Infants and toddlers (0-3)",
@@ -400,7 +400,7 @@
    "note": "NCSS 5 Oct: creates parent profile Persons Experiencing Homelessness",
    "age_group": [],
    "profile": [
-    "Persons Experiencing Homelessness"
+    "Persons experiencing homelessness"
    ],
    "fallback_profile": []
   },
@@ -411,7 +411,7 @@
    "note": "",
    "age_group": [],
    "profile": [
-    "Migrant individuals"
+    "Migrant individual"
    ],
    "fallback_profile": []
   },
@@ -422,7 +422,7 @@
    "note": "",
    "age_group": [],
    "profile": [
-    "Migrant individuals"
+    "Migrant individual"
    ],
    "fallback_profile": []
   },
@@ -433,7 +433,7 @@
    "note": "",
    "age_group": [],
    "profile": [
-    "Migrant individuals",
+    "Migrant individual",
     "Families"
    ],
    "fallback_profile": []
@@ -553,7 +553,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Casework/Case Management"
+    "Casework/Case management"
    ]
   },
   {
@@ -573,7 +573,7 @@
    "note": "NCSS: no match, programme review pending",
    "intervention": [
     "Therapy",
-    "Medical Clinic & Services"
+    "Medical clinic and services"
    ]
   },
   {
@@ -609,7 +609,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Information & Referral"
+    "Information and referral"
    ]
   },
   {
@@ -624,11 +624,11 @@
   },
   {
    "name": "Learning intervention",
-   "definition": "Structured support that builds learning skills or academic/learning outcomes for learners (e.g. learning support, literacy/numeracy help). Use Tuition for school-subject tuition.",
-   "provisional": true,
-   "note": "NCSS: added at NCSS request; definition to confirm",
+   "definition": "Targeted, structured educational or developmental support for learning or developmental difficulties (e.g. early intervention, educational therapy, learning support, literacy/numeracy intervention). Use Tuition for school-subject tuition.",
+   "provisional": false,
+   "note": "NCSS v1.1 definition (incl. early intervention)",
    "intervention": [
-    "Learning Intervention"
+    "Learning intervention"
    ]
   },
   {
@@ -646,7 +646,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Job Placement",
+    "Job placement",
     "Coaching"
    ]
   },
@@ -657,7 +657,7 @@
    "note": "",
    "intervention": [
     "Training",
-    "Job Placement"
+    "Job placement"
    ]
   },
   {
@@ -666,7 +666,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -675,7 +675,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -684,7 +684,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -693,7 +693,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -702,7 +702,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -711,7 +711,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -720,7 +720,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -729,7 +729,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -738,7 +738,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -747,7 +747,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Casework/Case Management"
+    "Casework/Case management"
    ]
   },
   {
@@ -756,7 +756,7 @@
    "provisional": true,
    "note": "NCSS: no match, programme review pending",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -765,7 +765,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -774,7 +774,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Housing & Shelter Support"
+    "Shelter provision"
    ]
   },
   {
@@ -783,7 +783,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Care Services"
+    "Care services"
    ]
   },
   {
@@ -792,7 +792,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Care Services"
+    "Care services"
    ]
   },
   {
@@ -801,7 +801,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Care Services"
+    "Care services"
    ]
   },
   {
@@ -810,7 +810,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Care Services"
+    "Care services"
    ]
   },
   {
@@ -819,7 +819,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Care Services"
+    "Care services"
    ]
   },
   {
@@ -837,7 +837,7 @@
    "provisional": true,
    "note": "NCSS: no match, review programmes",
    "intervention": [
-    "Enrichment Activities"
+    "Enrichment activities"
    ]
   },
   {
@@ -846,7 +846,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -864,7 +864,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Medical Clinic & Services"
+    "Medical clinic and services"
    ]
   },
   {
@@ -873,7 +873,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Medical Clinic & Services"
+    "Medical clinic and services"
    ]
   },
   {
@@ -882,7 +882,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Medical Clinic & Services"
+    "Medical clinic and services"
    ]
   },
   {
@@ -900,7 +900,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Legal Services"
+    "Legal services"
    ]
   },
   {
@@ -909,7 +909,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Care Services"
+    "Care services"
    ]
   },
   {
@@ -919,7 +919,7 @@
    "note": "NCSS: no match, programme review pending",
    "intervention": [
     "Therapy",
-    "Group Work"
+    "Group work"
    ]
   },
   {
@@ -928,8 +928,8 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Enrichment Activities",
-    "Group Work"
+    "Enrichment activities",
+    "Group work"
    ]
   },
   {
@@ -938,7 +938,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Group Work"
+    "Group work"
    ]
   },
   {
@@ -948,7 +948,7 @@
    "note": "NCSS: no match, programme review pending",
    "intervention": [
     "Counselling",
-    "Group Work"
+    "Group work"
    ]
   },
   {
@@ -957,8 +957,8 @@
    "provisional": true,
    "note": "NCSS: no match, programme review pending",
    "intervention": [
-    "Care Services",
-    "Medical Clinic & Services"
+    "Care services",
+    "Medical clinic and services"
    ]
   },
   {
@@ -967,7 +967,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -976,7 +976,7 @@
    "provisional": true,
    "note": "NCSS: no match, programme review pending",
    "intervention": [
-    "Information & Referral",
+    "Information and referral",
     "Coaching"
    ]
   },
@@ -986,7 +986,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -995,7 +995,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Financial/Material Assistance"
+    "Financial/material assistance"
    ]
   },
   {
@@ -1004,7 +1004,7 @@
    "provisional": true,
    "note": "NCSS: conditional match, review programmes",
    "intervention": [
-    "Home Maintenance"
+    "Home maintenance services"
    ]
   },
   {
@@ -1013,7 +1013,7 @@
    "provisional": true,
    "note": "our assumption; NCSS has no match",
    "intervention": [
-    "Mobility Services"
+    "Mobility services"
    ]
   },
   {
@@ -1022,7 +1022,7 @@
    "provisional": false,
    "note": "",
    "intervention": [
-    "Community Development/Outreach"
+    "Community development/outreach"
    ]
   }
  ],
@@ -1033,7 +1033,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Family, Parenting & Relationships"
+    "Family, parenting and relationships"
    ]
   },
   {
@@ -1042,7 +1042,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Disability Support"
+    "Disability support"
    ]
   },
   {
@@ -1051,18 +1051,35 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Recreational Activities",
+    "Recreational activities",
     "Social support"
    ]
   },
   {
-   "name": "Child and Youth Services",
-   "definition": "Care, protection, development and support programmes for children and youths (residential care, youth centres, mentoring, child welfare).",
+   "name": "Fostering and alternative care",
+   "definition": "Foster care, adoption, kinship care and children's homes for children who cannot live with their own family. Child protection is Protection from Violence.",
    "provisional": false,
    "note": "",
    "need": [
-    "Fostering & Alternative Care",
-    "Personal Development"
+    "Fostering and alternative care"
+   ]
+  },
+  {
+   "name": "Youth development",
+   "definition": "Personal growth of children and youths: mentoring, leadership, youth centres, life skills and enrichment. Tuition and learning support are Education Support.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Personal development"
+   ]
+  },
+  {
+   "name": "Child and youth emotional support",
+   "definition": "Counselling, emotional regulation and coping support for children and youths, incl. youth at risk.",
+   "provisional": false,
+   "note": "",
+   "need": [
+    "Intrapersonal challenges"
    ]
   },
   {
@@ -1071,7 +1088,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Caregiving Support"
+    "Caregiving support"
    ]
   },
   {
@@ -1080,7 +1097,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Reintegration/Transition Services"
+    "Reintegration/Transition services"
    ]
   },
   {
@@ -1089,7 +1106,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Education and Learning"
+    "Education and learning"
    ]
   },
   {
@@ -1098,7 +1115,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Caregiving Support"
+    "Caregiving support"
    ]
   },
   {
@@ -1107,7 +1124,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Healthcare & Well-Being"
+    "Healthcare and well-being"
    ]
   },
   {
@@ -1116,16 +1133,16 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Healthcare & Well-Being"
+    "Healthcare and well-being"
    ]
   },
   {
    "name": "General Healthcare Subsidies",
-   "definition": "Subsidies for medical costs. Granular need: Healthcare support under Financial & Material Support.",
+   "definition": "Subsidies for medical costs. Granular need: Healthcare support under Financial and material support.",
    "provisional": false,
    "note": "",
    "need": [
-    "Financial & Material Support"
+    "Financial and material support"
    ]
   },
   {
@@ -1134,7 +1151,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Healthcare & Well-Being"
+    "Healthcare and well-being"
    ]
   },
   {
@@ -1143,7 +1160,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Mental Health Services"
+    "Mental health"
    ]
   },
   {
@@ -1152,7 +1169,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Healthcare & Well-Being"
+    "Healthcare and well-being"
    ]
   },
   {
@@ -1161,7 +1178,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Financial & Material Support"
+    "Financial and material support"
    ]
   },
   {
@@ -1170,7 +1187,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Housing & Shelter Support"
+    "Housing and shelter support"
    ]
   },
   {
@@ -1179,7 +1196,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Work & Employment"
+    "Work and employment"
    ]
   },
   {
@@ -1188,7 +1205,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Financial & Material Support"
+    "Financial and material support"
    ]
   },
   {
@@ -1197,7 +1214,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Financial & Material Support"
+    "Financial and material support"
    ]
   },
   {
@@ -1206,7 +1223,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Retirement & Legacy Planning"
+    "Retirement and legacy planning"
    ]
   },
   {
@@ -1215,8 +1232,8 @@
    "provisional": true,
    "note": "NCSS 14 Oct: no matching need; parents are our fallback",
    "need": [
-    "Disability Support",
-    "Financial & Material Support"
+    "Disability support",
+    "Financial and material support"
    ]
   },
   {
@@ -1225,8 +1242,8 @@
    "provisional": true,
    "note": "NCSS 14 Oct: no matching need; parents are our fallback",
    "need": [
-    "Disability Support",
-    "Education and Learning"
+    "Disability support",
+    "Education and learning"
    ]
   },
   {
@@ -1235,7 +1252,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Justice & Legal Protection"
+    "Justice and legal protection"
    ]
   },
   {
@@ -1244,7 +1261,7 @@
    "provisional": true,
    "note": "NCSS 14 Oct: may be a funder mechanism, not a need",
    "need": [
-    "Community participation/Engagement"
+    "Community participation/engagement"
    ]
   },
   {
@@ -1253,7 +1270,7 @@
    "provisional": false,
    "note": "",
    "need": [
-    "Substance and Behavioral Addictions recovery"
+    "Substance and behavioural addictions recovery"
    ]
   }
  ],
@@ -1339,7 +1356,7 @@
    "Child protection services": {
     "moved": {
      "scheme_type": [
-      "Child and Youth Services"
+      "Protection from Violence"
      ]
     }
    },
@@ -1435,6 +1452,10 @@
     "review": true
    },
    "Loss of Breadwinner Support": {
+    "to": [],
+    "review": true
+   },
+   "Child and Youth Services": {
     "to": [],
     "review": true
    },
@@ -1551,21 +1572,25 @@
   }
  },
  "moved_out_need_parent": {
-  "Need shelter": "Housing & Shelter Support",
-  "Need food support": "Financial & Material Support",
-  "Need mortgage support": "Financial & Material Support",
-  "Individuals needing legal aid": "Justice & Legal Protection"
+  "Need shelter": "Housing and shelter support",
+  "Need food support": "Financial and material support",
+  "Need mortgage support": "Financial and material support",
+  "Individuals needing legal aid": "Justice and legal protection"
  },
  "provisional_intervention_parents": [
   "Coaching",
-  "Community Development/Outreach",
-  "Crisis Assessment & Intervention",
-  "Enrichment Activities",
-  "Information & Communication Accessibility",
-  "Learning Intervention",
+  "Community development/outreach",
+  "Crisis assessment and intervention",
+  "Enrichment activities",
+  "Information and communication accessibility",
   "Mentoring",
-  "Mobility Services",
+  "Mobility services",
   "Psychoeducation"
+ ],
+ "extension_profiles": [
+  "Families",
+  "Persons experiencing homelessness",
+  "Victims of abuse or harassment"
  ],
  "embed_synonyms": {
   "Seniors": "Elderly",
@@ -1582,7 +1607,9 @@
   ],
   "Family & Children": [
    "Family and Parenting Support",
-   "Child and Youth Services"
+   "Fostering and alternative care",
+   "Youth development",
+   "Child and youth emotional support"
   ],
   "Health & Wellbeing": [
    "Healthcare",
@@ -1632,7 +1659,8 @@
    "Youth",
    "Youth-at-Risk",
    "Single Parents",
-   "Women"
+   "Women",
+   "Child and Youth Services"
   ],
   "Health & Wellbeing": [
    "Counselling and Emotional Support"

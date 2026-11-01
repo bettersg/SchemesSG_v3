@@ -31,7 +31,7 @@ def migrate(vals, field):
         out = [MERGED.get(v, v) for v in out if v not in DROPPED_WHAT]
     if field == "scheme_type":  # NCSS 14 Oct: removed terms leave scheme_type (their meaning is tagged in other fields)
         out = ["Mental Health" if v == "Mental Health Rehabilitation" else v for v in out]
-        out = [v for v in out if v not in tx.REMOVED_FROM_SCHEME_TYPE_2026_10_14]
+        out = [v for v in out if v not in tx.REMOVED_FROM_SCHEME_TYPE_2026_10_14 + tx.REMOVED_FROM_SCHEME_TYPE_2026_10_28]
     return sorted(set(out))
 for g in gold.values():
     for f in ("who_is_it_for", "what_it_gives", "scheme_type"):

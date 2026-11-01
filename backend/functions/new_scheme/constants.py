@@ -38,6 +38,7 @@ LEGACY_SCHEME_CATEGORY_MAPPING = {
         "Youth-at-Risk",
         "Single Parents",
         "Women",
+        "Child and Youth Services",  # v2 term, split by NCSS v1.1
     ],
     "Health & Wellbeing": [
         "Healthcare",
