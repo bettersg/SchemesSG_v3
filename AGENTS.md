@@ -11,6 +11,10 @@ Agent-agnostic instructions. `CLAUDE.md` at root, `backend/`, and
   relevant accepted decisions in `docs/adr/`.
 - For required checks, test impact, and evidence, read `docs/verification.md`
   before choosing checks. Load other references when relevant.
+- For scheme data changes in dev or prod (corrections, re-tags, backfills),
+  read `docs/data-changes.md` before the first write.
+- For domain terms (Need, Intervention, Audience, Suggestion, Draft), read
+  `GLOSSARY.md`.
 
 ## Task isolation and delivery
 

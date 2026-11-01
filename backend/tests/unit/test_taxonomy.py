@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+
 BACKEND = Path(__file__).resolve().parents[2]
 SP = BACKEND / "scheme-processor"
 sys.path.insert(0, str(SP))
@@ -22,6 +23,18 @@ def test_vendored_copies_are_identical():
 def test_json_matches_generator():
     result = subprocess.run([sys.executable, "export_taxonomy.py", "--check"], cwd=BACKEND / "scripts/ncss_eval")
     assert result.returncode == 0, "run scripts/ncss_eval/export_taxonomy.py to regenerate taxonomy_data.json"
+
+
+def test_source_table_term_names_match_the_vendored_copies():
+    """ncss_eval/taxonomy.py offers the same term_names lookup as the copies, so a vocabulary check works in either."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ncss_source_taxonomy", BACKEND / "scripts/ncss_eval/taxonomy.py")
+    source = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(source)
+    assert source.FIELDS == tx.FIELDS
+    for field in tx.FIELDS:
+        assert source.term_names(field) == tx.term_names(field)
 
 
 def test_every_alias_target_exists_and_no_alias_shadows_a_live_term():

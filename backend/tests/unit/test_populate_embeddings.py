@@ -1,5 +1,7 @@
 """populate_embeddings script: runs the shared reindex against the right project, with a prod confirmation."""
 
+import sys
+
 import pandas as pd
 import pytest
 from utils.reindex_embeddings import build_desc_booster
@@ -11,8 +13,8 @@ from scripts import populate_embeddings as pe
 def stubbed(monkeypatch, tmp_path):
     """Env files in tmp_path; the reindex and the Firestore client are recorded instead of run."""
     calls = {}
-    monkeypatch.setattr(pe, "FUNCTIONS_DIR", tmp_path)
-    monkeypatch.setattr(pe, "firestore_client", lambda: "db")
+    monkeypatch.setattr(sys.modules[pe.load_environment.__module__], "FUNCTIONS_DIR", tmp_path)
+    monkeypatch.setattr(pe, "firestore_client", lambda _name: "db")
 
     def reindex(db):
         calls["db"] = db
