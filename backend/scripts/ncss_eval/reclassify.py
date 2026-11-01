@@ -340,7 +340,7 @@ def cmd_apply(a):
     stuck = stuck_off_vocabulary(snapshot, plan)
     stuck_path = OUT / f"stuck-ids-{a.env}.txt"
     stuck_path.write_text("".join(f"{sid}\n" for sid in dict.fromkeys(sid for sid, _ in stuck)))
-    print(f"{len(plan)} of {len(snapshot)} dev schemes would change; {sum(1 for i in snapshot if i not in results)} have no result; "
+    print(f"{len(plan)} of {len(snapshot)} {a.env} schemes would change; {sum(1 for i in snapshot if i not in results)} have no result; "
           f"{len(stale)} stale results rejected {stale[:5]}; {len(kept)} empty model fields fall back to the old tags translated: {kept[:10]}; "
           f"{len(stuck)} fields still off-vocabulary {stuck[:10]} -> re-ask: classify --ids {stuck_path} --force")
     if not a.write:
