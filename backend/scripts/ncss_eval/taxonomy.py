@@ -6,6 +6,10 @@ from this static table (never from the LLM).
 
 Parents are lists because a term can roll up to an age group, a profile, both, or neither.
 `provisional=True` = parent not yet confirmed by NCSS; `fallback` = parent to use if NCSS says no.
+
+This is the source table. `term_names(field)` lists one field's vocabulary. The runtime helpers (normalize_terms,
+translate_legacy, parents) live in the generated copies `scheme-processor/app/taxonomy.py` and
+`functions/new_scheme/taxonomy.py`; reclassify.py imports `from app import taxonomy`.
 """
 from dataclasses import dataclass, field
 
@@ -357,3 +361,13 @@ LEGACY_ALIASES = {
         "General Public Support": {"moved": {"who_is_it_for": ["General public"]}},
     },
 }
+
+
+# ---------------------------------------------------------------- lookup
+FIELDS = ("who_is_it_for", "what_it_gives", "scheme_type")
+_TABLES = {"who_is_it_for": WHO_IS_IT_FOR, "what_it_gives": WHAT_IT_GIVES, "scheme_type": SCHEME_TYPE}
+
+
+def term_names(field):
+    """Current vocabulary of one tag field, in table order (same call as app.taxonomy.term_names)."""
+    return [t.name for t in _TABLES[field]]
