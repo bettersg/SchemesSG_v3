@@ -107,16 +107,33 @@ def term_counts(rows):
 def apply_plan(snapshot, results):
     """{id: {field: terms}} for schemes whose new tags differ from the stored ones (exact lists, not just the vocabulary).
 
-    A field the model left empty never overwrites existing tags: those are returned by empty_over_existing for a human to look at."""
+    A field the model left empty never wipes existing tags: it gets the old tags translated to the current vocabulary
+    instead, or stays as is when nothing translates (stuck_off_vocabulary lists those for a model re-ask)."""
     plan = {}
     for sid, scheme in snapshot.items():
         result = results.get(sid)
         if not result:
             continue
-        update = {f: result[f] for f in FIELDS if (result.get(f) or None) != (scheme.get(f) or None) and result.get(f)}
+        old = old_in_new_vocabulary(scheme)
+        update = {}
+        for f in FIELDS:
+            new = result.get(f) or old[f]
+            if new and new != (scheme.get(f) or None):
+                update[f] = new
         if update:
             plan[sid] = update
     return plan
+
+
+def stuck_off_vocabulary(snapshot, plan):
+    """[(id, field)] still holding terms outside the current vocabulary after the plan: re-ask with classify --ids --force."""
+    stuck = []
+    for sid, scheme in snapshot.items():
+        for f in FIELDS:
+            terms = plan.get(sid, {}).get(f) or scheme.get(f) or []
+            if any(t not in tx.term_names(f) for t in terms):
+                stuck.append((sid, f))
+    return stuck
 
 
 def stale_results(snapshot, results):
@@ -320,8 +337,12 @@ def cmd_apply(a):
     stale_ids = {sid for sid, _ in stale}
     plan = apply_plan(snapshot, {i: r for i, r in results.items() if i not in stale_ids})
     kept = empty_over_existing(snapshot, results)
+    stuck = stuck_off_vocabulary(snapshot, plan)
+    stuck_path = OUT / f"stuck-ids-{a.env}.txt"
+    stuck_path.write_text("".join(f"{sid}\n" for sid in dict.fromkeys(sid for sid, _ in stuck)))
     print(f"{len(plan)} of {len(snapshot)} dev schemes would change; {sum(1 for i in snapshot if i not in results)} have no result; "
-          f"{len(stale)} stale results rejected {stale[:5]}; {len(kept)} empty model fields leave existing tags untouched: {kept[:10]}")
+          f"{len(stale)} stale results rejected {stale[:5]}; {len(kept)} empty model fields fall back to the old tags translated: {kept[:10]}; "
+          f"{len(stuck)} fields still off-vocabulary {stuck[:10]} -> re-ask: classify --ids {stuck_path} --force")
     if not a.write:
         print("dry run (add --write to back up and write)")
         return
@@ -331,7 +352,8 @@ def cmd_apply(a):
 
     db = _firestore(a.env)
     # Read each doc at write time: back up the LIVE tags and skip any doc edited since the snapshot.
-    live_docs = {d.id: d.to_dict() for d in db.get_all([db.collection("schemes").document(sid) for sid in plan]) if d.exists}
+    live_snaps = {d.id: d for d in db.get_all([db.collection("schemes").document(sid) for sid in plan]) if d.exists}
+    live_docs = {sid: d.to_dict() for sid, d in live_snaps.items()}
     writable, drifted = {}, []
     for sid, update in plan.items():
         live = {"id": sid, **{k: (live_docs.get(sid) or {}).get(k) for k in SNAPSHOT_KEYS}}
@@ -346,7 +368,10 @@ def cmd_apply(a):
     print(f"backup of live tags -> {backup}; skipped {len(drifted)} docs changed or missing since the snapshot {drifted[:10]}")
     batch, n = db.batch(), 0
     for sid, update in writable.items():
-        batch.update(db.collection("schemes").document(sid), {**update, "tags_updated_at": firestore.SERVER_TIMESTAMP})
+        # precondition: an edit landing between this read and the commit fails the batch instead of being overwritten
+        # (re-run snapshot + apply after such a failure: earlier batches stay written and are skipped as drifted)
+        batch.update(db.collection("schemes").document(sid), {**update, "tags_updated_at": firestore.SERVER_TIMESTAMP},
+                     option=db.write_option(last_update_time=live_snaps[sid].update_time))
         n += 1
         if n % 400 == 0:
             batch.commit()
