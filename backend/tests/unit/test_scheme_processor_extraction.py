@@ -140,7 +140,7 @@ def run_pipeline(pipeline, monkeypatch, llm_fields):
     async def scrape(_url):
         return {"content": "Call us at hello@fycs.org.sg or 6123 4567. " + PAGE * 3, "logo_url": None, "error": None}
 
-    async def extract(_text):
+    async def extract(_text, scheme_name=""):
         return llm_fields
 
     monkeypatch.setattr(pipeline, "scrape_url", scrape)

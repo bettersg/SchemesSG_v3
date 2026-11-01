@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSchemeCategory } from "./categories";
+import { getSchemeCategory, resolveSchemeCategory } from "./categories";
 
 describe("resolveSchemeCategory", () => {
   it("returns undefined for empty array", () => {
@@ -41,5 +41,27 @@ describe("resolveSchemeCategory", () => {
       "elderly",
     ];
     expect(resolveSchemeCategory(types)).toBe("Family & Children");
+  });
+});
+
+describe("NCSS-aligned (v2) scheme types", () => {
+  it("maps v2 terms and keeps the pre-v2 ones", () => {
+    expect(getSchemeCategory("Child and Youth Services")).toBe(
+      "Family & Children",
+    );
+    expect(getSchemeCategory("Disability Support")).toBe(
+      "Disability & Transport",
+    );
+    expect(getSchemeCategory("Elderly")).toBe("Seniors & Caregiving");
+  });
+
+  it("maps the NCSS v1.1 split of Child and Youth Services", () => {
+    for (const type of [
+      "Fostering and alternative care",
+      "Youth development",
+      "Child and youth emotional support",
+    ]) {
+      expect(getSchemeCategory(type)).toBe("Family & Children");
+    }
   });
 });

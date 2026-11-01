@@ -66,7 +66,7 @@ async def process_scheme(
         llm_failed = False
         if scraped_text and len(scraped_text) > 500:
             logger.info(f"Step 2: Extracting fields with LLM ({len(scraped_text)} chars)")
-            llm_fields = await extract_with_llm(scraped_text)
+            llm_fields = await extract_with_llm(scraped_text, scheme_name=scheme_name)
             llm_failed = not llm_fields
 
         # Step 3: Extract contacts with regex (more reliable than LLM)

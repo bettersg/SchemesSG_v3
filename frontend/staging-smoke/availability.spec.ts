@@ -1,3 +1,4 @@
+import { SEO_COPY } from "../src/lib/seo";
 import { expect, test } from "./read-only-fixture";
 import {
   STAGING_API_ORIGIN,
@@ -23,9 +24,7 @@ test("staging deployment is available and serves the expected application", asyn
     "staging hosting did not return HTTP 200",
   ).toBe(200);
   await expect(page).toHaveURL(`${STAGING_ORIGIN}/`);
-  await expect(page).toHaveTitle(
-    "Find the Right Schemes, All in One Place | Schemes.sg",
-  );
+  await expect(page).toHaveTitle(SEO_COPY.homeTitle);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
   const html = await response.text();

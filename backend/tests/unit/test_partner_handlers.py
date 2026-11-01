@@ -10,9 +10,11 @@ import pytest
 from partner.api import _dispatch, _handle_detail, _handle_list
 from partner.routing import Route
 from partner.serializers import PUBLIC_FIELDS, PartnerRequestError, clamp_limit
+from utils.catalog_filtering import CatalogFilters
 from utils.catalog_pagination import PaginationResult, _encode_cursor
 from utils.pagination import encode_cursor as encode_search_cursor
 from utils.scheme_lifecycle import NON_SEARCHABLE_STATUSES
+from werkzeug.datastructures import MultiDict
 
 
 FUNCTIONS_DIR = Path(__file__).resolve().parents[2] / "functions"
@@ -62,17 +64,8 @@ def _db(**docs):
     return FakeFirestore(docs)
 
 
-class _Args:
-    """Stand-in for werkzeug's request.args (a MultiDict) in list tests."""
-
-    def __init__(self, values):
-        self._values = values
-
-    def get(self, key, default=None):
-        return self._values.get(key, default)
-
-    def keys(self):
-        return self._values.keys()
+class _Args(MultiDict):
+    """werkzeug's request.args, built from a dict or a list of (key, value) pairs."""
 
 
 class _SearchRequest:
@@ -254,9 +247,62 @@ def test_list_rejects_unknown_query_parameters():
         _handle_list(MagicMock(), _Args({"sort": "name"}))
 
 
-def test_list_rejects_combining_filters():
-    with pytest.raises(PartnerRequestError):
-        _handle_list(MagicMock(), _Args({"agency": "MOH", "area": "BEDOK"}))
+def test_list_combines_filters_and_repeated_values(mocker):
+    """Filters AND together and a repeated parameter ORs its values (#484)."""
+    mocker.patch("schemes.catalog.known_agencies", return_value=["Ministry of Health (MOH)"])
+    listed = mocker.patch(
+        "partner.api.list_schemes",
+        return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
+    )
+
+    _handle_list(
+        MagicMock(),
+        _Args([("agency", "ministry of health"), ("area", "bedok"), ("area", "Tampines")]),
+    )
+
+    filters = listed.call_args.args[1]
+    assert filters == CatalogFilters(agency=("Ministry of Health (MOH)",), area=("BEDOK", "TAMPINES"))
+    assert listed.call_args.kwargs["exclude_statuses"] == NON_SEARCHABLE_STATUSES
+
+
+def test_updated_since_lists_removed_schemes_too(mocker):
+    """An incremental sync must learn about retirements, so updated_since keeps every status."""
+    listed = mocker.patch(
+        "partner.api.list_schemes",
+        return_value=PaginationResult(
+            data=[{"scheme_id": "gone", "status": "retired", "status_updated_at": "2026-10-20T00:00:00+00:00"}],
+            total_count=1,
+        ),
+    )
+
+    body = _handle_list(MagicMock(), _Args({"updated_since": "2026-10-01T00:00:00Z"}))
+
+    filters = listed.call_args.args[1]
+    assert filters.updated_since.isoformat() == "2026-10-01T00:00:00+00:00"
+    assert listed.call_args.kwargs["exclude_statuses"] == frozenset()
+    assert body["data"][0]["status"] == "retired"
+    assert body["data"][0]["updated_at"] == "2026-10-20T00:00:00+00:00"
+
+
+@pytest.mark.parametrize("raw", ["yesterday", "", "2026-13-01"])
+def test_updated_since_must_be_iso_8601(raw):
+    with pytest.raises(PartnerRequestError, match="updated_since"):
+        _handle_list(MagicMock(), _Args({"updated_since": raw}))
+
+
+def test_category_list_returns_the_full_scheme_type(mocker):
+    """Partners get every scheme_type, as detail does; only the website trims (#484)."""
+    mocker.patch(
+        "partner.api.list_schemes",
+        return_value=PaginationResult(
+            data=[{"scheme_id": "a", "status": "active", "scheme_type": ["Healthcare", "Caregiver Support"]}],
+            total_count=1,
+        ),
+    )
+
+    body = _handle_list(MagicMock(), _Args({"category": "Seniors & Caregiving"}))
+
+    assert body["data"][0]["scheme_type"] == ["Healthcare", "Caregiver Support"]
 
 
 @pytest.mark.parametrize(
@@ -282,7 +328,7 @@ def test_list_rejects_a_cursor_we_did_not_issue(cursor, mocker):
     paginate = mocker.patch(
         # partner.api imported the name directly, so patch it there. Patching
         # schemes.catalog leaves partner.api's reference bound to the real function.
-        "partner.api._get_listed_paginated_results",
+        "partner.api.list_schemes",
         return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
     )
     with pytest.raises(PartnerRequestError, match="Invalid cursor"):
@@ -295,7 +341,7 @@ def test_list_accepts_a_cursor_we_issued(mocker):
     mocker.patch(
         # partner.api imported the name directly, so patch it there. Patching
         # schemes.catalog leaves partner.api's reference bound to the real function.
-        "partner.api._get_listed_paginated_results",
+        "partner.api.list_schemes",
         return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
     )
     _handle_list(MagicMock(), _Args({"cursor": _encode_cursor("some-doc-id")}))
@@ -308,7 +354,7 @@ def test_an_empty_cursor_parameter_is_rejected_not_ignored(mocker):
     value is an error. Otherwise the one truncation a partner is most likely to hit
     is the one case that silently rewinds.
     """
-    paginate = mocker.patch("partner.api._get_listed_paginated_results")
+    paginate = mocker.patch("partner.api.list_schemes")
     with pytest.raises(PartnerRequestError, match="Invalid cursor"):
         _handle_list(MagicMock(), _Args({"cursor": ""}))
     paginate.assert_not_called()
@@ -317,7 +363,7 @@ def test_an_empty_cursor_parameter_is_rejected_not_ignored(mocker):
 def test_an_absent_cursor_still_means_the_first_page(mocker):
     """The counterpart: omitting the parameter must not become an error."""
     paginate = mocker.patch(
-        "partner.api._get_listed_paginated_results",
+        "partner.api.list_schemes",
         return_value=PaginationResult(data=[], next_cursor=None, has_more=False, total_count=0),
     )
     _handle_list(MagicMock(), _Args({"limit": "5"}))
@@ -455,7 +501,7 @@ def test_both_operations_agree_on_cursor_versus_limit_precedence(mocker):
     a partner fixing what list told them then hits a different error from search.
     """
     _stub_search_model(mocker, [])
-    mocker.patch("partner.api._get_listed_paginated_results")
+    mocker.patch("partner.api.list_schemes")
     from partner.search import handle_search
 
     both_wrong = {"cursor": "!!!bogus!!!", "limit": "many"}
@@ -534,7 +580,7 @@ def test_importing_the_api_does_not_load_the_search_stack():
         "class _Db:\n"
         "    def collection(self, _name): return _Col()\n"
         "class _Args(dict):\n"
-        "    pass\n"
+        "    def getlist(self, key): return [self[key]] if key in self else []\n"
         "class _Req:\n"
         "    method = 'GET'\n"
         "    path = '/v1/schemes'\n"
@@ -547,8 +593,8 @@ def test_importing_the_api_does_not_load_the_search_stack():
         "from utils.catalog_pagination import PaginationResult;"
         # Patched at the catalog seam so the probe needs no Firestore fake for
         # pagination. Everything between _dispatch and here is the real code.
-        "setattr(api, '_get_listed_paginated_results',"
-        " lambda **kw: PaginationResult(data=[], has_more=False, total_count=0));"
+        "setattr(api, 'list_schemes',"
+        " lambda *a, **kw: PaginationResult(data=[], has_more=False, total_count=0));"
         "assert resolve_route('GET', '/v1/schemes') == Route(kind='list');"
         "api._dispatch(Route(kind='list'), _Req(), _Db(), {});"
         "api._handle_detail(_Db(), 'nope');"

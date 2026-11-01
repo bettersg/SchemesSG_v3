@@ -96,54 +96,6 @@ def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
     )
 
 
-def normalize_categories(llm_values: Optional[List[str]], allowed_options: List[str]) -> List[str]:
-    """
-    Map LLM output values to valid category options using keyword matching.
-
-    The LLM may return slightly different phrasings - this normalizes them
-    to the canonical values in our category lists.
-
-    Args:
-        llm_values: Raw values from LLM extraction
-        allowed_options: List of valid category values
-
-    Returns:
-        List of matched valid category values
-    """
-    if not llm_values:
-        return []
-
-    stop_words = {"and", "or", "the", "a", "an", "for", "of", "in", "to", "with"}
-
-    def get_keywords(text: str) -> set:
-        """Extract meaningful keywords from text."""
-        words = text.lower().replace("/", " ").replace("-", " ").split()
-        return {w for w in words if w not in stop_words and len(w) > 2}
-
-    mapped = []
-    for llm_val in llm_values:
-        llm_lower = llm_val.lower().strip()
-        llm_keywords = get_keywords(llm_val)
-
-        # Try exact match first
-        matched = False
-        for opt in allowed_options:
-            if llm_lower == opt.lower():
-                mapped.append(opt)
-                matched = True
-                break
-
-        # Try keyword overlap if no exact match
-        if not matched:
-            for opt in allowed_options:
-                opt_keywords = get_keywords(opt)
-                if llm_keywords & opt_keywords:  # Intersection
-                    mapped.append(opt)
-                    break
-
-    return list(dict.fromkeys(mapped))  # Remove duplicates, preserve order
-
-
 def validate_image_url(url: str, timeout: int = 5) -> bool:
     """
     Validate that an image URL is accessible and returns valid image content.

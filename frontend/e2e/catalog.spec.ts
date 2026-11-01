@@ -126,3 +126,32 @@ test("category links are in the footer without opening the picker", async ({
   );
   expect(uniqueCategoryLinks.size).toBeGreaterThan(1);
 });
+
+test("two areas tapped before the first navigation commits are both kept", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await interceptCatalogSchemeJourney(page);
+  await page.goto("/catalog");
+  await expect(
+    page.getByRole("heading", { level: 1, name: /All schemes/ }),
+  ).toBeVisible();
+
+  // Hold every client navigation, as a slow connection would, so the second
+  // tap lands while the first is still in flight.
+  await page.route(/[?&]_rsc=/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.fallback();
+  });
+
+  await page
+    .getByRole("button", { name: /All areas: filter by planning area/ })
+    .click();
+  const panel = page.getByRole("dialog");
+  await panel.getByRole("link", { name: "Bedok" }).click();
+  await panel.getByRole("link", { name: "Bishan" }).click();
+
+  await expect(page).toHaveURL("/catalog?area=BEDOK&area=BISHAN", {
+    timeout: 20_000,
+  });
+});

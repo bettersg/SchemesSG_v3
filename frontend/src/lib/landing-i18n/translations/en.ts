@@ -347,6 +347,10 @@ export const en: Translations = {
         heading: "Rate limits",
         body: "Each partner gets a per-minute budget, shared across all three operations: spending it on list also spends it for search. Every response tells you where you stand, so you never have to discover the limit by hitting it.",
       },
+      sync: {
+        heading: "Keeping in sync",
+        body: "Scheme ids are stable and the same in the development and production APIs, so use scheme_id as your key. Every scheme carries updated_at: the latest of its last scrape, its last status change and its last bulk re-tag. Do one full sync, then ask only for what changed with updated_since. Those results also include schemes that were retired or went inactive, with their status, so you know what to drop. A bulk re-tagging run moves updated_at too, so updated_since picks up the new tags.",
+      },
       retired: {
         heading: "When a scheme goes away",
         body: "Schemes close, and some are folded into a replacement. If you store scheme ids, handle this case: a retired scheme that was merged returns 404 with the id that replaced it, so you can follow the change instead of silently dropping the record.",

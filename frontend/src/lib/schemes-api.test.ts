@@ -5,7 +5,7 @@ const fetchWithAuth = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api", () => ({ fetchWithAuth }));
 
-import { getSchemesCategory, streamChat } from "./schemes";
+import { getCatalogSchemes, getSchemesCategory, streamChat } from "./schemes";
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -43,6 +43,21 @@ describe("scheme API", () => {
     });
     expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
       "https://api.test/catalog?limit=20&category=Financial+Assistance&cursor=catalog-cursor-1",
+    );
+  });
+
+  it("repeats category and area parameters for a combined catalog filter", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      Response.json({ data: [], total_count: 0, has_more: false }),
+    );
+
+    await getCatalogSchemes({
+      categories: ["Education", "Financial+Assistance"],
+      areas: ["BEDOK", " "],
+    });
+
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
+      "https://api.test/catalog?limit=20&category=Education&category=Financial+Assistance&area=BEDOK",
     );
   });
 
