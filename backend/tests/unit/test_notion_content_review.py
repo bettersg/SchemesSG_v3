@@ -136,7 +136,14 @@ def flag(db, check_id="check-1", scheme_id="s1", suggestions=None, contact_check
             "status": "pending",
             "suggestions": suggestions
             if suggestions is not None
-            else [{"field": "eligibility", "new_value": "Citizens and PRs aged 60 and above.", "page_url": LINK}],
+            else [
+                {
+                    "field": "eligibility",
+                    "new_value": "Citizens and PRs aged 60 and above.",
+                    "quote": "open to Citizens and PRs aged 60 and above",
+                    "page_url": LINK,
+                }
+            ],
             "contact_check": contact_check or [],
             "new_pages": NEW_PAGES,
             **extra,
@@ -176,7 +183,10 @@ def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     body = notion.body_text("page-1")
     assert body.startswith("Fields marked ✏️")  # how-to note first, right under the fields
     assert "🎯 Eligibility: changed by AI" in body and LINK in body
-    assert "🆕 New: Citizens and PRs aged 60 and above.\n↩️ Old: Citizens aged 65 and above." in body
+    assert (
+        "🆕 New: Citizens and PRs aged 60 and above.\n\n↩️ Old: Citizens aged 65 and above.\n\n"
+        '💬 Quote: "open to Citizens and PRs aged 60 and above"\n\n🔗 Source: '
+    ) in body
     record = db.get_document("contentChecks", "check-1")
     assert (record["notion_page_id"], record["pushed_at"]) == ("page-1", NOW)
 
@@ -283,7 +293,9 @@ def test_contact_gone_from_site_replaces_phone():
     push(db, notion)
     row = notion.row("page-1")
     assert (row[C["phone"]], row["Changed by AI"]) == ("67654321", ["Phone"])
-    assert "6123 4567" in notion.body_text("page-1")  # previous value in the box
+    body = notion.body_text("page-1")
+    assert "6123 4567" in body  # previous value in the box
+    assert "💬 Quote" not in body  # the contact check gives no quote
 
 
 def test_contact_gone_that_is_not_in_the_fields_gets_a_note():

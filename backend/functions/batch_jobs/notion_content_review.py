@@ -186,9 +186,10 @@ def contact_changes(scheme: Dict[str, Any], contact_check: List[Dict[str, Any]])
 
 
 def suggested_changes(scheme: Dict[str, Any], record: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    """{field: {new_value, page_url}} from the AI's suggestions and the contact check."""
+    """{field: {new_value, quote, page_url}} from the AI's suggestions and the contact check
+    (which has no quote)."""
     changes = {
-        s["field"]: {"new_value": s.get("new_value"), "page_url": s.get("page_url")}
+        s["field"]: {"new_value": s.get("new_value"), "quote": s.get("quote"), "page_url": s.get("page_url")}
         for s in record.get("suggestions") or []
         if s.get("field") in FIELD_TO_COLUMN
     }
@@ -235,7 +236,8 @@ def review_blocks(
     scheme: Dict[str, Any], changes: Dict[str, Dict[str, Any]], contact_check: List[Dict[str, Any]]
 ) -> List[dict]:
     """Row body: a how-to note, a note for contacts gone from the site that are not in the
-    phone/email fields, then one ✏️ box per changed field (new value, old value, source)."""
+    phone/email fields, then one ✏️ box per changed field (new value, old value, the AI's quote
+    when it gave one, source)."""
     blocks = [
         {
             "type": "callout",
@@ -273,6 +275,7 @@ def review_blocks(
         new = changes[field]["new_value"]
         new = _as_text(allowed_tags(field, new) if field in LIST_FIELDS else new) or "(empty)"
         old = _as_text(stored_value(scheme, field)) or "(empty)"
+        quote = (changes[field].get("quote") or "").strip()
         source = changes[field].get("page_url") or scheme.get("link") or ""
         blocks.append(
             {
@@ -283,11 +286,12 @@ def review_blocks(
                     "rich_text": [
                         {
                             "type": "text",
-                            "text": {"content": f"{FIELD_TO_COLUMN[field]}: changed by AI\n"},
+                            "text": {"content": f"{FIELD_TO_COLUMN[field]}: changed by AI\n\n"},
                             "annotations": {"bold": True},
                         },
-                        *_paragraph_text("🆕 New: ", new + "\n"),
-                        *_paragraph_text("↩️ Old: ", old + "\n"),
+                        *_paragraph_text("🆕 New: ", new + "\n\n"),
+                        *_paragraph_text("↩️ Old: ", old + "\n\n"),
+                        *(_paragraph_text("💬 Quote: ", f'"{quote}"\n\n') if quote else []),
                         {"type": "text", "text": {"content": "🔗 Source: "}, "annotations": {"bold": True}},
                         {
                             "type": "text",
