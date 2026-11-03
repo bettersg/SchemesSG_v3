@@ -180,6 +180,7 @@ def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     assert row[C["who_is_it_for"]] == ["Seniors"]  # tag no longer on the allowed list is not shown
     assert row["Changed by AI"] == ["Eligibility"]
     assert (row["Status"], row["Scheme ID"], row["Check ID"]) == ("Pending", "s1", "check-1")
+    assert row[review.DIFF_COLUMN] == ""
     body = notion.body_text("page-1")
     assert body.startswith("Fields marked ✏️")  # how-to note first, right under the fields
     assert "🎯 Eligibility: changed by AI" in body and LINK in body
@@ -189,6 +190,27 @@ def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
     ) in body
     record = db.get_document("contentChecks", "check-1")
     assert (record["notion_page_id"], record["pushed_at"]) == ("page-1", NOW)
+
+
+def test_push_populates_text_diff_column_when_present():
+    db, notion = setup()
+    diff_text = "Page: https://example.org/carefund\n+ Citizens and PRs aged 60 and above.\n- Citizens aged 65 and above."
+    flag(db, diff=diff_text)
+    push(db, notion)
+
+    row = notion.row("page-1")
+    assert row[review.DIFF_COLUMN] == diff_text
+    assert notion.schema[review.DIFF_COLUMN] == {"rich_text": {}}
+
+
+def test_push_populates_text_diff_column_from_text_diff_key():
+    db, notion = setup()
+    diff_text = "Page: https://example.org/carefund\n+ New text line"
+    flag(db, text_diff=diff_text)
+    push(db, notion)
+
+    row = notion.row("page-1")
+    assert row[review.DIFF_COLUMN] == diff_text
 
 
 def test_push_shows_old_vocabulary_tags_translated():

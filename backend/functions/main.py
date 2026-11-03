@@ -34,8 +34,6 @@ The following endpoints are available:
      mark dead links inactive, post summary to Slack, and reindex embeddings
    - scheduled_firebase_collection_sync: Dev only. Twice-monthly job that makes dev's
      schemes collection an exact copy of prod's
-   - scheduled_content_check: monthly scheduled job to check for content changes in existing schemes
-     and queue flagged schemes for volunteer review in Notion
    - scheduled_notion_content_review: hourly job that applies Approved/Rejected Notion review rows
      to Firestore, then trashes the rows
 
@@ -62,7 +60,6 @@ import sys
 
 from agent.handler import agent_chat_message  # noqa: F401
 from batch_jobs.notion_content_review import scheduled_notion_content_review  # noqa: F401
-from batch_jobs.run_content_check import scheduled_content_check  # noqa: F401
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options

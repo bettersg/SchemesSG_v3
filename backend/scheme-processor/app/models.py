@@ -40,6 +40,7 @@ class ContentCheckResult(BaseModel):
     outcome: Literal["not_found", "skipped", "scrape_failed", "baseline", "unchanged", "flagged", "error"]
     detail: Optional[str] = None
     check_id: Optional[str] = None
+    diff: Optional[str] = None
 
 
 class ContentCheckResponse(BaseModel):

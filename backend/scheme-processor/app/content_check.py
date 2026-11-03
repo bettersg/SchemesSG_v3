@@ -2,7 +2,8 @@
 Monthly content-change check (issue #407).
 
 For one scheme:
-1. Skip it when the weekly link check marked the link suspect or inactive.
+1. Skip it when the weekly link check marked the link suspect or inactive, or when an earlier
+check still waits for a volunteer and is less than 2 months old.
 2. Scrape the scheme link. A failed scrape adds 1 to ``content_check_fail_streak``; nothing else
 changes and the AI is not called.
 3. Fingerprint each page: a SHA-256 hash of its main text (crawl4ai's pruning filter drops menus,
@@ -18,7 +19,7 @@ suggestions.
 
 Firestore:
 - ``schemes/<id>``: content_pages ([{url, hash, contacts}]), last_content_checked,
-content_check_fail_streak (only while failing). Page text is never stored.
+content_check_fail_streak (only while failing). Normalized text is stored separately in ``schemeContent/<id>``.
 ``scraped_text`` and ``last_scraped_update`` are never touched.
 - ``contentChecks/<id>``: one record per flag.
 
@@ -26,12 +27,12 @@ Prompt, filters and contact check were chosen in the trial (Notion "#407 AI revi
 the prompt was adapted from reading a diff to reading whole changed pages.
 """
 
-import asyncio
 import hashlib
+import difflib
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -41,6 +42,8 @@ from loguru import logger
 
 SCHEMES = "schemes"
 CHECKS = "contentChecks"
+CONTENT_TEXTS = "schemeContent"
+MAX_SNAPSHOT_BYTES = 900_000
 
 SKIP_STATUSES = ("inactive", "retired")
 
@@ -48,10 +51,8 @@ SKIP_STATUSES = ("inactive", "retired")
 MAX_REVIEW_CHARS = 200_000
 
 REVIEW_MODEL = "gpt-5.4-mini"
-PROMPT_VERSION = "v6-strict"
+PROMPT_VERSION = "v5-normalized-diff"
 # Fields the reviewer sees and may update: the extractor's content fields plus regex phone/email.
-# Taxonomy tags are left out: the taxonomy tagger owns them, and volunteers can still edit them in Notion.
-# search_booster is left out: it is search keywords, so the reviewer always finds more to add.
 CONTENT_FIELDS = (
     "llm_description",
     "summary",
@@ -61,7 +62,11 @@ CONTENT_FIELDS = (
     "address",
     "phone",
     "email",
+    "who_is_it_for",
+    "what_it_gives",
+    "scheme_type",
     "service_area",
+    "search_booster",
 )
 REGEX_FIELDS = ("phone", "email")
 
@@ -75,18 +80,11 @@ CONTACT_JUNK = re.compile(r"sentry|wixpress|example\.", re.I)  # tracking-code "
 
 REVIEW_SYSTEM = """You review the source web pages of a Singapore social service scheme listed on SchemesSG.
 
-The user message gives the scheme's currently stored fields and the current text of the source pages that changed since those fields were last checked. Each page starts with "Page: <URL>".
+The user message gives the scheme's currently stored fields and word-normalized diffs of changed source pages. Each page starts with "Page: <URL>". Lines beginning with + are newly added text; lines beginning with - were removed. Unmarked context is unchanged. Quotes must come from added (+) text; remove the diff marker when quoting. The text has been normalized to lowercase words and numbers.
 
 Decide which stored fields are now out of date because of what the pages say. For each one, give the updated value, a short quote from the page text that shows the change, and the URL of the page it came from. If no stored field needs updating, return an empty list.
 
 Only suggest a change to a field when the page text shows that a stored fact about this scheme is no longer true, or when the page gives important information about this scheme that the stored field lacks. Do not suggest changes for rewording or formatting, or for information about other programmes or the organisation in general.
-
-Rules for these fields:
-- agency: only change it when a different organisation now runs the scheme. Do not change it for legal suffixes (Ltd, Pte Ltd, Limited), short forms or abbreviations (SG / Singapore, AIC / Agency for Integrated Care), capitalisation, or another way of writing the same organisation's name.
-- address: only change it when the location is different (another street, block, unit or postal code), or when the stored address is empty. Do not change it to add or remove "Singapore", to reorder parts, or for punctuation or abbreviations (Rd / Road, Ave / Avenue).
-- summary and llm_description: only change them when a fact in the stored text is wrong or missing and it matters to someone applying, such as amounts or fees, who is eligible, age limits, services added or stopped, location, dates or deadlines, how to apply, or the stored text describing the wrong programme. Do not rewrite to make the text fuller, clearer or more up to date in tone. Do not change how partner organisations are named. When you change one, copy the stored text and edit only the sentences with the changed fact.
-
-Before including a change, ask: would someone reading the stored value be misled, or miss something they need? If not, leave it out.
 
 When suggesting a change, keep the stored field's structure and wording and change only what is needed. If the stored field is empty, use your own structure.
 
@@ -105,7 +103,7 @@ REVIEW_USER = """Scheme: {name} ({agency})
 Stored fields:
 {fields}
 
-Changed pages:
+Changed page diffs (with surrounding context):
 {pages}"""
 
 
@@ -140,20 +138,43 @@ def _words(value: Any) -> str:
 
 
 def page_hash(text: str) -> str:
-    return hashlib.sha256(_words(text).encode()).hexdigest()
+    """Hash the exact canonical string persisted in schemeContent."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+class MainContentExtractionError(Exception):
+    """An HTML page did not yield a usable main-content fingerprint."""
 
 
 def scraped_pages(scrape_result: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    """{normalised URL: {url, text, hash}}. `text` is the full page; `hash` is of the main text
-    (the full text when the scraper gave none, e.g. PDFs or the Pydoll fallback).
-    A URL crawled twice keeps its longest copy."""
+    """Build canonical hashes from main text, falling back to full page text."""
     pages: Dict[str, Dict[str, Any]] = {}
     for page in scrape_result.get("pages") or []:
+        url = page.get("url") or ""
         text = clean_text(page.get("text") or "")
-        main = clean_text(page.get("main_text") or "") or text
-        key = norm_url(page.get("url") or "")
-        if text.strip() and (key not in pages or len(text) > len(pages[key]["text"])):
-            pages[key] = {"url": page["url"], "text": text, "hash": page_hash(main)}
+        main = clean_text(page.get("main_text") or "")
+        is_pdf = urlsplit(url).path.lower().endswith(".pdf")
+        if not text.strip():
+            raise MainContentExtractionError(f"Empty page text: {url}")
+        if is_pdf:
+            main = text
+        if not _words(main):
+            # Keep content elsewhere on the page when semantic/pruned extraction fails.
+            # clean_text converts HTML (including the Pydoll path) to readable text.
+            main = text
+            logger.warning(f"Missing main content for {url}; hashing normalized full-page text")
+        # A tiny semantic extraction compared with the full page may be a widget.
+        # Log the anomaly, but do not reject legitimate short scheme pages.
+        ratio = len(main) / max(len(text), 1)
+        logger.info(f"Content extraction {url}: method={page.get('extraction_method', 'unknown')} "
+                    f"full={len(text)} main={len(main)} ratio={ratio:.2f}")
+        if ratio < 0.05:
+            logger.warning(f"Suspiciously small main extraction: {url} ({ratio:.2%})")
+        key = norm_url(url)
+        if key not in pages or len(text) > len(pages[key]["text"]):
+            normalized = _words(main)
+            pages[key] = {"url": url, "text": text, "normalized_text": normalized,
+                          "hash": page_hash(normalized)}
     return pages
 
 
@@ -175,10 +196,37 @@ def changed_pages(old: Dict[str, Dict[str, Any]], new: Dict[str, Dict[str, Any]]
     ]
 
 
-def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]]) -> Tuple[str, bool]:
-    """Changed pages as the reviewer reads them: "Page: <url>" then the text. Returns (text, cut)."""
-    text = "\n\n".join(f"Page: {url}\n{new[norm_url(url)]['text']}" for url in urls)
-    return text[:MAX_REVIEW_CHARS], len(text) > MAX_REVIEW_CHARS
+def normalized_diff(old_text: str, new_text: str, context_words: int = 35) -> str:
+    """Compact word-level diff with unchanged surrounding words for the AI reviewer."""
+    old_words, new_words = old_text.split(), new_text.split()
+    matcher = difflib.SequenceMatcher(None, old_words, new_words, autojunk=False)
+    chunks = []
+    for group in matcher.get_grouped_opcodes(context_words):
+        lines = []
+        for tag, i1, i2, j1, j2 in group:
+            if tag in ("equal", "delete", "replace") and i1 != i2:
+                prefix = " " if tag == "equal" else "-"
+                lines.append(prefix + " ".join(old_words[i1:i2]))
+            if tag in ("insert", "replace") and j1 != j2:
+                lines.append("+" + " ".join(new_words[j1:j2]))
+        chunks.append("\n".join(lines))
+    return "\n...\n".join(chunks)
+
+
+def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]],
+                 previous: Dict[str, str]) -> Tuple[str, bool]:
+    """Send normalized word diffs, with surrounding context, not full page text."""
+    sections = []
+    for url in urls:
+        key = norm_url(url)
+        current = new[key]["normalized_text"]
+        prior = previous.get(key)
+        if prior is None:
+            sections.append(f"Page: {url}\nNew page (no previous snapshot):\n+{current}")
+        else:
+            sections.append(f"Page: {url}\n{normalized_diff(prior, current)}")
+    output = "\n\n".join(sections)
+    return output[:MAX_REVIEW_CHARS], len(output) > MAX_REVIEW_CHARS
 
 
 #### Regex contact check
@@ -304,9 +352,30 @@ class ContentStore:
 
         self.db.collection(SCHEMES).document(scheme_id).update({"content_check_fail_streak": firestore.Increment(1)})
 
-    def save_pages(self, scheme_id: str, pages: List[Dict[str, Any]], now: datetime) -> None:
-        """Baseline or not flagged: the new hashes and contacts become the reference."""
-        self.db.collection(SCHEMES).document(scheme_id).update(self._stamp(now, content_pages=pages))
+    def get_texts(self, scheme_id: str) -> Optional[Dict[str, str]]:
+        """Only called after hash change, or to establish missing snapshot baseline."""
+        doc = self.db.collection(CONTENT_TEXTS).document(scheme_id).get()
+        if not doc.exists:
+            return None
+        data = doc.to_dict() or {}
+        return {norm_url(v["url"]): v["text"] for v in data.get("pages", {}).values()
+                if isinstance(v, dict) and isinstance(v.get("url"), str)
+                and isinstance(v.get("text"), str)}
+
+    def save_pages(self, scheme_id: str, pages: List[Dict[str, Any]],
+                   new: Dict[str, Dict[str, Any]], now: datetime) -> None:
+        """Atomically save accepted hashes and canonical text in separate documents."""
+        payload = {hashlib.sha256(k.encode()).hexdigest():
+                   {"url": p["url"], "text": p["normalized_text"]}
+                   for k, p in sorted(new.items())}
+        snapshot = {"pages": payload, "updated_at": now}
+        if len(json.dumps(snapshot, ensure_ascii=False, default=str).encode("utf-8")) > MAX_SNAPSHOT_BYTES:
+            raise MainContentExtractionError("Normalized snapshot exceeds Firestore document size limit")
+        batch = self.db.batch()
+        batch.set(self.db.collection(CONTENT_TEXTS).document(scheme_id), snapshot)
+        batch.update(self.db.collection(SCHEMES).document(scheme_id),
+                     self._stamp(now, content_pages=pages))
+        batch.commit()
 
     def save_flagged(self, scheme_id: str, record: Dict[str, Any], now: datetime) -> str:
         """Flagged: the stored hashes stay as they are. Returns the contentChecks id."""
@@ -335,7 +404,7 @@ async def check_scheme(
     """Run a content check for one scheme. Returns {scheme_id, outcome, detail, check_id}, where
     outcome is one of: not_found, skipped, scrape_failed, baseline, unchanged, flagged, error."""
     now = now or datetime.now(timezone.utc)
-    result: Dict[str, Any] = {"scheme_id": scheme_id, "outcome": "", "detail": None, "check_id": None}
+    result: Dict[str, Any] = {"scheme_id": scheme_id, "outcome": "", "detail": None, "check_id": None, "diff": None}
 
     def done(outcome: str, detail: Optional[str] = None) -> Dict[str, Any]:
         logger.info(f"Content check {scheme_id}: {outcome}{f' ({detail})' if detail else ''}")
@@ -350,27 +419,48 @@ async def check_scheme(
         return done("skipped", "link suspect")
     if scheme.get("status") in SKIP_STATUSES:
         return done("skipped", f"status {scheme['status']}")
-    scrape_result = await scrape(scheme["link"])
-    new = scraped_pages(scrape_result)
-    if scrape_result.get("error") or not new:
+    # One scrape only; missing main content falls back to normalized full-page text.
+    try:
+        scrape_result = await scrape(scheme["link"])
+        if scrape_result.get("error"):
+            raise MainContentExtractionError(str(scrape_result["error"]))
+        new = scraped_pages(scrape_result)
+        if not new:
+            raise MainContentExtractionError("No pages extracted")
+    except Exception as exc:
+        reason = f"{type(exc).__name__}: {exc}"
+        logger.warning(f"Content scrape failed for {scheme['link']}: {reason}")
         store.record_failure(scheme_id)
-        return done("scrape_failed", scrape_result.get("error") or "no page text")
+        return done("scrape_failed", reason[:500])
 
     old = stored_pages(scheme)
     if old is None:
-        store.save_pages(scheme_id, page_entries(new), now)
+        store.save_pages(scheme_id, page_entries(new), new, now)
         return done("baseline", f"{len(new)} page(s) saved")
 
     changed = changed_pages(old, new)
+    # Existing hashes without text are a migration baseline, not an AI-reviewable diff.
+    # During the requested full rebaseline, reset schemes without a snapshot.
+    previous = None
+    if changed:
+        previous = store.get_texts(scheme_id)
+        if previous is None or any(
+            c["change"] == "changed" and norm_url(c["url"]) not in previous
+            for c in changed
+        ):
+            store.save_pages(scheme_id, page_entries(new), new, now)
+            return done("baseline", "normalized text snapshot initialized")
     contacts_gone = contact_check(old, new)
     if not changed and not contacts_gone:
-        store.save_pages(scheme_id, page_entries(new), now)
+        store.save_pages(scheme_id, page_entries(new), new, now)
         return done("unchanged")
 
     suggestions: List[Dict[str, Any]] = []
     cut = False
+    text_diff = None
     if changed:
-        pages, cut = format_pages([c["url"] for c in changed], new)
+        pages, cut = format_pages([c["url"] for c in changed], new, previous or {})
+        text_diff = pages if pages.strip() else None
         try:
             suggestions = filter_suggestions(await review(scheme, pages), scheme)
         except ReviewError as e:
@@ -378,7 +468,7 @@ async def check_scheme(
             return done("error", str(e))
 
     if not suggestions and not contacts_gone:
-        store.save_pages(scheme_id, page_entries(new), now)
+        store.save_pages(scheme_id, page_entries(new), new, now)
         return done("unchanged", f"{len(changed)} page(s) changed, nothing out of date")
 
     record = {
@@ -388,14 +478,15 @@ async def check_scheme(
         "status": "pending",
         "created_at": now,
         "pages": changed,
+        "diff": text_diff,
+        "text_diff": text_diff,
         "review_input_truncated": cut,
         "suggestions": suggestions,
         "contact_check": contacts_gone,
-        # The hashes this check saw; saved on the scheme once a volunteer approves or rejects.
-        "new_pages": page_entries(new),
         "model": REVIEW_MODEL,
         "prompt_version": PROMPT_VERSION,
     }
     check_id = store.save_flagged(scheme_id, record, now)
     result["check_id"] = check_id
+    result["diff"] = text_diff
     return done("flagged", f"{len(suggestions)} suggestion(s), {len(contacts_gone)} contact(s) gone")

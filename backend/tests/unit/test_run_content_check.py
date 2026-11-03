@@ -1,6 +1,5 @@
 """Unit tests for the monthly scheme content change check batch job (run_content_check.py)."""
 
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -227,12 +226,36 @@ def test_run_content_check_core_top_level_error(monkeypatch):
     assert "Firestore unavailable" in result["error"]
 
 
-def test_scheduled_content_check(monkeypatch):
-    """scheduled_content_check invokes run_content_check_core."""
-    mock_run = MagicMock(return_value={"success": True, "total_checked": 0})
-    monkeypatch.setattr(content_job, "run_content_check_core", mock_run)
+def test_trigger_content_check_job_success(monkeypatch):
+    """trigger_content_check_job calls Cloud Run Jobs API and returns execution metadata."""
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        "name": "projects/schemessg-v3-dev/locations/asia-southeast1/jobs/scheme-content-check/executions/exec-1"
+    }
+    mock_post = MagicMock(return_value=mock_response)
+    monkeypatch.setattr(content_job.requests, "post", mock_post)
 
-    event = SimpleNamespace(schedule_time="2026-11-01T10:00:00Z")
-    content_job.scheduled_content_check.__wrapped__(event)
+    mock_creds = MagicMock()
+    mock_creds.token = "fake-token"
+    monkeypatch.setattr(content_job.google.auth, "default", lambda **k: (mock_creds, "schemessg-v3-dev"))
 
-    mock_run.assert_called_once_with()
+    result = content_job.trigger_content_check_job(project_id="schemessg-v3-dev")
+    assert result["success"] is True
+    assert "exec-1" in result["execution"]
+    mock_post.assert_called_once_with(
+        "https://asia-southeast1-run.googleapis.com/v2/projects/schemessg-v3-dev/locations/asia-southeast1/jobs/scheme-content-check:run",
+        headers={"Content-Type": "application/json", "Authorization": "Bearer fake-token"},
+        json={},
+        timeout=60,
+    )
+
+
+def test_trigger_content_check_job_failure(monkeypatch):
+    """trigger_content_check_job handles API errors gracefully."""
+    mock_post = MagicMock(side_effect=content_job.requests.exceptions.RequestException("API error"))
+    monkeypatch.setattr(content_job.requests, "post", mock_post)
+    monkeypatch.setattr(content_job.google.auth, "default", lambda **k: (MagicMock(), "schemessg-v3-dev"))
+
+    result = content_job.trigger_content_check_job(project_id="schemessg-v3-dev")
+    assert result["success"] is False
+    assert "API error" in result["error"]

@@ -88,6 +88,7 @@ FIELD_COLUMNS = {
     for field, label in FIELD_LABELS.items()
 }
 FIELD_TO_COLUMN = {field: column for column, field in FIELD_COLUMNS.items()}
+DIFF_COLUMN = "Text Diff"
 COLUMN_TYPES = {
     FIELD_TO_COLUMN["scheme"]: "title",
     FIELD_TO_COLUMN["who_is_it_for"]: "multi_select",
@@ -99,6 +100,7 @@ COLUMN_TYPES = {
     "Last updated": "date",
     "Scheme ID": "rich_text",
     "Check ID": "rich_text",
+    DIFF_COLUMN: "rich_text",
 }
 COLUMN_TYPES.update({column: "rich_text" for column in FIELD_COLUMNS if column not in COLUMN_TYPES})
 # Tag fields only take these options; anything else a volunteer adds is dropped on write.
@@ -203,6 +205,7 @@ def row_properties(
     check_id: str,
     scheme: Dict[str, Any],
     changes: Dict[str, Dict[str, Any]],
+    diff: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Plain row values: every field pre-filled, changed fields holding the new value.
     "Last updated" is when the listing was last saved (the website's "Last updated"), so the
@@ -223,6 +226,7 @@ def row_properties(
             "Last updated": listed.date().isoformat() if listed else None,
             "Scheme ID": scheme_id,
             "Check ID": check_id,
+            DIFF_COLUMN: _as_text(diff),
         }
     )
     return values
@@ -321,13 +325,12 @@ def existing_rows(notion: NotionClient, data_source: str) -> Dict[str, Dict[str,
 def sync_tag_options(notion: NotionClient, data_source: str) -> None:
     """Set the tag columns' dropdowns to exactly the allowed lists, so volunteers only see tags
     an approval saves. Runs at the start of every push, so taxonomy updates reach Notion."""
-    notion.update_data_source(
-        data_source,
-        {
-            FIELD_TO_COLUMN[field]: {"multi_select": {"options": [{"name": notion_option(tag)} for tag in tags]}}
-            for field, tags in TAG_OPTIONS.items()
-        },
-    )
+    properties = {
+        FIELD_TO_COLUMN[field]: {"multi_select": {"options": [{"name": notion_option(tag)} for tag in tags]}}
+        for field, tags in TAG_OPTIONS.items()
+    }
+    properties[DIFF_COLUMN] = {"rich_text": {}}
+    notion.update_data_source(data_source, properties)
 
 
 def push_flagged(
@@ -362,7 +365,11 @@ def push_flagged(
             # Old-vocabulary tags shown in today's terms (some move field); approving saves them that way.
             scheme.update(translate_legacy({field: _as_list(scheme.get(field)) for field in LIST_FIELDS}))
             changes = suggested_changes(scheme, record)
-            props = encode_properties(row_properties(scheme_id, check_id, scheme, changes), COLUMN_TYPES)
+            diff = record.get("diff") if record.get("diff") is not None else record.get("text_diff")
+            props = encode_properties(
+                row_properties(scheme_id, check_id, scheme, changes, diff=diff),
+                COLUMN_TYPES,
+            )
             blocks = review_blocks(scheme, changes, record.get("contact_check") or [])
             row = rows.get(scheme_id)
             if row and row["status"] in (STATUS_APPROVED, STATUS_REJECTED):
