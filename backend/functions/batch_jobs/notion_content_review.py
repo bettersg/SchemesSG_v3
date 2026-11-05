@@ -510,6 +510,32 @@ def sweep_decided(
     return counts
 
 
+def push_pending(
+    db=None,
+    notion: Optional[NotionClient] = None,
+    cfg: Optional[Dict[str, str]] = None,
+    now: Optional[datetime] = None,
+) -> Dict[str, Any]:
+    """Find any pending contentChecks records without a Notion page and push them."""
+    cfg = cfg or notion_config()
+    if not cfg:
+        logger.info("Notion review push skipped: NOTION_* not set")
+        return {"skipped": "notion not configured"}
+    db = db or get_firestore_client()
+    now = now or datetime.now(timezone.utc)
+
+    unpushed_check_ids = [
+        doc.id
+        for doc in db.collection(CHECKS).where("status", "==", STATUS_PENDING).stream()
+        if not (doc.to_dict() or {}).get("notion_page_id")
+    ]
+    if not unpushed_check_ids:
+        return {"created": 0, "updated": 0, "skipped_decided": 0, "failed": 0}
+
+    logger.info(f"Pushing {len(unpushed_check_ids)} pending checks to Notion...")
+    return push_flagged(unpushed_check_ids, db=db, notion=notion, cfg=cfg, now=now)
+
+
 @scheduler_fn.on_schedule(
     schedule="0 * * * *",  # every hour, on the hour
     region="asia-southeast1",
@@ -519,6 +545,7 @@ def sweep_decided(
     retry_count=0,  # the next run is an hour away
 )
 def scheduled_notion_content_review(event: scheduler_fn.ScheduledEvent) -> None:
-    """Apply volunteer verdicts from the Notion content review queue."""
+    """Sync pending checks to Notion, then apply volunteer verdicts from the Notion review queue."""
     logger.info(f"Notion content review sweep triggered at {event.schedule_time}")
+    push_pending()
     sweep_decided()

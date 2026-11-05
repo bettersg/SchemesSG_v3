@@ -413,6 +413,7 @@ async def check_scheme(
     scheme = store.get_scheme(scheme_id)
     if scheme is None:
         return done("not_found")
+    result["scheme_name"] = scheme.get("scheme")
     if not scheme.get("link"):
         return done("skipped", "no link")
     if scheme.get("link_suspect"):
