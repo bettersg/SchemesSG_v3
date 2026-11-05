@@ -114,7 +114,7 @@ def _enforce_block_cap(blocks: List[dict]) -> List[dict]:
 def build_content_check_summary_message(
     results_summary: Dict[str, Any],
     flagged_schemes: List[Dict[str, Any]],
-    failed_schemes: List[Dict[str, Any]],
+    failed_schemes: Optional[List[Dict[str, Any]]] = None,
 ) -> dict:
     """
     Build Slack message summarizing monthly scheme content check results.

@@ -76,7 +76,7 @@ def test_build_content_check_summary_message():
 
 
 def test_build_content_check_summary_message_with_failures():
-    """build_content_check_summary_message includes failure blocks when errors occur."""
+    """build_content_check_summary_message includes failure counts in summary and fallback text, omitting individual failure blocks."""
     results_summary = {
         "total_checked": 5,
         "outcomes": {
@@ -98,8 +98,10 @@ def test_build_content_check_summary_message_with_failures():
     )
 
     assert "1 failed" in msg["text"]
-    assert any("Failed Checks (1)" in str(b) for b in msg["blocks"])
-    assert any("Scheme 3" in str(b) for b in msg["blocks"])
+    assert any("Failures / Scrape errors: *1*" in str(b) for b in msg["blocks"])
+    # Individual failed schemes are omitted from message blocks
+    assert not any("Failed Checks" in str(b) for b in msg["blocks"])
+    assert not any("Scheme 3" in str(b) for b in msg["blocks"])
 
 
 def test_build_content_check_error_message():
