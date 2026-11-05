@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 
 import pytest
 from app.content_check import (
-    MAX_REVIEW_CHARS,
     ReviewError,
+    _words,
     changed_pages,
     check_scheme,
     contact_check,
@@ -34,6 +34,7 @@ class FakeStore:
         self.fail_streak = 0
         self.stamped = None
         self.records = []
+        self.texts = {norm_url(u): _words(t) for u, t in (scheme.get("_old_pages") or {}).items()} if scheme else {}
 
     def get_scheme(self, scheme_id):
         return self.scheme
@@ -41,9 +42,18 @@ class FakeStore:
     def record_failure(self, scheme_id):
         self.fail_streak += 1
 
-    def save_pages(self, scheme_id, pages, now):
+    def get_texts(self, scheme_id):
+        return dict(self.texts)
+
+    def save_pages(self, scheme_id, pages, *args):
         self.scheme["content_pages"] = pages
-        self.stamped = now
+        if len(args) == 2:
+            new, now = args
+            for k, p in new.items():
+                self.texts[k] = p.get("normalized_text", "")
+            self.stamped = now
+        elif len(args) == 1:
+            self.stamped = args[0]
 
     def save_flagged(self, scheme_id, record, now):
         self.records.append(record)
@@ -60,6 +70,7 @@ def scheme(old_pages=None, **extra):
     fields = {"scheme": "Aid Fund", "agency": "Example Org", "link": LINK, "eligibility": "Age 60 and above"}
     if old_pages is not None:
         fields["content_pages"] = baseline(old_pages)
+        fields["_old_pages"] = old_pages
     return {**fields, **extra}
 
 
@@ -178,7 +189,7 @@ def test_only_changed_pages_go_to_ai_as_full_text():
     store = FakeStore(scheme({LINK: "Age 60 and above", LINK + "/about": "About us"}))
     review = reviewer([])
     run(store, scrape=scraper({LINK: "Age 65 and above\nFooter", LINK + "/about": "About us"}), review=review)
-    assert review.calls == [f"Page: {LINK}\nAge 65 and above\nFooter"]
+    assert review.calls == [f"Page: {LINK}\n age\n-60\n+65\n and above\n+footer"]
 
 
 def test_not_flagged_saves_new_hashes():
@@ -250,10 +261,10 @@ def test_hash_keeps_numbers_intact():
     assert page_hash("Grant: $3,500") == page_hash("grant $3,500")
 
 
-def test_review_input_is_capped():
-    new = scraped_pages({"pages": [{"url": LINK, "text": "x" * (MAX_REVIEW_CHARS + 10)}]})
-    text, cut = format_pages([LINK], new)
-    assert len(text) == MAX_REVIEW_CHARS and cut
+def test_review_input_is_not_capped():
+    new = scraped_pages({"pages": [{"url": LINK, "text": "x" * 250_000}]})
+    text = format_pages([LINK], new)
+    assert len(text) >= 250_000
 
 
 def test_scraped_pages_drops_trackers_and_keeps_longest_copy():
@@ -265,7 +276,7 @@ def test_scraped_pages_drops_trackers_and_keeps_longest_copy():
             ]
         }
     )
-    assert pages == {norm_url(LINK): {"url": LINK + "/", "text": "longer", "hash": page_hash("longer")}}
+    assert pages == {norm_url(LINK): {"url": LINK + "/", "text": "longer", "normalized_text": "longer", "hash": page_hash("longer")}}
 
 
 def test_scraped_pages_converts_html():
@@ -281,7 +292,7 @@ def test_filter_drops_contacts_copy_backs_and_unknown_fields():
         {"field": "phone", "new_value": "6999 8888"},
         {"field": "eligibility", "new_value": "age 60 and above"},  # same words: copy-back
         {"field": "not_a_field", "new_value": "x"},
-        {"field": "who_is_it_for", "new_value": ["Seniors"]},  # tags belong to the taxonomy tagger
+        {"field": "unknown_tag", "new_value": ["Seniors"]},  # tags belong to the taxonomy tagger
         "not a dict",
         {"field": "summary", "new_value": "Helps seniors and caregivers"},
     ]

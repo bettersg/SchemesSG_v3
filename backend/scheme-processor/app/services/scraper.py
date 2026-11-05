@@ -85,7 +85,7 @@ async def _scrape_html(url: str, content_check: bool = False) -> Dict[str, Any]:
     # Check if blocked by Cloudflare - try Pydoll bypass
     if _is_cloudflare_blocked(result):
         logger.warning(f"Cloudflare detected, trying Pydoll bypass for: {url}")
-        pydoll_result = await _try_pydoll_bypass(url)
+        pydoll_result = await _try_pydoll_bypass(url, content_check=content_check)
         if pydoll_result.get("content") and not pydoll_result.get("error"):
             return pydoll_result
         # Pydoll failed too
@@ -113,8 +113,6 @@ def _is_cloudflare_blocked(result: Dict[str, Any]) -> bool:
 
 # Conservative, cross-site exclusions for content-change fingerprints only.
 CONTENT_EXCLUDE_SELECTOR = ", ".join([
-    "nav", "footer", "aside", '[role="navigation"]',
-    '[role="banner"]', '[role="contentinfo"]',
     "#onetrust-banner-sdk", "#CybotCookiebotDialog",
     ".cky-consent-container", ".cc-window", ".cc-banner",
     "#intercom-container", "#hubspot-messages-iframe-container",
@@ -294,7 +292,7 @@ def _main_text(result) -> str:
     return getattr(result.markdown, "fit_markdown", None) or ""
 
 
-async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
+async def _try_pydoll_bypass(url: str, content_check: bool = False) -> Dict[str, Any]:
     """
     Try Pydoll for Cloudflare bypass.
 
@@ -381,14 +379,13 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
                     break
 
             # Extract page content
-            raw_html = await _extract_pydoll_content(tab)
-            main_text, method = extract_main_content(raw_html)
-            page_content = extract_meaningful_text(raw_html)
+            page_content = await _extract_pydoll_content(tab)
 
-            if page_content and len(page_content) >= 300:
+            if page_content and len(page_content) > 500:
                 logger.info(f"Pydoll succeeded for {url}: {len(page_content)} chars")
                 images = _extract_images_from_html(page_content, url)
                 logo_url = select_best_logo(images, url) if images else None
+                main_text, method = extract_main_content(page_content) if content_check else ("", "disabled")
                 return {
                     "content": page_content,
                     "images": images,
@@ -497,42 +494,4 @@ def _extract_images_from_html(html: str, base_url: str) -> List[Dict]:
         images.append({"src": src, "alt": img.get("alt", ""), "desc": " ".join(desc_parts), "score": 0})
 
     return images
-
-
-def extract_meaningful_text(html: str) -> str:
-    soup = BeautifulSoup(html, "html.parser")
-
-    # Remove non-content elements
-    for tag in soup([
-        "script",
-        "style",
-        "noscript",
-        "iframe",
-        "svg",
-        "template",
-    ]):
-        tag.decompose()
-
-    # Remove hidden elements
-    for tag in soup.select(
-        '[hidden], [aria-hidden="true"], '
-        '[style*="display:none"], '
-        '[style*="display: none"], '
-        '[style*="visibility:hidden"], '
-        '[style*="visibility: hidden"]'
-    ):
-        tag.decompose()
-
-    # Prefer the main content region
-    main = (
-        soup.select_one("main")
-        or soup.select_one("article")
-        or soup.select_one(".main-content-wrapper")
-        or soup.body
-        or soup
-    )
-
-    text = main.get_text(separator=" ", strip=True)
-
-    return re.sub(r"\s+", " ", text).strip()
 

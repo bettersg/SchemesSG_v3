@@ -27,6 +27,7 @@ Prompt, filters and contact check were chosen in the trial (Notion "#407 AI revi
 the prompt was adapted from reading a diff to reading whole changed pages.
 """
 
+import asyncio
 import hashlib
 import difflib
 import json
@@ -46,9 +47,6 @@ CONTENT_TEXTS = "schemeContent"
 MAX_SNAPSHOT_BYTES = 900_000
 
 SKIP_STATUSES = ("inactive", "retired")
-
-# Page text sent to the reviewer is capped; one long page (e.g. a doctors list) can reach ~900k chars.
-MAX_REVIEW_CHARS = 200_000
 
 REVIEW_MODEL = "gpt-5.4-mini"
 PROMPT_VERSION = "v5-normalized-diff"
@@ -139,7 +137,7 @@ def _words(value: Any) -> str:
 
 def page_hash(text: str) -> str:
     """Hash the exact canonical string persisted in schemeContent."""
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return hashlib.sha256(_words(text).encode("utf-8")).hexdigest()
 
 
 class MainContentExtractionError(Exception):
@@ -214,8 +212,9 @@ def normalized_diff(old_text: str, new_text: str, context_words: int = 35) -> st
 
 
 def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]],
-                 previous: Dict[str, str]) -> Tuple[str, bool]:
+                 previous: Optional[Dict[str, str]] = None) -> str:
     """Send normalized word diffs, with surrounding context, not full page text."""
+    previous = previous or {}
     sections = []
     for url in urls:
         key = norm_url(url)
@@ -226,7 +225,7 @@ def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]],
         else:
             sections.append(f"Page: {url}\n{normalized_diff(prior, current)}")
     output = "\n\n".join(sections)
-    return output[:MAX_REVIEW_CHARS], len(output) > MAX_REVIEW_CHARS
+    return output
 
 
 #### Regex contact check
@@ -460,7 +459,7 @@ async def check_scheme(
     cut = False
     text_diff = None
     if changed:
-        pages, cut = format_pages([c["url"] for c in changed], new, previous or {})
+        pages = format_pages([c["url"] for c in changed], new, previous or {})
         text_diff = pages if pages.strip() else None
         try:
             suggestions = filter_suggestions(await review(scheme, pages), scheme)

@@ -67,7 +67,8 @@ def get_slack_channel() -> str:
 def _format_flagged_scheme(item: Dict[str, Any]) -> str:
     doc_id = item.get("doc_id", "Unknown")
     name = item.get("scheme_name") or doc_id
-    detail = item.get("detail", "Content changes detected")
+    raw_detail = str(item.get("detail", "Content changes detected") or "").replace("\n", " ").strip()
+    detail = raw_detail[:197] + "..." if len(raw_detail) > 200 else raw_detail
     check_id = item.get("check_id")
     check_str = f" (`{check_id}`)" if check_id else ""
     return f"• *{name}*{check_str}\n  ID: `{doc_id}`\n  Detail: _{detail}_"
@@ -77,17 +78,34 @@ def _format_failed_scheme(item: Dict[str, Any]) -> str:
     doc_id = item.get("doc_id", "Unknown")
     name = item.get("scheme_name") or doc_id
     outcome = item.get("outcome", "error")
-    detail = item.get("detail", "Unknown error")
-    return f"• *{name}*\n  ID: `{doc_id}`\n  Outcome: `{outcome}`\n  Error: _{detail}_"
+    raw_detail = str(item.get("detail", "Unknown error") or "").replace("\n", " ").strip()
+    detail = raw_detail[:197] + "..." if len(raw_detail) > 200 else raw_detail
+    return f"• *{name}*\n  ID: `{doc_id}` | Outcome: `{outcome}`\n  Error: _{detail}_"
 
 
 def _chunked_blocks(items: List[Dict[str, Any]], formatter: Callable[[Dict[str, Any]], str]) -> List[dict]:
-    """Group items into Slack section blocks, up to MAX_ITEMS_PER_BLOCK per block."""
+    """Group items into Slack section blocks, ensuring character limits (<= 3000 chars per block)."""
     blocks = []
-    for i in range(0, len(items), MAX_ITEMS_PER_BLOCK):
-        chunk = items[i : i + MAX_ITEMS_PER_BLOCK]
-        text = "\n".join(formatter(item) for item in chunk)
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text}})
+    current_lines = []
+    current_len = 0
+    max_block_chars = 2800  # Slack section limit is 3000 chars
+
+    for item in items:
+        line = formatter(item)
+        line_len = len(line) + 1  # account for newline
+        if len(current_lines) >= MAX_ITEMS_PER_BLOCK or (current_len + line_len > max_block_chars and current_lines):
+            text = "\n".join(current_lines)
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text[:3000]}})
+            current_lines = [line]
+            current_len = line_len
+        else:
+            current_lines.append(line)
+            current_len += line_len
+
+    if current_lines:
+        text = "\n".join(current_lines)
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text[:3000]}})
+
     return blocks
 
 
@@ -103,7 +121,7 @@ def _enforce_block_cap(blocks: List[dict]) -> List[dict]:
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": f":warning: _… and {omitted} more entries omitted. Check logs for the full list._",
+                    "text": f":warning: _… and {omitted} more entries omitted due to Slack message limits. Check logs for the full list._",
                 }
             ],
         }
@@ -175,6 +193,23 @@ def build_content_check_summary_message(
             {
                 "type": "context",
                 "elements": [{"type": "mrkdwn", "text": ":eyes: Pending review rows created in `contentChecks`"}],
+            }
+        )
+
+    # Add failed schemes section if any
+    if failed_schemes:
+        blocks.append({"type": "divider"})
+        blocks.append(
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": f"*Failed Checks ({len(failed_schemes)}) - scraping or processing errors:*"},
+            }
+        )
+        blocks.extend(_chunked_blocks(failed_schemes, _format_failed_scheme))
+        blocks.append(
+            {
+                "type": "context",
+                "elements": [{"type": "mrkdwn", "text": ":warning: Check Cloud Run logs for error stack traces"}],
             }
         )
 

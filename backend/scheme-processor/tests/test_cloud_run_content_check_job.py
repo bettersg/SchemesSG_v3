@@ -1,15 +1,9 @@
 """Unit tests for Cloud Run Job monthly scheme content check and its Slack integration."""
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-
-# Ensure scheme-processor is on sys.path so we can import app.run_content_check
-SCHEME_PROCESSOR_DIR = Path(__file__).resolve().parents[2] / "scheme-processor"
-if str(SCHEME_PROCESSOR_DIR) not in sys.path:
-    sys.path.insert(0, str(SCHEME_PROCESSOR_DIR))
+from slack_sdk.errors import SlackApiError
 
 from app.run_content_check import (
     build_content_check_error_message,
@@ -18,7 +12,6 @@ from app.run_content_check import (
     get_slack_client,
     run_job_core,
 )
-from slack_sdk.errors import SlackApiError
 
 
 def test_get_slack_client_and_channel(monkeypatch):
@@ -76,7 +69,7 @@ def test_build_content_check_summary_message():
 
 
 def test_build_content_check_summary_message_with_failures():
-    """build_content_check_summary_message includes failure counts in summary and fallback text, omitting individual failure blocks."""
+    """build_content_check_summary_message renders failed schemes section with outcome and error details."""
     results_summary = {
         "total_checked": 5,
         "outcomes": {
@@ -99,9 +92,46 @@ def test_build_content_check_summary_message_with_failures():
 
     assert "1 failed" in msg["text"]
     assert any("Failures / Scrape errors: *1*" in str(b) for b in msg["blocks"])
-    # Individual failed schemes are omitted from message blocks
-    assert not any("Failed Checks" in str(b) for b in msg["blocks"])
-    assert not any("Scheme 3" in str(b) for b in msg["blocks"])
+    assert any("Failed Checks (1)" in str(b) for b in msg["blocks"])
+    assert any("Scheme 3" in str(b) for b in msg["blocks"])
+    assert any("Timeout 30s" in str(b) for b in msg["blocks"])
+
+
+def test_build_content_check_summary_message_length_safety():
+    """build_content_check_summary_message truncates long error details and enforces Slack limits."""
+    results_summary = {
+        "total_checked": 60,
+        "outcomes": {"unchanged": 10, "flagged": 10, "scrape_failed": 40, "error": 0},
+        "duration_seconds": 300,
+    }
+    # Massive error detail simulating stack trace or HTML error
+    huge_error = "Server Error 500: Database failed with connection timeout\n" * 50
+    flagged = [
+        {"doc_id": f"flag-{i}", "scheme_name": f"Flagged Scheme {i}", "detail": "Field updated"}
+        for i in range(10)
+    ]
+    failures = [
+        {"doc_id": f"fail-{i}", "scheme_name": f"Failed Scheme {i}", "outcome": "scrape_failed", "detail": huge_error}
+        for i in range(500)
+    ]
+
+    msg = build_content_check_summary_message(
+        results_summary, flagged_schemes=flagged, failed_schemes=failures
+    )
+
+    # 1. Total blocks must not exceed Slack limit of 50
+    assert len(msg["blocks"]) <= 50
+
+    # 2. No section block may exceed Slack limit of 3000 chars
+    for block in msg["blocks"]:
+        if block.get("type") == "section" and "text" in block:
+            assert len(block["text"]["text"]) <= 3000
+
+    # 3. Fallback text must not exceed Slack limit of 4000 chars
+    assert len(msg["text"]) <= 4000
+
+    # 4. Truncation notice included when blocks exceed capacity
+    assert any("omitted due to Slack message limits" in str(b) for b in msg["blocks"])
 
 
 def test_build_content_check_error_message():
