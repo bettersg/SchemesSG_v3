@@ -3,12 +3,13 @@ Notion review queue for the monthly content check (issue #407).
 
 Two jobs, both plain Notion API calls (no Notion AI):
 
-1. Monthly push (called at the end of ``run_content_check_core``): each flagged scheme gets one
-   row in the Notion review database. Fields the AI (or the contact check) says are out of date
-   are pre-filled with the new value and tagged in "Changed by AI"; a ✏️ box per change in the
-   row body shows the previous value and the source page. A scheme already in the queue has its
-   row refreshed, unless a volunteer has already set it to Approved.
-2. Hourly sweep (``scheduled_notion_content_review``): rows set to Approved or Rejected are applied
+1. Hourly push (``push_pending``, run by ``scheduled_notion_content_review``): each record the
+   monthly Cloud Run job flagged gets one row in the Notion review database. Fields the AI (or the
+   contact check) says are out of date are pre-filled with the new value and tagged in "Changed by
+   AI"; a ✏️ box per change in the row body shows the previous value and the source page. A scheme
+   already in the queue has its row refreshed, unless a volunteer has already set it to Approved or
+   Rejected.
+2. Hourly sweep (same scheduled function, after the push): rows set to Approved or Rejected are applied
    to Firestore, recorded on their ``contentChecks`` record, then moved to Notion's trash.
    - Approved: every field in the row is written to the scheme, plus the new page hashes.
    - Rejected: only the new page hashes are saved, so the same change is not flagged again.
@@ -535,7 +536,8 @@ def push_pending(
 
     unpushed_check_ids = [
         doc.id
-        for doc in db.collection(CHECKS).where("status", "==", STATUS_PENDING).stream()
+        # Firestore matches case-sensitively, and the monthly job saves "pending" in lowercase.
+        for doc in db.collection(CHECKS).where("status", "==", STATUS_PENDING.lower()).stream()
         if not (doc.to_dict() or {}).get("notion_page_id")
     ]
     if not unpushed_check_ids:

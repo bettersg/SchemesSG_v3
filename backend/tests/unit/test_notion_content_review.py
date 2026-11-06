@@ -308,6 +308,36 @@ def test_push_failure_for_one_check_does_not_stop_the_others():
     assert notion.row("page-1")["Scheme ID"] == "s1"
 
 
+def test_push_pending_finds_a_record_saved_by_the_monthly_job():
+    db, notion = setup()
+    # Every field check_scheme saves; its status is lowercase while Notion's is "Pending".
+    flag(
+        db,
+        scheme="Care Fund",
+        link=LINK,
+        created_at=NOW,
+        pages=[{"url": LINK, "change": "changed"}],
+        diff="- old\n+ new",
+        text_diff="- old\n+ new",
+        review_input_truncated=False,
+        model="test-model",
+        prompt_version="test-prompt",
+    )
+
+    result = review.push_pending(db=db, notion=notion, cfg=CFG, now=NOW)
+
+    assert result["created"] == 1
+    assert notion.row("page-1")["Status"] == "Pending"
+    assert db.get_document("contentChecks", "check-1")["notion_page_id"] == "page-1"
+
+
+def test_push_pending_skips_records_already_in_notion():
+    db, notion = setup()
+    flag(db, notion_page_id="page-9")
+    assert review.push_pending(db=db, notion=notion, cfg=CFG, now=NOW)["created"] == 0
+    assert notion.pages == {}
+
+
 def test_contact_gone_from_site_replaces_phone():
     db, notion = setup()
     gone = [{"contact": "61234567", "pages": [LINK + "/contact"], "replacements": ["6765 4321"]}]
