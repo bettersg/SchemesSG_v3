@@ -13,11 +13,13 @@ from app.content_check import (
     changed_pages,
     check_scheme,
     contact_check,
+    contacts,
     filter_suggestions,
     format_pages,
     norm_url,
     page_entries,
     page_hash,
+    phone_key,
     scraped_pages,
 )
 
@@ -227,8 +229,48 @@ def test_removed_contact_flags_even_without_ai_suggestion():
     result = run(store, scrape=scraper({LINK: "Call 6999 8888 for help"}), review=reviewer([]))
     assert result["outcome"] == "flagged"
     assert store.records[0]["contact_check"] == [
-        {"contact": "61234567", "pages": [LINK], "replacements": ["69998888"]}
+        {"contact": "61234567", "pages": [LINK], "replacements": ["6999 8888"]}
     ]
+
+
+@pytest.mark.parametrize(
+    "written, key",
+    [
+        ("6123 4567", "61234567"),
+        ("6123-4567", "61234567"),
+        ("+65 6123 4567", "61234567"),
+        ("(65) 6123 4567", "61234567"),
+        ("6512 3456", "65123456"),  # Local number that starts with 65
+        ("1800 123 4567", "18001234567"),
+        ("1900 123 4567", "19001234567"),
+    ],
+)
+def test_phone_key(written, key):
+    assert phone_key(written) == key
+
+
+def test_contacts_keep_1800_numbers_whole():
+    assert contacts("Call 1800 123 4567") == ["18001234567"]
+
+
+def test_same_number_written_differently_is_not_gone():
+    old = {LINK: {"contacts": contacts("Call 6123 4567")}}
+    new = {LINK: {"url": LINK, "text": "Call +65 6123-4567"}}
+    assert contact_check(old, new) == []
+
+
+def test_new_1800_number_is_offered_as_the_page_writes_it():
+    old = {LINK: {"contacts": contacts("Call 6123 4567")}}
+    new = {LINK: {"url": LINK, "text": "Call 1800 123 4567"}}
+    assert contact_check(old, new) == [
+        {"contact": "61234567", "pages": [LINK], "replacements": ["1800 123 4567"]}
+    ]
+
+
+def test_international_number_is_offered_once_with_its_prefix():
+    old = {LINK: {"contacts": contacts("Call 6123 4567")}}
+    new = {LINK: {"url": LINK, "text": "Call +65 6999 8888"}}
+    assert contact_check(old, new)[0]["replacements"] == ["+65 6999 8888"]
 
 
 def test_footer_contact_change_flags_when_main_text_hash_is_same():

@@ -231,19 +231,34 @@ def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]],
 #### Regex contact check
 
 
-def contacts(text: str) -> List[str]:
-    """Emails (lowercase) and phones (last 8 digits) on a page, sorted."""
+def phone_key(phone: str) -> str:
+    """Digits used to compare phones, so +65 6123 4567 and 6123-4567 match. 1800/1900 numbers stay
+    whole. Only a 10-digit number has a country code: 6512 3456 is a local number."""
+    digits = re.sub(r"\D", "", phone)
+    return digits[2:] if len(digits) == 10 and digits.startswith("65") else digits
+
+
+def page_contacts(text: str) -> Dict[str, str]:
+    """{comparison form: form to show} for a page's contacts. Emails are lowercase in both; phones
+    compare by phone_key and show as the page writes them."""
     # Links and image URLs out first: IDs like .../487c6111-2149-.../ otherwise read as phone numbers.
     found = extract_contacts(URLS.sub(" ", IMAGES.sub(" ", text)), max_text_length=10**7)
-    emails = {e.lower() for e in found.emails if not CONTACT_JUNK.search(e)}
-    return sorted(emails | {re.sub(r"\D", "", p)[-8:] for p in found.phones})
+    shown = {e.lower(): e.lower() for e in found.emails if not CONTACT_JUNK.search(e)}
+    for phone in found.phones_as_written:
+        shown.setdefault(phone_key(phone), phone)
+    return shown
+
+
+def contacts(text: str) -> List[str]:
+    """Emails (lowercase) and phones (phone_key) on a page, sorted."""
+    return sorted(page_contacts(text))
 
 
 def contact_check(old: Dict[str, Dict[str, Any]], new: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Flag an email/phone that was on a page crawled both times and is gone from the whole new
     scrape. Added contacts don't flag (extra crawled pages add many), but contacts new on the same
-    page are offered as replacements."""
-    new_contacts = {k: set(contacts(p["text"])) for k, p in new.items()}
+    page are offered as replacements, as the page writes them."""
+    new_contacts = {k: page_contacts(p["text"]) for k, p in new.items()}
     everywhere = set().union(*new_contacts.values())
     found: Dict[str, Dict[str, Any]] = {}
     for key in sorted(old.keys() & new.keys()):
@@ -251,7 +266,7 @@ def contact_check(old: Dict[str, Dict[str, Any]], new: Dict[str, Dict[str, Any]]
         for contact in before - everywhere:
             entry = found.setdefault(contact, {"contact": contact, "pages": [], "replacements": set()})
             entry["pages"].append(new[key]["url"])
-            entry["replacements"] |= new_contacts[key] - before
+            entry["replacements"] |= {shown for c, shown in new_contacts[key].items() if c not in before}
     return [{**e, "replacements": sorted(e["replacements"])} for _, e in sorted(found.items())]
 
 

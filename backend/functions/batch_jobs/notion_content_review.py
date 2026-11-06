@@ -164,22 +164,31 @@ def _split_contacts(value: Any) -> List[str]:
     return [part.strip() for part in re.split(r"[,;\n]", _as_text(value)) if part.strip()]
 
 
+def _phone_key(phone: str) -> str:
+    """Digits used to compare phones. Must match phone_key in scheme-processor's content_check.py,
+    which wrote the gone numbers: 1800/1900 numbers stay whole, a 10-digit 65... drops the 65."""
+    digits = re.sub(r"\D", "", phone)
+    return digits[2:] if len(digits) == 10 and digits.startswith("65") else digits
+
+
 def contact_changes(scheme: Dict[str, Any], contact_check: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     """Turn the regex contact check into phone/email suggestions. Only a stored phone/email that is
     gone from the site changes the field: it is removed, and contacts new on the same page are
-    added. Contacts are emails (lowercase) or the last 8 digits of a phone number."""
+    added. Gone contacts are emails (lowercase) or a _phone_key; replacements are as the page
+    writes them."""
     gone = {entry["contact"] for entry in contact_check}
     added = sorted({r for entry in contact_check for r in entry.get("replacements", [])})
     sources = [page for entry in contact_check for page in entry.get("pages", [])]
     changes: Dict[str, Dict[str, Any]] = {}
     for field, is_email in (("phone", False), ("email", True)):
-        key = (lambda c: c.lower()) if is_email else (lambda c: re.sub(r"\D", "", c)[-8:])
+        key = (lambda c: c.lower()) if is_email else _phone_key
         before = _split_contacts(scheme.get(field))
         kept = [c for c in before if key(c) not in gone]
         if len(kept) == len(before):
             continue
         kept_keys = {key(c) for c in kept}
-        new = kept + [c for c in added if ("@" in c) == is_email and c not in kept_keys]
+        fresh = {key(c): c for c in added if ("@" in c) == is_email and key(c) not in kept_keys}
+        new = kept + list(fresh.values())
         changes[field] = {"new_value": ", ".join(new), "page_url": sources[0] if sources else None}
     return changes
 

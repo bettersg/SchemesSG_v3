@@ -310,14 +310,38 @@ def test_push_failure_for_one_check_does_not_stop_the_others():
 
 def test_contact_gone_from_site_replaces_phone():
     db, notion = setup()
-    gone = [{"contact": "61234567", "pages": [LINK + "/contact"], "replacements": ["67654321"]}]
+    gone = [{"contact": "61234567", "pages": [LINK + "/contact"], "replacements": ["6765 4321"]}]
     flag(db, suggestions=[], contact_check=gone)
     push(db, notion)
     row = notion.row("page-1")
-    assert (row[C["phone"]], row["Changed by AI"]) == ("67654321", ["Phone"])
+    assert (row[C["phone"]], row["Changed by AI"]) == ("6765 4321", ["Phone"])
     body = notion.body_text("page-1")
     assert "6123 4567" in body  # previous value in the box
     assert "💬 Quote" not in body  # the contact check gives no quote
+
+
+def test_contact_gone_keeps_the_whole_1800_replacement():
+    changes = review.contact_changes(
+        {"phone": "+65 6123 4567"},
+        [{"contact": "61234567", "pages": [LINK], "replacements": ["1800 123 4567"]}],
+    )
+    assert changes["phone"]["new_value"] == "1800 123 4567"
+
+
+def test_gone_1800_number_matches_the_stored_phone():
+    changes = review.contact_changes(
+        {"phone": "1800 123 4567, 6222 3333"},
+        [{"contact": "18001234567", "pages": [LINK], "replacements": ["6765 4321"]}],
+    )
+    assert changes["phone"]["new_value"] == "6222 3333, 6765 4321"
+
+
+def test_replacement_already_on_the_scheme_is_not_added_twice():
+    changes = review.contact_changes(
+        {"phone": "6123 4567, 6765-4321"},
+        [{"contact": "61234567", "pages": [LINK], "replacements": ["+65 6765 4321", "6765 4321"]}],
+    )
+    assert changes["phone"]["new_value"] == "6765-4321"
 
 
 def test_contact_gone_that_is_not_in_the_fields_gets_a_note():
