@@ -37,6 +37,18 @@ class FakeDocumentReference:
         self._client._update_document(self._collection_name, self.id, fields)
 
 
+class FakeQuery:
+    """Equality filter only; matches case-sensitively, as Firestore does."""
+
+    def __init__(self, documents: list[FakeDocumentSnapshot], field: str, value: Any):
+        self._documents = documents
+        self._field = field
+        self._value = value
+
+    def stream(self) -> list[FakeDocumentSnapshot]:
+        return [doc for doc in self._documents if (doc.to_dict() or {}).get(self._field) == self._value]
+
+
 class FakeCollectionReference:
     def __init__(self, client: "FakeFirestore", name: str):
         self._client = client
@@ -55,6 +67,11 @@ class FakeCollectionReference:
             FakeDocumentSnapshot(doc_id, data)
             for doc_id, data in sorted(self._client.list_documents(self._name).items())
         ]
+
+    def where(self, field: str, op: str, value: Any) -> FakeQuery:
+        if op != "==":
+            raise NotImplementedError(f"FakeCollectionReference.where supports == only, got {op}")
+        return FakeQuery(self.stream(), field, value)
 
 
 class FakeWriteBatch:

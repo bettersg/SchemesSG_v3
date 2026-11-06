@@ -11,12 +11,14 @@ import subprocess
 from typing import Any, Dict, List
 
 import requests
+import re
+from bs4 import BeautifulSoup
 from app.constants import BOT_PROTECTION_INDICATORS, CLOUDFLARE_INDICATORS
 from app.services.extraction import select_best_logo
 from loguru import logger
 
 
-async def scrape_url(url: str) -> Dict[str, Any]:
+async def scrape_url(url: str, content_check: bool = False) -> Dict[str, Any]:
     """
     Scrape a URL and return content with images.
 
@@ -24,13 +26,17 @@ async def scrape_url(url: str) -> Dict[str, Any]:
 
     Args:
         url: URL to scrape
+        content_check: for the monthly content check: wait 2s before capturing each page
+            (fewer half-loaded menus) and add each page's main text (crawl4ai pruning filter)
 
     Returns:
-        Dict with: content, images, logo_url, error
+        Dict with: content, images, logo_url, error, and pages ([{url, text, main_text}], one per
+        crawled page; only on success; HTML main_text only with content_check).
+        The content checker normalizes main_text before hashing and storing snapshots.
     """
     if _is_pdf(url):
         return await _scrape_pdf(url)
-    return await _scrape_html(url)
+    return await _scrape_html(url, content_check)
 
 
 def _is_pdf(url: str) -> bool:
@@ -59,20 +65,27 @@ async def _scrape_pdf(url: str) -> Dict[str, Any]:
         if not text.strip():
             return {"content": "", "images": [], "logo_url": None, "error": "PDF Processing Error: No text extracted"}
 
-        return {"content": text.strip(), "images": [], "logo_url": None, "error": None}
+        return {
+            "content": text.strip(),
+            "images": [],
+            "logo_url": None,
+            "error": None,
+            "pages": [{"url": url, "text": text.strip(), "main_text": text.strip(),
+                       "extraction_method": "pdf_text"}],
+        }
 
     except Exception as e:
         return {"content": "", "images": [], "logo_url": None, "error": f"PDF Processing Error: {str(e)}"}
 
 
-async def _scrape_html(url: str) -> Dict[str, Any]:
+async def _scrape_html(url: str, content_check: bool = False) -> Dict[str, Any]:
     """Scrape HTML with crawl4ai, fallback to Pydoll for Cloudflare."""
-    result = await _try_crawl4ai(url)
+    result = await _try_crawl4ai(url, content_check)
 
     # Check if blocked by Cloudflare - try Pydoll bypass
     if _is_cloudflare_blocked(result):
         logger.warning(f"Cloudflare detected, trying Pydoll bypass for: {url}")
-        pydoll_result = await _try_pydoll_bypass(url)
+        pydoll_result = await _try_pydoll_bypass(url, content_check=content_check)
         if pydoll_result.get("content") and not pydoll_result.get("error"):
             return pydoll_result
         # Pydoll failed too
@@ -98,7 +111,55 @@ def _is_cloudflare_blocked(result: Dict[str, Any]) -> bool:
     return any(ind in content_lower for ind in CLOUDFLARE_INDICATORS)
 
 
-async def _try_crawl4ai(url: str) -> Dict[str, Any]:
+# Conservative, cross-site exclusions for content-change fingerprints only.
+CONTENT_EXCLUDE_SELECTOR = ", ".join([
+    "#onetrust-banner-sdk", "#CybotCookiebotDialog",
+    ".cky-consent-container", ".cc-window", ".cc-banner",
+    "#intercom-container", "#hubspot-messages-iframe-container",
+    ".crisp-client", "#tidio-chat", ".instagram-media",
+    ".fb-post", ".twitter-tweet",
+    '[class*="cookie-consent"]', '[id*="cookie-consent"]',
+    '[class*="related-program"]', '[class*="related-post"]',
+    '[class*="related-article"]',
+])
+
+
+def extract_main_content(html: str) -> tuple[str, str]:
+    """Extract conservative main-page text; never fall back to the whole body.
+
+    Returns (text, extraction_method). Empty text means extraction failed.
+    """
+    if not html:
+        return "", "missing_html"
+    soup = BeautifulSoup(html, "lxml")
+    for tag in soup.select(CONTENT_EXCLUDE_SELECTOR):
+        tag.decompose()
+    for tag in soup(["script", "style", "noscript", "iframe", "svg", "template"]):
+        tag.decompose()
+    for tag in soup.select('[hidden], [aria-hidden="true"], [style*="display:none"], '
+                           '[style*="display: none"], [style*="visibility:hidden"], '
+                           '[style*="visibility: hidden"]'):
+        tag.decompose()
+
+    # Prefer structural main regions; avoid selecting body, which contains all widgets.
+    candidates = []
+    for selector in ('main', '[role="main"]', 'article',
+                     '#main-content', '.main-content', '.page-content',
+                     '.entry-content', '.post-content'):
+        for node in soup.select(selector):
+            text = node.get_text(" ", strip=True)
+            if text:
+                link_length = sum(len(a.get_text(" ", strip=True)) for a in node.select("a"))
+                # Text-heavy content wins; penalize menus and link directories.
+                score = len(text) - 0.8 * link_length
+                candidates.append((score, text, selector))
+    if not candidates:
+        return "", "no_semantic_container"
+    _, text, method = max(candidates, key=lambda item: item[0])
+    return re.sub(r"\s+", " ", text).strip(), f"semantic:{method}"
+
+
+async def _try_crawl4ai(url: str, content_check: bool = False) -> Dict[str, Any]:
     """Try scraping with crawl4ai."""
     try:
         from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
@@ -117,10 +178,23 @@ async def _try_crawl4ai(url: str) -> Dict[str, Any]:
             ],
         )
 
+        content_check_options = {}
+        if content_check:
+            from crawl4ai import DefaultMarkdownGenerator
+            from crawl4ai.content_filter_strategy import PruningContentFilterLXML
+
+            # Pruning only adds markdown.fit_markdown; result.markdown stays the full page text.
+            content_check_options = {
+                "delay_before_return_html": 2.0,
+                "excluded_selector": CONTENT_EXCLUDE_SELECTOR,
+                "markdown_generator": DefaultMarkdownGenerator(content_filter=PruningContentFilterLXML()),
+            }
+
         crawl_config = CrawlerRunConfig(
-            deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=5),
+            deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=1 if content_check else 5),
             cache_mode=CacheMode.BYPASS,
             verbose=False,
+            **content_check_options,
         )
 
         logger.info(f"Starting crawl4ai for: {url}")
@@ -128,7 +202,7 @@ async def _try_crawl4ai(url: str) -> Dict[str, Any]:
         async with AsyncWebCrawler(config=browser_config) as crawler:
             results = await crawler.arun(url=url, config=crawl_config, magic=True)
 
-        return _process_crawl_results(results, url)
+        return _process_crawl_results(results, url, content_check=content_check)
 
     except Exception as e:
         error_str = str(e).lower()
@@ -138,7 +212,7 @@ async def _try_crawl4ai(url: str) -> Dict[str, Any]:
         return {"content": "", "images": [], "logo_url": None, "error": f"Crawl Error: {str(e)}"}
 
 
-def _process_crawl_results(results, url: str) -> Dict[str, Any]:
+def _process_crawl_results(results, url: str, content_check: bool = False) -> Dict[str, Any]:
     """Process crawl4ai results into standardized format."""
     if not results:
         return {"content": "", "images": [], "logo_url": None, "error": "No results from crawler"}
@@ -147,12 +221,16 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
     if isinstance(results, list):
         all_text = []
         all_images = []
+        all_pages = []
 
         for result in results:
             if result.success:
                 text = result.markdown or result.cleaned_html or ""
                 if text:
                     all_text.append(text)
+                    main, method = _content_main(result) if content_check else ("", "disabled")
+                    all_pages.append({"url": result.url or url, "text": text,
+                                      "main_text": main, "extraction_method": method})
 
                 if hasattr(result, "media") and result.media:
                     images = result.media.get("images", [])
@@ -161,7 +239,13 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
         scraped_text = "\n\n---PAGE BREAK---\n\n".join(all_text)
         logo_url = select_best_logo(all_images, url) if all_images else None
 
-        return {"content": scraped_text, "images": all_images, "logo_url": logo_url, "error": None}
+        return {
+            "content": scraped_text,
+            "images": all_images,
+            "logo_url": logo_url,
+            "error": None,
+            "pages": all_pages,
+        }
 
     # Single result
     if not results.success:
@@ -178,10 +262,37 @@ def _process_crawl_results(results, url: str) -> Dict[str, Any]:
             logo_url = select_best_logo(images, url)
 
     logger.info(f"Crawl4ai completed for {url}: {len(scraped_text)} chars")
-    return {"content": scraped_text, "images": images, "logo_url": logo_url, "error": None}
+    main, method = _content_main(results) if content_check else ("", "disabled")
+    return {
+        "content": scraped_text,
+        "images": images,
+        "logo_url": logo_url,
+        "error": None,
+        "pages": [{"url": results.url or url, "text": scraped_text,
+                   "main_text": main, "extraction_method": method}],
+    }
 
 
-async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
+def _content_main(result) -> tuple[str, str]:
+    """Use semantic HTML when available, then pruned Markdown as fallback."""
+    html = getattr(result, "cleaned_html", None) or ""
+    main, method = extract_main_content(html)
+    if main:
+        logger.info(f"Main extraction {method}: {len(main)} chars")
+        return main, method
+    pruned = _main_text(result)
+    if pruned.strip():
+        logger.info(f"Main extraction pruned_markdown: {len(pruned)} chars")
+        return pruned, "pruned_markdown"
+    return "", "missing_main_content"
+
+
+def _main_text(result) -> str:
+    """The pruned main text (no menus, sidebars, footers), when the pruning filter ran."""
+    return getattr(result.markdown, "fit_markdown", None) or ""
+
+
+async def _try_pydoll_bypass(url: str, content_check: bool = False) -> Dict[str, Any]:
     """
     Try Pydoll for Cloudflare bypass.
 
@@ -274,7 +385,15 @@ async def _try_pydoll_bypass(url: str) -> Dict[str, Any]:
                 logger.info(f"Pydoll succeeded for {url}: {len(page_content)} chars")
                 images = _extract_images_from_html(page_content, url)
                 logo_url = select_best_logo(images, url) if images else None
-                return {"content": page_content, "images": images, "logo_url": logo_url, "error": None}
+                main_text, method = extract_main_content(page_content) if content_check else ("", "disabled")
+                return {
+                    "content": page_content,
+                    "images": images,
+                    "logo_url": logo_url,
+                    "error": None,
+                    "pages": [{"url": url, "text": page_content,
+                               "main_text": main_text, "extraction_method": method}],
+                }
             else:
                 return {
                     "content": "",
@@ -375,3 +494,4 @@ def _extract_images_from_html(html: str, base_url: str) -> List[Dict]:
         images.append({"src": src, "alt": img.get("alt", ""), "desc": " ".join(desc_parts), "score": 0})
 
     return images
+

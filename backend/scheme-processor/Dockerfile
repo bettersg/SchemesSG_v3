@@ -26,6 +26,7 @@ COPY pyproject.toml uv.lock* ./
 
 # Install dependencies with uv (create venv in project)
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
+ENV UV_NO_DEV=1
 RUN uv sync --frozen --no-dev || uv sync --no-dev
 
 # Install Playwright browsers
