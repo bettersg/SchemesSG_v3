@@ -433,7 +433,7 @@ def test_approved_row_writes_ai_and_volunteer_changes_and_new_hashes_then_trashe
         },
     )
 
-    assert sweep(db, notion) == {"approved": 1, "rejected": 0, "skipped": 0, "failed": 0}
+    assert sweep(db, notion) == {"approved": 1, "rejected": 0, "skipped": 0, "already_applied": 0, "failed": 0}
     saved = db.get_document("schemes", "s1")
     assert saved["eligibility"] == "Citizens and PRs aged 60 and above."
     assert saved["summary"] == "Up to $350 a month."
@@ -617,9 +617,33 @@ def test_firestore_failure_keeps_row_for_next_run():
     assert notion.trashed == ["page-1"]
 
 
+@pytest.mark.parametrize("status", ["Approved", "Rejected"])
+def test_retry_after_failed_trash_only_trashes_the_row(status):
+    db, notion = setup()
+    flag(db)
+    push(db, notion)
+    notion.set_values("page-1", Status=status)
+    real_trash = notion.trash_page
+    notion.trash_page = lambda page_id: (_ for _ in ()).throw(RuntimeError("Notion down"))
+
+    assert sweep(db, notion)["failed"] == 1
+    first_scheme = db.get_document("schemes", "s1")
+    first_record = db.get_document("contentChecks", "check-1")
+    assert first_record["status"] == status.lower()
+    db.seed("schemes", "s1", {**first_scheme, "summary": "Edited after the decision."})
+
+    notion.trash_page = real_trash
+    assert sweep(db, notion, now=NOW + timedelta(days=4))["already_applied"] == 1
+    assert notion.trashed == ["page-1"]
+    saved = db.get_document("schemes", "s1")
+    assert saved["summary"] == "Edited after the decision."  # not overwritten by the retry
+    assert saved["last_scraped_update"] == first_scheme["last_scraped_update"]  # not moved forward
+    assert db.get_document("contentChecks", "check-1") == first_record
+
+
 def test_sweep_ignores_pending_rows():
     db, notion = setup()
     flag(db)
     push(db, notion)
-    assert sweep(db, notion) == {"approved": 0, "rejected": 0, "skipped": 0, "failed": 0}
+    assert sweep(db, notion) == {"approved": 0, "rejected": 0, "skipped": 0, "already_applied": 0, "failed": 0}
     assert notion.trashed == []

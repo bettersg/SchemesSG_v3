@@ -21,6 +21,8 @@ Two jobs, both plain Notion API calls (no Notion AI):
      volunteer has confirmed the listing.
    - Scheme retired, or replaced through a Slack update since the push: nothing is written.
    A row whose Firestore write fails stays in Notion and is retried next hour.
+   - Record already decided (an earlier run wrote it but the row was not trashed): nothing is written
+     again; the row is just trashed.
 
 Firestore stays the source of truth; Notion only holds the open review queue.
 Every entry point is a no-op unless NOTION_API_TOKEN and NOTION_CONTENT_CHECK_DATA_SOURCE_ID are set.
@@ -490,7 +492,8 @@ def replaced_since_push(scheme: Dict[str, Any], record: Dict[str, Any]) -> bool:
 
 def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple[str, Optional[str]]:
     """Apply one decided row to Firestore. Returns (outcome, detail). Raises on a failed write,
-    so the row stays in Notion for the next run."""
+    so the row stays in Notion for the next run. A record no longer pending was already applied by an
+    earlier run whose trash step failed, so it is left as it is ("already_applied")."""
     check_id, scheme_id, status = values.get("Check ID"), values.get("Scheme ID"), values.get("Status")
     if not check_id or not scheme_id:
         raise ValueError("row has no Check ID or Scheme ID")
@@ -498,6 +501,8 @@ def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple
     record = check_ref.get().to_dict()
     if not record:
         raise ValueError(f"contentChecks/{check_id} not found")
+    if record.get("status") != STATUS_PENDING.lower():
+        return "already_applied", f"already {record.get('status')}"
     scheme_ref = db.collection(SCHEMES).document(scheme_id)
     scheme = scheme_ref.get().to_dict()
 
@@ -551,7 +556,7 @@ def sweep_decided(
     db = db or get_firestore_client()
     notion = notion or NotionClient(cfg["token"])
     now = now or datetime.now(timezone.utc)
-    counts = {"approved": 0, "rejected": 0, "skipped": 0, "failed": 0}
+    counts = {"approved": 0, "rejected": 0, "skipped": 0, "already_applied": 0, "failed": 0}
 
     decided = {"or": [{"property": "Status", "select": {"equals": s}} for s in (STATUS_APPROVED, STATUS_REJECTED)]}
     for page in notion.query_all(cfg["data_source"], filter=decided):
