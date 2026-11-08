@@ -45,6 +45,7 @@ from batch_jobs.notion_client import NotionClient, decode_row, encode_properties
 
 SCHEMES = "schemes"
 CHECKS = "contentChecks"
+CONTENT_TEXTS = "schemeContent"
 RETIRED_STATUS = "retired"
 # Decided records are kept this long (Firestore TTL on expires_at); pending ones never expire.
 DECIDED_RETENTION = timedelta(days=183)
@@ -538,6 +539,10 @@ def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple
     batch = db.batch()
     batch.update(scheme_ref, scheme_update)
     batch.update(check_ref, decision)
+    if record.get("new_snapshot"):
+        snapshot = dict(record["new_snapshot"])
+        snapshot["updated_at"] = now
+        batch.set(db.collection(CONTENT_TEXTS).document(scheme_id), snapshot)
     batch.commit()
     return outcome, detail
 

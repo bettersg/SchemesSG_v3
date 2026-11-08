@@ -15,6 +15,13 @@ NOW = datetime(2026, 11, 1, 10, 0, tzinfo=timezone.utc)
 LINK = "https://example.org/carefund"
 C = review.FIELD_TO_COLUMN  # Firestore field -> Notion column name (with emoji)
 NEW_PAGES = [{"url": LINK, "hash": "new-hash", "contacts": ["67654321"]}]
+NEW_SNAPSHOT = {
+    "pages": {
+        "hash-1": {"url": LINK, "text": "open to Citizens and PRs aged 60 and above"},
+    },
+    "updated_at": NOW,
+}
+_SENTINEL = object()
 
 
 class FakeNotion(NotionClient):
@@ -127,28 +134,36 @@ def scheme(**overrides):
     return data
 
 
-def flag(db, check_id="check-1", scheme_id="s1", suggestions=None, contact_check=None, **extra):
-    db.seed(
-        "contentChecks",
-        check_id,
-        {
-            "scheme_id": scheme_id,
-            "status": "pending",
-            "suggestions": suggestions
-            if suggestions is not None
-            else [
-                {
-                    "field": "eligibility",
-                    "new_value": "Citizens and PRs aged 60 and above.",
-                    "quote": "open to Citizens and PRs aged 60 and above",
-                    "page_url": LINK,
-                }
-            ],
-            "contact_check": contact_check or [],
-            "new_pages": NEW_PAGES,
-            **extra,
-        },
-    )
+def flag(
+    db,
+    check_id="check-1",
+    scheme_id="s1",
+    suggestions=None,
+    contact_check=None,
+    new_snapshot=_SENTINEL,
+    **extra,
+):
+    snapshot = deepcopy(NEW_SNAPSHOT) if new_snapshot is _SENTINEL else new_snapshot
+    data = {
+        "scheme_id": scheme_id,
+        "status": "pending",
+        "suggestions": suggestions
+        if suggestions is not None
+        else [
+            {
+                "field": "eligibility",
+                "new_value": "Citizens and PRs aged 60 and above.",
+                "quote": "open to Citizens and PRs aged 60 and above",
+                "page_url": LINK,
+            }
+        ],
+        "contact_check": contact_check or [],
+        "new_pages": NEW_PAGES,
+        **extra,
+    }
+    if snapshot is not None:
+        data["new_snapshot"] = snapshot
+    db.seed("contentChecks", check_id, data)
 
 
 def setup(**scheme_overrides):
@@ -194,7 +209,9 @@ def test_push_creates_row_with_new_value_prefilled_and_new_and_old_in_box():
 
 def test_push_populates_text_diff_column_when_present():
     db, notion = setup()
-    diff_text = "Page: https://example.org/carefund\n+ Citizens and PRs aged 60 and above.\n- Citizens aged 65 and above."
+    diff_text = (
+        "Page: https://example.org/carefund\n+ Citizens and PRs aged 60 and above.\n- Citizens aged 65 and above."
+    )
     flag(db, diff=diff_text)
     push(db, notion)
 
@@ -442,6 +459,9 @@ def test_approved_row_writes_ai_and_volunteer_changes_and_new_hashes_then_trashe
     assert saved["service_area"] == "Islandwide"
     assert saved["content_pages"] == NEW_PAGES
     assert saved["last_scraped_update"] == NOW + timedelta(days=3)  # website "Last updated" = approval time
+    content = db.get_document("schemeContent", "s1")
+    assert content["pages"] == NEW_SNAPSHOT["pages"]
+    assert content["updated_at"] == NOW + timedelta(days=3)
     record = db.get_document("contentChecks", "check-1")
     assert (record["status"], record["decided_by"]) == ("approved", "Alex Tan")
     assert record["expires_at"] > record["decided_at"]
@@ -571,6 +591,9 @@ def test_rejected_row_keeps_fields_but_saves_new_hashes():
     assert saved["eligibility"] == "Citizens aged 65 and above."  # AI's value not applied
     assert saved["content_pages"] == NEW_PAGES  # same change won't flag again
     assert saved["last_scraped_update"] == NOW + timedelta(days=3)  # reviewed: listing confirmed as is
+    content = db.get_document("schemeContent", "s1")
+    assert content["pages"] == NEW_SNAPSHOT["pages"]
+    assert content["updated_at"] == NOW + timedelta(days=3)
     assert db.get_document("contentChecks", "check-1")["status"] == "rejected"
     assert notion.trashed == ["page-1"]
 
@@ -647,3 +670,48 @@ def test_sweep_ignores_pending_rows():
     push(db, notion)
     assert sweep(db, notion) == {"approved": 0, "rejected": 0, "skipped": 0, "already_applied": 0, "failed": 0}
     assert notion.trashed == []
+
+
+def test_approved_row_without_new_snapshot_completes_without_error():
+    db, notion = setup()
+    flag(db, new_snapshot=None)
+    push(db, notion)
+    notion.set_values("page-1", Status="Approved")
+
+    assert sweep(db, notion)["approved"] == 1
+    assert db.get_document("schemeContent", "s1") is None
+    assert db.get_document("schemes", "s1")["content_pages"] == NEW_PAGES
+
+
+def test_rejected_row_without_new_snapshot_completes_without_error():
+    db, notion = setup()
+    flag(db, new_snapshot=None)
+    push(db, notion)
+    notion.set_values("page-1", Status="Rejected")
+
+    assert sweep(db, notion)["rejected"] == 1
+    assert db.get_document("schemeContent", "s1") is None
+    assert db.get_document("schemes", "s1")["content_pages"] == NEW_PAGES
+
+
+def test_approved_row_without_new_snapshot_completes_without_error():
+    db, notion = setup()
+    flag(db, new_snapshot=None)
+    push(db, notion)
+    notion.set_values("page-1", Status="Approved")
+
+    assert sweep(db, notion)["approved"] == 1
+    assert db.get_document("schemeContent", "s1") is None
+    assert db.get_document("schemes", "s1")["content_pages"] == NEW_PAGES
+
+
+def test_rejected_row_without_new_snapshot_completes_without_error():
+    db, notion = setup()
+    flag(db, new_snapshot=None)
+    push(db, notion)
+    notion.set_values("page-1", Status="Rejected")
+
+    assert sweep(db, notion)["rejected"] == 1
+    assert db.get_document("schemeContent", "s1") is None
+    assert db.get_document("schemes", "s1")["content_pages"] == NEW_PAGES
+

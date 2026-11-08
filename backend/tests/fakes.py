@@ -82,6 +82,9 @@ class FakeWriteBatch:
     def update(self, doc_ref: FakeDocumentReference, fields: dict[str, Any]) -> None:
         self._operations.append(("update", doc_ref, deepcopy(fields)))
 
+    def set(self, doc_ref: FakeDocumentReference, data: dict[str, Any], merge: bool = False) -> None:
+        self._operations.append(("set", doc_ref, deepcopy(data)))
+
     def delete(self, doc_ref: FakeDocumentReference) -> None:
         self._operations.append(("delete", doc_ref, None))
 
@@ -91,6 +94,8 @@ class FakeWriteBatch:
         for operation, doc_ref, fields in self._operations:
             if operation == "update":
                 self._client._update_document(doc_ref._collection_name, doc_ref.id, fields or {})
+            elif operation == "set":
+                self._client._set_document(doc_ref._collection_name, doc_ref.id, fields or {}, merge=False)
             else:
                 self._client._delete_document(doc_ref._collection_name, doc_ref.id)
 

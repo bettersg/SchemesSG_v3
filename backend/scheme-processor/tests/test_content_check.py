@@ -4,6 +4,7 @@ Firestore, the scraper and the AI reviewer are replaced by in-memory fakes.
 """
 
 import asyncio
+import hashlib
 from datetime import datetime, timezone
 
 import pytest
@@ -219,6 +220,8 @@ def test_flagged_keeps_old_hashes_and_writes_record():
     assert record["review_input_truncated"] is False
     # The new hashes travel with the flag, to be saved once a volunteer decides.
     assert record["new_pages"] == baseline({LINK: "Age 65 and above"})
+    assert record["new_snapshot"]["pages"][hashlib.sha256(LINK.encode()).hexdigest()]["text"] == "age 65 and above"
+    assert record["new_snapshot"]["updated_at"] == NOW
 
 
 def test_review_error_writes_nothing():
@@ -438,3 +441,42 @@ def test_large_diff_provides_full_text_to_llm_but_truncates_for_firestore():
     assert record["diff_truncated"] is True
     assert record["diff"].endswith(DIFF_TRUNCATION_MARKER)
     assert record["review_input_truncated"] is False
+
+
+def test_truncate_record_diff_caps_large_new_snapshot():
+    import json
+
+    large_text = "word " * 300_000  # ~1.5MB
+    record = {
+        "scheme_id": "s1",
+        "diff": "some diff",
+        "text_diff": "some diff",
+        "new_snapshot": {
+            "pages": {"h1": {"url": "https://example.com", "text": large_text}},
+            "updated_at": NOW,
+        },
+    }
+    truncated = truncate_record_diff(record)
+    size = len(json.dumps(truncated, ensure_ascii=False, default=str).encode("utf-8"))
+    assert size <= MAX_SNAPSHOT_BYTES
+    assert truncated["new_snapshot"]["pages"]["h1"]["text"].endswith(SNAPSHOT_TRUNCATION_MARKER)
+
+
+def test_truncate_record_diff_caps_large_new_snapshot():
+    import json
+
+    large_text = "word " * 300_000  # ~1.5MB
+    record = {
+        "scheme_id": "s1",
+        "diff": "some diff",
+        "text_diff": "some diff",
+        "new_snapshot": {
+            "pages": {"h1": {"url": "https://example.com", "text": large_text}},
+            "updated_at": NOW,
+        },
+    }
+    truncated = truncate_record_diff(record)
+    size = len(json.dumps(truncated, ensure_ascii=False, default=str).encode("utf-8"))
+    assert size <= MAX_SNAPSHOT_BYTES
+    assert truncated["new_snapshot"]["pages"]["h1"]["text"].endswith(SNAPSHOT_TRUNCATION_MARKER)
+

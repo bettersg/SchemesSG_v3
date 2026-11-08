@@ -352,6 +352,12 @@ def truncate_record_diff(record: Dict[str, Any], max_bytes: int = MAX_SNAPSHOT_B
     rec = dict(record)
     marker_bytes = len(DIFF_TRUNCATION_MARKER.encode("utf-8"))
 
+    if "new_snapshot" in rec and isinstance(rec["new_snapshot"], dict) and "pages" in rec["new_snapshot"]:
+        snapshot = dict(rec["new_snapshot"])
+        now = snapshot.get("updated_at") or datetime.now(timezone.utc)
+        capped_pages = truncate_snapshot_pages(snapshot["pages"], now, max_bytes=max_bytes // 2)
+        rec["new_snapshot"] = {**snapshot, "pages": capped_pages}
+
     base = dict(rec)
     base["diff"] = ""
     base["text_diff"] = ""
@@ -586,6 +592,13 @@ async def check_scheme(
         store.save_pages(scheme_id, page_entries(new), new, now)
         return done("unchanged", f"{len(changed)} page(s) changed, nothing out of date")
 
+    payload = {
+        hashlib.sha256(k.encode()).hexdigest(): {"url": p["url"], "text": p["normalized_text"]}
+        for k, p in sorted(new.items())
+    }
+    payload = truncate_snapshot_pages(payload, now)
+    new_snapshot = {"pages": payload, "updated_at": now}
+
     record = {
         "scheme_id": scheme_id,
         "scheme": scheme.get("scheme"),
@@ -599,6 +612,7 @@ async def check_scheme(
         "suggestions": suggestions,
         "contact_check": contacts_gone,
         "new_pages": page_entries(new),
+        "new_snapshot": new_snapshot,
         "model": REVIEW_MODEL,
         "prompt_version": PROMPT_VERSION,
     }
