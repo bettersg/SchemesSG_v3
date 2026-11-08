@@ -205,13 +205,13 @@ async def _try_crawl4ai(url: str, content_check: bool = False) -> Dict[str, Any]
         content_check_options = {}
         if content_check:
             from crawl4ai import DefaultMarkdownGenerator
-            from crawl4ai.content_filter_strategy import PruningContentFilterLXML
+            from crawl4ai.content_filter_strategy import PruningContentFilter
 
             # Pruning only adds markdown.fit_markdown; result.markdown stays the full page text.
             content_check_options = {
                 "delay_before_return_html": 2.0,
                 "excluded_selector": CONTENT_EXCLUDE_SELECTOR,
-                "markdown_generator": DefaultMarkdownGenerator(content_filter=PruningContentFilterLXML()),
+                "markdown_generator": DefaultMarkdownGenerator(content_filter=PruningContentFilter()),
             }
 
         crawl_config = CrawlerRunConfig(

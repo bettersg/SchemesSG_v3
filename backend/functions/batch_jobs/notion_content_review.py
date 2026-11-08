@@ -8,15 +8,21 @@ Two jobs, both plain Notion API calls (no Notion AI):
    contact check) says are out of date are pre-filled with the new value and tagged in "Changed by
    AI"; a ✏️ box per change in the row body shows the previous value and the source page. A scheme
    already in the queue has its row refreshed, unless a volunteer has already set it to Approved or
-   Rejected.
+   Rejected. The scheme's field values at push time are saved on the record as ``pushed_values``.
 2. Hourly sweep (same scheduled function, after the push): rows set to Approved or Rejected are applied
    to Firestore, recorded on their ``contentChecks`` record, then moved to Notion's trash.
-   - Approved: every field in the row is written to the scheme, plus the new page hashes.
+   - Approved: only fields that differ from ``pushed_values`` (changed by the AI or the volunteer) are
+     written, so anything else that changed the scheme since the push is kept. If Firestore also
+     changed such a field, the row's value still wins and a warning is logged. A column missing from
+     the row is skipped. Planning area stored as a list is saved back as a list. Records pushed
+     before ``pushed_values`` existed compare against the scheme as it is now. Plus the new page hashes.
    - Rejected: only the new page hashes are saved, so the same change is not flagged again.
    - Both: last_scraped_update (the website's "Last updated") becomes the decision time, since a
      volunteer has confirmed the listing.
    - Scheme retired, or replaced through a Slack update since the push: nothing is written.
    A row whose Firestore write fails stays in Notion and is retried next hour.
+   - Record already decided (an earlier run wrote it but the row was not trashed): nothing is written
+     again; the row is just trashed.
 
 Firestore stays the source of truth; Notion only holds the open review queue.
 Every entry point is a no-op unless NOTION_API_TOKEN and NOTION_CONTENT_CHECK_DATA_SOURCE_ID are set.
@@ -158,6 +164,25 @@ def stored_value(scheme: Dict[str, Any], field: str) -> Any:
     return scheme.get(field) or ""
 
 
+def field_snapshot(scheme: Dict[str, Any]) -> Dict[str, Any]:
+    """The scheme's row fields as Firestore stores them (tags untranslated), for ``pushed_values``."""
+    return {
+        field: stored_value(scheme, field) if field == "llm_description" else scheme.get(field)
+        for field in FIELD_COLUMNS.values()
+    }
+
+
+def _stored_form(field: str, value: Any) -> Any:
+    """A Firestore value in the form a row shows it, so it can be compared with the row: tags as a
+    list, everything else as trimmed text (lists joined with ", ")."""
+    return _as_list(value) if field in LIST_FIELDS else _as_text(value).strip()
+
+
+def _row_form(field: str, value: Any) -> Any:
+    """A row value in the form an approval saves it: allowed tags only, text trimmed."""
+    return allowed_tags(field, value) if field in LIST_FIELDS else _as_text(value).strip()
+
+
 #### Contact check -> phone/email suggestions
 
 
@@ -262,8 +287,9 @@ def review_blocks(
                     "Fields marked ✏️ already show the AI's new value. Compare each with its box below: to keep "
                     "the old value, copy it back into the field. Fix any other field you notice. New in the box "
                     "is what the AI suggested; if you edit the field, the field is what gets saved. Then set "
-                    "Status to Approved (saves all fields) or Rejected (SchemesSG stays as it was). Text in "
-                    "this section is not saved."
+                    "Status to Approved (saves the fields that changed) or Rejected (SchemesSG stays as it "
+                    "was). Text in this section is not saved. Only edit the values: don't rename, add or "
+                    "delete columns."
                 ),
             },
         }
@@ -372,6 +398,8 @@ def push_flagged(
                 raise ValueError(f"contentChecks/{check_id} not found")
             scheme_id = record["scheme_id"]
             scheme = db.collection(SCHEMES).document(scheme_id).get().to_dict() or {}
+            # Taken before translation, so translated or dropped tags count as changed on approval.
+            pushed_values = field_snapshot(scheme)
             # Old-vocabulary tags shown in today's terms (some move field); approving saves them that way.
             scheme.update(translate_legacy({field: _as_list(scheme.get(field)) for field in LIST_FIELDS}))
             changes = suggested_changes(scheme, record)
@@ -399,7 +427,10 @@ def push_flagged(
             else:
                 page_id = notion.create_page(cfg["data_source"], props, blocks)["id"]
                 counts["created"] += 1
-            batch.update(db.collection(CHECKS).document(check_id), {"notion_page_id": page_id, "pushed_at": now})
+            batch.update(
+                db.collection(CHECKS).document(check_id),
+                {"notion_page_id": page_id, "pushed_at": now, "pushed_values": pushed_values},
+            )
             batch.commit()
             rows[scheme_id] = {"page_id": page_id, "status": STATUS_PENDING, "check_id": check_id}
         except Exception as e:
@@ -413,21 +444,42 @@ def push_flagged(
 #### Hourly sweep
 
 
-def approved_update(values: Dict[str, Any], scheme: Dict[str, Any]) -> Dict[str, Any]:
-    """Firestore fields from an Approved row. Tag fields keep only allowed options (older tags no
-    longer on the list are dropped); Description goes to both llm_description and description."""
+def approved_update(
+    values: Dict[str, Any], scheme: Dict[str, Any], pushed_values: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """Firestore fields from an Approved row: only those that differ from ``pushed_values`` (the
+    scheme at push time), i.e. changed by the AI or the volunteer. Without ``pushed_values`` (records
+    pushed before it existed) the row is compared with the scheme as it is now.
+
+    - A column missing from the row is skipped, never blanked.
+    - If Firestore also changed the field since the push, the row's value wins (logged).
+    - Tag fields keep only allowed options (older tags no longer on the list are dropped).
+    - Planning area stored as a list is saved as a list (the row's text split on commas).
+    - Description goes to both llm_description and description.
+    - Scheme name and link are never blanked."""
+    scheme_id = values.get("Scheme ID")
+    current = field_snapshot(scheme)
+    base = current if pushed_values is None else pushed_values
     update: Dict[str, Any] = {}
     for column, field in FIELD_COLUMNS.items():
-        value = values.get(column)
-        if field in LIST_FIELDS:
-            update[field] = allowed_tags(field, value)
-        else:
-            update[field] = (value or "").strip() if isinstance(value, str) else value
-    update["description"] = update["llm_description"]
-    if not update.get("link"):
-        update.pop("link")  # never blank the scheme link
-    if not update.get("scheme"):
-        update.pop("scheme")
+        if column not in values:
+            logger.warning(f"Notion review {scheme_id}: column {column!r} missing from the row; {field} not saved")
+            continue
+        new = _row_form(field, values[column])
+        if new == _stored_form(field, base.get(field)):
+            continue  # nobody changed it in Notion; keep whatever Firestore has now
+        if pushed_values is not None and _stored_form(field, current[field]) != _stored_form(
+            field, pushed_values.get(field)
+        ):
+            logger.warning(f"Notion review {scheme_id}: {field} changed in Firestore since the push; row value saved")
+        update[field] = new
+    if "planning_area" in update and isinstance(scheme.get("planning_area"), list):
+        update["planning_area"] = [area.strip() for area in update["planning_area"].split(",") if area.strip()]
+    if "llm_description" in update:
+        update["description"] = update["llm_description"]
+    for field in ("link", "scheme"):
+        if field in update and not update[field]:
+            update.pop(field)  # never blank the scheme link or name
     return update
 
 
@@ -440,7 +492,8 @@ def replaced_since_push(scheme: Dict[str, Any], record: Dict[str, Any]) -> bool:
 
 def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple[str, Optional[str]]:
     """Apply one decided row to Firestore. Returns (outcome, detail). Raises on a failed write,
-    so the row stays in Notion for the next run."""
+    so the row stays in Notion for the next run. A record no longer pending was already applied by an
+    earlier run whose trash step failed, so it is left as it is ("already_applied")."""
     check_id, scheme_id, status = values.get("Check ID"), values.get("Scheme ID"), values.get("Status")
     if not check_id or not scheme_id:
         raise ValueError("row has no Check ID or Scheme ID")
@@ -448,6 +501,8 @@ def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple
     record = check_ref.get().to_dict()
     if not record:
         raise ValueError(f"contentChecks/{check_id} not found")
+    if record.get("status") != STATUS_PENDING.lower():
+        return "already_applied", f"already {record.get('status')}"
     scheme_ref = db.collection(SCHEMES).document(scheme_id)
     scheme = scheme_ref.get().to_dict()
 
@@ -479,7 +534,7 @@ def apply_row(db, values: Dict[str, Any], reviewer: str, now: datetime) -> Tuple
         "last_scraped_update": now,
     }
     if outcome == "approved":
-        scheme_update.update(approved_update(values, scheme))
+        scheme_update.update(approved_update(values, scheme, record.get("pushed_values")))
     batch = db.batch()
     batch.update(scheme_ref, scheme_update)
     batch.update(check_ref, decision)
@@ -501,7 +556,7 @@ def sweep_decided(
     db = db or get_firestore_client()
     notion = notion or NotionClient(cfg["token"])
     now = now or datetime.now(timezone.utc)
-    counts = {"approved": 0, "rejected": 0, "skipped": 0, "failed": 0}
+    counts = {"approved": 0, "rejected": 0, "skipped": 0, "already_applied": 0, "failed": 0}
 
     decided = {"or": [{"property": "Status", "select": {"equals": s}} for s in (STATUS_APPROVED, STATUS_REJECTED)]}
     for page in notion.query_all(cfg["data_source"], filter=decided):

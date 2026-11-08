@@ -6,7 +6,8 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
-    "crawl4ai>=0.7.8",
+    # Exact pin: 0.8.6+ needs unclecode-litellm, which overwrites files in our litellm folder.
+    "crawl4ai==0.8.5",
     "playwright>=1.40.0",
     "pydoll-python>=2.15.0",
     "beautifulsoup4>=4.12.3",
