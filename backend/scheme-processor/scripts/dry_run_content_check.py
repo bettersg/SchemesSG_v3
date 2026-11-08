@@ -1,7 +1,7 @@
 """
 Dry run of the monthly content check (issue #407).
 
-Same scrape, page-hash compare and AI review as /content-check, but nothing is written to
+Same scrape, page-hash compare and AI review as the monthly content check, but nothing is written to
 Firestore: the stored hashes stay as the baseline, so the run can be repeated to count how many
 schemes get flagged.
 
