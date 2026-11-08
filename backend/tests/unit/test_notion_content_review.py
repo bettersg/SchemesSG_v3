@@ -396,7 +396,28 @@ def test_long_description_survives_the_round_trip():
 #### Hourly sweep
 
 
-def test_approved_row_writes_every_field_and_new_hashes_then_trashes_row():
+@pytest.fixture
+def warnings():
+    """Warning messages loguru logs during the test."""
+    messages = []
+    sink = review.logger.add(lambda m: messages.append(m.record["message"]), level="WARNING")
+    yield messages
+    review.logger.remove(sink)
+
+
+def test_push_saves_the_scheme_as_stored_before_tags_are_translated():
+    db, notion = setup(scheme_type=["Financial Assistance", "Legal Aid"], planning_area=["BEDOK", "TAMPINES"])
+    flag(db)
+    push(db, notion)
+
+    pushed = db.get_document("contentChecks", "check-1")["pushed_values"]
+    assert set(pushed) == set(review.FIELD_COLUMNS.values())
+    assert pushed["scheme_type"] == ["Financial Assistance", "Legal Aid"]  # raw, not translated
+    assert pushed["eligibility"] == "Citizens aged 65 and above."  # Firestore's value, not the AI's
+    assert pushed["planning_area"] == ["BEDOK", "TAMPINES"]
+
+
+def test_approved_row_writes_ai_and_volunteer_changes_and_new_hashes_then_trashes_row():
     db, notion = setup()
     flag(db)
     push(db, notion)
@@ -425,6 +446,118 @@ def test_approved_row_writes_every_field_and_new_hashes_then_trashes_row():
     assert (record["status"], record["decided_by"]) == ("approved", "Alex Tan")
     assert record["expires_at"] > record["decided_at"]
     assert notion.trashed == ["page-1"]
+
+
+def test_approve_keeps_firestore_changes_made_after_the_push(warnings):
+    db, notion = setup(who_is_it_for=["Seniors"])  # only allowed tags, so the row shows them unchanged
+    flag(db)
+    push(db, notion)
+    db.seed("schemes", "s1", scheme(agency="New FSC", who_is_it_for=["Caregivers"]))  # e.g. console edit, re-tag
+    notion.set_values("page-1", Status="Approved")
+
+    sweep(db, notion)
+    saved = db.get_document("schemes", "s1")
+    assert saved["agency"] == "New FSC"  # untouched in Notion: newer Firestore value kept
+    assert saved["who_is_it_for"] == ["Caregivers"]
+    assert saved["eligibility"] == "Citizens and PRs aged 60 and above."  # AI's change still saved
+    assert warnings == []
+
+
+def test_volunteer_wins_when_firestore_changed_the_same_field(warnings):
+    db, notion = setup()
+    flag(db)
+    push(db, notion)
+    db.seed("schemes", "s1", scheme(summary="Console summary."))
+    notion.set_values("page-1", Status="Approved", **{C["summary"]: "Volunteer summary."})
+
+    sweep(db, notion)
+    assert db.get_document("schemes", "s1")["summary"] == "Volunteer summary."
+    assert any("summary changed in Firestore since the push" in m for m in warnings)
+
+
+def test_approve_copying_the_old_value_back_keeps_it():
+    db, notion = setup()
+    flag(db)
+    push(db, notion)
+    notion.set_values("page-1", Status="Approved", **{C["eligibility"]: "Citizens aged 65 and above."})
+
+    sweep(db, notion)
+    assert db.get_document("schemes", "s1")["eligibility"] == "Citizens aged 65 and above."
+
+
+def test_missing_column_is_skipped_not_blanked(warnings):
+    db, notion = setup()
+    flag(db, suggestions=[{"field": "llm_description", "new_value": "AI description.", "page_url": LINK}])
+    push(db, notion)
+    del notion.pages["page-1"]["properties"][C["llm_description"]]  # column renamed in Notion
+    notion.set_values("page-1", Status="Approved", **{C["summary"]: "Up to $350 a month."})
+
+    sweep(db, notion)
+    saved = db.get_document("schemes", "s1")
+    assert saved["llm_description"] == "Monthly cash help for seniors."
+    assert saved["description"] == "Old legacy description."
+    assert saved["summary"] == "Up to $350 a month."  # rest of the row still saved
+    assert any(C["llm_description"] in m and "missing" in m for m in warnings)
+
+
+def test_untouched_list_planning_area_stays_a_list():
+    db, notion = setup(planning_area=["BEDOK", "TAMPINES"])
+    flag(db)
+    push(db, notion)
+    assert notion.row("page-1")[C["planning_area"]] == "BEDOK, TAMPINES"
+    notion.set_values("page-1", Status="Approved")
+
+    sweep(db, notion)
+    assert db.get_document("schemes", "s1")["planning_area"] == ["BEDOK", "TAMPINES"]
+
+
+def test_edited_list_planning_area_is_saved_as_a_list():
+    db, notion = setup(planning_area=["BEDOK", "TAMPINES"])
+    flag(db)
+    push(db, notion)
+    notion.set_values("page-1", Status="Approved", **{C["planning_area"]: "BEDOK,  PASIR RIS, "})
+
+    sweep(db, notion)
+    assert db.get_document("schemes", "s1")["planning_area"] == ["BEDOK", "PASIR RIS"]
+
+
+def test_edited_text_planning_area_stays_text():
+    db, notion = setup()
+    flag(db)
+    push(db, notion)
+    notion.set_values("page-1", Status="Approved", **{C["planning_area"]: "Toa Payoh, Bishan"})
+
+    sweep(db, notion)
+    assert db.get_document("schemes", "s1")["planning_area"] == "Toa Payoh, Bishan"
+
+
+def test_approve_saves_translated_tags_even_when_untouched():
+    db, notion = setup(scheme_type=["Financial Assistance", "Legal Aid"])
+    flag(db)
+    push(db, notion)
+    notion.set_values("page-1", Status="Approved")
+
+    sweep(db, notion)
+    saved = db.get_document("schemes", "s1")
+    assert saved["scheme_type"] == ["Financial Assistance"]
+    assert saved["what_it_gives"] == ["Financial assistance (general)", "Legal aid and services"]
+    assert saved["who_is_it_for"] == ["Seniors"]  # "Legacy tag" is not on the allowed list
+
+
+def test_record_without_pushed_values_compares_with_the_scheme_now():
+    db, notion = setup()
+    flag(db)
+    push(db, notion)
+    record = db.get_document("contentChecks", "check-1")
+    del record["pushed_values"]  # pushed before pushed_values existed
+    db.seed("contentChecks", "check-1", record)
+    notion.set_values("page-1", Status="Approved", **{C["summary"]: "Up to $350 a month."})
+
+    sweep(db, notion)
+    saved = db.get_document("schemes", "s1")
+    assert saved["summary"] == "Up to $350 a month."
+    assert saved["eligibility"] == "Citizens and PRs aged 60 and above."
+    assert saved["address"] == "1 Sample Street"
 
 
 def test_rejected_row_keeps_fields_but_saves_new_hashes():
