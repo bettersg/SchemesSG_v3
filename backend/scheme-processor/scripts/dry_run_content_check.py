@@ -5,9 +5,11 @@ Same scrape, page-hash compare and AI review as the monthly content check, but n
 Firestore: the stored hashes stay as the baseline, so the run can be repeated to count how many
 schemes get flagged.
 
-- First run: picks --limit schemes that already have hashes (in ID order) and saves their IDs to
-  sample.json in the output folder.
-- Later runs: --sample <file> checks the same schemes again, so runs can be compared.
+- First run: picks --limit schemes that already have hashes and saved page text (in ID order) and
+  saves their IDs to sample.json in the output folder.
+- Later runs: --sample <file> checks the same schemes again, so runs can be compared. Schemes
+  without saved page text are skipped: the check would only mark them "baseline", never asking
+  the AI, and a dry run never saves the text. One real run of the job saves it.
 - Each run writes run_<date>_<time>.json: outcome counts, plus per scheme the changed pages and
   the AI's suggestions (old value, new value, quote, page URL).
 
@@ -30,48 +32,80 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
+from app.content_check import (
+    CONTENT_TEXTS,
+    ContentStore,
+    changed_pages,
+    check_scheme,
+    review_changes,
+    scraped_pages,
+    stored_pages,
+)
 from dotenv import load_dotenv
 
 
 DEV_PROJECT = "schemessg-v3-dev"
 
 
+class DryRunStore(ContentStore):
+    """Real reads; every write is only noted down. Overrides each ContentStore write with the same
+    inputs (tests/test_dry_run_content_check.py checks this)."""
+
+    def __init__(self, db):
+        super().__init__(db)
+        self.scheme = None
+        self.flagged = None
+
+    def get_scheme(self, scheme_id):
+        self.scheme = super().get_scheme(scheme_id)
+        return self.scheme
+
+    def record_failure(self, scheme_id):
+        pass
+
+    def save_pages(self, scheme_id, pages, new, now):
+        pass
+
+    def save_flagged(self, scheme_id, record, now):
+        self.flagged = record
+        return "dry-run"
+
+
+def saved_text_ids(db):
+    """IDs of schemes with saved page text. Without it the check marks a changed scheme "baseline"
+    instead of asking the AI, and a dry run never saves it, so such schemes are left out."""
+    return {ref.id for ref in db.collection(CONTENT_TEXTS).list_documents()}
+
+
 def pick_sample(db, limit: int):
-    """The first `limit` schemes (by ID) that already have stored page hashes."""
+    """The first `limit` schemes (by ID) that have stored page hashes and saved page text."""
+    with_text = saved_text_ids(db)
     ids = []
     for doc in db.collection("schemes").select(["content_pages"]).stream():
-        if isinstance((doc.to_dict() or {}).get("content_pages"), list):
+        if doc.id in with_text and isinstance((doc.to_dict() or {}).get("content_pages"), list):
             ids.append(doc.id)
             if len(ids) == limit:
                 break
     return ids
 
 
-async def run(db, scheme_ids):
-    from app.content_check import ContentStore, changed_pages, check_scheme, scraped_pages, stored_pages
-    from app.services.scraper import scrape_url
+def pages_changed(scheme, scraped):
+    """Changed pages for the report. Empty when the scrape gave nothing usable: check_scheme has
+    already reported that as scrape_failed."""
+    try:
+        old = stored_pages(scheme)
+        new = scraped_pages(scraped) if scraped else {}
+    except Exception:
+        return []
+    return changed_pages(old, new) if old is not None and new else []
 
-    class DryRunStore(ContentStore):
-        """Real reads; every write is only noted down."""
 
-        def __init__(self, db):
-            super().__init__(db)
-            self.scheme = None
-            self.flagged = None
+async def run(db, scheme_ids, scrape_page=None, review=review_changes):
+    if scrape_page is None:
+        from app.services.scraper import scrape_url
 
-        def get_scheme(self, scheme_id):
-            self.scheme = super().get_scheme(scheme_id)
-            return self.scheme
-
-        def record_failure(self, scheme_id):
-            pass
-
-        def save_pages(self, scheme_id, pages, now):
-            pass
-
-        def save_flagged(self, scheme_id, record, now):
-            self.flagged = record
-            return "dry-run"
+        async def scrape_page(url):
+            return await scrape_url(url, content_check=True)
 
     results = []
     for n, scheme_id in enumerate(scheme_ids, 1):
@@ -79,17 +113,15 @@ async def run(db, scheme_ids):
         scraped = {}
 
         async def scrape(url):
-            scraped.update(await scrape_url(url, content_check=True))
+            scraped.update(await scrape_page(url))
             return scraped
 
         try:
-            res = await check_scheme(scheme_id, store, scrape)
+            res = await check_scheme(scheme_id, store, scrape, review=review)
         except Exception as e:
             res = {"scheme_id": scheme_id, "outcome": "error", "detail": f"{type(e).__name__}: {e}"[:500]}
 
         scheme = store.scheme or {}
-        old = stored_pages(scheme)
-        new = scraped_pages(scraped) if scraped else {}
         record = store.flagged or {}
         results.append(
             {
@@ -98,7 +130,7 @@ async def run(db, scheme_ids):
                 "link": scheme.get("link"),
                 "outcome": res["outcome"],
                 "detail": res.get("detail"),
-                "pages_changed": changed_pages(old, new) if old is not None and new else [],
+                "pages_changed": pages_changed(scheme, scraped),
                 "suggestions": [
                     {
                         "field": s.get("field"),
@@ -149,6 +181,11 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     if args.sample:
         scheme_ids = json.loads(Path(args.sample).read_text())
+        with_text = saved_text_ids(db)
+        no_text = [i for i in scheme_ids if i not in with_text]
+        if no_text:
+            print(f"Skipping {len(no_text)} of {len(scheme_ids)}: no saved page text (run the real job once to save it)")
+            scheme_ids = [i for i in scheme_ids if i in with_text]
     else:
         scheme_ids = pick_sample(db, args.limit)
         (out / "sample.json").write_text(json.dumps(scheme_ids, indent=2))
