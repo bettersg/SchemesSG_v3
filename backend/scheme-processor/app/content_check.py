@@ -27,13 +27,13 @@ the prompt was adapted from reading a diff to reading whole changed pages.
 """
 
 import asyncio
-import hashlib
 import difflib
+import hashlib
 import json
 import os
 import re
-from datetime import datetime, timedelta, timezone
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from app.services.extraction import extract_contacts
@@ -44,6 +44,8 @@ SCHEMES = "schemes"
 CHECKS = "contentChecks"
 CONTENT_TEXTS = "schemeContent"
 MAX_SNAPSHOT_BYTES = 900_000
+DIFF_TRUNCATION_MARKER = "\n\n... [diff truncated to stay within Firestore 1MB limit]"
+SNAPSHOT_TRUNCATION_MARKER = "\n\n... [text truncated to stay within Firestore 1MB limit]"
 
 SKIP_STATUSES = ("inactive", "retired")
 
@@ -163,15 +165,16 @@ def scraped_pages(scrape_result: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         # A tiny semantic extraction compared with the full page may be a widget.
         # Log the anomaly, but do not reject legitimate short scheme pages.
         ratio = len(main) / max(len(text), 1)
-        logger.info(f"Content extraction {url}: method={page.get('extraction_method', 'unknown')} "
-                    f"full={len(text)} main={len(main)} ratio={ratio:.2f}")
+        logger.info(
+            f"Content extraction {url}: method={page.get('extraction_method', 'unknown')} "
+            f"full={len(text)} main={len(main)} ratio={ratio:.2f}"
+        )
         if ratio < 0.05:
             logger.warning(f"Suspiciously small main extraction: {url} ({ratio:.2%})")
         key = norm_url(url)
         if key not in pages or len(text) > len(pages[key]["text"]):
             normalized = _words(main)
-            pages[key] = {"url": url, "text": text, "normalized_text": normalized,
-                          "hash": page_hash(normalized)}
+            pages[key] = {"url": url, "text": text, "normalized_text": normalized, "hash": page_hash(normalized)}
     return pages
 
 
@@ -210,8 +213,7 @@ def normalized_diff(old_text: str, new_text: str, context_words: int = 35) -> st
     return "\n...\n".join(chunks)
 
 
-def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]],
-                 previous: Optional[Dict[str, str]] = None) -> str:
+def format_pages(urls: List[str], new: Dict[str, Dict[str, Any]], previous: Optional[Dict[str, str]] = None) -> str:
     """Send normalized word diffs, with surrounding context, not full page text."""
     previous = previous or {}
     sections = []
@@ -341,6 +343,105 @@ async def review_changes(scheme: Dict[str, Any], pages: str) -> List[Dict[str, A
     raise ReviewError(f"{type(last_error).__name__}: {last_error}"[:500])
 
 
+def truncate_record_diff(record: Dict[str, Any], max_bytes: int = MAX_SNAPSHOT_BYTES) -> Dict[str, Any]:
+    """Truncate the stored diff in a contentChecks record so the document fits within Firestore's 1MB limit."""
+    encoded = json.dumps(record, ensure_ascii=False, default=str).encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return record
+
+    rec = dict(record)
+    marker_bytes = len(DIFF_TRUNCATION_MARKER.encode("utf-8"))
+
+    base = dict(rec)
+    base["diff"] = ""
+    base["text_diff"] = ""
+    overhead = len(json.dumps(base, ensure_ascii=False, default=str).encode("utf-8"))
+
+    available = max(0, max_bytes - overhead - 2048)
+    num_fields = sum(1 for f in ("diff", "text_diff") if f in rec and rec[f])
+    if num_fields == 0:
+        return rec
+
+    budget_per_field = available // num_fields
+    allowed_bytes = max(0, budget_per_field - marker_bytes)
+
+    raw_diff = rec.get("diff") or rec.get("text_diff") or ""
+    raw_encoded = raw_diff.encode("utf-8")
+    truncated = raw_encoded[:allowed_bytes].decode("utf-8", errors="ignore") + DIFF_TRUNCATION_MARKER
+
+    if "diff" in rec and rec["diff"]:
+        rec["diff"] = truncated
+    if "text_diff" in rec and rec["text_diff"]:
+        rec["text_diff"] = truncated
+    rec["diff_truncated"] = True
+
+    while len(json.dumps(rec, ensure_ascii=False, default=str).encode("utf-8")) > max_bytes:
+        curr = rec.get("diff") or ""
+        if len(curr) <= marker_bytes + 10:
+            break
+        trimmed = curr[: max(0, len(curr) - marker_bytes - 1000)] + DIFF_TRUNCATION_MARKER
+        if "diff" in rec:
+            rec["diff"] = trimmed
+        if "text_diff" in rec:
+            rec["text_diff"] = trimmed
+
+    return rec
+
+
+def truncate_snapshot_pages(
+    payload: Dict[str, Dict[str, Any]],
+    now: datetime,
+    max_bytes: int = MAX_SNAPSHOT_BYTES,
+) -> Dict[str, Dict[str, Any]]:
+    """Truncate stored page texts in schemeContent so the snapshot fits within Firestore's 1MB limit."""
+    snapshot = {"pages": payload, "updated_at": now}
+    encoded = json.dumps(snapshot, ensure_ascii=False, default=str).encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return payload
+
+    result = {k: dict(v) for k, v in payload.items()}
+    marker_bytes = len(SNAPSHOT_TRUNCATION_MARKER.encode("utf-8"))
+
+    overhead_snapshot = {
+        "pages": {k: {"url": v["url"], "text": ""} for k, v in result.items()},
+        "updated_at": now,
+    }
+    overhead = len(json.dumps(overhead_snapshot, ensure_ascii=False, default=str).encode("utf-8"))
+    available_budget = max(0, max_bytes - overhead - 2048)
+
+    # Water-filling: sort pages by text byte length ascending
+    # Small pages keep full text; large pages are capped at the remaining share
+    sorted_keys = sorted(result.keys(), key=lambda k: len(result[k]["text"].encode("utf-8")))
+    remaining_budget = available_budget
+    remaining_pages = len(sorted_keys)
+
+    for k in sorted_keys:
+        text_bytes = len(result[k]["text"].encode("utf-8"))
+        fair_share = remaining_budget // remaining_pages
+        if text_bytes <= fair_share:
+            remaining_budget -= text_bytes
+        else:
+            allowed = max(0, fair_share - marker_bytes)
+            raw = result[k]["text"].encode("utf-8")[:allowed].decode("utf-8", errors="ignore")
+            result[k]["text"] = raw + SNAPSHOT_TRUNCATION_MARKER
+            remaining_budget -= len(result[k]["text"].encode("utf-8"))
+        remaining_pages -= 1
+
+    while result:
+        encoded = json.dumps({"pages": result, "updated_at": now}, ensure_ascii=False, default=str).encode("utf-8")
+        if len(encoded) <= max_bytes:
+            break
+        largest_key = max(result, key=lambda k: len(result[k]["text"].encode("utf-8")))
+        curr_text = result[largest_key]["text"]
+        if len(curr_text) <= marker_bytes + 10:
+            break
+        result[largest_key]["text"] = (
+            curr_text[: max(0, len(curr_text) - marker_bytes - 1000)] + SNAPSHOT_TRUNCATION_MARKER
+        )
+
+    return result
+
+
 #### Firestore
 
 
@@ -371,27 +472,30 @@ class ContentStore:
         if not doc.exists:
             return None
         data = doc.to_dict() or {}
-        return {norm_url(v["url"]): v["text"] for v in data.get("pages", {}).values()
-                if isinstance(v, dict) and isinstance(v.get("url"), str)
-                and isinstance(v.get("text"), str)}
+        return {
+            norm_url(v["url"]): v["text"]
+            for v in data.get("pages", {}).values()
+            if isinstance(v, dict) and isinstance(v.get("url"), str) and isinstance(v.get("text"), str)
+        }
 
-    def save_pages(self, scheme_id: str, pages: List[Dict[str, Any]],
-                   new: Dict[str, Dict[str, Any]], now: datetime) -> None:
+    def save_pages(
+        self, scheme_id: str, pages: List[Dict[str, Any]], new: Dict[str, Dict[str, Any]], now: datetime
+    ) -> None:
         """Atomically save accepted hashes and canonical text in separate documents."""
-        payload = {hashlib.sha256(k.encode()).hexdigest():
-                   {"url": p["url"], "text": p["normalized_text"]}
-                   for k, p in sorted(new.items())}
+        payload = {
+            hashlib.sha256(k.encode()).hexdigest(): {"url": p["url"], "text": p["normalized_text"]}
+            for k, p in sorted(new.items())
+        }
+        payload = truncate_snapshot_pages(payload, now)
         snapshot = {"pages": payload, "updated_at": now}
-        if len(json.dumps(snapshot, ensure_ascii=False, default=str).encode("utf-8")) > MAX_SNAPSHOT_BYTES:
-            raise MainContentExtractionError("Normalized snapshot exceeds Firestore document size limit")
         batch = self.db.batch()
         batch.set(self.db.collection(CONTENT_TEXTS).document(scheme_id), snapshot)
-        batch.update(self.db.collection(SCHEMES).document(scheme_id),
-                     self._stamp(now, content_pages=pages))
+        batch.update(self.db.collection(SCHEMES).document(scheme_id), self._stamp(now, content_pages=pages))
         batch.commit()
 
     def save_flagged(self, scheme_id: str, record: Dict[str, Any], now: datetime) -> str:
         """Flagged: the stored hashes stay as they are. Returns the contentChecks id."""
+        record = truncate_record_diff(record)
         batch = self.db.batch()
         check_ref = self.db.collection(CHECKS).document()
         batch.set(check_ref, record)
@@ -458,10 +562,7 @@ async def check_scheme(
     previous = None
     if changed:
         previous = store.get_texts(scheme_id)
-        if previous is None or any(
-            c["change"] == "changed" and norm_url(c["url"]) not in previous
-            for c in changed
-        ):
+        if previous is None or any(c["change"] == "changed" and norm_url(c["url"]) not in previous for c in changed):
             store.save_pages(scheme_id, page_entries(new), new, now)
             return done("baseline", "normalized text snapshot initialized")
     contacts_gone = contact_check(old, new)
@@ -501,7 +602,8 @@ async def check_scheme(
         "model": REVIEW_MODEL,
         "prompt_version": PROMPT_VERSION,
     }
+    record = truncate_record_diff(record)
     check_id = store.save_flagged(scheme_id, record, now)
     result["check_id"] = check_id
-    result["diff"] = text_diff
+    result["diff"] = record.get("diff")
     return done("flagged", f"{len(suggestions)} suggestion(s), {len(contacts_gone)} contact(s) gone")

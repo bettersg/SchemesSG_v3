@@ -8,6 +8,9 @@ from datetime import datetime, timezone
 
 import pytest
 from app.content_check import (
+    DIFF_TRUNCATION_MARKER,
+    MAX_SNAPSHOT_BYTES,
+    SNAPSHOT_TRUNCATION_MARKER,
     ReviewError,
     _words,
     changed_pages,
@@ -21,6 +24,8 @@ from app.content_check import (
     page_hash,
     phone_key,
     scraped_pages,
+    truncate_record_diff,
+    truncate_snapshot_pages,
 )
 
 
@@ -262,9 +267,7 @@ def test_same_number_written_differently_is_not_gone():
 def test_new_1800_number_is_offered_as_the_page_writes_it():
     old = {LINK: {"contacts": contacts("Call 6123 4567")}}
     new = {LINK: {"url": LINK, "text": "Call 1800 123 4567"}}
-    assert contact_check(old, new) == [
-        {"contact": "61234567", "pages": [LINK], "replacements": ["1800 123 4567"]}
-    ]
+    assert contact_check(old, new) == [{"contact": "61234567", "pages": [LINK], "replacements": ["1800 123 4567"]}]
 
 
 def test_international_number_is_offered_once_with_its_prefix():
@@ -318,7 +321,9 @@ def test_scraped_pages_drops_trackers_and_keeps_longest_copy():
             ]
         }
     )
-    assert pages == {norm_url(LINK): {"url": LINK + "/", "text": "longer", "normalized_text": "longer", "hash": page_hash("longer")}}
+    assert pages == {
+        norm_url(LINK): {"url": LINK + "/", "text": "longer", "normalized_text": "longer", "hash": page_hash("longer")}
+    }
 
 
 def test_scraped_pages_converts_html():
@@ -350,3 +355,86 @@ def test_contact_in_link_is_not_a_phone_number():
     )
     assert old[norm_url(LINK)]["contacts"] == []
     assert contact_check(old, new) == []
+
+
+def test_truncate_record_diff_keeps_small_record_intact():
+    record = {
+        "scheme_id": "s1",
+        "diff": "small diff",
+        "text_diff": "small diff",
+        "review_input_truncated": False,
+    }
+    truncated = truncate_record_diff(record)
+    assert truncated == record
+    assert "diff_truncated" not in truncated
+
+
+def test_truncate_record_diff_caps_large_diff_within_1mb():
+    large_diff = "diff line +added -removed\n" * 40_000  # ~1MB
+    record = {
+        "scheme_id": "s1",
+        "diff": large_diff,
+        "text_diff": large_diff,
+        "review_input_truncated": False,
+    }
+    truncated = truncate_record_diff(record)
+    import json
+
+    size = len(json.dumps(truncated, ensure_ascii=False, default=str).encode("utf-8"))
+    assert size <= MAX_SNAPSHOT_BYTES
+    assert truncated["diff_truncated"] is True
+    assert truncated["diff"].endswith(DIFF_TRUNCATION_MARKER)
+    assert truncated["text_diff"].endswith(DIFF_TRUNCATION_MARKER)
+
+
+def test_truncate_snapshot_pages_keeps_small_snapshot_intact():
+    payload = {
+        "h1": {"url": "https://example.com/1", "text": "hello"},
+        "h2": {"url": "https://example.com/2", "text": "world"},
+    }
+    truncated = truncate_snapshot_pages(payload, NOW)
+    assert truncated == payload
+
+
+def test_truncate_snapshot_pages_caps_large_pages_within_1mb():
+    large_text = "word " * 300_000  # ~1.5MB
+    payload = {
+        "h1": {"url": "https://example.com/1", "text": large_text},
+        "h2": {"url": "https://example.com/2", "text": "short intro"},
+    }
+    truncated = truncate_snapshot_pages(payload, NOW)
+    import json
+
+    size = len(json.dumps({"pages": truncated, "updated_at": NOW}, ensure_ascii=False, default=str).encode("utf-8"))
+    assert size <= MAX_SNAPSHOT_BYTES
+    assert truncated["h2"]["text"] == "short intro"  # smaller page preserved intact
+    assert truncated["h1"]["text"].endswith(SNAPSHOT_TRUNCATION_MARKER)
+
+
+def test_large_diff_provides_full_text_to_llm_but_truncates_for_firestore():
+    import json
+
+    huge_new_text = "Grant information updated: " + "detailed eligibility terms and conditions. " * 30_000  # >1.2MB
+    store = FakeStore(scheme({LINK: "Grant information old."}))
+    llm_received_texts = []
+
+    async def fake_review(scheme_data, pages_text):
+        llm_received_texts.append(pages_text)
+        return [
+            {"field": "eligibility", "new_value": "Updated terms", "quote": "terms and conditions", "page_url": LINK}
+        ]
+
+    result = run(store, scrape=scraper({LINK: huge_new_text}), review=fake_review)
+
+    assert result["outcome"] == "flagged"
+    # LLM receives the full, untruncated text
+    assert len(llm_received_texts) == 1
+    assert len(llm_received_texts[0]) >= 1_000_000
+
+    # The record stored in Firestore is safely truncated below 1MB
+    record = store.records[0]
+    record_size = len(json.dumps(record, ensure_ascii=False, default=str).encode("utf-8"))
+    assert record_size <= MAX_SNAPSHOT_BYTES
+    assert record["diff_truncated"] is True
+    assert record["diff"].endswith(DIFF_TRUNCATION_MARKER)
+    assert record["review_input_truncated"] is False
