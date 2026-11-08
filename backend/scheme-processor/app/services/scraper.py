@@ -7,15 +7,20 @@ Handles web content extraction with Cloudflare bypass support via Pydoll.
 import asyncio
 import io
 import os
+import re
 import subprocess
+import threading
 from typing import Any, Dict, List
 
 import requests
-import re
-from bs4 import BeautifulSoup
 from app.constants import BOT_PROTECTION_INDICATORS, CLOUDFLARE_INDICATORS
 from app.services.extraction import select_best_logo
+from bs4 import BeautifulSoup
 from loguru import logger
+
+
+# Synchronize Pydoll Cloudflare bypass runs to prevent concurrent Xvfb display :99 collisions
+_pydoll_lock = threading.Lock()
 
 
 async def scrape_url(url: str, content_check: bool = False) -> Dict[str, Any]:
@@ -70,8 +75,7 @@ async def _scrape_pdf(url: str) -> Dict[str, Any]:
             "images": [],
             "logo_url": None,
             "error": None,
-            "pages": [{"url": url, "text": text.strip(), "main_text": text.strip(),
-                       "extraction_method": "pdf_text"}],
+            "pages": [{"url": url, "text": text.strip(), "main_text": text.strip(), "extraction_method": "pdf_text"}],
         }
 
     except Exception as e:
@@ -112,16 +116,27 @@ def _is_cloudflare_blocked(result: Dict[str, Any]) -> bool:
 
 
 # Conservative, cross-site exclusions for content-change fingerprints only.
-CONTENT_EXCLUDE_SELECTOR = ", ".join([
-    "#onetrust-banner-sdk", "#CybotCookiebotDialog",
-    ".cky-consent-container", ".cc-window", ".cc-banner",
-    "#intercom-container", "#hubspot-messages-iframe-container",
-    ".crisp-client", "#tidio-chat", ".instagram-media",
-    ".fb-post", ".twitter-tweet",
-    '[class*="cookie-consent"]', '[id*="cookie-consent"]',
-    '[class*="related-program"]', '[class*="related-post"]',
-    '[class*="related-article"]',
-])
+CONTENT_EXCLUDE_SELECTOR = ", ".join(
+    [
+        "#onetrust-banner-sdk",
+        "#CybotCookiebotDialog",
+        ".cky-consent-container",
+        ".cc-window",
+        ".cc-banner",
+        "#intercom-container",
+        "#hubspot-messages-iframe-container",
+        ".crisp-client",
+        "#tidio-chat",
+        ".instagram-media",
+        ".fb-post",
+        ".twitter-tweet",
+        '[class*="cookie-consent"]',
+        '[id*="cookie-consent"]',
+        '[class*="related-program"]',
+        '[class*="related-post"]',
+        '[class*="related-article"]',
+    ]
+)
 
 
 def extract_main_content(html: str) -> tuple[str, str]:
@@ -136,16 +151,25 @@ def extract_main_content(html: str) -> tuple[str, str]:
         tag.decompose()
     for tag in soup(["script", "style", "noscript", "iframe", "svg", "template"]):
         tag.decompose()
-    for tag in soup.select('[hidden], [aria-hidden="true"], [style*="display:none"], '
-                           '[style*="display: none"], [style*="visibility:hidden"], '
-                           '[style*="visibility: hidden"]'):
+    for tag in soup.select(
+        '[hidden], [aria-hidden="true"], [style*="display:none"], '
+        '[style*="display: none"], [style*="visibility:hidden"], '
+        '[style*="visibility: hidden"]'
+    ):
         tag.decompose()
 
     # Prefer structural main regions; avoid selecting body, which contains all widgets.
     candidates = []
-    for selector in ('main', '[role="main"]', 'article',
-                     '#main-content', '.main-content', '.page-content',
-                     '.entry-content', '.post-content'):
+    for selector in (
+        "main",
+        '[role="main"]',
+        "article",
+        "#main-content",
+        ".main-content",
+        ".page-content",
+        ".entry-content",
+        ".post-content",
+    ):
         for node in soup.select(selector):
             text = node.get_text(" ", strip=True)
             if text:
@@ -191,7 +215,9 @@ async def _try_crawl4ai(url: str, content_check: bool = False) -> Dict[str, Any]
             }
 
         crawl_config = CrawlerRunConfig(
-            deep_crawl_strategy=BFSDeepCrawlStrategy(max_depth=1, include_external=False, max_pages=1 if content_check else 5),
+            deep_crawl_strategy=BFSDeepCrawlStrategy(
+                max_depth=1, include_external=False, max_pages=1 if content_check else 5
+            ),
             cache_mode=CacheMode.BYPASS,
             verbose=False,
             **content_check_options,
@@ -229,8 +255,9 @@ def _process_crawl_results(results, url: str, content_check: bool = False) -> Di
                 if text:
                     all_text.append(text)
                     main, method = _content_main(result) if content_check else ("", "disabled")
-                    all_pages.append({"url": result.url or url, "text": text,
-                                      "main_text": main, "extraction_method": method})
+                    all_pages.append(
+                        {"url": result.url or url, "text": text, "main_text": main, "extraction_method": method}
+                    )
 
                 if hasattr(result, "media") and result.media:
                     images = result.media.get("images", [])
@@ -268,8 +295,7 @@ def _process_crawl_results(results, url: str, content_check: bool = False) -> Di
         "images": images,
         "logo_url": logo_url,
         "error": None,
-        "pages": [{"url": results.url or url, "text": scraped_text,
-                   "main_text": main, "extraction_method": method}],
+        "pages": [{"url": results.url or url, "text": scraped_text, "main_text": main, "extraction_method": method}],
     }
 
 
@@ -297,7 +323,10 @@ async def _try_pydoll_bypass(url: str, content_check: bool = False) -> Dict[str,
     Try Pydoll for Cloudflare bypass.
 
     Uses Xvfb virtual display for better Cloudflare bypass.
+    Serialized via _pydoll_lock to prevent concurrent runs from colliding on Xvfb display :99.
     """
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _pydoll_lock.acquire)
     xvfb_process = None
 
     try:
@@ -317,7 +346,11 @@ async def _try_pydoll_bypass(url: str, content_check: bool = False) -> Dict[str,
                 stderr=subprocess.DEVNULL,
             )
             await asyncio.sleep(1)
-            logger.info(f"Started Xvfb on :{display_num}")
+            if xvfb_process.poll() is not None:
+                logger.warning(f"Xvfb failed to start (exit code {xvfb_process.returncode}), using headless mode")
+                xvfb_process = None
+            else:
+                logger.info(f"Started Xvfb on :{display_num}")
         except FileNotFoundError:
             logger.warning("Xvfb not found, using headless mode")
             xvfb_process = None
@@ -391,8 +424,7 @@ async def _try_pydoll_bypass(url: str, content_check: bool = False) -> Dict[str,
                     "images": images,
                     "logo_url": logo_url,
                     "error": None,
-                    "pages": [{"url": url, "text": page_content,
-                               "main_text": main_text, "extraction_method": method}],
+                    "pages": [{"url": url, "text": page_content, "main_text": main_text, "extraction_method": method}],
                 }
             else:
                 return {
@@ -418,6 +450,7 @@ async def _try_pydoll_bypass(url: str, content_check: bool = False) -> Dict[str,
                     xvfb_process.kill()
                 except Exception:
                     pass
+        _pydoll_lock.release()
 
 
 async def _extract_pydoll_content(tab) -> str:
@@ -494,4 +527,3 @@ def _extract_images_from_html(html: str, base_url: str) -> List[Dict]:
         images.append({"src": src, "alt": img.get("alt", ""), "desc": " ".join(desc_parts), "score": 0})
 
     return images
-

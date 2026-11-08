@@ -2,8 +2,7 @@
 Monthly content-change check (issue #407).
 
 For one scheme:
-1. Skip it when the weekly link check marked the link suspect or inactive, or when an earlier
-check still waits for a volunteer and is less than 2 months old.
+1. Skip it when the weekly link check marked the link suspect or inactive.
 2. Scrape the scheme link. A failed scrape adds 1 to ``content_check_fail_streak``; nothing else
 changes and the AI is not called.
 3. Fingerprint each page: a SHA-256 hash of its main text (crawl4ai's pruning filter drops menus,
