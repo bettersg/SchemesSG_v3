@@ -36,6 +36,19 @@ LLM_CALL_TIMEOUT_SECONDS = 90
 
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 
+# The fields the extractor fills, one "- name: definition" line each. The content-change
+# reviewer (app/content_check.py) sends the same list, so both read fields the same way.
+FIELD_DEFINITIONS = """- llm_description: A comprehensive description of the scheme/service using newlines and bullet point lists for readability. Do NOT duplicate information from the eligibility, how_to_apply, or agency fields. Focus on what the scheme does, who it helps, and key benefits.
+- summary: A brief 1-2 sentence summary (string)
+- eligibility: Eligibility criteria and requirements (string)
+- how_to_apply: Steps to apply for this scheme (string)
+- agency: The organization name providing this scheme (string)
+- address: Full physical address including postal code if available (string)
+- phone: Phone number(s) found on the page, including hotlines and toll-free numbers. Comma-separated if multiple (string or null)
+- email: Contact email address(es) found on the page. Comma-separated if multiple (string or null)
+- service_area: Geographic service area (string)
+- search_booster: Comma-separated keywords for search (string)"""
+
 
 def _strip_code_fences(text: str) -> str:
     """Strip markdown code fences from LLM response."""
@@ -114,16 +127,7 @@ Content to extract from:
 ---
 
 Return a JSON object with these fields:
-- llm_description: A comprehensive description of the scheme/service using newlines and bullet point lists for readability. Do NOT duplicate information from the eligibility, how_to_apply, or agency fields. Focus on what the scheme does, who it helps, and key benefits.
-- summary: A brief 1-2 sentence summary (string)
-- eligibility: Eligibility criteria and requirements (string)
-- how_to_apply: Steps to apply for this scheme (string)
-- agency: The organization name providing this scheme (string)
-- address: Full physical address including postal code if available (string)
-- phone: Phone number(s) found on the page, including hotlines and toll-free numbers. Comma-separated if multiple (string or null)
-- email: Contact email address(es) found on the page. Comma-separated if multiple (string or null)
-- service_area: Geographic service area (string)
-- search_booster: Comma-separated keywords for search (string)
+{FIELD_DEFINITIONS}
 
 Return ONLY valid JSON, no markdown code blocks or explanation."""
 

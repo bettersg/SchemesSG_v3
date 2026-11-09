@@ -34,6 +34,22 @@ without the other silently diverges dev from deployed behavior.
 - Never commit `functions/.env*`, `functions/creds*.json`, or
   `prod_schemes_data.json` — see root `.gitignore`.
 
+## Secrets
+
+Everything comes from `functions/.env` (the `FUNCTIONS_ENV_VARS*` GitHub
+secrets when deployed) except the names below, which come from Secret Manager
+(`bettersg/schemessg-infra`):
+
+- Functions: names in a function's `secrets=[...]`. Deployed, they must not
+  also be in `FUNCTIONS_ENV_VARS*`, or the deploy fails. Locally, keep them in
+  `functions/.env`: the emulator logs that it can't read Secret Manager and
+  uses the `.env` value.
+- Content check job: `JOB_SECRET_KEYS` in `scheme-processor/deploy.sh`. The
+  Functions can keep the same name in `.env`; the two don't clash.
+
+To move a token: declare it in infra `envs/*/secrets.tf` and add its values,
+list it as above, then remove it from `FUNCTIONS_ENV_VARS*`.
+
 ## Verification
 
 - Focused pytest file while developing, then `uv run --frozen pytest`

@@ -36,6 +36,7 @@ class ContactInfo:
     emails: List[str] = field(default_factory=list)
     phones: List[str] = field(default_factory=list)
     addresses: List[str] = field(default_factory=list)
+    phones_as_written: List[str] = field(default_factory=list)  # Same numbers as phones, spacing kept
 
 
 def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
@@ -84,6 +85,9 @@ def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
         phones.extend(matches)
     # Clean and dedupe
     cleaned_phones = [re.sub(r"[\s\-]", "", p) for p in phones]
+    phones_as_written: dict[str, str] = {}
+    for cleaned, phone in zip(cleaned_phones, phones):
+        phones_as_written.setdefault(cleaned, " ".join(phone.split()))
 
     # Singapore postal code pattern (6 digits)
     postal_pattern = r"Singapore\s*\d{6}|S\s*\(\s*\d{6}\s*\)|S\d{6}"
@@ -93,6 +97,7 @@ def extract_contacts(text: str, max_text_length: int = 100000) -> ContactInfo:
         emails=list(dict.fromkeys(filtered_emails)),  # Dedupe, preserve order
         phones=list(dict.fromkeys(cleaned_phones)),
         addresses=list(dict.fromkeys(postal_matches)),
+        phones_as_written=list(phones_as_written.values()),
     )
 
 
@@ -150,13 +155,14 @@ def select_best_logo(images: List[Dict], base_url: str = "", validate: bool = Tr
     scored_candidates = []
 
     for img in images:
-        src = img.get("src", "")
+        # crawl4ai can return None for these fields, so `or ""` rather than a get() default
+        src = img.get("src") or ""
         if not src or src.startswith("data:"):
             continue
 
         src_lower = src.lower()
-        alt_lower = img.get("alt", "").lower()
-        desc_lower = img.get("desc", "").lower()
+        alt_lower = (img.get("alt") or "").lower()
+        desc_lower = (img.get("desc") or "").lower()
         score = img.get("score", 0) or 0
 
         # Strong boost for logo patterns in URL or alt

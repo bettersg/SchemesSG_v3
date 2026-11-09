@@ -50,6 +50,9 @@ fi
 echo "Setting GCP project..."
 gcloud config set project $PROJECT_ID
 
+# The content check job reads these from Secret Manager (schemessg-infra), not the env file.
+JOB_SECRET_KEYS="AZURE_OPENAI_API_KEY_SEA SLACK_BOT_TOKEN"
+
 # Read env vars from .env file and format for Cloud Run
 echo "Reading environment variables..."
 ENV_VARS=""
@@ -70,7 +73,14 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
     else
         ENV_VARS="$ENV_VARS,$key=$value"
     fi
+
+    # Cloud Run rejects a name set as both an env var and a secret.
+    [[ " $JOB_SECRET_KEYS " == *" $key "* ]] && continue
+    JOB_ENV_VARS="${JOB_ENV_VARS:+$JOB_ENV_VARS,}$key=$value"
 done < "$ENV_FILE"
+
+JOB_SECRETS=$(for k in $JOB_SECRET_KEYS; do printf '%s=%s:latest,' "$k" "$k"; done)
+JOB_SECRETS=${JOB_SECRETS%,}
 
 # Deploy to Cloud Run from source (auto-builds and creates repo)
 echo "Building and deploying to Cloud Run..."
@@ -90,14 +100,63 @@ gcloud run deploy $SERVICE_NAME \
     --set-env-vars "$ENV_VARS" \
     --no-allow-unauthenticated
 
-# Get the service URL
+# Get the service URL and image
 SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
+SERVICE_IMAGE=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(spec.template.spec.containers[0].image)')
 
 echo ""
 echo "============================================"
 echo "Deployment complete!"
 echo "============================================"
 echo "Service URL: $SERVICE_URL"
+echo "Image: $SERVICE_IMAGE"
+
+# Deploy Cloud Run Job for monthly content check (reusing the built container image)
+JOB_NAME="scheme-content-check"
+echo ""
+echo "============================================"
+echo "Deploying Cloud Run Job: $JOB_NAME"
+echo "============================================"
+gcloud run jobs deploy $JOB_NAME \
+    --image "$SERVICE_IMAGE" \
+    --region $REGION \
+    --command "uv" \
+    --args "run,python,-m,app.run_content_check" \
+    --memory 2Gi \
+    --cpu 2 \
+    --task-timeout 86400 \
+    --max-retries 1 \
+    --set-env-vars "$JOB_ENV_VARS" \
+    --set-secrets "$JOB_SECRETS"
+
+# Schedule the Cloud Run Job with Cloud Scheduler (0 10 1 * * = 10am SGT on 1st of every month)
+SCHEDULER_JOB="scheduled-content-check"
+SCHEDULE="0 10 1 * *"
+TIMEZONE="Asia/Singapore"
+
+echo ""
+echo "============================================"
+echo "Configuring Cloud Scheduler: $SCHEDULER_JOB"
+echo "============================================"
+if gcloud scheduler jobs describe $SCHEDULER_JOB --location=$REGION --project=$PROJECT_ID &>/dev/null; then
+    gcloud scheduler jobs update http $SCHEDULER_JOB \
+        --location=$REGION \
+        --project=$PROJECT_ID \
+        --schedule="$SCHEDULE" \
+        --time-zone="$TIMEZONE" \
+        --uri="https://${REGION}-run.googleapis.com/v2/projects/${PROJECT_ID}/locations/${REGION}/jobs/${JOB_NAME}:run" \
+        --http-method=POST \
+        --oauth-service-account-email="$FIREBASE_SA"
+else
+    gcloud scheduler jobs create http $SCHEDULER_JOB \
+        --location=$REGION \
+        --project=$PROJECT_ID \
+        --schedule="$SCHEDULE" \
+        --time-zone="$TIMEZONE" \
+        --uri="https://${REGION}-run.googleapis.com/v2/projects/${PROJECT_ID}/locations/${REGION}/jobs/${JOB_NAME}:run" \
+        --http-method=POST \
+        --oauth-service-account-email="$FIREBASE_SA"
+fi
 
 # Check and setup IAM binding for Firebase Functions to call Cloud Run
 echo ""
@@ -116,6 +175,17 @@ if [ "$IAM_CHECK" = "0" ]; then
     echo "IAM binding added successfully."
 else
     echo "IAM binding already exists for $FIREBASE_SA"
+fi
+
+# Ensure service account has invoker role on the Cloud Run Job (for Cloud Scheduler)
+JOB_IAM_CHECK=$(gcloud run jobs get-iam-policy $JOB_NAME --region $REGION --project $PROJECT_ID --format json 2>/dev/null | grep -c "$FIREBASE_SA" || true)
+if [ "$JOB_IAM_CHECK" = "0" ]; then
+    echo "Granting Cloud Run Job invoker role to service account..."
+    gcloud run jobs add-iam-policy-binding $JOB_NAME \
+        --region=$REGION \
+        --member="serviceAccount:$FIREBASE_SA" \
+        --role="roles/run.invoker" \
+        --project=$PROJECT_ID
 fi
 
 echo ""

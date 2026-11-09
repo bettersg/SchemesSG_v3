@@ -14,6 +14,7 @@ Install from lockfiles before validating a clean checkout: `npm ci` in
 | Backend unit | Isolated logic with no external services | `cd backend && uv run --frozen pytest -m unit --no-cov` |
 | Backend integration | Handlers and components with external boundaries replaced | `cd backend && uv run --frozen pytest -m "integration and not smoke" --no-cov` |
 | Backend canonical | Secretless unit/integration suite with independent coverage ratchets | `cd backend && uv run --frozen pytest && uv run --frozen coverage json -o - \| uv run --frozen python scripts/check_coverage.py` |
+| Scheme processor | Cloud Run scraper and content-check unit tests | `cd backend/scheme-processor && uv run --frozen pytest` |
 | Frontend unit/integration | Vitest, Testing Library, and enforced coverage | `cd frontend && npm run test:coverage` |
 | Frontend static/build | Lint, types, and validation build | `cd frontend && npm run lint && npm run typecheck && npm run build` |
 | Frontend public build | Anonymous static generation of catalog and scheme routes against a local fixture API | `cd frontend && npm run test:build-fixture && npm run build:public` |
