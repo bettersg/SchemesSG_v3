@@ -715,3 +715,9 @@ def test_rejected_row_without_new_snapshot_completes_without_error():
     assert db.get_document("schemeContent", "s1") is None
     assert db.get_document("schemes", "s1")["content_pages"] == NEW_PAGES
 
+
+
+def test_scheduled_review_reads_notion_token_from_secret_manager():
+    """The token is bound from Secret Manager; without this the hourly job silently does nothing."""
+    endpoint = review.scheduled_notion_content_review.__firebase_endpoint__
+    assert endpoint.secretEnvironmentVariables == [{"key": "NOTION_API_TOKEN"}]

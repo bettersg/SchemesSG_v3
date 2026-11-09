@@ -614,6 +614,8 @@ def push_pending(
     timeout_sec=300,
     max_instances=1,
     retry_count=0,  # the next run is an hour away
+    # From Secret Manager (bettersg/schemessg-infra); keep it out of FUNCTIONS_ENV_VARS*, or the deploy fails.
+    secrets=["NOTION_API_TOKEN"],
 )
 def scheduled_notion_content_review(event: scheduler_fn.ScheduledEvent) -> None:
     """Sync pending checks to Notion, then apply volunteer verdicts from the Notion review queue."""

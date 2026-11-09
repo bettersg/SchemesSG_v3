@@ -70,7 +70,15 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
     else
         ENV_VARS="$ENV_VARS,$key=$value"
     fi
+
+    # The content check job reads these from Secret Manager, and Cloud Run rejects a
+    # name set both ways.
+    case "$key" in AZURE_OPENAI_API_KEY_SEA | SLACK_BOT_TOKEN) continue ;; esac
+    JOB_ENV_VARS="${JOB_ENV_VARS:+$JOB_ENV_VARS,}$key=$value"
 done < "$ENV_FILE"
+
+# Secret Manager secrets for the job (bettersg/schemessg-infra envs/<env>/secrets.tf).
+JOB_SECRETS="AZURE_OPENAI_API_KEY_SEA=AZURE_OPENAI_API_KEY_SEA:latest,SLACK_BOT_TOKEN=SLACK_BOT_TOKEN:latest"
 
 # Deploy to Cloud Run from source (auto-builds and creates repo)
 echo "Building and deploying to Cloud Run..."
@@ -116,7 +124,8 @@ gcloud run jobs deploy $JOB_NAME \
     --cpu 2 \
     --task-timeout 86400 \
     --max-retries 1 \
-    --set-env-vars "$ENV_VARS"
+    --set-env-vars "$JOB_ENV_VARS" \
+    --set-secrets "$JOB_SECRETS"
 
 # Schedule the Cloud Run Job with Cloud Scheduler (0 10 1 * * = 10am SGT on 1st of every month)
 SCHEDULER_JOB="scheduled-content-check"
