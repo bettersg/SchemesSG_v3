@@ -69,6 +69,22 @@ def prune_firebase_collection(client, collection_name, docs, dry_run=True):
     return [ref.id for ref in to_delete]
 
 
+# The monthly content check keeps its own state on each scheme. Dev's fingerprints match
+# dev's schemeContent snapshots, so the copy keeps dev's values instead of wiping them.
+DEV_OWNED_FIELDS = ("content_pages", "last_content_checked", "content_check_fail_streak")
+
+
+def keep_dev_fields(prod_docs, dev_docs):
+    """Prod's docs, with dev's own value (or none) for each field in DEV_OWNED_FIELDS."""
+    return {
+        doc_id: {
+            **{k: v for k, v in data.items() if k not in DEV_OWNED_FIELDS},
+            **{k: dev_docs[doc_id][k] for k in DEV_OWNED_FIELDS if k in dev_docs.get(doc_id, {})},
+        }
+        for doc_id, data in prod_docs.items()
+    }
+
+
 def diff_collections(prod_docs, dev_docs):
     """Doc IDs a sync would add to, delete from, and overwrite in dev."""
     missing = sorted(prod_docs.keys() - dev_docs.keys())
@@ -101,10 +117,11 @@ def sync_collection(collection_name="schemes", dry_run=True):
     dev_project = client("schemessg-v3-dev")
 
     prod_docs = retrieve_firebase_collection(prod_project, collection_name)
+    dev_docs = retrieve_firebase_collection(dev_project, collection_name)
+    docs = keep_dev_fields(prod_docs, dev_docs)
 
     if dry_run:
-        dev_docs = retrieve_firebase_collection(dev_project, collection_name)
-        missing, extra, changed = diff_collections(prod_docs, dev_docs)
+        missing, extra, changed = diff_collections(docs, dev_docs)
         if not prod_docs:
             logger.warning(f"Prod {collection_name} is empty; a real run would abort without changing dev")
         logger.info(
@@ -113,9 +130,9 @@ def sync_collection(collection_name="schemes", dry_run=True):
         )
         return missing, extra, changed
 
-    upsert_firebase_collection(dev_project, collection_name, prod_docs)
-    prune_firebase_collection(dev_project, collection_name, prod_docs, dry_run=False)
-    validate(dev_project, prod_docs, collection_name)
+    upsert_firebase_collection(dev_project, collection_name, docs)
+    prune_firebase_collection(dev_project, collection_name, docs, dry_run=False)
+    validate(dev_project, docs, collection_name)
 
 
 @scheduler_fn.on_schedule(
@@ -143,7 +160,9 @@ def scheduled_firebase_collection_sync(event: scheduler_fn.ScheduledEvent) -> No
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Make dev's schemes collection an exact copy of prod's.")
+    parser = argparse.ArgumentParser(
+        description="Make dev's schemes collection a copy of prod's, keeping dev's content check state."
+    )
     parser.add_argument(
         "--apply", action="store_true", help="Write to dev. Without it, only report what would change."
     )

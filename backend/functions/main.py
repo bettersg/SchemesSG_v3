@@ -33,7 +33,7 @@ The following endpoints are available:
    - scheduled_link_check_and_reindex: Weekly scheduled job to check all scheme links,
      mark dead links inactive, post summary to Slack, and reindex embeddings
    - scheduled_firebase_collection_sync: Dev only. Twice-monthly job that makes dev's
-     schemes collection an exact copy of prod's
+     schemes collection a copy of prod's, keeping dev's content check state
    - scheduled_notion_content_review: hourly job that applies Approved/Rejected Notion review rows
      to Firestore, then trashes the rows
 
