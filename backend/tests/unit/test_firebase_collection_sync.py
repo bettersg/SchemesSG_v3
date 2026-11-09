@@ -165,3 +165,24 @@ def test_sync_is_a_dry_run_unless_told_otherwise(prod, dev):
 
     assert (missing, extra, changed) == (["a"], ["c"], ["b"])
     assert dev.list_documents("schemes") == dev_before
+
+
+def test_sync_keeps_dev_content_check_state(prod, dev):
+    """Dev's fingerprints match dev's own schemeContent snapshots, so the copy must not replace them."""
+    dev_state = {
+        "content_pages": [{"url": "u", "hash": "dev"}],
+        "last_content_checked": "dev-time",
+        "content_check_fail_streak": 2,
+    }
+    prod.seed("schemes", "a", _scheme("A", agency="New Agency", content_pages=[{"url": "u", "hash": "prod"}]))
+    prod.seed("schemes", "b", _scheme("B", content_pages=[{"url": "u", "hash": "prod"}]))
+    dev.seed("schemes", "a", _scheme("A", agency="Old Agency", **dev_state))
+    dev.seed("schemes", "b", _scheme("B"))
+    prod_before = prod.list_documents("schemes")
+
+    sync.sync_collection("schemes", dry_run=False)
+
+    after = dev.list_documents("schemes")
+    assert after["a"] == _scheme("A", agency="New Agency", **dev_state)  # prod's fields, dev's check state
+    assert after["b"] == _scheme("B")  # no dev state yet: prod's fingerprints aren't copied either
+    assert prod.list_documents("schemes") == prod_before
