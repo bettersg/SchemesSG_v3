@@ -34,6 +34,22 @@ without the other silently diverges dev from deployed behavior.
 - Never commit `functions/.env*`, `functions/creds*.json`, or
   `prod_schemes_data.json` — see root `.gitignore`.
 
+## Secrets
+
+Tokens move one at a time from the `FUNCTIONS_ENV_VARS*` GitHub secrets (and
+the local `.env.*` files `scheme-processor/deploy.sh` reads) to Secret
+Manager. To move one:
+
+- Declare it in `bettersg/schemessg-infra` `envs/{dev,production}/secrets.tf`
+  (ID = env var name), apply, then add each project's value (infra README).
+- Functions: list it in `secrets=[...]` on every function that reads it. Code
+  keeps using `os.getenv`; a function that doesn't list it gets `None`.
+- Cloud Run job: add it to `JOB_SECRET_KEYS` in `scheme-processor/deploy.sh`.
+- Remove it from `FUNCTIONS_ENV_VARS*` before the deploy that declares it:
+  Firebase won't deploy a name that is both an env var and a secret.
+- Read access goes to the default compute service account. A function with its
+  own `service_account` needs its own grant in `secrets.tf`.
+
 ## Verification
 
 - Focused pytest file while developing, then `uv run --frozen pytest`

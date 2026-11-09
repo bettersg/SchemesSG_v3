@@ -50,6 +50,10 @@ fi
 echo "Setting GCP project..."
 gcloud config set project $PROJECT_ID
 
+# Keys the content check job reads from Secret Manager instead of the env file. Each
+# must exist in bettersg/schemessg-infra envs/<env>/secrets.tf. To move a key, add it here.
+JOB_SECRET_KEYS="AZURE_OPENAI_API_KEY_SEA SLACK_BOT_TOKEN"
+
 # Read env vars from .env file and format for Cloud Run
 echo "Reading environment variables..."
 ENV_VARS=""
@@ -71,14 +75,13 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
         ENV_VARS="$ENV_VARS,$key=$value"
     fi
 
-    # The content check job reads these from Secret Manager, and Cloud Run rejects a
-    # name set both ways.
-    case "$key" in AZURE_OPENAI_API_KEY_SEA | SLACK_BOT_TOKEN) continue ;; esac
+    # Cloud Run rejects a name set as both an env var and a secret.
+    [[ " $JOB_SECRET_KEYS " == *" $key "* ]] && continue
     JOB_ENV_VARS="${JOB_ENV_VARS:+$JOB_ENV_VARS,}$key=$value"
 done < "$ENV_FILE"
 
-# Secret Manager secrets for the job (bettersg/schemessg-infra envs/<env>/secrets.tf).
-JOB_SECRETS="AZURE_OPENAI_API_KEY_SEA=AZURE_OPENAI_API_KEY_SEA:latest,SLACK_BOT_TOKEN=SLACK_BOT_TOKEN:latest"
+JOB_SECRETS=$(for k in $JOB_SECRET_KEYS; do printf '%s=%s:latest,' "$k" "$k"; done)
+JOB_SECRETS=${JOB_SECRETS%,}
 
 # Deploy to Cloud Run from source (auto-builds and creates repo)
 echo "Building and deploying to Cloud Run..."
