@@ -36,19 +36,18 @@ without the other silently diverges dev from deployed behavior.
 
 ## Secrets
 
-Tokens move one at a time from the `FUNCTIONS_ENV_VARS*` GitHub secrets (and
-the local `.env.*` files `scheme-processor/deploy.sh` reads) to Secret
-Manager. To move one:
+Everything comes from `functions/.env` (the `FUNCTIONS_ENV_VARS*` GitHub
+secrets when deployed) except the names below, which come from Secret Manager
+(`bettersg/schemessg-infra`):
 
-- Declare it in `bettersg/schemessg-infra` `envs/{dev,production}/secrets.tf`
-  (ID = env var name), apply, then add each project's value (infra README).
-- Functions: list it in `secrets=[...]` on every function that reads it. Code
-  keeps using `os.getenv`; a function that doesn't list it gets `None`.
-- Cloud Run job: add it to `JOB_SECRET_KEYS` in `scheme-processor/deploy.sh`.
-- Remove it from `FUNCTIONS_ENV_VARS*` before the deploy that declares it:
-  Firebase won't deploy a name that is both an env var and a secret.
-- Read access goes to the default compute service account. A function with its
-  own `service_account` needs its own grant in `secrets.tf`.
+- Functions: names in a function's `secrets=[...]`. They must not also be in
+  `.env`, or Firebase won't deploy. Locally, put them in
+  `functions/.secret.local` (gitignored); without it they are unset.
+- Content check job: `JOB_SECRET_KEYS` in `scheme-processor/deploy.sh`. The
+  Functions can keep the same name in `.env`; the two don't clash.
+
+To move a token: declare it in infra `envs/*/secrets.tf` and add its values,
+list it as above, then remove it from `FUNCTIONS_ENV_VARS*`.
 
 ## Verification
 

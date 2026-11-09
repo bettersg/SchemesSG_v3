@@ -614,7 +614,8 @@ def push_pending(
     timeout_sec=300,
     max_instances=1,
     retry_count=0,  # the next run is an hour away
-    # From Secret Manager (bettersg/schemessg-infra); keep it out of FUNCTIONS_ENV_VARS*, or the deploy fails.
+    # Deployed: from Secret Manager, so keep it out of FUNCTIONS_ENV_VARS*.
+    # Emulator: from functions/.secret.local (gitignored); without it the job does nothing.
     secrets=["NOTION_API_TOKEN"],
 )
 def scheduled_notion_content_review(event: scheduler_fn.ScheduledEvent) -> None:

@@ -50,8 +50,7 @@ fi
 echo "Setting GCP project..."
 gcloud config set project $PROJECT_ID
 
-# Keys the content check job reads from Secret Manager instead of the env file. Each
-# must exist in bettersg/schemessg-infra envs/<env>/secrets.tf. To move a key, add it here.
+# The content check job reads these from Secret Manager (schemessg-infra), not the env file.
 JOB_SECRET_KEYS="AZURE_OPENAI_API_KEY_SEA SLACK_BOT_TOKEN"
 
 # Read env vars from .env file and format for Cloud Run
