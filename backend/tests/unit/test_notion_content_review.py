@@ -717,7 +717,10 @@ def test_rejected_row_without_new_snapshot_completes_without_error():
 
 
 
-def test_scheduled_review_reads_notion_token_from_secret_manager():
-    """The token is bound from Secret Manager; without this the hourly job silently does nothing."""
+def test_scheduled_review_reads_notion_config_from_secret_manager():
+    """Both are bound from Secret Manager; without them the hourly job silently does nothing."""
     endpoint = review.scheduled_notion_content_review.__firebase_endpoint__
-    assert endpoint.secretEnvironmentVariables == [{"key": "NOTION_API_TOKEN"}]
+    assert endpoint.secretEnvironmentVariables == [
+        {"key": "NOTION_API_TOKEN"},
+        {"key": "NOTION_CONTENT_CHECK_DATA_SOURCE_ID"},
+    ]

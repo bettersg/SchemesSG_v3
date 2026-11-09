@@ -40,9 +40,10 @@ Everything comes from `functions/.env` (the `FUNCTIONS_ENV_VARS*` GitHub
 secrets when deployed) except the names below, which come from Secret Manager
 (`bettersg/schemessg-infra`):
 
-- Functions: names in a function's `secrets=[...]`. They must not also be in
-  `.env`, or Firebase won't deploy. Locally, put them in
-  `functions/.secret.local` (gitignored); without it they are unset.
+- Functions: names in a function's `secrets=[...]`. Deployed, they must not
+  also be in `FUNCTIONS_ENV_VARS*`, or the deploy fails. Locally, keep them in
+  `functions/.env`: the emulator logs that it can't read Secret Manager and
+  uses the `.env` value.
 - Content check job: `JOB_SECRET_KEYS` in `scheme-processor/deploy.sh`. The
   Functions can keep the same name in `.env`; the two don't clash.
 

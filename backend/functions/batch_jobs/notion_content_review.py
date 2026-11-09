@@ -614,9 +614,9 @@ def push_pending(
     timeout_sec=300,
     max_instances=1,
     retry_count=0,  # the next run is an hour away
-    # Deployed: from Secret Manager, so keep it out of FUNCTIONS_ENV_VARS*.
-    # Emulator: from functions/.secret.local (gitignored); without it the job does nothing.
-    secrets=["NOTION_API_TOKEN"],
+    # Deployed: from Secret Manager, so keep these out of FUNCTIONS_ENV_VARS*.
+    # Emulator: from functions/.env, after it logs that it can't read Secret Manager.
+    secrets=["NOTION_API_TOKEN", "NOTION_CONTENT_CHECK_DATA_SOURCE_ID"],
 )
 def scheduled_notion_content_review(event: scheduler_fn.ScheduledEvent) -> None:
     """Sync pending checks to Notion, then apply volunteer verdicts from the Notion review queue."""
