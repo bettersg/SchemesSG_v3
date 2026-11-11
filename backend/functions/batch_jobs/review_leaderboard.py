@@ -97,7 +97,14 @@ def ranks(stats: Dict[str, Dict[str, Any]]) -> Dict[str, int]:
 
 
 class SlackDirectory:
-    """Resolves an email or Slack ID to (slack_id, display name, email); falls back to the raw value."""
+    """Resolves an email or Slack ID to (slack_id, display name, email).
+
+    Falls back to the raw value only when Slack says the user doesn't exist. Any other error
+    (rate limit, auth, outage) aborts the run: keying a reviewer by email for one run would split
+    them into a second row that later runs never remove.
+    """
+
+    NOT_FOUND = ("users_not_found", "user_not_found")
 
     def __init__(self, client):
         self._client = client
@@ -115,7 +122,9 @@ class SlackDirectory:
                 name = profile.get("display_name") or user.get("real_name") or user.get("name") or raw
                 self._cache[raw] = (user["id"], name, email or profile.get("email"))
             except SlackApiError as e:
-                logger.warning(f"Slack lookup failed for a reviewer, keeping the raw value: {e}")
+                if e.response.get("error") not in self.NOT_FOUND:
+                    raise
+                logger.warning(f"Reviewer not found in Slack, keeping the raw value: {e}")
                 self._cache[raw] = (raw, raw, email)
         return self._cache[raw]
 
@@ -148,10 +157,9 @@ def sync_review_leaderboard(
     db=None,
     notion: Optional[NotionClient] = None,
     slack=None,
-    token: Optional[str] = None,
     now: Optional[datetime] = None,
 ) -> Dict[str, Any]:
-    token = token or leaderboard_token()
+    token = leaderboard_token()  # never injectable: the prod-only check must not be bypassed
     if not token:
         logger.info("Review leaderboard sync skipped: not prod, or NOTION_LEADERBOARD_TOKEN not set")
         return {"skipped": "not configured"}

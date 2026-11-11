@@ -98,7 +98,18 @@ def test_ranks_share_place_on_ties():
     assert lb.ranks({"A": s(10, 0), "B": s(8, 2), "C": s(5, 0), "D": s(1, 0)}) == {"A": 1, "B": 1, "C": 3, "D": 4}
 
 
-def test_sync_merges_email_and_slack_id_then_updates_existing_row_and_creates_new_one():
+class RateLimitedSlack(FakeSlack):
+    def users_lookupByEmail(self, *, email):
+        raise SlackApiError("ratelimited", {"ok": False, "error": "ratelimited"})
+
+
+@pytest.fixture
+def prod_env(monkeypatch):
+    monkeypatch.setenv("FB_PROJECT_ID", "schemessg")
+    monkeypatch.setenv("NOTION_LEADERBOARD_TOKEN", "t")
+
+
+def test_sync_merges_email_and_slack_id_then_updates_existing_row_and_creates_new_one(prod_env):
     db = FakeFirestore()
     db.seed(
         "schemeEntries",
@@ -138,7 +149,7 @@ def test_sync_merges_email_and_slack_id_then_updates_existing_row_and_creates_ne
         ],
     )
 
-    result = lb.sync_review_leaderboard(db=db, notion=notion, slack=FakeSlack(), token="t", now=NOW)
+    result = lb.sync_review_leaderboard(db=db, notion=notion, slack=FakeSlack(), now=NOW)
 
     assert result == {"reviewers": 2, "reviews": 4, "created": 1, "updated": 1}
     ann, bo = (decode_row(notion.pages[page_id]) for page_id in ("page-1", "page-2"))
@@ -167,10 +178,22 @@ def test_sync_merges_email_and_slack_id_then_updates_existing_row_and_creates_ne
     assert notion.pages["page-2"]["icon"] == {"type": "emoji", "emoji": "🥈"}
 
 
-def test_slack_lookup_failure_keeps_the_raw_value():
+def test_unknown_slack_user_keeps_the_raw_value():
     directory = lb.SlackDirectory(FakeSlack())
     assert directory.resolve("U-gone") == ("U-gone", "U-gone", None)
     assert directory.resolve("gone@example.org") == ("gone@example.org", "gone@example.org", "gone@example.org")
+
+
+def test_transient_slack_error_aborts_before_writing_to_notion(prod_env):
+    db = FakeFirestore()
+    db.seed("schemeEntries", "e1", {"Status": "approved", "approved_by": "ann@example.org", "approved_at": NOW})
+    db.seed("schemeEntries", "e2", {"Status": "rejected", "rejected_by": "U-ann", "rejected_at": NOW})
+    notion = FakeNotion(pages=[page_for("U-ann")])
+
+    with pytest.raises(SlackApiError):
+        lb.sync_review_leaderboard(db=db, notion=notion, slack=RateLimitedSlack(), now=NOW)
+    # No email-keyed second row for Ann: nothing was written, and the scheduler's retry reruns the whole sync.
+    assert notion.calls == []
 
 
 @pytest.mark.parametrize(
