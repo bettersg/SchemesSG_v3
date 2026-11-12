@@ -37,7 +37,11 @@ class FakeNotion(NotionClient):
             self._apply(page_id, body)
             return deepcopy(self.pages[page_id])
         if method == "PATCH" and path.startswith("/pages/"):
-            self._apply(path.split("/")[2], body)
+            page_id = path.split("/")[2]
+            if body.get("in_trash"):  # trashed pages drop out of queries
+                del self.pages[page_id]
+            else:
+                self._apply(page_id, body)
             return {}
         raise AssertionError(f"unexpected Notion call {method} {path}")
 
@@ -151,7 +155,7 @@ def test_sync_merges_email_and_slack_id_then_updates_existing_row_and_creates_ne
 
     result = lb.sync_review_leaderboard(db=db, notion=notion, slack=FakeSlack(), now=NOW)
 
-    assert result == {"reviewers": 2, "reviews": 4, "created": 1, "updated": 1}
+    assert result == {"reviewers": 2, "reviews": 4, "created": 1, "updated": 1, "trashed": 0}
     ann, bo = (decode_row(notion.pages[page_id]) for page_id in ("page-1", "page-2"))
     assert {
         k: ann[k] for k in ("Reviewer", "Reviewer key", "Approved", "Rejected", "This month", "Rank", "Last review")
@@ -176,6 +180,35 @@ def test_sync_merges_email_and_slack_id_then_updates_existing_row_and_creates_ne
     }
     assert "Person" not in notion.pages["page-2"]["properties"]  # no Notion member with that email
     assert notion.pages["page-2"]["icon"] == {"type": "emoji", "emoji": "🥈"}
+
+
+class SlackThatFindsCy(FakeSlack):
+    USERS = {
+        **FakeSlack.USERS,
+        "U-cy": {"id": "U-cy", "name": "cy", "profile": {"display_name": "Cy", "email": "cy@example.org"}},
+    }
+
+
+def test_row_keyed_by_email_is_trashed_once_slack_finds_the_reviewer(prod_env):
+    db = FakeFirestore()
+    db.seed("schemeEntries", "e1", {"Status": "approved", "approved_by": "cy@example.org", "approved_at": NOW})
+    notion = FakeNotion(pages=[{"id": "page-hand", "properties": {}}])  # a row someone added by hand, no key
+
+    # Run 1: Slack doesn't know Cy's email yet, so Cy's row is keyed by the email.
+    lb.sync_review_leaderboard(db=db, notion=notion, slack=FakeSlack(), now=NOW)
+    # Run 2: Slack now finds Cy, so the key becomes the Slack ID.
+    result = lb.sync_review_leaderboard(db=db, notion=notion, slack=SlackThatFindsCy(), now=NOW)
+
+    assert result == {"reviewers": 1, "reviews": 1, "created": 1, "updated": 0, "trashed": 1}
+    keys = sorted(str(decode_row(page).get("Reviewer key")) for page in notion.pages.values())
+    assert keys == ["None", "U-cy"]  # one row for Cy, and the hand-added row stays
+
+
+def test_empty_count_never_clears_the_board(prod_env):
+    notion = FakeNotion(pages=[page_for("U-ann")])
+    result = lb.sync_review_leaderboard(db=FakeFirestore(), notion=notion, slack=FakeSlack(), now=NOW)
+    assert result["trashed"] == 0
+    assert list(notion.pages) == ["page-1"]
 
 
 def test_unknown_slack_user_keeps_the_raw_value():

@@ -6,7 +6,7 @@ Firestore stays the source of truth. Each run recomputes all-time totals from ``
 (Status approved or rejected, so retirements and updates count too), so a missed or repeated run is
 harmless. One Notion row per reviewer, keyed on "Reviewer key" (their Slack user ID): approvals
 store the reviewer's email and rejections their Slack ID, so both are resolved through Slack and
-merged. Levels, progress bars and views are Notion formulas; this job writes the counts, rank,
+merged. A keyed row the run didn't write is stale and goes to the Notion trash. Levels, progress bars and views are Notion formulas; this job writes the counts, rank,
 medal icon and, when a workspace member has the same email, the Notion "Person".
 
 Prod only: the Better.sg workspace has no dev copy, and dev's NOTION_LEADERBOARD_TOKEN is a placeholder.
@@ -198,7 +198,23 @@ def sync_review_leaderboard(
             notion.create_page(DATA_SOURCE_ID, properties, icon=icon)
             created += 1
 
-    result = {"reviewers": len(stats), "reviews": len(events), "created": created, "updated": updated}
+    # Each run recounts everything, so a keyed row this run didn't write is stale: the reviewer's key
+    # changed (Slack now finds an email it couldn't, or no longer does) or their reviews are gone.
+    # Rows without a key were added by hand and stay. An empty count never clears the board.
+    trashed = 0
+    if stats:
+        for key, page_id in rows.items():
+            if key and key not in stats:
+                notion.trash_page(page_id)
+                trashed += 1
+
+    result = {
+        "reviewers": len(stats),
+        "reviews": len(events),
+        "created": created,
+        "updated": updated,
+        "trashed": trashed,
+    }
     logger.info(f"Review leaderboard synced: {result}")
     return result
 
