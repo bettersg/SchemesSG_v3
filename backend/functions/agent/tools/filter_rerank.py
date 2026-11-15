@@ -15,6 +15,9 @@ from utils.logging_setup import setup_logging
 
 logger = setup_logging()
 # To be used as a fallback message if LLM doesn't provide an action_message in the tool call input.
+# The chat UI shows its own translatable wording for each action_message
+# `code` (frontend/src/lib/status-step-copy.ts); these strings are the fallback.
+# A new code needs an entry there.
 ACTION_MESSAGE_ON_START = "Filtering and re-ranking existing schemes.\n Instructions are: \n {directive}"
 ACTION_MESSAGE_ON_END = "Filtered and re-ranked schemes list to {num_items} items."
 SHORT_ACTION_MESSAGE_ON_START = "Filtering schemes"
@@ -150,6 +153,8 @@ def filter_rerank_by_directive(
                     "phase": "action_message",
                     "label": SHORT_ACTION_MESSAGE_ON_START,
                     "message": ACTION_MESSAGE_ON_START.format(directive=directive),
+                    "code": "filter.start",
+                    "params": {"directive": directive},
                 },
             }
         )
@@ -173,6 +178,8 @@ def filter_rerank_by_directive(
                     "phase": "action_message",
                     "label": SHORT_ACTION_MESSAGE_ON_END,
                     "message": ACTION_MESSAGE_ON_END.format(num_items=len(sorted_schemes)),
+                    "code": "filter.end",
+                    "params": {"count": len(sorted_schemes)},
                 },
             }
         )

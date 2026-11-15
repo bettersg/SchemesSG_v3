@@ -16,6 +16,9 @@ from utils.logging_setup import setup_logging
 
 logger = setup_logging()
 
+# The chat UI shows its own translatable wording for each action_message
+# `code` (frontend/src/lib/status-step-copy.ts); these strings are the fallback.
+# A new code needs an entry there.
 ACTION_MESSAGE_ON_START = 'Finding the schemes that best match "{query}"'
 ACTION_MESSAGE_ON_END = 'Found {result_count} schemes matching "{query}".'
 SHORT_ACTION_MESSAGE_ON_START = "Searching schemes database"
@@ -70,6 +73,8 @@ def _search_schemes_sync(
                     "phase": "action_message",
                     "label": SHORT_ACTION_MESSAGE_ON_START,
                     "message": ACTION_MESSAGE_ON_START.format(query=query),
+                    "code": "search.start",
+                    "params": {"query": query},
                 },
             },
         )
@@ -96,6 +101,8 @@ def _search_schemes_sync(
                     "phase": "action_message",
                     "label": SHORT_ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", []))),
                     "message": ACTION_MESSAGE_ON_END.format(result_count=len(results.get("data", [])), query=query),
+                    "code": "search.end",
+                    "params": {"count": len(results.get("data", [])), "query": query},
                 },
             }
         )
