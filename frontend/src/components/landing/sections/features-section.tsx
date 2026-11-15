@@ -37,10 +37,6 @@ import { cn } from "@/lib/utils";
 function useTutorialCopy() {
   const { t } = useLingui();
   return {
-    composerLabel: t({
-      message: "Describe your situation",
-      comment: "Search box label in the feature walkthrough demo",
-    }),
     categoryPrompts: [
       t({ message: "Financial Assistance" }),
       t({ message: "Family & Children" }),
