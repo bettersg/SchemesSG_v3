@@ -30,19 +30,19 @@ msgstr "{0, plural, one {找到 # 项援助计划} other {找到 # 项援助计�
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Filtered and re-ranked the list to # scheme.} other {Filtered and re-ranked the list to # schemes.}}"
-msgstr ""
+msgstr "{0, plural, one {已将列表筛选并重新排序为 # 个援助计划。} other {已将列表筛选并重新排序为 # 个援助计划。}}"
 
 #. Chat status step detail; query is the web search the assistant ran
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Found # result for \"{query}\".} other {Found # results for \"{query}\".}}"
-msgstr ""
+msgstr "{0, plural, one {找到 # 条关于“{query}”的结果。} other {找到 # 条关于“{query}”的结果。}}"
 
 #. Chat status step detail; query is the search the assistant ran
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Found # scheme matching \"{query}\".} other {Found # schemes matching \"{query}\".}}"
-msgstr ""
+msgstr "{0, plural, one {找到 # 个符合“{query}”的援助计划。} other {找到 # 个符合“{query}”的援助计划。}}"
 
 #. placeholder {0}: steps.length
 #: src/components/chat/status-steps-accordion.tsx
@@ -53,7 +53,7 @@ msgstr "{0, plural, one {我是如何找到这些的（# 个步骤）} other {�
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Retrieved detailed information for # scheme.} other {Retrieved detailed information for # schemes.}}"
-msgstr ""
+msgstr "{0, plural, one {已获取 # 个援助计划的详细信息。} other {已获取 # 个援助计划的详细信息。}}"
 
 #. Catalogue heading: selected categories (or All schemes), then the planning areas they are filtered to
 #: src/components/catalog/catalog-detail.tsx
@@ -413,7 +413,7 @@ msgstr "复制回答"
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Couldn’t read \"{url}\"."
-msgstr ""
+msgstr "无法读取“{url}”。"
 
 #. Label above the demo search input in the features tutorial
 #. Search box label in the feature walkthrough demo
@@ -560,7 +560,7 @@ msgstr "关于对话回答的反馈"
 #. Chat status step: the assistant is loading full scheme details
 #: src/lib/status-step-copy.ts
 msgid "Fetching scheme details"
-msgstr ""
+msgstr "正在获取援助计划详情"
 
 #: src/app/(main)/feedback/page.tsx
 msgid "Fill in all the required fields."
@@ -578,12 +578,12 @@ msgstr "按机构或援助类型筛选"
 #. Chat status step detail; directive is the assistant's own filtering instruction, in English
 #: src/lib/status-step-copy.ts
 msgid "Filtering and re-ranking the schemes. Instructions: {directive}"
-msgstr ""
+msgstr "正在筛选并重新排序援助计划。指示：{directive}"
 
 #. Chat status step: the assistant is narrowing the current results
 #: src/lib/status-step-copy.ts
 msgid "Filtering schemes"
-msgstr ""
+msgstr "正在筛选援助计划"
 
 #. Category chip label
 #. Scheme category
@@ -638,7 +638,7 @@ msgstr "正在寻找最合适的援助计划……"
 #. Chat status step detail; query is the search the assistant ran
 #: src/lib/status-step-copy.ts
 msgid "Finding the schemes that best match \"{query}\""
-msgstr ""
+msgstr "正在寻找最符合“{query}”的援助计划"
 
 #: src/components/landing/sections/cta-section.tsx
 msgid "Free to use. No sign-up required."
@@ -949,7 +949,7 @@ msgstr "缩小范围，找到适合您的援助计划"
 #. Aria label for the main navigation tabs
 #: src/components/layout/navbar.tsx
 msgid "Navigation"
-msgstr ""
+msgstr "导航"
 
 #: src/components/layout/navbar.tsx
 msgid "Navigation tabs"
@@ -1022,7 +1022,7 @@ msgstr "打开菜单"
 #. Aria label for the mobile tab list switching between chat and schemes views
 #: src/components/chat/chat-page.tsx
 msgid "Options"
-msgstr ""
+msgstr "视图选项"
 
 #. Singapore URA planning area name; use its official local name
 #: src/lib/planning-area-labels.ts
@@ -1101,7 +1101,7 @@ msgstr "女皇镇"
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Read \"{url}\"."
-msgstr ""
+msgstr "已读取“{url}”。"
 
 #: src/components/landing/sections/faq-section.tsx
 msgid "Read our Privacy Policy"
@@ -1114,12 +1114,12 @@ msgstr "请查看开发者文档"
 #. Chat status step: the assistant is opening a web page
 #: src/lib/status-step-copy.ts
 msgid "Reading a web page"
-msgstr ""
+msgstr "正在读取网页"
 
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Reading the page \"{url}\""
-msgstr ""
+msgstr "正在读取网页“{url}”"
 
 #: src/components/chat/thinking-phrases.ts
 msgid "Reading your question"
@@ -1147,7 +1147,7 @@ msgstr "梧槽"
 #. Chat status step: full scheme details loaded
 #: src/lib/status-step-copy.ts
 msgid "Scheme details found"
-msgstr ""
+msgstr "已找到援助计划详情"
 
 #: src/components/schemes/scheme-detail.tsx
 msgid "Scheme details may change. Check the official agency website for the latest eligibility, benefits, and application information."
@@ -1176,7 +1176,7 @@ msgstr "援助计划"
 #. Chat status step: narrowing the results finished
 #: src/lib/status-step-copy.ts
 msgid "Schemes filtered"
-msgstr ""
+msgstr "已筛选援助计划"
 
 #: src/components/landing/sections/testimonial-section.tsx
 msgid "Schemes.sg helps our staff quickly find relevant support options for service users. We're excited to see how this tool can strengthen our work with the community."
@@ -1230,22 +1230,22 @@ msgstr "搜索援助计划"
 #. Chat status step detail
 #: src/lib/status-step-copy.ts
 msgid "Searching our database for more information about selected schemes."
-msgstr ""
+msgstr "正在搜索我们的数据库，以获取所选援助计划的更多信息。"
 
 #. Chat status step: the assistant is searching the scheme list
 #: src/lib/status-step-copy.ts
 msgid "Searching schemes database"
-msgstr ""
+msgstr "正在搜索援助计划数据库"
 
 #. Chat status step detail; query is the web search the assistant ran
 #: src/lib/status-step-copy.ts
 msgid "Searching the web for \"{query}\""
-msgstr ""
+msgstr "正在网上搜索“{query}”"
 
 #. Chat status step: the assistant is searching the web
 #: src/lib/status-step-copy.ts
 msgid "Searching web"
-msgstr ""
+msgstr "正在搜索网页"
 
 #: src/components/landing/sections/features-section.tsx
 msgid "See who qualifies, what you get, and where to apply for each scheme."
@@ -1592,17 +1592,17 @@ msgstr "我们会定期更新援助计划资料。申请前，请务必向机构
 #. Chat status step: the web page was read
 #: src/lib/status-step-copy.ts
 msgid "Web page read"
-msgstr ""
+msgstr "已读取网页"
 
 #. Chat status step: the web page could not be read
 #: src/lib/status-step-copy.ts
 msgid "Web page unavailable"
-msgstr ""
+msgstr "网页无法打开"
 
 #. Chat status step: the web search finished
 #: src/lib/status-step-copy.ts
 msgid "Web results found"
-msgstr ""
+msgstr "已找到网页结果"
 
 #: src/components/chat/thinking-phrases.ts
 msgid "Weighing what might help most"

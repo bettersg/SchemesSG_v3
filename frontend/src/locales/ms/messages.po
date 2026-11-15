@@ -30,19 +30,19 @@ msgstr "{0, plural, one {# skim ditemui} other {# skim ditemui}}"
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Filtered and re-ranked the list to # scheme.} other {Filtered and re-ranked the list to # schemes.}}"
-msgstr ""
+msgstr "{0, plural, one {Senarai telah ditapis dan disusun semula kepada # skim.} other {Senarai telah ditapis dan disusun semula kepada # skim.}}"
 
 #. Chat status step detail; query is the web search the assistant ran
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Found # result for \"{query}\".} other {Found # results for \"{query}\".}}"
-msgstr ""
+msgstr "{0, plural, one {Menemui # hasil bagi \"{query}\".} other {Menemui # hasil bagi \"{query}\".}}"
 
 #. Chat status step detail; query is the search the assistant ran
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Found # scheme matching \"{query}\".} other {Found # schemes matching \"{query}\".}}"
-msgstr ""
+msgstr "{0, plural, one {Menemui # skim yang sepadan dengan \"{query}\".} other {Menemui # skim yang sepadan dengan \"{query}\".}}"
 
 #. placeholder {0}: steps.length
 #: src/components/chat/status-steps-accordion.tsx
@@ -53,7 +53,7 @@ msgstr "{0, plural, one {Cara saya menemui ini (# langkah)} other {Cara saya men
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Retrieved detailed information for # scheme.} other {Retrieved detailed information for # schemes.}}"
-msgstr ""
+msgstr "{0, plural, one {Maklumat terperinci bagi # skim telah didapatkan.} other {Maklumat terperinci bagi # skim telah didapatkan.}}"
 
 #. Catalogue heading: selected categories (or All schemes), then the planning areas they are filtered to
 #: src/components/catalog/catalog-detail.tsx
@@ -413,7 +413,7 @@ msgstr "Salin jawapan"
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Couldn’t read \"{url}\"."
-msgstr ""
+msgstr "Tidak dapat membaca \"{url}\"."
 
 #. Label above the demo search input in the features tutorial
 #. Search box label in the feature walkthrough demo
@@ -560,7 +560,7 @@ msgstr "Maklum balas tentang jawapan sembang"
 #. Chat status step: the assistant is loading full scheme details
 #: src/lib/status-step-copy.ts
 msgid "Fetching scheme details"
-msgstr ""
+msgstr "Mendapatkan maklumat skim"
 
 #: src/app/(main)/feedback/page.tsx
 msgid "Fill in all the required fields."
@@ -578,12 +578,12 @@ msgstr "Tapis mengikut agensi atau jenis sokongan"
 #. Chat status step detail; directive is the assistant's own filtering instruction, in English
 #: src/lib/status-step-copy.ts
 msgid "Filtering and re-ranking the schemes. Instructions: {directive}"
-msgstr ""
+msgstr "Menapis dan menyusun semula skim. Arahan: {directive}"
 
 #. Chat status step: the assistant is narrowing the current results
 #: src/lib/status-step-copy.ts
 msgid "Filtering schemes"
-msgstr ""
+msgstr "Menapis skim"
 
 #. Category chip label
 #. Scheme category
@@ -638,7 +638,7 @@ msgstr "Mencari skim terbaik..."
 #. Chat status step detail; query is the search the assistant ran
 #: src/lib/status-step-copy.ts
 msgid "Finding the schemes that best match \"{query}\""
-msgstr ""
+msgstr "Mencari skim yang paling sepadan dengan \"{query}\""
 
 #: src/components/landing/sections/cta-section.tsx
 msgid "Free to use. No sign-up required."
@@ -949,7 +949,7 @@ msgstr "Kecilkan senarai kepada skim yang sesuai"
 #. Aria label for the main navigation tabs
 #: src/components/layout/navbar.tsx
 msgid "Navigation"
-msgstr ""
+msgstr "Navigasi"
 
 #: src/components/layout/navbar.tsx
 msgid "Navigation tabs"
@@ -1022,7 +1022,7 @@ msgstr "Buka menu"
 #. Aria label for the mobile tab list switching between chat and schemes views
 #: src/components/chat/chat-page.tsx
 msgid "Options"
-msgstr ""
+msgstr "Pilihan paparan"
 
 #. Singapore URA planning area name; use its official local name
 #: src/lib/planning-area-labels.ts
@@ -1101,7 +1101,7 @@ msgstr "Queenstown"
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Read \"{url}\"."
-msgstr ""
+msgstr "Telah membaca \"{url}\"."
 
 #: src/components/landing/sections/faq-section.tsx
 msgid "Read our Privacy Policy"
@@ -1114,12 +1114,12 @@ msgstr "Baca dokumentasi pembangun"
 #. Chat status step: the assistant is opening a web page
 #: src/lib/status-step-copy.ts
 msgid "Reading a web page"
-msgstr ""
+msgstr "Membaca halaman web"
 
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Reading the page \"{url}\""
-msgstr ""
+msgstr "Membaca halaman \"{url}\""
 
 #: src/components/chat/thinking-phrases.ts
 msgid "Reading your question"
@@ -1147,7 +1147,7 @@ msgstr "Rochor"
 #. Chat status step: full scheme details loaded
 #: src/lib/status-step-copy.ts
 msgid "Scheme details found"
-msgstr ""
+msgstr "Maklumat skim ditemui"
 
 #: src/components/schemes/scheme-detail.tsx
 msgid "Scheme details may change. Check the official agency website for the latest eligibility, benefits, and application information."
@@ -1176,7 +1176,7 @@ msgstr "Skim"
 #. Chat status step: narrowing the results finished
 #: src/lib/status-step-copy.ts
 msgid "Schemes filtered"
-msgstr ""
+msgstr "Skim telah ditapis"
 
 #: src/components/landing/sections/testimonial-section.tsx
 msgid "Schemes.sg helps our staff quickly find relevant support options for service users. We're excited to see how this tool can strengthen our work with the community."
@@ -1230,22 +1230,22 @@ msgstr "Cari skim"
 #. Chat status step detail
 #: src/lib/status-step-copy.ts
 msgid "Searching our database for more information about selected schemes."
-msgstr ""
+msgstr "Mencari maklumat lanjut tentang skim yang dipilih dalam pangkalan data kami."
 
 #. Chat status step: the assistant is searching the scheme list
 #: src/lib/status-step-copy.ts
 msgid "Searching schemes database"
-msgstr ""
+msgstr "Mencari dalam pangkalan data skim"
 
 #. Chat status step detail; query is the web search the assistant ran
 #: src/lib/status-step-copy.ts
 msgid "Searching the web for \"{query}\""
-msgstr ""
+msgstr "Mencari \"{query}\" di web"
 
 #. Chat status step: the assistant is searching the web
 #: src/lib/status-step-copy.ts
 msgid "Searching web"
-msgstr ""
+msgstr "Mencari di web"
 
 #: src/components/landing/sections/features-section.tsx
 msgid "See who qualifies, what you get, and where to apply for each scheme."
@@ -1592,17 +1592,17 @@ msgstr "Kami mengemas kini maklumat skim secara kerap. Sentiasa semak maklumat t
 #. Chat status step: the web page was read
 #: src/lib/status-step-copy.ts
 msgid "Web page read"
-msgstr ""
+msgstr "Halaman web telah dibaca"
 
 #. Chat status step: the web page could not be read
 #: src/lib/status-step-copy.ts
 msgid "Web page unavailable"
-msgstr ""
+msgstr "Halaman web tidak tersedia"
 
 #. Chat status step: the web search finished
 #: src/lib/status-step-copy.ts
 msgid "Web results found"
-msgstr ""
+msgstr "Hasil web ditemui"
 
 #: src/components/chat/thinking-phrases.ts
 msgid "Weighing what might help most"

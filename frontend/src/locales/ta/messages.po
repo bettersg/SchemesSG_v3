@@ -30,19 +30,19 @@ msgstr "{0, plural, one {# திட்டம் கிடைத்தது} ot
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Filtered and re-ranked the list to # scheme.} other {Filtered and re-ranked the list to # schemes.}}"
-msgstr ""
+msgstr "{0, plural, one {பட்டியலை # திட்டத்திற்கு வடிகட்டி மீண்டும் தரவரிசைப்படுத்தியது.} other {பட்டியலை # திட்டங்களுக்கு வடிகட்டி மீண்டும் தரவரிசைப்படுத்தியது.}}"
 
 #. Chat status step detail; query is the web search the assistant ran
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Found # result for \"{query}\".} other {Found # results for \"{query}\".}}"
-msgstr ""
+msgstr "{0, plural, one {\"{query}\" என்பதற்கு # இணைய முடிவு கண்டறியப்பட்டது.} other {\"{query}\" என்பதற்கு # இணைய முடிவுகள் கண்டறியப்பட்டன.}}"
 
 #. Chat status step detail; query is the search the assistant ran
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Found # scheme matching \"{query}\".} other {Found # schemes matching \"{query}\".}}"
-msgstr ""
+msgstr "{0, plural, one {\"{query}\" என்பதற்குப் பொருந்தும் # திட்டம் கண்டறியப்பட்டது.} other {\"{query}\" என்பதற்குப் பொருந்தும் # திட்டங்கள் கண்டறியப்பட்டன.}}"
 
 #. placeholder {0}: steps.length
 #: src/components/chat/status-steps-accordion.tsx
@@ -53,7 +53,7 @@ msgstr "{0, plural, one {இவற்றை நான் எவ்வாறு �
 #. placeholder {0}: count(p)
 #: src/lib/status-step-copy.ts
 msgid "{0, plural, one {Retrieved detailed information for # scheme.} other {Retrieved detailed information for # schemes.}}"
-msgstr ""
+msgstr "{0, plural, one {# திட்டத்திற்கான விரிவான தகவல்கள் பெறப்பட்டன.} other {# திட்டங்களுக்கான விரிவான தகவல்கள் பெறப்பட்டன.}}"
 
 #. Catalogue heading: selected categories (or All schemes), then the planning areas they are filtered to
 #: src/components/catalog/catalog-detail.tsx
@@ -413,7 +413,7 @@ msgstr "பதிலை நகலெடுக்கவும்"
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Couldn’t read \"{url}\"."
-msgstr ""
+msgstr "\"{url}\" இணையப்பக்கத்தைப் படிக்க முடியவில்லை."
 
 #. Label above the demo search input in the features tutorial
 #. Search box label in the feature walkthrough demo
@@ -560,7 +560,7 @@ msgstr "உரையாடல் பதில் குறித்த கரு
 #. Chat status step: the assistant is loading full scheme details
 #: src/lib/status-step-copy.ts
 msgid "Fetching scheme details"
-msgstr ""
+msgstr "திட்ட விவரங்களைப் பெறுகிறது"
 
 #: src/app/(main)/feedback/page.tsx
 msgid "Fill in all the required fields."
@@ -578,12 +578,12 @@ msgstr "அமைப்பு அல்லது ஆதரவு வகைக்
 #. Chat status step detail; directive is the assistant's own filtering instruction, in English
 #: src/lib/status-step-copy.ts
 msgid "Filtering and re-ranking the schemes. Instructions: {directive}"
-msgstr ""
+msgstr "திட்டங்களை வடிகட்டி வரிசைப்படுத்துகிறது. வழிமுறைகள்: {directive}"
 
 #. Chat status step: the assistant is narrowing the current results
 #: src/lib/status-step-copy.ts
 msgid "Filtering schemes"
-msgstr ""
+msgstr "திட்டங்களை வடிகட்டுகிறது"
 
 #. Category chip label
 #. Scheme category
@@ -638,7 +638,7 @@ msgstr "மிகவும் பொருத்தமான திட்டங�
 #. Chat status step detail; query is the search the assistant ran
 #: src/lib/status-step-copy.ts
 msgid "Finding the schemes that best match \"{query}\""
-msgstr ""
+msgstr "\"{query}\" என்பதற்கு மிகவும் பொருந்தும் திட்டங்களைக் கண்டறிகிறது"
 
 #: src/components/landing/sections/cta-section.tsx
 msgid "Free to use. No sign-up required."
@@ -949,7 +949,7 @@ msgstr "வடிகட்டிகள் மூலம் பொருந்த�
 #. Aria label for the main navigation tabs
 #: src/components/layout/navbar.tsx
 msgid "Navigation"
-msgstr ""
+msgstr "வழிசெலுத்தல்"
 
 #: src/components/layout/navbar.tsx
 msgid "Navigation tabs"
@@ -1022,7 +1022,7 @@ msgstr "மெனுவைத் திறக்கவும்"
 #. Aria label for the mobile tab list switching between chat and schemes views
 #: src/components/chat/chat-page.tsx
 msgid "Options"
-msgstr ""
+msgstr "காட்சி விருப்பங்கள்"
 
 #. Singapore URA planning area name; use its official local name
 #: src/lib/planning-area-labels.ts
@@ -1101,7 +1101,7 @@ msgstr "குவீன்ஸ்டவுன்"
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Read \"{url}\"."
-msgstr ""
+msgstr "\"{url}\" இணையப்பக்கம் படிக்கப்பட்டது."
 
 #: src/components/landing/sections/faq-section.tsx
 msgid "Read our Privacy Policy"
@@ -1114,12 +1114,12 @@ msgstr "உருவாக்குநர் ஆவணங்களைப் ப�
 #. Chat status step: the assistant is opening a web page
 #: src/lib/status-step-copy.ts
 msgid "Reading a web page"
-msgstr ""
+msgstr "இணையப்பக்கத்தைப் படிக்கிறது"
 
 #. Chat status step detail; url is the page address
 #: src/lib/status-step-copy.ts
 msgid "Reading the page \"{url}\""
-msgstr ""
+msgstr "\"{url}\" இணையப்பக்கத்தைப் படிக்கிறது"
 
 #: src/components/chat/thinking-phrases.ts
 msgid "Reading your question"
@@ -1147,7 +1147,7 @@ msgstr "ரோச்சோர்"
 #. Chat status step: full scheme details loaded
 #: src/lib/status-step-copy.ts
 msgid "Scheme details found"
-msgstr ""
+msgstr "திட்ட விவரங்கள் கண்டறியப்பட்டன"
 
 #: src/components/schemes/scheme-detail.tsx
 msgid "Scheme details may change. Check the official agency website for the latest eligibility, benefits, and application information."
@@ -1176,7 +1176,7 @@ msgstr "திட்டங்கள்"
 #. Chat status step: narrowing the results finished
 #: src/lib/status-step-copy.ts
 msgid "Schemes filtered"
-msgstr ""
+msgstr "திட்டங்கள் வடிகட்டப்பட்டன"
 
 #: src/components/landing/sections/testimonial-section.tsx
 msgid "Schemes.sg helps our staff quickly find relevant support options for service users. We're excited to see how this tool can strengthen our work with the community."
@@ -1230,22 +1230,22 @@ msgstr "திட்டங்களைத் தேடவும்"
 #. Chat status step detail
 #: src/lib/status-step-copy.ts
 msgid "Searching our database for more information about selected schemes."
-msgstr ""
+msgstr "தேர்ந்தெடுக்கப்பட்ட திட்டங்கள் குறித்த கூடுதல் தகவல்களுக்கு எங்கள் தரவுத்தளத்தில் தேடுகிறது."
 
 #. Chat status step: the assistant is searching the scheme list
 #: src/lib/status-step-copy.ts
 msgid "Searching schemes database"
-msgstr ""
+msgstr "திட்டங்களின் தரவுத்தளத்தில் தேடுகிறது"
 
 #. Chat status step detail; query is the web search the assistant ran
 #: src/lib/status-step-copy.ts
 msgid "Searching the web for \"{query}\""
-msgstr ""
+msgstr "\"{query}\" என்பதற்காக இணையத்தில் தேடுகிறது"
 
 #. Chat status step: the assistant is searching the web
 #: src/lib/status-step-copy.ts
 msgid "Searching web"
-msgstr ""
+msgstr "இணையத்தில் தேடுகிறது"
 
 #: src/components/landing/sections/features-section.tsx
 msgid "See who qualifies, what you get, and where to apply for each scheme."
@@ -1592,17 +1592,17 @@ msgstr "திட்ட விவரங்களை நாங்கள் வழ
 #. Chat status step: the web page was read
 #: src/lib/status-step-copy.ts
 msgid "Web page read"
-msgstr ""
+msgstr "இணையப்பக்கம் படிக்கப்பட்டது"
 
 #. Chat status step: the web page could not be read
 #: src/lib/status-step-copy.ts
 msgid "Web page unavailable"
-msgstr ""
+msgstr "இணையப்பக்கம் கிடைக்கவில்லை"
 
 #. Chat status step: the web search finished
 #: src/lib/status-step-copy.ts
 msgid "Web results found"
-msgstr ""
+msgstr "இணைய முடிவுகள் கண்டறியப்பட்டன"
 
 #: src/components/chat/thinking-phrases.ts
 msgid "Weighing what might help most"
