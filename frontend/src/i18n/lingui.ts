@@ -17,12 +17,24 @@ const loaders: Record<
   ms: () => import("@/locales/ms/messages"),
 };
 
+// Lingui 6's `i18n.messages` holds only the active catalog, so loaded locales
+// are tracked here.
+const loaded = new Set<Locale>(["en"]);
+let requested: Locale = "en";
+
+/**
+ * Loads a locale's catalog once and activates it, unless a newer switch was
+ * requested while it loaded. Rejects if the catalog fails to load, leaving the
+ * active locale unchanged.
+ */
 export async function activateLocale(locale: Locale) {
-  if (locale !== "en" && !(locale in i18n.messages)) {
+  requested = locale;
+  if (locale !== "en" && !loaded.has(locale)) {
     const { messages } = await loaders[locale]();
     i18n.load(locale, messages);
+    loaded.add(locale);
   }
-  i18n.activate(locale);
+  if (requested === locale) i18n.activate(locale);
 }
 
 export { i18n };

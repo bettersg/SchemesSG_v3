@@ -86,8 +86,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       ms: "ms",
     }
     document.documentElement.lang = langMap[locale]
-    void activateLocale(locale)
-  }, [locale])
+    activateLocale(locale).catch((error: unknown) => {
+      console.error(`Could not load the ${locale} translations`, error)
+      // Fall back to the language still on screen, unless a newer choice
+      // has replaced this one.
+      if (getSnapshot() === locale) setLocale(i18n.locale as Locale)
+    })
+  }, [locale, setLocale])
 
   const value = useMemo(
     () => ({ locale, setLocale }),
