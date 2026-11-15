@@ -23,6 +23,7 @@ import {
   parseCatalogQuery,
 } from "@/lib/catalog-filters";
 import { planningAreaLabel } from "@/lib/planning-area-labels";
+import { CATEGORY_LABELS } from "@/lib/design-system/category-labels";
 import {
   productCard,
   productPageShell,
@@ -265,8 +266,11 @@ export default function CatalogPageClient({
   }, [filterKey, hasInitialData, initialData]);
 
   const shownCount = schemes.length;
+  // The keys stay English for requests and URLs; the heading shows their labels.
   const categoriesLabel = selectedCategories.length
-    ? selectedCategories.join(", ")
+    ? selectedCategories
+        .map((category) => i18n._(CATEGORY_LABELS[category]))
+        .join(", ")
     : t`All schemes`;
   const areasLabel = selectedAreas
     .map((area) => planningAreaLabel(i18n, area))

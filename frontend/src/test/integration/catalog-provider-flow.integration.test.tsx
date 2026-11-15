@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CatalogPageClient from "@/components/catalog/catalog-detail";
 import { AppProviders } from "@/providers";
+import { useLanguage } from "@/lib/landing-i18n";
 import { catalogScheme } from "@/test/fixtures/catalog";
 import { TEST_API_URL } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
@@ -77,5 +78,40 @@ describe("catalog provider flow", () => {
       "education",
     ]);
     expect(last.searchParams.getAll("area")).toEqual(["BEDOK", "TOA PAYOH"]);
+  });
+
+  it("names the selected category in the visitor's language", async () => {
+    function LanguageButtons() {
+      const { setLocale } = useLanguage();
+      return (
+        <>
+          <button onClick={() => setLocale("zh")}>zh</button>
+          <button onClick={() => setLocale("en")}>en</button>
+        </>
+      );
+    }
+    render(
+      <AppProviders>
+        <LanguageButtons />
+        <CatalogPageClient
+          initialCategory="Education"
+          initialData={{ schemes: [], nextCursor: "", total: 0 }}
+        />
+      </AppProviders>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "zh" }));
+    try {
+      expect(
+        await screen.findByRole(
+          "heading",
+          { level: 1, name: /教育/ },
+          { timeout: 5000 },
+        ),
+      ).toBeVisible();
+    } finally {
+      // The saved locale is module state; leave English for other tests.
+      fireEvent.click(screen.getByRole("button", { name: "en" }));
+    }
   });
 });
