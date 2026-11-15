@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import React from "react";
 import "@/globals.css";
-import "@/styles/noto-sans-sc.css";
 import { AppProviders } from "@/providers";
 import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
@@ -11,11 +10,12 @@ import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 // the fallback font.
 //
 // Every font lists "Schemes Tamil" (globals.css) and "Schemes Chinese"
-// (styles/noto-sans-sc.css) as fallbacks because none of them has Tamil or
-// Chinese glyphs. Without these, such text falls to whatever system font each
-// device has, so its look and width change from device to device. Putting the
-// faces in each font's fallback, rather than switching fonts by page language,
-// keeps English names inside Tamil or Chinese text in the brand font.
+// (public/fonts/noto-sans-sc/noto-sans-sc.css, linked once a visitor picks
+// Chinese) as fallbacks because none of them has Tamil or Chinese glyphs.
+// Without these, such text falls to whatever system font each device has, so
+// its look and width change from device to device. Putting the faces in each
+// font's fallback, rather than switching fonts by page language, keeps English
+// names inside Tamil or Chinese text in the brand font.
 const openSans = localFont({
   src: "../assets/fonts/OpenSansVF-latin.woff2",
   weight: "300 600",

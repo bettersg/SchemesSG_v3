@@ -62,6 +62,19 @@ function subscribe(onChange: () => void) {
   }
 }
 
+// The Chinese face's 90 @font-face rules stay out of the bundle: Next inlines
+// bundled CSS into every prerendered page, so English visitors would pay for
+// them. The stylesheet is linked the first time a visitor picks Chinese.
+const CHINESE_FACE_HREF = "/fonts/noto-sans-sc/noto-sans-sc.css"
+
+function linkChineseFace() {
+  if (document.querySelector(`link[href="${CHINESE_FACE_HREF}"]`)) return
+  const link = document.createElement("link")
+  link.rel = "stylesheet"
+  link.href = CHINESE_FACE_HREF
+  document.head.appendChild(link)
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
@@ -86,6 +99,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       ms: "ms",
     }
     document.documentElement.lang = langMap[locale]
+    if (locale === "zh") linkChineseFace()
     activateLocale(locale).catch((error: unknown) => {
       console.error(`Could not load the ${locale} translations`, error)
       // Fall back to the language still on screen, unless a newer choice

@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { LanguageProvider, useLanguage } from "./LanguageContext";
 import { i18n } from "@/i18n/lingui";
 
+const CHINESE_FACE = 'link[href="/fonts/noto-sans-sc/noto-sans-sc.css"]';
+
 function Probe() {
   const { setLocale } = useLanguage();
   return (
@@ -35,6 +37,7 @@ describe("LanguageProvider with Lingui", () => {
     );
     expect(screen.getByText("Catalogue")).toBeVisible();
     expect(i18n.locale).toBe("en");
+    expect(document.querySelectorAll(CHINESE_FACE)).toHaveLength(0);
   });
 
   it("switches to Chinese without a reload and falls back to English", async () => {
@@ -51,6 +54,7 @@ describe("LanguageProvider with Lingui", () => {
       screen.getByText("Message with no Chinese translation"),
     ).toBeVisible();
     expect(document.documentElement.lang).toBe("zh-Hans");
+    expect(document.querySelectorAll(CHINESE_FACE)).toHaveLength(1);
   });
 
   it("switches to Tamil and sets lang attribute", async () => {
