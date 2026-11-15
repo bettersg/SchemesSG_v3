@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -107,6 +107,56 @@ describe("SchemesFilter", () => {
     await user.click(screen.getAllByRole("button", { name: "Dismiss" })[0]);
     expect(results().getByText("Jurong Support")).toBeVisible();
     expect(results().queryByText("Bedok Support")).not.toBeInTheDocument();
+  });
+
+  it("finds the no-location option by its translated name", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+    const switchTo = (locale: string) => {
+      localStorage.setItem("schemes-lang", locale);
+      window.dispatchEvent(
+        new StorageEvent("storage", { key: "schemes-lang", newValue: locale }),
+      );
+    };
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <SchemesFilter
+          schemes={[
+            ...schemes,
+            makeScheme({ schemeId: "anywhere", planningArea: "No Location" }),
+          ]}
+          setFilterObj={() => {}}
+          selectedLocations={new Set()}
+          setSelectedLocations={() => {}}
+          selectedAgencies={new Set()}
+          setSelectedAgencies={() => {}}
+          resetFilters={() => {}}
+        />
+      </LanguageProvider>,
+    );
+
+    act(() => switchTo("zh"));
+    try {
+      await user.click(
+        await screen.findByRole(
+          "button",
+          { name: "按地点筛选" },
+          { timeout: 5000 },
+        ),
+      );
+      await user.type(screen.getByPlaceholderText("搜索地点……"), "无特定地区");
+      expect(screen.getByRole("button", { name: "无特定地区" })).toBeVisible();
+    } finally {
+      // The saved locale is module state; leave English for other tests.
+      act(() => switchTo("en"));
+    }
   });
 
   it("sends filter_apply events with correct filter_name and no selected values", async () => {

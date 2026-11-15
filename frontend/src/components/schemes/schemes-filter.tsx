@@ -165,9 +165,7 @@ function FilterPanel({
                   {isOn && <Check size={lg ? 13 : 11} strokeWidth={3} />}
                 </span>
                 <span className="min-w-0 flex-1 truncate">
-                  {option === "No Location"
-                    ? t({ message: "No location", comment: "Location filter option for schemes not tied to a planning area" })
-                    : formatOption(option)}
+                  {formatOption(option)}
                 </span>
               </button>
             );
@@ -400,7 +398,14 @@ function SchemesFilter({
         options={locationOptions}
         selected={selectedLocations}
         onChange={applyLocations}
-        formatOption={(value) => planningAreaLabel(i18n, value)}
+        formatOption={(value) =>
+          value === "No Location"
+            ? t({
+                message: "No location",
+                comment: "Location filter option for schemes not tied to a planning area",
+              })
+            : planningAreaLabel(i18n, value)
+        }
       />
       <FilterChip
         icon={Building2}
