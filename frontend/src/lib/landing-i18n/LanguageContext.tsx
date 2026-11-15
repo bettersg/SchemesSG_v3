@@ -23,16 +23,10 @@ const LanguageContext = createContext<LanguageContextValue | null>(null)
 
 const STORAGE_KEY = "schemes-lang"
 
-// The saved locale is an external store rather than component state, so that
-// the server snapshot and the client snapshot can legitimately differ.
-//
-// These pages are prerendered, so the server has no way to know a visitor's
-// language and always emits English. Reading localStorage in a useState
-// initialiser therefore made every translated string a hydration mismatch for a
-// returning Chinese visitor. useSyncExternalStore is built for this: React uses
-// `getServerSnapshot` while hydrating, then re-reads the store and re-renders,
-// which is a deliberate update rather than a mismatch. The cost is a brief
-// flash of English, which is the trade a statically rendered site has to make.
+// The saved locale is an external store, not component state, because pages are
+// prerendered in English: the server can't know a visitor's language. React
+// hydrates with `getServerSnapshot`, then re-renders in the saved language, so
+// a returning visitor sees a brief flash of English but no hydration mismatch.
 let cached: Locale | null = null
 const listeners = new Set<() => void>()
 
@@ -81,11 +75,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     listeners.forEach((notify) => notify())
   }, [])
 
-  // Mirrors the locale onto <html lang>, which the CSS minimum font size for
-  // Chinese selects on. Setting it only inside setLocale missed the case that
-  // matters most: a restored preference renders Chinese while the document
-  // still claims English, so the floor never applied and assistive tech read
-  // the wrong language.
+  // Mirrors the locale onto <html lang> on every change, including a preference
+  // restored on load: the Chinese and Tamil size floors and screen readers use
+  // it.
   useEffect(() => {
     const langMap: Record<Locale, string> = {
       en: "en",
