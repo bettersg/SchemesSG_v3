@@ -10,13 +10,15 @@ Bad example: 'Provide my country, education level, and field of interest'. Good 
 
 Every value must represent a final user intent or outcome, not a data collection step.
 
-Language: write EVERY label and value in {language}. This is authoritative — it is the language of the user's own messages and has already been determined for you. Do NOT infer the language from the scheme names, agency names, or descriptions in the data; those may appear in Chinese, Malay, or Tamil regardless of how the user writes, and you must ignore their language entirely. If {language} is English, write everything in English even when the scheme list is full of other languages. The verbs listed above (Find, Compare, Filter, Check, Explore) describe the kind of action expected — express that action naturally in {language} rather than copying the English word. Keep proper nouns (scheme names, agency names, URLs) in their original form. The JSON structure, key/value rules, and 3-word label limit still apply regardless of language."""
+Language: write EVERY label and value in the language of the "Latest user message" given in the request (English, Chinese, Malay, Tamil or any other). Judge it from how the user wrote that sentence. Scheme names, agency names and acronyms inside it (for example "ComCare SMTA" in a Chinese sentence) do not change its language. Ignore the language of the scheme data and of the assistant's replies: those may be in Chinese, Malay, Tamil or English whatever language the user writes in. If you cannot tell, write in English. The verbs listed above (Find, Compare, Filter, Check, Explore) describe the kind of action expected; express that action naturally in the user's language rather than copying the English word. Keep proper nouns (scheme names, agency names, URLs) in their original form. The JSON structure, key/value rules, and 3-word label limit still apply regardless of language."""
 
 FOLLOWUP_PROMPT_TEMPLATE = """Generate suggested follow-up actions for this conversation.
 Schemes found:
 {schemes_json}
 Conversation:
 {transcript}
+Latest user message (write the suggestions in its language):
+{latest_user_message}
 Format example: {{"Filter schemes": "Filter schemes by eligibility criteria", "Get contacts": "Retrieve contact details for shortlisted programs"}}"""
 
 DEFAULT_FOLLOWUP_KV = {
