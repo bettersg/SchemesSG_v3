@@ -5,6 +5,9 @@ export const SCHEMES_SG_LOGO_URL = `${SITE_URL}/logo.svg`;
 // Organization.logo for every crawler.
 export const SCHEMES_SG_LOGO_PNG_URL = `${SITE_URL}/icon.png`;
 export const SCHEMES_SG_OG_IMAGE_URL = `${SITE_URL}/opengraph-image.png`;
+// Last known catalogue size, rounded down to the hundred. Shown when the live
+// count can't be read; raise it when the catalogue passes the next hundred.
+export const FALLBACK_SCHEME_COUNT = 700;
 
 export const SEO_COPY = {
   productName: "Schemes.sg",
