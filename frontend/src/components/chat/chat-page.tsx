@@ -634,7 +634,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
             setSelectedTab(key === "schemes" ? "schemes" : "chat")
           }
         >
-          <Tabs.ListContainer className="p-4 flex gap-2 items-center">
+          <Tabs.ListContainer className="p-4 flex flex-wrap gap-2 items-center">
             <Tabs.List aria-label={t({ message: "Options", comment: "Aria label for the mobile tab list switching between chat and schemes views" })} className={productSegmentedList}>
               <Tabs.Tab id="chat" className={productSegmentedTab}>
                 <Trans comment="Mobile tab label for the conversation view">Chat</Trans>

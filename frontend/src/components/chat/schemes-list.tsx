@@ -199,7 +199,7 @@ export default function SchemesList({
         <div
           role="status"
           aria-live="polite"
-          className="shrink-0 whitespace-nowrap text-sm font-semibold text-(--schemes-blue-600)"
+          className="min-w-0 text-sm font-semibold text-(--schemes-blue-600)"
         >
           {isGenerating ? (
             <StatusTextShimmer>{t({ message: "Finding the best schemes...", comment: "Status text while the AI searches for schemes" })}</StatusTextShimmer>

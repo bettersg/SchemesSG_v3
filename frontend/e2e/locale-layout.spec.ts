@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import {
+  LANDING_QUERY,
+  interceptLandingResultsJourney,
+  waitForHydration,
+} from "./fixtures/landing-results";
 
 // Translations run much longer than English (the Tamil navbar tabs need over
 // twice the width), so every language is checked at phone and desktop widths
@@ -101,6 +106,60 @@ for (const locale of LOCALES) {
           ).toBeLessThanOrEqual(layout.languageLeft);
         }
       }
+    }
+  });
+}
+
+// A started chat has its own phone toolbar (chat and schemes tabs, New chat)
+// and a results header, neither of which exists before the first search.
+const CHAT_LOCALES = FULL ? LOCALES : (["zh", "ta"] as const);
+const CHAT_WIDTHS = FULL ? [320, 390] : [320];
+
+for (const locale of CHAT_LOCALES) {
+  test(`${locale}: the phone chat toolbar and results header fit the screen`, async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    await interceptLandingResultsJourney(page);
+    await page.addInitScript((saved) => {
+      localStorage.setItem("schemes-lang", saved);
+    }, locale);
+
+    for (const width of CHAT_WIDTHS) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/");
+      await waitForHydration(page.getByRole("textbox"));
+      await page.getByRole("textbox").fill(LANDING_QUERY);
+      await page.getByRole("textbox").press("Enter");
+
+      const tabs = page.getByRole("tab").filter({ visible: true });
+      await expect(tabs).toHaveCount(2);
+      await tabs.nth(1).click();
+      await expect(
+        page.locator('a[href^="/schemes/"]').filter({ visible: true }).first(),
+      ).toBeVisible();
+
+      const overflowing = await page.evaluate(() => {
+        // Screen-reader-only text is a 1px box that always measures as
+        // overflowing, so it is taken out of the layout before measuring.
+        document
+          .querySelectorAll<HTMLElement>(".sr-only")
+          .forEach((el) => (el.style.display = "none"));
+        const toolbars = [...document.querySelectorAll('[role="tablist"]')]
+          .filter((list) => !list.closest("header"))
+          .map((list) => list.parentElement);
+        const rows = [
+          ...toolbars,
+          ...document.querySelectorAll('[role="status"]'),
+        ].filter((el): el is HTMLElement => !!el && el.offsetParent !== null);
+        if (rows.length === 0) return ["no chat toolbar or results header found"];
+        return rows
+          .flatMap((row) => [row, ...row.querySelectorAll<HTMLElement>("*")])
+          .filter((el) => el.offsetParent !== null)
+          .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1)
+          .map((el) => (el.textContent ?? "").trim().slice(0, 40));
+      });
+      expect(overflowing, `chat at ${width}px runs off the screen`).toEqual([]);
     }
   });
 }
