@@ -15,13 +15,14 @@ import Link from "next/link";
 import SchemeCard from "@/components/schemes/scheme-card";
 import { type CatalogCategory } from "@/lib/design-system/categories";
 import CatalogCategorySelect from "@/components/catalog/catalog-category-select";
+import { useLingui } from "@lingui/react/macro";
 import {
   type CatalogFilterState,
   catalogFilterKey,
-  formatPlanningArea,
   getSelectedCategories,
   parseCatalogQuery,
 } from "@/lib/catalog-filters";
+import { planningAreaLabel } from "@/lib/planning-area-labels";
 import {
   productCard,
   productPageShell,
@@ -61,9 +62,10 @@ function CatalogQueryReader({
 }
 
 function CatalogGridSkeleton() {
+  const { t } = useLingui();
   return (
     <div
-      aria-label="Loading schemes"
+      aria-label={t`Loading schemes`}
       className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[68rem] lg:grid-cols-3 2xl:max-w-none 2xl:grid-cols-4"
     >
       {Array.from({ length: 8 }).map((_, index) => (
@@ -95,6 +97,7 @@ export default function CatalogPageClient({
   initialCategory,
   initialData,
 }: CatalogPageClientProps) {
+  const { t, i18n } = useLingui();
   const activeCategory = initialCategory;
   const [extraFilters, setExtraFilters] =
     useState<CatalogFilterState>(NO_EXTRA_FILTERS);
@@ -261,13 +264,20 @@ export default function CatalogPageClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey, hasInitialData, initialData]);
 
-  const heading =
-    (selectedCategories.length
-      ? selectedCategories.join(", ")
-      : "All schemes") +
-    (selectedAreas.length
-      ? ` in ${selectedAreas.map(formatPlanningArea).join(", ")}`
-      : "");
+  const shownCount = schemes.length;
+  const categoriesLabel = selectedCategories.length
+    ? selectedCategories.join(", ")
+    : t`All schemes`;
+  const areasLabel = selectedAreas
+    .map((area) => planningAreaLabel(i18n, area))
+    .join(", ");
+  const heading = selectedAreas.length
+    ? t({
+        message: `${categoriesLabel} in ${areasLabel}`,
+        comment:
+          "Catalogue heading: selected categories (or All schemes), then the planning areas they are filtered to",
+      })
+    : categoriesLabel;
 
   // search feature (tbc)
   return (
@@ -343,15 +353,19 @@ export default function CatalogPageClient({
                   <StatusTextShimmer>
                     {selectedCategories.length === 0 &&
                     selectedAreas.length === 0
-                      ? "Finding schemes across all categories..."
-                      : `Finding ${heading} schemes...`}
+                      ? t`Finding schemes across all categories…`
+                      : t({
+                          message: `Finding ${heading} schemes…`,
+                          comment:
+                            "Catalogue loading status; heading is the selected categories and areas",
+                        })}
                   </StatusTextShimmer>
                 ) : (
                   <>
                     {heading}
                     <span className="ml-2 align-middle text-sm font-semibold text-(--schemes-blue-600)">
                       {totalCount !== null && schemes.length < totalCount
-                        ? `(${schemes.length} of ${totalCount})`
+                        ? t`(${shownCount} of ${totalCount})`
                         : `(${totalCount ?? schemes.length})`}
                     </span>
                   </>
@@ -365,7 +379,10 @@ export default function CatalogPageClient({
                 {/* Names the dimension: the h1 already states the active
                     category, so an unlabelled trigger reads as a badge. */}
                 <span className="hidden shrink-0 text-xs font-semibold uppercase tracking-wide text-(--schemes-muted) sm:inline">
-                  Category
+                  {t({
+                    message: "Category",
+                    comment: "Label beside the catalogue filter button",
+                  })}
                 </span>
                 {/* Fills the row on mobile, content-width (capped) from sm up.
                     Width rather than flex-basis: HeroUI's button base is w-fit,
@@ -390,11 +407,11 @@ export default function CatalogPageClient({
                 />
                 <Link
                   href="/"
-                  aria-label="Search schemes"
+                  aria-label={t`Search schemes`}
                   className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-(--schemes-blue-100) bg-(--schemes-blue-50) px-4 py-2 text-sm font-semibold text-(--schemes-blue-600) transition-[background-color,border-color,color] hover:border-(--schemes-blue-600) hover:bg-(--schemes-blue-600) hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)"
                 >
                   <Search size={18} strokeWidth={2} />
-                  Search
+                  {t`Search`}
                 </Link>
               </div>
             </div>
@@ -403,8 +420,8 @@ export default function CatalogPageClient({
             <CatalogGridSkeleton />
           ) : schemes.length === 0 ? (
             <EmptyState
-              title="No schemes found"
-              description="Try a different search or category"
+              title={t`No schemes found`}
+              description={t`Try a different search or category`}
             />
           ) : (
             <div className="mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[68rem] lg:grid-cols-3 2xl:max-w-none 2xl:grid-cols-4">

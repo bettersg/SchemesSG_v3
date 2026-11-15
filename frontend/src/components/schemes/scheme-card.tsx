@@ -6,6 +6,7 @@ import CategoryTag from "./category-tag";
 import { productCard } from "@/lib/design-system/product-styles";
 import { getSchemeCategory } from "@/lib/design-system/categories";
 import { track } from "@/lib/analytics";
+import { useLingui } from "@lingui/react/macro";
 
 interface SchemeCardProps {
   scheme: Scheme;
@@ -26,6 +27,7 @@ function SchemeCard({
   headingLevel = 3,
   list,
 }: SchemeCardProps) {
+  const { t } = useLingui();
   // sort scheme types, putting any of the 10 scheme categories in the front
   // slice to the first 2 types
   const hasCategory = (type: string) => getSchemeCategory(type) !== undefined;
@@ -36,12 +38,16 @@ function SchemeCard({
   // without turning a dense grid into a field of coloured pills.
   const topType = sortedTypes[0];
   const Heading = headingLevel === 2 ? "h2" : "h3";
+  const { schemeName, agency } = scheme;
   return (
     <Link
       href={`/schemes/${scheme.schemeId}`}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${scheme.schemeName}, ${scheme.agency} (opens in new tab)`}
+      aria-label={t({
+        message: `${schemeName}, ${agency} (opens in new tab)`,
+        comment: "Card link aria-label: scheme name and agency, opens externally",
+      })}
       onClick={
         list
           ? () =>

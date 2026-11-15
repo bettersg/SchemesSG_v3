@@ -8,18 +8,21 @@ import {
   statusStepSummaryClass,
 } from "@/components/chat/status-step-styles";
 import { StatusStep } from "@/providers/chat-provider";
+import { Plural, useLingui } from "@lingui/react/macro";
+import { statusStepCopy } from "@/lib/status-step-copy";
 
 type StatusStepsAccordionProps = {
   steps: StatusStep[];
 };
 
 export function StatusStepsAccordion({ steps }: StatusStepsAccordionProps) {
+  const { i18n } = useLingui();
   if (!steps.length) return null;
 
   return (
     <Accordion hideSeparator className={`${statusStepContainerClass} p-0`}>
       <Accordion.Item id="response-steps" className="w-full bg-transparent">
-        <Accordion.Heading className="w-fit max-w-max">
+        <Accordion.Heading className="w-fit max-w-full">
           <Accordion.Trigger
             className={`${statusStepSummaryClass} cursor-pointer hover:bg-(--schemes-status-info-bg) hover:text-(--schemes-blue-600)`}
           >
@@ -32,9 +35,12 @@ export function StatusStepsAccordion({ steps }: StatusStepsAccordionProps) {
                 className="h-3.5 w-3.5 shrink-0"
               />
             </Accordion.Indicator>
-            <span className="w-max shrink-0">
-              How I found these ({steps.length}{" "}
-              {steps.length === 1 ? "step" : "steps"})
+            <span className="min-w-0">
+              <Plural
+                value={steps.length}
+                one="How I found these (# step)"
+                other="How I found these (# steps)"
+              />
             </span>
           </Accordion.Trigger>
         </Accordion.Heading>
@@ -43,7 +49,7 @@ export function StatusStepsAccordion({ steps }: StatusStepsAccordionProps) {
             <ol className="py-1.5 space-y-2 text-xs font-medium text-(--schemes-ink-soft)">
               {steps.map((step) => (
                 <li key={step.id} className="flex items-center gap-2">
-                  {step.message}
+                  {statusStepCopy(i18n, step).message}
                 </li>
               ))}
             </ol>

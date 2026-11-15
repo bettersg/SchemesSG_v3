@@ -7,15 +7,17 @@ import { Check, ChevronDown, MapPin } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
 import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   CATALOG_CATEGORY_ICON_SRC,
   CATALOG_CATEGORY_OPTIONS,
   type CatalogCategory,
   type SchemeCategory,
 } from "@/lib/design-system/categories";
+import { CATEGORY_LABELS } from "@/lib/design-system/category-labels";
+import { planningAreaLabel } from "@/lib/planning-area-labels";
 import {
   PLANNING_AREAS,
-  formatPlanningArea,
   getCatalogFilterHref,
   toggleValue,
 } from "@/lib/catalog-filters";
@@ -31,8 +33,11 @@ type CatalogCategorySelectProps = {
   className?: string;
 };
 
-const categoryLabel = (cat: CatalogCategory) =>
-  cat === "All" ? "All Schemes" : cat;
+function useCategoryLabel() {
+  const { t, i18n } = useLingui();
+  return (cat: CatalogCategory) =>
+    cat === "All" ? t`All Schemes` : i18n._(CATEGORY_LABELS[cat]);
+}
 
 function OptionRow({
   href,
@@ -74,7 +79,13 @@ function OptionRow({
       )}
       <span className="min-w-0 flex-1 truncate">
         {label}
-        {isSelected && <span className="sr-only">, selected</span>}
+        {isSelected && (
+          <span className="sr-only">
+            <Trans comment="Screen-reader suffix on the selected catalogue filter option">
+              , selected
+            </Trans>
+          </span>
+        )}
       </span>
       {isSelected && (
         <Check
@@ -105,12 +116,23 @@ function FilterList({
   onNavigate: () => void;
   size: "sm" | "lg";
 }) {
+  const categoryLabel = useCategoryLabel();
+  const { t, i18n } = useLingui();
   const lg = size === "lg";
   // Area rows keep the panel open, so a second tap can land before the first
   // navigation commits. Building hrefs from the committed selection would drop
   // the first area; this local copy updates on click. The list remounts each
   // time the panel opens, so it starts from the committed selection.
   const [areas, setAreas] = useState(selectedAreas);
+  // "All" leads; the categories follow in alphabetical order of the label shown,
+  // using the language's own collation (pinyin order for Chinese).
+  const collator = new Intl.Collator(i18n.locale);
+  const categories = [
+    "All" as const,
+    ...CATALOG_CATEGORY_OPTIONS.filter((cat) => cat !== "All").sort((a, b) =>
+      collator.compare(categoryLabel(a), categoryLabel(b)),
+    ),
+  ];
 
   return (
     <div
@@ -120,7 +142,7 @@ function FilterList({
       )}
     >
       {kind === "category" ? (
-        CATALOG_CATEGORY_OPTIONS.map((cat) => (
+        categories.map((cat) => (
           <OptionRow
             key={cat}
             lg={lg}
@@ -143,7 +165,10 @@ function FilterList({
         <>
           <OptionRow
             lg={lg}
-            label="All areas"
+            label={t({
+              message: "All areas",
+              comment: "Catalogue filter option: no planning area filter",
+            })}
             isSelected={areas.length === 0}
             href={getCatalogFilterHref(selectedCategories, [])}
             onNavigate={() => setAreas([])}
@@ -154,7 +179,7 @@ function FilterList({
             <OptionRow
               key={area}
               lg={lg}
-              label={formatPlanningArea(area)}
+              label={planningAreaLabel(i18n, area)}
               isSelected={areas.includes(area)}
               href={getCatalogFilterHref(
                 selectedCategories,
@@ -178,6 +203,8 @@ function CatalogCategorySelect({
   selectedAreas,
   className,
 }: CatalogCategorySelectProps) {
+  const { t, i18n } = useLingui();
+  const categoryLabel = useCategoryLabel();
   const isDesktop = useIsDesktop();
   const drawerState = useOverlayState();
   // Popover is a React Aria DialogTrigger, so it is controlled by isOpen rather
@@ -191,12 +218,35 @@ function CatalogCategorySelect({
   const label = isCategory
     ? categoryLabel(primary)
     : selectedAreas[0]
-      ? formatPlanningArea(selectedAreas[0])
-      : "All areas";
+      ? planningAreaLabel(i18n, selectedAreas[0])
+      : t({
+          message: "All areas",
+          comment: "Catalogue filter option: no planning area filter",
+        });
 
   const trigger = (
     <Button
-      aria-label={`${label}${extraCount ? ` and ${extraCount} more` : ""}: ${isCategory ? "browse by category" : "filter by planning area"}`}
+      aria-label={
+        isCategory
+          ? extraCount
+            ? t({
+                message: `${label} and ${extraCount} more: browse by category`,
+                comment: "Screen-reader label for the catalogue category button; label is the first selected category",
+              })
+            : t({
+                message: `${label}: browse by category`,
+                comment: "Screen-reader label for the catalogue category button; label is the selected category",
+              })
+          : extraCount
+            ? t({
+                message: `${label} and ${extraCount} more: filter by planning area`,
+                comment: "Screen-reader label for the catalogue area button; label is the first selected area",
+              })
+            : t({
+                message: `${label}: filter by planning area`,
+                comment: "Screen-reader label for the catalogue area button; label is the selected area",
+              })
+      }
       className={clsx(
         "inline-flex min-h-11 items-center gap-2 rounded-full border border-(--schemes-border-neutral) bg-white px-4 py-2 text-sm font-semibold text-(--schemes-ink-soft) transition-[background-color,border-color,color] hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-100)",
         className,
@@ -268,7 +318,17 @@ function CatalogCategorySelect({
           <Drawer.Dialog className="flex max-h-[80vh] flex-col rounded-t-2xl bg-(--schemes-surface) pt-3 outline-none">
             <Drawer.Handle />
             <h2 className="shrink-0 px-4 pb-2 pt-1 font-(--font-head) text-lg font-semibold text-(--schemes-blue-900)">
-              {isCategory ? "Categories" : "Planning area"}
+              {isCategory
+                ? t({
+                    message: "Categories",
+                    comment:
+                      "Catalogue filter panel heading when choosing categories",
+                  })
+                : t({
+                    message: "Planning area",
+                    comment:
+                      "Catalogue filter panel heading when choosing a planning area",
+                  })}
             </h2>
             {list("lg", () => drawerState.close())}
           </Drawer.Dialog>

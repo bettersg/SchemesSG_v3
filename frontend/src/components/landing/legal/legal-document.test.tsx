@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import LegalDocument from "./legal-document";
+import { I18nWrapper } from "@/test/i18n-wrapper";
 
 describe("LegalDocument", () => {
   const sampleMarkdown = `
@@ -23,11 +24,13 @@ Visit our [Terms of Service](/terms).
 
   it("renders the heading and effective date", () => {
     render(
-      <LegalDocument
+      <I18nWrapper>
+        <LegalDocument
         heading="Privacy Policy"
         effectiveDate="20 September 2026"
         markdown={sampleMarkdown}
-      />,
+      />
+      </I18nWrapper>,
     );
 
     expect(
@@ -38,7 +41,9 @@ Visit our [Terms of Service](/terms).
 
   it("gives each section an anchor the contents sidebar links to", () => {
     render(
-      <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />,
+      <I18nWrapper>
+        <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />
+      </I18nWrapper>,
     );
 
     const h2 = screen.getByRole("heading", {
@@ -60,10 +65,12 @@ Visit our [Terms of Service](/terms).
 
   it("keeps text before the first section as a preamble, outside the contents", () => {
     render(
-      <LegalDocument
+      <I18nWrapper>
+        <LegalDocument
         heading="Terms of Service"
         markdown={`**Urgent Help**\n\nCall [995](tel:995).\n\n## 1. About\n\nBody.`}
-      />,
+      />
+      </I18nWrapper>,
     );
 
     expect(screen.getByRole("link", { name: "995" })).toHaveAttribute(
@@ -81,7 +88,9 @@ Visit our [Terms of Service](/terms).
 
   it("renders bullet lists", () => {
     render(
-      <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />,
+      <I18nWrapper>
+        <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />
+      </I18nWrapper>,
     );
 
     expect(screen.getByText("Search terms")).toBeVisible();
@@ -91,7 +100,9 @@ Visit our [Terms of Service](/terms).
 
   it("renders internal links as Next.js Links", () => {
     render(
-      <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />,
+      <I18nWrapper>
+        <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />
+      </I18nWrapper>,
     );
 
     const termsLink = screen.getByRole("link", { name: "Terms of Service" });
@@ -100,7 +111,9 @@ Visit our [Terms of Service](/terms).
 
   it("renders mailto links without target blank", () => {
     render(
-      <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />,
+      <I18nWrapper>
+        <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />
+      </I18nWrapper>,
     );
 
     const emailLink = screen.getByRole("link", { name: "info@better.sg" });
@@ -114,10 +127,12 @@ Visit our [Terms of Service](/terms).
 Visit [Google](https://google.com) for more information.
 `;
     render(
-      <LegalDocument
+      <I18nWrapper>
+        <LegalDocument
         heading="Privacy Policy"
         markdown={markdownWithExternal}
-      />,
+      />
+      </I18nWrapper>,
     );
 
     const externalLink = screen.getByRole("link", { name: "Google" });
@@ -128,7 +143,9 @@ Visit [Google](https://google.com) for more information.
 
   it("does not render the placeholder notice", () => {
     render(
-      <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />,
+      <I18nWrapper>
+        <LegalDocument heading="Privacy Policy" markdown={sampleMarkdown} />
+      </I18nWrapper>,
     );
 
     expect(

@@ -14,6 +14,10 @@ import AgencyContactCard from "@/components/schemes/agency-contact-card";
 import StatusBanner from "@/components/feedback/status-banner";
 import { AlertCircle, Check, ExternalLink, Share2 } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
+import type { I18n } from "@lingui/core";
+import { CATEGORY_LABELS } from "@/lib/design-system/category-labels";
 import {
   productButtonOutlineNeutral,
   productButtonProminent,
@@ -162,17 +166,21 @@ function ShareButton({
       {status === "copied" ? (
         <>
           <Check size={14} strokeWidth={2} className="shrink-0" />
-          Link copied
+          <Trans comment="Share button: the link was copied to clipboard">
+            Link copied
+          </Trans>
         </>
       ) : status === "failed" ? (
         <>
           <AlertCircle size={14} strokeWidth={2} className="shrink-0" />
-          Copy failed, try again
+          <Trans comment="Share button: the clipboard copy failed">
+            Copy failed, try again
+          </Trans>
         </>
       ) : (
         <>
           <Share2 size={14} strokeWidth={2} className="shrink-0" />
-          Share scheme
+          <Trans comment="Button: share this scheme page">Share scheme</Trans>
         </>
       )}
     </button>
@@ -191,31 +199,71 @@ function VisitWebsiteButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`${productButtonSolidAmber} ${productButtonProminent} w-full no-underline hover:no-underline ${className ?? ""}`}
+      className={`${productButtonSolidAmber} ${productButtonProminent} w-full whitespace-normal text-center no-underline hover:no-underline ${className ?? ""}`}
     >
       <ExternalLink size={14} strokeWidth={2} className="shrink-0" />
-      Visit website
+      <Trans comment="Button: open the scheme's official website in a new tab">
+        Visit website
+      </Trans>
     </Link>
   );
 }
 
-function buildJumpAnchors(scheme: Scheme): SchemeDetailAnchor[] {
+function buildJumpAnchors(
+  scheme: Scheme,
+  i18n: I18n,
+): SchemeDetailAnchor[] {
   const anchors: SchemeDetailAnchor[] = [];
-  if (scheme.description) anchors.push({ id: "overview", label: "Overview" });
+  if (scheme.description)
+    anchors.push({
+      id: "overview",
+      label: i18n._(
+        msg({
+          message: "Overview",
+          comment: "Tab label: summary and category section on a scheme page",
+        }),
+      ),
+    });
   const hasQualifies =
     (scheme.targetAudience && scheme.targetAudience.length > 0) ||
     (scheme.benefits && scheme.benefits.length > 0) ||
     scheme.eligibilityText;
-  if (hasQualifies) anchors.push({ id: "qualifies", label: "Who qualifies" });
+  if (hasQualifies)
+    anchors.push({
+      id: "qualifies",
+      label: i18n._(
+        msg({
+          message: "Who qualifies",
+          comment: "Tab label: eligibility requirements section on a scheme page",
+        }),
+      ),
+    });
   if (scheme.howToApply)
-    anchors.push({ id: "how-to-apply", label: "How to apply" });
+    anchors.push({
+      id: "how-to-apply",
+      label: i18n._(
+        msg({
+          message: "How to apply",
+          comment: "Tab label: application steps section on a scheme page",
+        }),
+      ),
+    });
   if (scheme.serviceArea || (scheme.contact && scheme.contact.length > 0)) {
-    anchors.push({ id: "agency", label: "Agency details" });
+    anchors.push({
+      id: "agency",
+      label: i18n._(
+        msg({
+          message: "Agency details",
+          comment: "Tab label: agency contact and location section on a scheme page",
+        }),
+      ),
+    });
   }
   return anchors;
 }
 
 export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
+  const { t, i18n } = useLingui();
   const hasCategory = (type: string) => getSchemeCategory(type) !== undefined;
   const sortedTypes = [...scheme.schemeType].sort((a, b) => {
     return Number(hasCategory(b)) - Number(hasCategory(a));
@@ -235,7 +283,12 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
     });
   }, [scheme.schemeId, scheme.schemeName, sortedTypes]);
 
-  const jumpAnchors = useMemo(() => buildJumpAnchors(scheme), [scheme]);
+  const jumpAnchors = useMemo(
+    () => buildJumpAnchors(scheme, i18n),
+    // The labels are translated here, so a language switch has to rebuild them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [scheme, i18n, i18n.locale],
+  );
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
   const { isHidden: stickyHeaderHidden } = useHideOnScroll();
   const stickyHeaderOffset = useSchemeDetailStickyOffset(stickyHeaderRef);
@@ -313,21 +366,26 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                   if (category) {
                     return (
                       <nav
-                        aria-label="Breadcrumb"
+                        aria-label={t({
+                          message: "Breadcrumb",
+                          comment: "Aria label for the breadcrumb navigation at the top of the scheme page",
+                        })}
                         className="flex items-center gap-1 text-xs text-(--schemes-muted)"
                       >
                         <NextLink
                           href="/catalog"
                           className="transition-colors hover:text-(--schemes-blue-600)"
                         >
-                          Catalog
+                          <Trans comment="Breadcrumb: link to the main catalog page">
+                            Catalogue
+                          </Trans>
                         </NextLink>
                         <ChevronRight size={12} strokeWidth={2} aria-hidden />
                         <NextLink
                           href={getCatalogCategoryPath(category)}
                           className="transition-colors hover:text-(--schemes-blue-600)"
                         >
-                          {category}
+                          {i18n._(CATEGORY_LABELS[category])}
                         </NextLink>
                       </nav>
                     );
@@ -360,7 +418,10 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
         </div>
         {jumpAnchors.length > 1 && (
           <nav
-            aria-label="On this page"
+            aria-label={t({
+              message: "On this page",
+              comment: "Aria label for the section navigation tabs on a scheme page",
+            })}
             // Owns top and bottom padding: the hero above animates its own to 0 on scroll.
             className={clsx(
               "py-3",
@@ -390,7 +451,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
                       }}
                       className={clsx(
                         productSegmentedTab,
-                        "inline-flex min-h-10 items-center justify-center whitespace-nowrap px-3 py-2 no-underline transition-[background-color,box-shadow] hover:bg-white/60 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-400) sm:flex-1",
+                        "inline-flex min-h-10 items-center justify-center whitespace-nowrap px-3 py-2 no-underline transition-[background-color,box-shadow] hover:bg-white/60 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--schemes-blue-400) sm:min-w-0 sm:flex-1 sm:whitespace-normal sm:text-center sm:leading-snug",
                         isActive && productSegmentedIndicator,
                       )}
                     >
@@ -407,12 +468,17 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       {scheme.status === "inactive" && (
         <StatusBanner
           variant="alert"
-          title="We couldn't reach this scheme's website"
+          title={t({
+            message: "We couldn't reach this scheme's website",
+            comment: "Alert banner title: the scheme's URL failed health check",
+          })}
           className="mx-auto mb-8 max-w-3xl"
         >
           <p>
-            Its official link failed our last check, so the details below may be
-            out of date. Contact the agency to confirm before you apply.
+            <Trans>
+              Its official link failed our last check, so the details below may
+              be out of date. Contact the agency to confirm before you apply.
+            </Trans>
           </p>
         </StatusBanner>
       )}
@@ -420,9 +486,11 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       {!hasDetail && (
         <section className="mb-10 rounded-xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-6">
           <p className="mb-3 text-sm leading-relaxed text-(--schemes-status-info-text)">
-            We don&apos;t have detailed information for this scheme yet. The
-            agency website has the full picture, including eligibility and how
-            to apply.
+            <Trans>
+              We don&apos;t have detailed information for this scheme yet. The
+              agency website has the full picture, including eligibility and how
+              to apply.
+            </Trans>
           </p>
           {scheme.link && (
             <Link
@@ -431,7 +499,7 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               rel="noopener noreferrer"
               className="text-sm font-semibold text-(--schemes-blue-600) hover:underline"
             >
-              Visit the agency website →
+              <Trans>Visit the agency website →</Trans>
             </Link>
           )}
         </section>
@@ -443,12 +511,20 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
-          <h2 className={productCardHeadingLg}>Overview</h2>
+          <h2 className={productCardHeadingLg}>
+            <Trans comment="Section heading: summary and category">
+              Overview
+            </Trans>
+          </h2>
           <div className="flex flex-col gap-6">
             <MarkdownWrapper text={scheme.description} />
             {sortedTypes && sortedTypes.length > 0 && (
               <div>
-                <SectionLabel>Scheme type</SectionLabel>
+                <SectionLabel>
+                  <Trans comment="Section label: the category tags for a scheme">
+                    Scheme type
+                  </Trans>
+                </SectionLabel>
                 <div className="flex flex-wrap gap-2">
                   {sortedTypes.map((t) => (
                     <CategoryTag key={t} label={t} size="md" />
@@ -466,13 +542,21 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
-          <h2 className={productCardHeadingLg}>Who qualifies</h2>
+          <h2 className={productCardHeadingLg}>
+            <Trans comment="Section heading: who can apply for this scheme">
+              Who qualifies
+            </Trans>
+          </h2>
 
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-6 lg:flex-row">
               {scheme.targetAudience && scheme.targetAudience.length > 0 && (
                 <div className="flex-1">
-                  <SectionLabel>Eligibility groups</SectionLabel>
+                  <SectionLabel>
+                    <Trans comment="Section label: the groups who are eligible">
+                      Eligibility groups
+                    </Trans>
+                  </SectionLabel>
                   <div className="flex flex-col gap-2">
                     {scheme.targetAudience.map((t) => (
                       <BulletItem key={t}>{t}</BulletItem>
@@ -482,7 +566,11 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
               )}
               {scheme.benefits && scheme.benefits.length > 0 && (
                 <div className="flex-1">
-                  <SectionLabel>What you receive</SectionLabel>
+                  <SectionLabel>
+                    <Trans comment="Section label: the benefits provided">
+                      What you receive
+                    </Trans>
+                  </SectionLabel>
                   <div className="flex flex-col gap-2">
                     {scheme.benefits.map((b) => (
                       <BulletItem key={b}>{b}</BulletItem>
@@ -494,7 +582,11 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
 
             {scheme.eligibilityText && (
               <div>
-                <SectionLabel>Eligibility details</SectionLabel>
+                <SectionLabel>
+                  <Trans comment="Section label: detailed eligibility criteria">
+                    Eligibility details
+                  </Trans>
+                </SectionLabel>
                 <MarkdownWrapper text={scheme.eligibilityText} />
               </div>
             )}
@@ -508,7 +600,11 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
-          <h2 className={productCardHeadingLg}>How to apply</h2>
+          <h2 className={productCardHeadingLg}>
+            <Trans comment="Section heading: instructions for applying">
+              How to apply
+            </Trans>
+          </h2>
           <MarkdownWrapper text={scheme.howToApply} />
         </section>
       )}
@@ -520,11 +616,19 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
           className="mx-auto mb-10 max-w-3xl"
           style={sectionScrollMarginStyle}
         >
-          <h2 className={productCardHeadingLg}>Agency details</h2>
+          <h2 className={productCardHeadingLg}>
+            <Trans comment="Section heading: agency contact and location">
+              Agency details
+            </Trans>
+          </h2>
           <div className="flex flex-col gap-6">
             {scheme.serviceArea && (
               <div>
-                <SectionLabel>Service area</SectionLabel>
+                <SectionLabel>
+                  <Trans comment="Section label: geographic coverage">
+                    Service area
+                  </Trans>
+                </SectionLabel>
                 <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
                   {scheme.serviceArea}
                 </p>
@@ -548,18 +652,25 @@ export default function SchemeDetail({ scheme }: { scheme: Scheme }) {
       )}
 
       <StatusBanner
-        title="Important Information"
+        title={t({
+          message: "Important Information",
+          comment: "Info banner heading: disclaimer about scheme accuracy",
+        })}
         className="mx-auto mb-8 max-w-3xl p-6"
       >
         <div className="flex flex-col gap-4">
           <p>
-            Scheme details may change. Check the official agency website for the
-            latest eligibility, benefits, and application information.
+            <Trans>
+              Scheme details may change. Check the official agency website for
+              the latest eligibility, benefits, and application information.
+            </Trans>
           </p>
           <div className="flex flex-col gap-3">
             <p>
-              Help keep Schemes.sg accurate by correcting this listing or
-              contributing a new scheme.
+              <Trans>
+                Help keep Schemes.sg accurate by correcting this listing or
+                contributing a new scheme.
+              </Trans>
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <FeedbackPrompt

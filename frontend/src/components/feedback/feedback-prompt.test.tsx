@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import FeedbackPrompt from "./feedback-prompt";
+import { I18nWrapper } from "@/test/i18n-wrapper";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(
   navigator,
@@ -24,28 +25,32 @@ describe("FeedbackPrompt", () => {
       value: { writeText },
     });
     const { rerender } = render(
-      <FeedbackPrompt
+      <I18nWrapper>
+        <FeedbackPrompt
         variant="rating"
         text="A useful answer"
         onMsgRate={onMsgRate}
-      />,
+      />
+      </I18nWrapper>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Good response" }));
+    fireEvent.click(screen.getByRole("button", { name: "Helpful" }));
     expect(onMsgRate).toHaveBeenLastCalledWith("up");
 
     rerender(
-      <FeedbackPrompt
-        variant="rating"
-        text="A useful answer"
-        rating="up"
-        onMsgRate={onMsgRate}
-      />,
+      <I18nWrapper>
+        <FeedbackPrompt
+          variant="rating"
+          text="A useful answer"
+          rating="up"
+          onMsgRate={onMsgRate}
+        />
+      </I18nWrapper>,
     );
     expect(
-      screen.getByRole("button", { name: "Good response" }),
+      screen.getByRole("button", { name: "Helpful" }),
     ).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Bad response" }));
+    fireEvent.click(screen.getByRole("button", { name: "Not helpful" }));
     expect(onMsgRate).toHaveBeenLastCalledWith("down");
 
     fireEvent.click(screen.getByRole("button", { name: "Copy response" }));
@@ -56,7 +61,11 @@ describe("FeedbackPrompt", () => {
   });
 
   it("links users to the contribution form", () => {
-    render(<FeedbackPrompt variant="contribution" />);
+    render(
+      <I18nWrapper>
+        <FeedbackPrompt variant="contribution" />
+      </I18nWrapper>,
+    );
 
     expect(
       screen.getByRole("link", { name: "Contribute a new scheme" }),

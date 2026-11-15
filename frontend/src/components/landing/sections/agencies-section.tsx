@@ -3,8 +3,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
 import { agencies } from "@/data/landing-agencies";
-import type { Agency } from "@/data/landing-agencies";
-import { useLanguage } from "@/lib/landing-i18n";
+import { Trans } from "@lingui/react/macro";
 import { ArrowRight } from "lucide-react";
 import {
   ScrollVelocityContainer,
@@ -43,7 +42,6 @@ function AgencyPill({ agency }: { agency: (typeof agencies)[0] }) {
 }
 
 export function AgenciesSection() {
-  const { t } = useLanguage();
 
   return (
     <section id="about" className="py-10 px-6 bg-neutral-50">
@@ -57,27 +55,22 @@ export function AgenciesSection() {
             transition={transition.entrance}
           >
             <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-              {t.agencies.heading.split("\n").map((line, i, arr) => (
-                <span key={i}>
-                  {line}
-                  {i < arr.length - 1 && (
-                    <>
-                      {" "}
-                      <br className="hidden sm:inline" />
-                    </>
-                  )}
-                </span>
-              ))}
+              <Trans>
+                Discover schemes from <br className="hidden sm:inline" />
+                200+ agencies
+              </Trans>
             </h2>
             <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-              {t.agencies.subtitle}
+              <Trans>
+                We index schemes from key government ministries, statutory boards, and community organisations.
+              </Trans>
             </p>
             <Button
               size="lg"
               className={`${cssTransition.allState} mt-7 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer`}
             >
               <Link href="/" className="flex items-center gap-4">
-                {t.agencies.cta} <ArrowRight className="h-4 w-4" />
+                <Trans comment="Button: go to the search page">Start searching</Trans> <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           </motion.div>

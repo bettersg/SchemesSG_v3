@@ -1,7 +1,10 @@
 import { fileURLToPath, URL } from "node:url";
+import { lingui } from "@lingui/vite-plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Next compiles Lingui macros with the SWC plugin; Vitest needs its own transform.
+  plugins: [lingui({ macroTransform: true })],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -33,8 +36,6 @@ export default defineConfig({
         "src/data/landing-agencies.ts",
         "src/lib/design-system/motion.ts",
         "src/lib/design-system/product-styles.ts",
-        "src/lib/landing-i18n/translations/en.ts",
-        "src/lib/landing-i18n/translations/zh.ts",
         // Async and framework-owned Next.js entrypoints stay at the browser seam.
         "src/app/layout.tsx",
         "src/app/{robots,sitemap}.ts",

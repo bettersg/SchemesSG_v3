@@ -1,23 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { LanguageProvider } from "@/lib/landing-i18n";
-import { en } from "@/lib/landing-i18n/translations/en";
-import { zh } from "@/lib/landing-i18n/translations/zh";
+import { LanguageProvider, useLanguage } from "@/lib/landing-i18n";
 import { FAQSection } from "./faq-section";
 
-// Selected by destination, not by "the first answer that has a link": more than
-// one FAQ answer carries a link now, and position is not a stable identifier.
-const linkedItem = (dict: typeof en, href: string) =>
-  dict.faq.items.find((item) => item.answerLink?.href === href);
-
-/**
- * The API answer shipped once with a bare "/developers" written into the prose,
- * so the docs page was named but not reachable. Pin the link in both languages.
- */
 describe("FAQ section", () => {
   it("links the API answer to the developer docs", async () => {
-    const apiItem = linkedItem(en, "/developers");
     const user = userEvent.setup();
     render(
       <LanguageProvider>
@@ -25,32 +13,66 @@ describe("FAQ section", () => {
       </LanguageProvider>,
     );
 
-    // Answers live in collapsed panels, so open the one being asserted.
-    await user.click(screen.getByText(apiItem!.question));
+    await user.click(
+      screen.getByText("Can I access Schemes.sg data through an API?"),
+    );
 
     expect(
-      await screen.findByRole("link", { name: apiItem!.answerLink!.label }),
+      await screen.findByRole("link", { name: "Read the developer docs" }),
     ).toHaveAttribute("href", "/developers");
   });
 
-  it.each([
-    ["en", en],
-    ["zh", zh],
-  ])("names /developers in the %s API answer", (_lang, dict) => {
-    const apiItem = linkedItem(dict, "/developers");
-    expect(apiItem).toBeDefined();
-    // The link replaced a bare path in the prose; it must not come back.
-    expect(apiItem?.answer).not.toContain("/developers");
+  it("links the privacy answer to the policy", async () => {
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <FAQSection />
+      </LanguageProvider>,
+    );
+
+    await user.click(screen.getByText("Is my personal information safe?"));
+
+    expect(
+      await screen.findByRole("link", { name: "Read our Privacy Policy" }),
+    ).toHaveAttribute("href", "/privacy");
   });
 
-  // The privacy answer states what we do and do not share, so the policy has to
-  // be one click away in both languages rather than only in English.
-  it.each([
-    ["en", en],
-    ["zh", zh],
-  ])("links the %s privacy answer to the policy", (_lang, dict) => {
-    const privacyItem = linkedItem(dict, "/privacy");
-    expect(privacyItem).toBeDefined();
-    expect(privacyItem?.answerLink?.label).toBeTruthy();
+  // The answers state what we do and do not share, so both links have to
+  // survive translation, not only work in English.
+  it("keeps both answer links in Chinese", async () => {
+    const user = userEvent.setup();
+    function LocaleButtons() {
+      const { setLocale } = useLanguage();
+      return (
+        <>
+          <button onClick={() => setLocale("zh")}>zh</button>
+          <button onClick={() => setLocale("en")}>en</button>
+        </>
+      );
+    }
+    render(
+      <LanguageProvider>
+        <LocaleButtons />
+        <FAQSection />
+      </LanguageProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "zh" }));
+    try {
+      await user.click(await screen.findByText("我的个人信息安全吗？"));
+      expect(
+        await screen.findByRole("link", { name: "阅读我们的隐私政策" }),
+      ).toHaveAttribute("href", "/privacy");
+
+      await user.click(
+        screen.getByText("我可以通过应用程序接口获取 Schemes.sg 的数据吗？"),
+      );
+      expect(
+        await screen.findByRole("link", { name: "请查看开发者文档" }),
+      ).toHaveAttribute("href", "/developers");
+    } finally {
+      // The saved locale is module state; leave English for other tests.
+      await user.click(screen.getByRole("button", { name: "en" }));
+    }
   });
 });

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import SchemeCard from "./scheme-card";
 import { makeScheme } from "@/test/fixtures/scheme";
+import { I18nWrapper } from "@/test/i18n-wrapper";
 
 const trackMock = vi.hoisted(() => vi.fn());
 
@@ -20,7 +21,11 @@ describe("SchemeCard analytics", () => {
       schemeType: ["Financial Assistance"],
     });
 
-    render(<SchemeCard scheme={scheme} list={{ id: "catalog", index: 5 }} />);
+    render(
+      <I18nWrapper>
+        <SchemeCard scheme={scheme} list={{ id: "catalog", index: 5 }} />
+      </I18nWrapper>,
+    );
 
     const link = screen.getByRole("link", {
       name: /Test Scheme, Test Agency/,
@@ -50,7 +55,11 @@ describe("SchemeCard analytics", () => {
       agency: "Test Agency",
     });
 
-    render(<SchemeCard scheme={scheme} />);
+    render(
+      <I18nWrapper>
+        <SchemeCard scheme={scheme} />
+      </I18nWrapper>,
+    );
 
     const link = screen.getByRole("link", {
       name: /Test Scheme, Test Agency/,

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useLanguage } from "@/lib/landing-i18n";
+import { Trans } from "@lingui/react/macro";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
@@ -35,7 +35,6 @@ const partnerLogos = [
 ];
 
 export function FeaturedSection() {
-  const { t } = useLanguage();
 
   return (
     <section className="border-t border-neutral-200/60 bg-neutral-50 py-14 px-6">
@@ -47,7 +46,7 @@ export function FeaturedSection() {
         transition={transition.entrance}
       >
         <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
-          {t.featured.heading}
+          <Trans comment="Section header above logos of media outlets">Featured on</Trans>
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-8 md:gap-x-8">
           {featuredLogos.map((logo) => (
@@ -69,7 +68,7 @@ export function FeaturedSection() {
 
         <div className="mt-10 pt-10 border-t border-neutral-100">
           <p className="text-center text-sm font-medium uppercase tracking-widest text-neutral-400 mb-10">
-            {t.featured.partnersHeading}
+            <Trans comment="Section header above partner organization logos">Our partners</Trans>
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
             {partnerLogos.map((logo) => {

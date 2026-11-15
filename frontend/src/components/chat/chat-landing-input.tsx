@@ -1,4 +1,3 @@
-import { useLanguage } from "@/lib/landing-i18n";
 import { motion } from "framer-motion";
 import { ArrowRight, Maximize2, Minimize2, Search } from "lucide-react";
 import { FormEvent, KeyboardEvent, useRef } from "react";
@@ -17,6 +16,8 @@ import {
   productComposerTextareaSingleLine,
 } from "@/lib/design-system/product-styles";
 import { cn } from "@/lib/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useSchemeCount } from "@/lib/scheme-count";
 
 interface ChatLandingInputProps {
   query: string;
@@ -29,7 +30,8 @@ function ChatLandingInput({
   setQuery,
   handleSubmit,
 }: ChatLandingInputProps) {
-  const { t } = useLanguage();
+  const { t } = useLingui();
+  const schemeCount = useSchemeCount();
   const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Caps are multiples of the 28px line-height so a clamped textarea never cuts
@@ -62,17 +64,18 @@ function ChatLandingInput({
     <div className="px-4 md:px-8 flex flex-col items-center justify-center text-center z-10">
       {/* Headline */}
       <motion.h1
-        className="font-serif font-bold leading-[1.08] tracking-tight text-5xl lg:text-[4.5rem] xl:text-[5rem]"
+        className="font-serif font-bold leading-[1.08] tracking-tight [overflow-wrap:anywhere] text-5xl lg:text-[4.5rem] xl:text-[5rem]"
         initial={motionPreset.fadeInUpHero.initial}
         animate={motionPreset.fadeInUpHero.animate}
         transition={{ ...transition.slowEntrance, delay: delay.heroHeadline }}
       >
-        {t.hero.headline.split("\n").map((line, i, arr) => (
-          <span key={i}>
-            {line}
-            {i < arr.length - 1 && <br />}
-          </span>
-        ))}
+        <Trans comment="Landing page hero headline">
+          Find the Right
+          <br />
+          Assistance Schemes
+          <br />
+          in Singapore
+        </Trans>
       </motion.h1>
 
       {/* Subtitle */}
@@ -82,7 +85,7 @@ function ChatLandingInput({
         animate={motionPreset.fadeInUpMd.animate}
         transition={{ ...transition.entrance, delay: delay.heroSubtitle }}
       >
-        {t.hero.subtitle}
+        <Trans comment="Landing page hero subtitle">Describe your situation and find schemes you may qualify for. Over {schemeCount} schemes from 200+ agencies and community organisations.</Trans>
       </motion.p>
 
       {/* Search bar */}
@@ -116,7 +119,7 @@ function ChatLandingInput({
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              aria-label={expanded ? t.a11y.collapseInput : t.a11y.expandInput}
+              aria-label={expanded ? t`Collapse search box` : t`Expand search box`}
               className={cn(
                 productComposerExpandButton,
                 "right-3 top-3 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900",
@@ -136,7 +139,7 @@ function ChatLandingInput({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
-            placeholder={t.chat.searchPlaceholder}
+            placeholder={t({ message: "I'm a single parent looking for financial assistance…", comment: "Placeholder text for the landing page search input" })}
             className={cn(
               productComposerTextarea,
               "min-h-7 text-[15px] leading-7 focus:outline-none",
@@ -154,7 +157,7 @@ function ChatLandingInput({
                 productComposerSendButton,
                 "size-10 cursor-pointer",
               )}
-              aria-label={t.a11y.search}
+              aria-label={t({ message: "Search", comment: "Button to submit the search query" })}
             >
               <ArrowRight className="h-4 w-4" />
             </button>
@@ -170,7 +173,7 @@ function ChatLandingInput({
                   productComposerSendButton,
                   "size-10 cursor-pointer",
                 )}
-                aria-label={t.a11y.search}
+                aria-label={t({ message: "Search", comment: "Button to submit the search query" })}
               >
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -182,16 +185,76 @@ function ChatLandingInput({
             </p> */}
         {/* Category chips */}
         <div className="flex flex-wrap gap-4 justify-center">
-          {t.chat.categoryChips.map(({ label, prompt }) => (
-            <button
-              type="button"
-              key={label}
-              onClick={() => handleChipClick(prompt)}
-              className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
-            >
-              {label}
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need financial assistance", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Financial Assistance</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need support for my family or children", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Family & Children</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need health and wellbeing support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Health & Wellbeing</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need housing or food support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Housing & Food</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need education support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Education</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need employment or training support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Employment & Training</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need support for seniors or caregivers", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Seniors & Caregiving</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need disability or transport support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Disability & Transport</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need legal or safety support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Legal & Safety</Trans>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleChipClick(t({ message: "I need community support", comment: "Category chip prompt" }))}
+            className="inline-flex items-center gap-1.5 py-2 px-3 bg-white border border-(--schemes-border) rounded-full text-sm font-semibold text-(--schemes-ink-soft) hover:border-(--schemes-blue-100) hover:text-(--schemes-blue-600) hover:bg-(--schemes-blue-50) transition-colors"
+          >
+            <Trans comment="Category chip label">Community Support</Trans>
+          </button>
         </div>
       </motion.form>
     </div>

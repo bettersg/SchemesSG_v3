@@ -118,7 +118,7 @@ test("scheme detail page shows a breadcrumb to catalog and category", async ({
   expect(serverBreadcrumb).toContain('href="/catalog/financial-assistance"');
 
   const breadcrumb = page.getByLabel("Breadcrumb");
-  const catalogLink = breadcrumb.getByRole("link", { name: "Catalog" });
+  const catalogLink = breadcrumb.getByRole("link", { name: "Catalogue" });
   await expect(catalogLink).toBeVisible();
   await expect(catalogLink).toHaveAttribute("href", "/catalog");
 

@@ -1,5 +1,6 @@
 import { Button, PressEvent } from "@heroui/react";
 import { RotateCcw } from "lucide-react";
+import { Trans } from "@lingui/react/macro";
 
 interface NewChatButtonProps {
   onPress: ((e: PressEvent) => void) | undefined;
@@ -16,7 +17,9 @@ export default function NewChatButton({ onPress }: NewChatButtonProps) {
       onPress={onPress}
     >
       <RotateCcw className="h-4! w-4! shrink-0" strokeWidth={2} />
-      <span>New chat</span>
+      <span>
+        <Trans>New chat</Trans>
+      </span>
     </Button>
   );
 }

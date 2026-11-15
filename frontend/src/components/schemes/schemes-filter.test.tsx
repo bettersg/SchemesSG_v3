@@ -6,6 +6,7 @@ import { filterSchemes } from "@/lib/scheme-filters";
 import { makeScheme } from "@/test/fixtures/scheme";
 import type { FilterObjType } from "@/types/types";
 import SchemesFilter from "./schemes-filter";
+import { LanguageProvider } from "@/lib/landing-i18n";
 
 const trackMock = vi.hoisted(() => vi.fn());
 
@@ -53,7 +54,7 @@ function FilterHarness() {
   const visibleSchemes = filterSchemes(schemes, filter);
 
   return (
-    <>
+    <LanguageProvider>
       <SchemesFilter
         schemes={schemes}
         setFilterObj={setFilter}
@@ -68,7 +69,7 @@ function FilterHarness() {
           <li key={scheme.schemeId}>{scheme.schemeName}</li>
         ))}
       </ul>
-    </>
+    </LanguageProvider>
   );
 }
 

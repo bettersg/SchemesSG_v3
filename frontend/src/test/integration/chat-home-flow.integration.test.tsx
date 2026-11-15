@@ -29,7 +29,9 @@ function renderChatHome() {
 }
 
 async function submitFromLanding(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Financial Assistance" }));
+  await user.click(
+    screen.getByRole("button", { name: "Financial Assistance" }),
+  );
   await user.click(screen.getByRole("button", { name: "Search" }));
 }
 
@@ -59,7 +61,9 @@ describe("chat home", () => {
     ).not.toBeInTheDocument();
 
     // "New Chat" is the one path that clears the latch.
-    await user.click(screen.getAllByRole("button", { name: "Start new chat" })[0]);
+    await user.click(
+      screen.getAllByRole("button", { name: "Start new chat" })[0],
+    );
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(

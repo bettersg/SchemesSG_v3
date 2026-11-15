@@ -1,53 +1,65 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { Button, Dropdown, Label, type Selection } from "@heroui/react";
+import { ChevronDown, Globe } from "lucide-react";
 import { useLanguage, type Locale } from "@/lib/landing-i18n";
 import { cn } from "@/lib/utils";
-import { cssTransition, transition } from "@/lib/design-system/motion";
+import { cssTransition } from "@/lib/design-system/motion";
+import { useLingui } from "@lingui/react/macro";
 
-const languages: { code: Locale; label: string }[] = [
-  { code: "en", label: "EN" },
-  { code: "zh", label: "\u4E2D\u6587" },
-  // Future: { code: "ms", label: "BM" },
-  // Future: { code: "ta", label: "\u0BA4\u0BAE\u0BBF\u0BB4\u0BCD" },
+// Each language is named in its own script so people can find theirs.
+const languages: { code: Locale; label: string; short: string }[] = [
+  { code: "en", label: "English", short: "EN" },
+  { code: "zh", label: "中文", short: "中文" },
+  { code: "ms", label: "Melayu", short: "Melayu" },
+  { code: "ta", label: "தமிழ்", short: "தமிழ்" },
 ];
 
 export function LanguageToggle({ className }: { className?: string }) {
   const { locale, setLocale } = useLanguage();
+  const { t } = useLingui();
+  const current = languages.find((lang) => lang.code === locale) ?? languages[0];
+  const currentLanguage = current.label;
+
+  const onSelectionChange = (keys: Selection) => {
+    if (keys === "all") return;
+    const [code] = keys;
+    if (code) setLocale(code as Locale);
+  };
 
   return (
-    <div
-      className={cn(
-        "flex items-center rounded-full bg-neutral-100 border border-neutral-200/60 p-1",
-        className,
-      )}
-      role="radiogroup"
-      aria-label="Select language"
-    >
-      {languages.map((lang) => (
-        <button
-          key={lang.code}
-          role="radio"
-          aria-checked={locale === lang.code}
-          onClick={() => setLocale(lang.code)}
-          className={cn(
-            "relative min-h-11 px-3 py-2 text-sm font-medium rounded-full cursor-pointer",
-            cssTransition.colorsState,
-            locale === lang.code
-              ? "text-neutral-900"
-              : "text-neutral-400 hover:text-neutral-600",
-          )}
+    <Dropdown>
+      <Button
+        aria-label={t({
+          message: `Language: ${currentLanguage}`,
+          comment: "Aria label for the navbar language menu button; the value is the current language name",
+        })}
+        className={cn(
+          "min-h-11 gap-1.5 rounded-full border border-neutral-200/60 bg-neutral-100 px-3 text-sm font-medium text-neutral-900 shadow-none hover:bg-neutral-200/70 cursor-pointer",
+          cssTransition.colorsState,
+          className,
+        )}
+      >
+        <Globe className="h-4 w-4 text-neutral-500" aria-hidden />
+        <span>{current.short}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-neutral-500" aria-hidden />
+      </Button>
+      <Dropdown.Popover placement="bottom" className="min-w-40">
+        <Dropdown.Menu
+          aria-label={t({ message: "Select language", comment: "Aria label for the language selector toggle" })}
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={new Set([locale])}
+          onSelectionChange={onSelectionChange}
         >
-          {locale === lang.code && (
-            <motion.div
-              layoutId="lang-toggle-active"
-              className="absolute inset-0 rounded-full bg-white shadow-sm border border-neutral-200/60"
-              transition={transition.toggleSpring}
-            />
-          )}
-          <span className="relative z-10">{lang.label}</span>
-        </button>
-      ))}
-    </div>
+          {languages.map((lang) => (
+            <Dropdown.Item key={lang.code} id={lang.code} textValue={lang.label} lang={lang.code}>
+              <Dropdown.ItemIndicator className="text-neutral-900" />
+              <Label>{lang.label}</Label>
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
   );
 }

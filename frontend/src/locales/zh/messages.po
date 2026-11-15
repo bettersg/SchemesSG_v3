@@ -1,0 +1,1685 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-18 18:59+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh\n"
+
+#. Screen-reader suffix on the selected catalogue filter option
+#: src/components/catalog/catalog-category-select.tsx
+msgid ", selected"
+msgstr "，已选中"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "({shownCount} of {totalCount})"
+msgstr "（{shownCount} / {totalCount}）"
+
+#. Chat status step: the scheme search finished
+#. placeholder {0}: 10
+#. placeholder {0}: count(p)
+#. placeholder {0}: filteredSchemes.length
+#: src/components/chat/schemes-list.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {# scheme found} other {# schemes found}}"
+msgstr "{0, plural, one {找到 # 项援助计划} other {找到 # 项援助计划}}"
+
+#. Chat status step detail
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Filtered and re-ranked the list to # scheme.} other {Filtered and re-ranked the list to # schemes.}}"
+msgstr ""
+
+#. Chat status step detail; query is the web search the assistant ran
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Found # result for \"{query}\".} other {Found # results for \"{query}\".}}"
+msgstr ""
+
+#. Chat status step detail; query is the search the assistant ran
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Found # scheme matching \"{query}\".} other {Found # schemes matching \"{query}\".}}"
+msgstr ""
+
+#. placeholder {0}: steps.length
+#: src/components/chat/status-steps-accordion.tsx
+msgid "{0, plural, one {How I found these (# step)} other {How I found these (# steps)}}"
+msgstr "{0, plural, one {我是如何找到这些的（# 个步骤）} other {我是如何找到这些的（# 个步骤）}}"
+
+#. Chat status step detail
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Retrieved detailed information for # scheme.} other {Retrieved detailed information for # schemes.}}"
+msgstr ""
+
+#. Catalogue heading: selected categories (or All schemes), then the planning areas they are filtered to
+#: src/components/catalog/catalog-detail.tsx
+msgid "{categoriesLabel} in {areasLabel}"
+msgstr "{areasLabel}的{categoriesLabel}"
+
+#: src/components/schemes/schemes-filter.tsx
+msgid "{count, plural, one {# agency} other {# agencies}}"
+msgstr "{count, plural, one {# 个机构} other {# 个机构}}"
+
+#: src/components/schemes/schemes-filter.tsx
+msgid "{count, plural, one {# area} other {# areas}}"
+msgstr "{count, plural, one {# 个地区} other {# 个地区}}"
+
+#: src/components/chat/scheme-update-notice.tsx
+msgid "{count, plural, one {# scheme found} other {# schemes found}}"
+msgstr "{count, plural, one {找到 # 个援助计划} other {找到 # 个援助计划}}"
+
+#. Screen-reader label for the catalogue category button; label is the first selected category
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label} and {extraCount} more: browse by category"
+msgstr "{label}及另外 {extraCount} 项：按类别浏览"
+
+#. Screen-reader label for the catalogue area button; label is the first selected area
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label} and {extraCount} more: filter by planning area"
+msgstr "{label}及另外 {extraCount} 项：按规划区筛选"
+
+#. Screen-reader label for the catalogue category button; label is the selected category
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label}: browse by category"
+msgstr "{label}：按类别浏览"
+
+#. Screen-reader label for the catalogue area button; label is the selected area
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label}: filter by planning area"
+msgstr "{label}：按规划区筛选"
+
+#. Card link aria-label: scheme name and agency, opens externally
+#: src/components/schemes/scheme-card.tsx
+msgid "{schemeName}, {agency} (opens in new tab)"
+msgstr "{schemeName}，{agency}（在新标签页中打开）"
+
+#. Footer copyright notice with year placeholder
+#: src/components/layout/footer.tsx
+msgid "© {year} Schemes.sg. All rights reserved."
+msgstr "© {year} Schemes.sg. 版权所有。"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "512 Thomson Road, Singapore 298136"
+msgstr "汤申路 512 号，新加坡 298136"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "A volunteer reviews and approves the listing"
+msgstr "义工会审核并批准刊登"
+
+#. Footer link
+#. Navbar tab
+#: src/components/layout/footer.tsx
+#: src/components/layout/navbar.tsx
+msgid "About"
+msgstr "关于我们"
+
+#. Filter label: filter schemes by agency
+#: src/components/schemes/schemes-filter.tsx
+msgid "Agency"
+msgstr "机构"
+
+#. Section heading: agency contact and location
+#. Tab label: agency contact and location section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Agency details"
+msgstr "机构详情"
+
+#. Catalogue filter option: no planning area filter
+#. Catalogue filter option: no planning area filter
+#: src/components/catalog/catalog-category-select.tsx
+msgid "All areas"
+msgstr "所有地区"
+
+#. Catalogue category: no filter
+#: src/lib/design-system/category-labels.ts
+msgid "All categories"
+msgstr "所有分类"
+
+#. Filter chip in the demo results
+#: src/components/landing/sections/features-section.tsx
+msgid "All matches"
+msgstr "所有结果"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "All schemes"
+msgstr "所有援助计划"
+
+#: src/components/catalog/catalog-category-select.tsx
+msgid "All Schemes"
+msgstr "所有援助计划"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "An AI tool collects the public details from the page"
+msgstr "人工智能工具从网页收集公开资料"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Ang Mo Kio"
+msgstr "宏茂桥"
+
+#. Privacy notice below the chat input
+#: src/components/chat/chat-input-bar.tsx
+msgid "Anonymous · No personal data stored"
+msgstr "匿名使用 · 不储存个人资料"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Apply directly with the agency"
+msgstr "直接向相关机构申请"
+
+#: src/components/chat/new-chat-modal.tsx
+msgid "Are you sure you want to start a new chat? Your chat history and search results will be reset."
+msgstr "您确定要开始新对话吗？您的对话记录和搜索结果将被重置。"
+
+#. Placeholder for the chat input after the first message
+#: src/components/chat/chat-input-bar.tsx
+msgid "Ask a follow-up question…"
+msgstr "继续提问……"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Available islandwide through Social Service Offices."
+msgstr "可通过全岛的社会服务处获得援助。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bedok"
+msgstr "勿洛"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bishan"
+msgstr "碧山"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Block 135 Jurong Gateway Road, Singapore 600135"
+msgstr "裕廊关道第 135 座，新加坡 600135"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Boon Lay"
+msgstr "文礼"
+
+#. Section heading on the demo scheme page
+#: src/components/landing/sections/features-section.tsx
+msgid "Branches and contacts"
+msgstr "分处与联系方式"
+
+#. Aria label for the breadcrumb navigation at the top of the scheme page
+#: src/components/schemes/scheme-detail.tsx
+msgid "Breadcrumb"
+msgstr "面包屑导航"
+
+#. Footer banner, followed by the better.sg logo image: the sentence must end where the logo starts
+#: src/components/layout/footer.tsx
+msgid "Built by volunteers at"
+msgstr "由义工打造，来自"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Batok"
+msgstr "武吉巴督"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Merah"
+msgstr "红山"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Panjang"
+msgstr "武吉班让"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Timah"
+msgstr "武吉知马"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Can I access Schemes.sg data through an API?"
+msgstr "我可以通过应用程序接口获取 Schemes.sg 的数据吗？"
+
+#: src/components/chat/new-chat-modal.tsx
+msgid "Cancel"
+msgstr "取消"
+
+#. Breadcrumb: link to the main catalog page
+#. Navbar tab: browse every scheme by category
+#: src/components/layout/navbar.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Catalogue"
+msgstr "目录"
+
+#. Catalogue filter panel heading when choosing categories
+#: src/components/catalog/catalog-category-select.tsx
+msgid "Categories"
+msgstr "分类"
+
+#. Label beside the catalogue filter button
+#: src/components/catalog/catalog-detail.tsx
+msgid "Category"
+msgstr "分类"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Central Singapore"
+msgstr "新加坡中部"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Central Water Catchment"
+msgstr "中央集水区"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Changi"
+msgstr "樟宜"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Changi Bay"
+msgstr "樟宜湾"
+
+#. Mobile tab label for the conversation view
+#: src/components/chat/chat-page.tsx
+msgid "Chat"
+msgstr "对话"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Checking what's out there for you"
+msgstr "正在为您查看有哪些选择"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Choa Chu Kang"
+msgstr "蔡厝港"
+
+#. Button: clear the active filter selections
+#: src/components/schemes/schemes-filter.tsx
+msgid "Clear"
+msgstr "清除"
+
+#. Button aria-label: remove all selections from this filter
+#: src/components/schemes/schemes-filter.tsx
+msgid "Clear {label} filter"
+msgstr "清除{label}筛选条件"
+
+#. Empty state hint when filters are active
+#: src/components/chat/schemes-list.tsx
+msgid "Clear one or more filters to see the schemes from this chat."
+msgstr "清除一个或多个筛选条件，即可查看这次对话找到的援助计划。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Clementi"
+msgstr "金文泰"
+
+#: src/components/layout/navbar.tsx
+msgid "Close menu"
+msgstr "关闭菜单"
+
+#: src/components/chat/chat-input-bar.tsx
+#: src/components/chat/chat-landing-input.tsx
+msgid "Collapse search box"
+msgstr "收起搜索框"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "ComCare Short-to-Medium-Term Assistance"
+msgstr "ComCare 中短期援助"
+
+#. Badge shown on footer links that are not yet available
+#: src/components/layout/footer.tsx
+msgid "Coming soon"
+msgstr "即将推出"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Common questions"
+msgstr "常见问题"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Community Health Assist Scheme (CHAS)"
+msgstr "社保援助计划（CHAS）"
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "Community Partner"
+msgstr "社区合作伙伴"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Community Support"
+msgstr "社区支持"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Comparing schemes from trusted agencies"
+msgstr "对比可信机构提供的援助计划"
+
+#. Confirms starting a new chat, which clears the current one
+#: src/components/chat/new-chat-modal.tsx
+msgid "Confirm"
+msgstr "确认"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Considering your options"
+msgstr "正在考虑您的各种选择"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Contact"
+msgstr "联系我们"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Contact your nearest Social Service Office to discuss your circumstances and next steps."
+msgstr "联系附近的社会服务处，讨论您的情况和下一步。"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Contribute"
+msgstr "推荐新的援助计划"
+
+#. Navbar tab: suggest a scheme that is missing. Keep it short: it shares one row with three other tabs
+#: src/components/layout/navbar.tsx
+msgctxt "navbar tab"
+msgid "Contribute"
+msgstr "推荐新的援助计划"
+
+#. Link button to contribute a new scheme
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Contribute a new scheme"
+msgstr "推荐新的援助计划"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Copied"
+msgstr "已复制"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Copy"
+msgstr "复制"
+
+#. Share button: the clipboard copy failed
+#: src/components/schemes/scheme-detail.tsx
+msgid "Copy failed, try again"
+msgstr "复制失败，请重试"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Copy response"
+msgstr "复制回答"
+
+#. Chat status step detail; url is the page address
+#: src/lib/status-step-copy.ts
+msgid "Couldn’t read \"{url}\"."
+msgstr ""
+
+#. Label above the demo search input in the features tutorial
+#. Search box label in the feature walkthrough demo
+#: src/components/landing/sections/features-section.tsx
+msgid "Describe your situation"
+msgstr "描述您的情况"
+
+#. Landing page hero subtitle
+#: src/components/chat/chat-landing-input.tsx
+msgid "Describe your situation and find schemes you may qualify for. Over {schemeCount} schemes from 200+ agencies and community organisations."
+msgstr "描述您的情况，寻找您可能符合资格的援助计划。这里汇集了来自200多个机构和社区组织的 {schemeCount} 多项援助计划。"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Describe your situation in your own words. We find the schemes that fit best, without the jargon."
+msgstr "用自己的话说说您的情况。我们会用简单易懂的方式，帮您找到最合适的援助计划。"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Developers"
+msgstr "开发者"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Disability & Transport"
+msgstr "残障与交通"
+
+#: src/components/landing/sections/agencies-section.tsx
+msgid "Discover schemes from <0/>200+ agencies"
+msgstr "探索来自<0/>200多个机构的援助计划"
+
+#. Button: close the filter panel
+#: src/components/schemes/schemes-filter.tsx
+msgid "Done"
+msgstr "完成"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Downtown Core"
+msgstr "市中心"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "e.g., ComCare Short-to-Medium Term Assistance"
+msgstr "例如：ComCare 中短期援助"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "e.g., https://www.msf.gov.sg/comcare"
+msgstr "例如：https://www.msf.gov.sg/comcare"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Education"
+msgstr "教育"
+
+#. Section label: detailed eligibility criteria
+#: src/components/schemes/scheme-detail.tsx
+msgid "Eligibility details"
+msgstr "申请资格详情"
+
+#. Section label: the groups who are eligible
+#: src/components/schemes/scheme-detail.tsx
+msgid "Eligibility groups"
+msgstr "适用人群"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Email"
+msgstr "电邮"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Employment & Training"
+msgstr "就业与培训"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Enter the full link, including http:// or https://"
+msgstr "请输入完整链接，包括 http:// 或 https://"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Enter the link to the scheme's page."
+msgstr "请输入援助计划网页的链接。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Enter the scheme name."
+msgstr "请输入援助计划名称。"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Enter your email"
+msgstr "输入您的电邮地址"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Enter your name"
+msgstr "输入您的姓名"
+
+#: src/components/chat/chat-input-bar.tsx
+#: src/components/chat/chat-landing-input.tsx
+msgid "Expand search box"
+msgstr "展开搜索框"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Family & Children"
+msgstr "家庭与儿童"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "FAQ"
+msgstr "常见问题"
+
+#. Section header above logos of media outlets
+#: src/components/landing/sections/featured-section.tsx
+msgid "Featured on"
+msgstr "媒体报道"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Features"
+msgstr "功能"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Feedback"
+msgstr "反馈"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Feedback about a chat response"
+msgstr "关于对话回答的反馈"
+
+#. Chat status step: the assistant is loading full scheme details
+#: src/lib/status-step-copy.ts
+msgid "Fetching scheme details"
+msgstr ""
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Fill in all the required fields."
+msgstr "请填写所有必填项目。"
+
+#. Button aria-label: open a filter menu
+#: src/components/schemes/schemes-filter.tsx
+msgid "Filter by {label}"
+msgstr "按{label}筛选"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Filter by agency or support type"
+msgstr "按机构或援助类型筛选"
+
+#. Chat status step detail; directive is the assistant's own filtering instruction, in English
+#: src/lib/status-step-copy.ts
+msgid "Filtering and re-ranking the schemes. Instructions: {directive}"
+msgstr ""
+
+#. Chat status step: the assistant is narrowing the current results
+#: src/lib/status-step-copy.ts
+msgid "Filtering schemes"
+msgstr ""
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Financial Assistance"
+msgstr "经济援助"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Financial support for households facing temporary difficulty with essential expenses."
+msgstr "为暂时面对困难的家庭提供基本生活开支援助。"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Find schemes that fit you"
+msgstr "找到适合您的援助计划"
+
+#. Landing page hero headline
+#: src/components/chat/chat-landing-input.tsx
+msgid "Find the Right<0/>Assistance Schemes<1/>in Singapore"
+msgstr "在新加坡<0/>寻找合适的<1/>援助计划"
+
+#: src/components/landing/sections/cta-section.tsx
+msgid "Find the Support You Deserve"
+msgstr "找到您应得的支持"
+
+#. Catalogue loading status; heading is the selected categories and areas
+#: src/components/catalog/catalog-detail.tsx
+msgid "Finding {heading} schemes…"
+msgstr "正在寻找{heading}援助计划……"
+
+#. Loading state aria label while searching for schemes
+#: src/components/chat/schemes-list.tsx
+msgid "Finding schemes"
+msgstr "正在寻找援助计划"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "Finding schemes across all categories…"
+msgstr "正在寻找所有分类的援助计划……"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Finding the best place to start"
+msgstr "正在寻找最佳入手点"
+
+#. Status text while the AI searches for schemes
+#: src/components/chat/schemes-list.tsx
+msgid "Finding the best schemes..."
+msgstr "正在寻找最合适的援助计划……"
+
+#. Chat status step detail; query is the search the assistant ran
+#: src/lib/status-step-copy.ts
+msgid "Finding the schemes that best match \"{query}\""
+msgstr ""
+
+#: src/components/landing/sections/cta-section.tsx
+msgid "Free to use. No sign-up required."
+msgstr "免费使用。无需注册。"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "From your first question to how to apply, in one place."
+msgstr "从第一次提问到了解如何申请，都能在这里完成。"
+
+#. Footer link to better.sg
+#: src/components/layout/footer.tsx
+msgid "Get involved"
+msgstr "参与其中"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Getting my bearings"
+msgstr "正在了解情况"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Geylang"
+msgstr "芽笼"
+
+#. Menu item in the message actions popover
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Give feedback"
+msgstr "提供反馈"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Giving this the thought it needs"
+msgstr "正在仔细斟酌您的需求"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Health & Wellbeing"
+msgstr "健康与身心"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Help keep Schemes.sg accurate by correcting this listing or contributing a new scheme."
+msgstr "您可以更正这项资料或推荐新的援助计划，帮助 Schemes.sg 保持资料准确。"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Help us improve Schemes.sg with your valuable input"
+msgstr "欢迎提供宝贵意见，帮助我们改进 Schemes.sg"
+
+#. Thumbs-up button tooltip and aria label
+#. Thumbs-up button tooltip and aria label
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Helpful"
+msgstr "有帮助"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Hougang"
+msgstr "后港"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Households needing help with essential expenses"
+msgstr "需要基本生活开支援助的家庭"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Housing & Food"
+msgstr "住房与食品"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "How does the AI matching work?"
+msgstr "人工智能匹配是如何运作的？"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "How it works:"
+msgstr "运作方式："
+
+#. Section heading: instructions for applying
+#. Tab label: application steps section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "How to apply"
+msgstr "如何申请"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "How up-to-date is the information?"
+msgstr "信息多久更新一次？"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "How we find your matches"
+msgstr "我们如何寻找匹配的援助计划"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "I found schemes that may help with household expenses and childcare costs."
+msgstr "我们找到了一些可能帮助家庭开支和托儿费用的援助计划。"
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "I had no idea there were schemes for my situation until I tried Schemes.sg. It matched me with three programmes I actually qualified for, and one of them covered my kids' school fees. I wish I'd found this sooner."
+msgstr "我完全不知道有适合我情况的援助计划，直到我试了 Schemes.sg。它为我匹配了三个我真正符合资格的计划，其中一个还帮我支付了孩子的学费。真希望我能更早发现这个工具。"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need community support"
+msgstr "我需要社区支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need disability or transport support"
+msgstr "我需要残障或交通支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need education support"
+msgstr "我需要教育支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need employment or training support"
+msgstr "我需要就业或培训支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need financial assistance"
+msgstr "我需要经济援助"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need health and wellbeing support"
+msgstr "我需要健康与身心支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need housing or food support"
+msgstr "我需要住房或食物支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need legal or safety support"
+msgstr "我需要法律或安全支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need support for my family or children"
+msgstr "我需要家庭或儿童方面的支持"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need support for seniors or caregivers"
+msgstr "我需要年长者或看护者支持"
+
+#. Placeholder text for the landing page search input
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+msgid "I'm a single parent looking for financial assistance…"
+msgstr "我是单亲家长，想找经济援助……"
+
+#. Info banner heading: disclaimer about scheme accuracy
+#: src/components/schemes/scheme-detail.tsx
+msgid "Important Information"
+msgstr "重要信息"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Is my personal information safe?"
+msgstr "我的个人信息安全吗？"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Is Schemes.sg free to use?"
+msgstr "Schemes.sg 免费吗？"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Its official link failed our last check, so the details below may be out of date. Contact the agency to confirm before you apply."
+msgstr "我们上次检查时无法打开官方链接，因此以下资料可能已经过时。申请前，请先向机构确认。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Jurong East"
+msgstr "裕廊东"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Jurong West"
+msgstr "裕廊西"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Kallang"
+msgstr "加冷"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Keeping your situation in mind"
+msgstr "正在把您的具体情况考虑在内"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Know a scheme that's missing from our database? Share it with us!"
+msgstr "知道有哪些援助计划还没收录在我们的资料库中吗？欢迎告诉我们！"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Know a scheme we’re missing? Suggest it and help others find it."
+msgstr "知道我们遗漏了哪些援助计划吗？欢迎推荐，帮助更多人找到它。"
+
+#. Aria label for the navbar language menu button; the value is the current language name
+#: src/components/landing/shared/language-toggle.tsx
+msgid "Language: {currentLanguage}"
+msgstr "语言：{currentLanguage}"
+
+#. Footer column heading
+#: src/components/layout/footer.tsx
+msgid "Legal"
+msgstr "法律"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Legal & Safety"
+msgstr "法律与安全"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Lim Chu Kang"
+msgstr "林厝港"
+
+#. Share button: the link was copied to clipboard
+#: src/components/schemes/scheme-detail.tsx
+msgid "Link copied"
+msgstr "链接已复制"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "Loading schemes"
+msgstr "正在加载援助计划"
+
+#. Filter label: filter schemes by location
+#: src/components/schemes/schemes-filter.tsx
+msgid "Location"
+msgstr "地点"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Looking for the right fit for you"
+msgstr "正在为您寻找最合适的方案"
+
+#. Footer location text
+#: src/components/layout/footer.tsx
+msgid "Made with care in Singapore"
+msgstr "用心制作于新加坡"
+
+#. Footer tagline
+#: src/components/layout/footer.tsx
+msgid "Making social assistance accessible for everyone."
+msgstr "让每个人都能获取社会援助。"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Making sure I've understood you"
+msgstr "正在确认我已充分理解您的意思"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Mandai"
+msgstr "万礼"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Marina East"
+msgstr "滨海东"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Marina South"
+msgstr "滨海南"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Marine Parade"
+msgstr "马林百列"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Ministry of Health"
+msgstr "卫生部"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Ministry of Social and Family Development"
+msgstr "社会及家庭发展部"
+
+#. Button to show additional feedback options
+#: src/components/feedback/feedback-prompt.tsx
+msgid "More actions"
+msgstr "更多操作"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Museum"
+msgstr "博物馆"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Name"
+msgstr "姓名"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Narrow down to the schemes that fit"
+msgstr "缩小范围，找到适合您的援助计划"
+
+#. Aria label for the main navigation tabs
+#: src/components/layout/navbar.tsx
+msgid "Navigation"
+msgstr ""
+
+#: src/components/layout/navbar.tsx
+msgid "Navigation tabs"
+msgstr "导航标签页"
+
+#: src/components/chat/new-chat-button.tsx
+msgid "New chat"
+msgstr "新对话"
+
+#. Heading of the dialog that confirms starting a new chat
+#: src/components/chat/new-chat-modal.tsx
+msgid "New Chat"
+msgstr "新对话"
+
+#: src/components/chat/schemes-panel-pulse.tsx
+msgid "New schemes available"
+msgstr "有新的援助计划可用"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Newton"
+msgstr "纽顿"
+
+#. Location filter option for schemes not tied to a planning area
+#: src/components/schemes/schemes-filter.tsx
+msgid "No location"
+msgstr "无特定地区"
+
+#. Empty state: no options match the search
+#: src/components/schemes/schemes-filter.tsx
+msgid "No matches"
+msgstr "无匹配项"
+
+#. Empty state heading when search returns no results
+#: src/components/catalog/catalog-detail.tsx
+#: src/components/chat/schemes-list.tsx
+msgid "No schemes found"
+msgstr "未找到援助计划"
+
+#. Empty state heading when active filters hide all results
+#: src/components/chat/schemes-list.tsx
+msgid "No schemes match the selected filters"
+msgstr "没有符合所选筛选条件的援助计划"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "North-Eastern Islands"
+msgstr "东北群岛"
+
+#. Thumbs-down button tooltip and aria label
+#. Thumbs-down button tooltip and aria label
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Not helpful"
+msgstr "没有帮助"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Novena"
+msgstr "诺维娜"
+
+#. Aria label for the section navigation tabs on a scheme page
+#: src/components/schemes/scheme-detail.tsx
+msgid "On this page"
+msgstr "本页导航"
+
+#: src/components/layout/navbar.tsx
+msgid "Open menu"
+msgstr "打开菜单"
+
+#. Aria label for the mobile tab list switching between chat and schemes views
+#: src/components/chat/chat-page.tsx
+msgid "Options"
+msgstr ""
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Orchard"
+msgstr "乌节"
+
+#. Section header above partner organization logos
+#: src/components/landing/sections/featured-section.tsx
+msgid "Our partners"
+msgstr "合作伙伴"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Outram"
+msgstr "欧南"
+
+#. Section heading: summary and category
+#. Tab label: summary and category section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Overview"
+msgstr "概览"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Pasir Ris"
+msgstr "巴西立"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Paya Lebar"
+msgstr "巴耶利峇"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Picturing your situation"
+msgstr "正在构想您面临的情况"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Piecing this together"
+msgstr "正在组合各种相关信息"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Pioneer"
+msgstr "先驱"
+
+#. Catalogue filter panel heading when choosing a planning area
+#: src/components/catalog/catalog-category-select.tsx
+msgid "Planning area"
+msgstr "规划区"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Please enter a valid email address"
+msgstr "请输入有效的电邮地址"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Privacy Policy"
+msgstr "隐私政策"
+
+#. Footer column heading
+#: src/components/layout/footer.tsx
+msgid "Product"
+msgstr "产品"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Punggol"
+msgstr "榜鹅"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Queenstown"
+msgstr "女皇镇"
+
+#. Chat status step detail; url is the page address
+#: src/lib/status-step-copy.ts
+msgid "Read \"{url}\"."
+msgstr ""
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Read our Privacy Policy"
+msgstr "阅读我们的隐私政策"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Read the developer docs"
+msgstr "请查看开发者文档"
+
+#. Chat status step: the assistant is opening a web page
+#: src/lib/status-step-copy.ts
+msgid "Reading a web page"
+msgstr ""
+
+#. Chat status step detail; url is the page address
+#: src/lib/status-step-copy.ts
+msgid "Reading the page \"{url}\""
+msgstr ""
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Reading your question"
+msgstr "正在阅读您的问题"
+
+#. Footer column heading
+#: src/components/layout/footer.tsx
+msgid "Resources"
+msgstr "资源"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Response actions"
+msgstr "回答操作"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "River Valley"
+msgstr "里峇峇利"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Rochor"
+msgstr "梧槽"
+
+#. Chat status step: full scheme details loaded
+#: src/lib/status-step-copy.ts
+msgid "Scheme details found"
+msgstr ""
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Scheme details may change. Check the official agency website for the latest eligibility, benefits, and application information."
+msgstr "援助计划的详情可能会更改。请到机构的官方网站查看最新的申请资格、援助内容和申请方法。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Scheme link"
+msgstr "援助计划链接"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Scheme name"
+msgstr "援助计划名称"
+
+#. Section label: the category tags for a scheme
+#: src/components/schemes/scheme-detail.tsx
+msgid "Scheme type"
+msgstr "援助计划类型"
+
+#. Footer column heading
+#. Mobile tab label for the results list
+#: src/components/chat/chat-page.tsx
+#: src/components/layout/footer.tsx
+msgid "Schemes"
+msgstr "援助计划"
+
+#. Chat status step: narrowing the results finished
+#: src/lib/status-step-copy.ts
+msgid "Schemes filtered"
+msgstr ""
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "Schemes.sg helps our staff quickly find relevant support options for service users. We're excited to see how this tool can strengthen our work with the community."
+msgstr "Schemes.sg 帮助我们的员工快速为服务对象找到相关的支持方案。我们很期待看到这个工具如何加强我们与社区的合作。"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Schemes.sg is a free, AI-powered search tool that helps you find social assistance schemes you may qualify for. It brings together schemes from over 200 government agencies and community organisations."
+msgstr "Schemes.sg 是免费的人工智能搜索工具，帮助您寻找可能符合资格的社会援助计划。这里汇集了来自200多个政府机构和社区组织的援助计划。"
+
+#: src/components/chat/chat-message-list.tsx
+msgid "Schemes.sg logo"
+msgstr "Schemes.sg 标志"
+
+#: src/components/chat/chat-scroll-anchor.tsx
+msgid "Scroll to latest"
+msgstr "滚动到最新位置"
+
+#. Button that scrolls the page back to the top
+#: src/components/landing/shared/scroll-to-top.tsx
+msgid "Scroll to top"
+msgstr "返回顶部"
+
+#. Button to submit the search query
+#. Button to submit the search query
+#. Footer link
+#: src/components/catalog/catalog-detail.tsx
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/layout/footer.tsx
+msgid "Search"
+msgstr "搜索"
+
+#. Filter search placeholder: search within the filter options
+#. placeholder {0}: label.toLowerCase()
+#: src/components/schemes/schemes-filter.tsx
+msgid "Search {0}…"
+msgstr "搜索{0}……"
+
+#. Alt text for the submit button in the demo composer
+#: src/components/landing/sections/features-section.tsx
+msgid "Search for this example"
+msgstr "搜索此示例"
+
+#. Button: go to the search page
+#. Navbar tab and button: open the search page
+#: src/components/catalog/catalog-detail.tsx
+#: src/components/landing/sections/cta-section.tsx
+#: src/components/layout/navbar.tsx
+msgid "Search schemes"
+msgstr "搜索援助计划"
+
+#. Chat status step detail
+#: src/lib/status-step-copy.ts
+msgid "Searching our database for more information about selected schemes."
+msgstr ""
+
+#. Chat status step: the assistant is searching the scheme list
+#: src/lib/status-step-copy.ts
+msgid "Searching schemes database"
+msgstr ""
+
+#. Chat status step detail; query is the web search the assistant ran
+#: src/lib/status-step-copy.ts
+msgid "Searching the web for \"{query}\""
+msgstr ""
+
+#. Chat status step: the assistant is searching the web
+#: src/lib/status-step-copy.ts
+msgid "Searching web"
+msgstr ""
+
+#: src/components/landing/sections/features-section.tsx
+msgid "See who qualifies, what you get, and where to apply for each scheme."
+msgstr "了解每项援助计划的申请资格、援助内容和申请地点。"
+
+#. Aria label for the language selector toggle
+#: src/components/landing/shared/language-toggle.tsx
+msgid "Select language"
+msgstr "选择语言"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Seletar"
+msgstr "实里达"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Sembawang"
+msgstr "三巴旺"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Send feedback"
+msgstr "发送反馈"
+
+#. Button to submit the chat message
+#: src/components/chat/stop-generating-button.tsx
+msgid "Send message"
+msgstr "发送讯息"
+
+#. Default error message when the chat stream fails
+#: src/components/chat/streaming-error-card.tsx
+msgid "Send your question again."
+msgstr "请重新发送您的问题。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Sengkang"
+msgstr "盛港"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Seniors & Caregiving"
+msgstr "年长者与看护"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Serangoon"
+msgstr "实龙岗"
+
+#. Field label on the demo scheme page
+#. Section label: geographic coverage
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Service area"
+msgstr "服务范围"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Share feedback"
+msgstr "分享反馈"
+
+#. Link button to open general feedback form
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Share general feedback"
+msgstr "分享一般反馈"
+
+#. Button on the demo scheme page
+#. Button: share this scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Share scheme"
+msgstr "分享援助计划"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Share your thoughts, suggestions, or concerns"
+msgstr "告诉我们您的想法、建议或顾虑"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Short-term financial support for lower-income households facing temporary difficulty."
+msgstr "为暂时面对困难的低收入家庭提供短期经济援助。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Simpang"
+msgstr "新邦"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Simply type your question, and Schemes.sg instantly scans more than {schemeCount} government and community assistance programs to show you what help is available."
+msgstr "只需输入您的问题，Schemes.sg 就会立即搜索 {schemeCount} 多个政府和社区援助计划，为您展示可以获得的帮助。"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Singapore Citizens and Permanent Residents"
+msgstr "新加坡公民和永久居民"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Singapore River"
+msgstr "新加坡河"
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "Single mother, Jurong West"
+msgstr "单亲妈妈，裕廊西"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Sitemap"
+msgstr "网站地图"
+
+#: src/components/landing/sections/cta-section.tsx
+msgid "Skip hours of searching across agency websites. Describe your situation, and we’ll find schemes that match."
+msgstr "不必花几个小时逐一搜索各机构的网站。说说您的情况，我们会帮您寻找合适的援助计划。"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Sorting through the possibilities"
+msgstr "正在梳理各种可能性"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Southern Islands"
+msgstr "南部群岛"
+
+#. Button in the error card to start a new conversation
+#: src/components/chat/streaming-error-card.tsx
+msgid "Start new chat"
+msgstr "开始新对话"
+
+#. Button: go to the search page
+#: src/components/landing/sections/agencies-section.tsx
+msgid "Start searching"
+msgstr "开始搜索"
+
+#. Screen-reader label for a numbered step in the feature walkthrough
+#: src/components/landing/sections/features-section.tsx
+msgid "Step {step}"
+msgstr "第 {step} 步"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Still with you"
+msgstr "依然在协助您"
+
+#. Button to cancel the AI response while it is streaming
+#: src/components/chat/stop-generating-button.tsx
+msgid "Stop generating"
+msgstr "停止生成"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Straits View"
+msgstr "海峡景"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Submit scheme"
+msgstr "提交援助计划"
+
+#: src/app/(main)/contribute/page.tsx
+#: src/app/(main)/feedback/page.tsx
+msgid "Submitting…"
+msgstr "正在提交……"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Subsidies for medical and dental care at participating clinics."
+msgstr "在参与计划的诊所接受医疗和牙科服务，可获得津贴。"
+
+#. Link button to report a scheme correction
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Suggest a correction"
+msgstr "建议更正"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Suggest a correction for {schemeName}"
+msgstr "为 {schemeName} 建议更正"
+
+#: src/app/(main)/contribute/page.tsx
+#: src/components/landing/sections/faq-section.tsx
+msgid "Suggest a new scheme"
+msgstr "推荐新的援助计划"
+
+#. Button: go to the contribute page
+#: src/components/landing/sections/faq-section.tsx
+msgid "Suggest a scheme"
+msgstr "推荐新的援助计划"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Suggest a scheme correction"
+msgstr "建议更正援助计划内容"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Sungei Kadut"
+msgstr "双溪加株"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tampines"
+msgstr "淡滨尼"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tanglin"
+msgstr "东陵"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tengah"
+msgstr "登加"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Terms of Service"
+msgstr "服务条款"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Thanks for your feedback."
+msgstr "感谢您的反馈。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Thanks, we’ve received your suggestion. A volunteer will review it."
+msgstr "谢谢，我们已收到您的建议。义工会进行审核。"
+
+#. Error card heading when the chat response fails
+#: src/components/chat/streaming-error-card.tsx
+msgid "The answer stopped partway"
+msgstr "回答中途停止了"
+
+#: src/components/chat/chat-page.tsx
+msgid "The connection dropped before the response finished. Send it again when ready."
+msgstr "连接在回答完成前中断了。准备好后请重新发送。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "The official webpage where details about this scheme can be found"
+msgstr "可查看这项援助计划详情的官方网页"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Thinking about what you need"
+msgstr "正在思考您的需求"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Thinking about who could help"
+msgstr "正在思考谁能提供帮助"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Thinking this through"
+msgstr "正在深入思考"
+
+#: src/components/schemes/retired-scheme-notice.tsx
+msgid "This page has been kept so existing links do not break. Browse the catalog to find currently listed support schemes."
+msgstr "本页面得以保留，以免现有链接失效。请浏览目录以查找当前列出的援助计划。"
+
+#: src/components/schemes/retired-scheme-notice.tsx
+msgid "This scheme is no longer listed"
+msgstr "此援助计划已不再列出"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Toa Payoh"
+msgstr "大巴窑"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Tools that do the searching for you"
+msgstr "帮您寻找援助的工具"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "Try a different search or category"
+msgstr "换个关键词或分类试试"
+
+#. Empty state hint when filters hide all results
+#: src/components/chat/schemes-list.tsx
+msgid "Try adjusting the filter options to broaden the list."
+msgstr "试着调整筛选条件，查看更多援助计划。"
+
+#. Empty state hint when search returns no results
+#: src/components/chat/schemes-list.tsx
+msgid "Try asking with a broader need, fewer conditions, or a different support area."
+msgstr "试着放宽需求、减少条件，或搜索其他支援领域。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tuas"
+msgstr "大士"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Turning this over"
+msgstr "正在反复斟酌"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Understanding what support may fit your situation"
+msgstr "了解哪些援助可能适合您的情况"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Use filters to narrow down schemes by agency, category, eligibility criteria, and the type of support you need."
+msgstr "使用筛选条件，按机构、分类、申请资格和所需支持类型对援助计划进行精准搜索。"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Visit the agency website →"
+msgstr "前往机构网站 →"
+
+#. Button on the demo scheme page
+#. Button: open the scheme's official website in a new tab
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Visit website"
+msgstr "访问网站"
+
+#. Alert banner title: the scheme's URL failed health check
+#: src/components/schemes/scheme-detail.tsx
+msgid "We couldn't reach this scheme's website"
+msgstr "我们无法打开该援助计划的网站"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "We couldn’t send your feedback. Check your connection and try again."
+msgstr "无法发送您的反馈。请检查网络连接后重试。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "We couldn’t send your suggestion. Check your connection and try again."
+msgstr "无法发送您的建议。请检查网络连接后重试。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "We couldn’t send your suggestion. Try again in a few minutes."
+msgstr "无法发送您的建议。请过几分钟再试。"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "We cover 10 areas: financial assistance, family and children, health and wellbeing, housing and food, education, employment and training, seniors and caregiving, disability and transport, legal and safety, and community support."
+msgstr "我们涵盖10个领域：经济援助、家庭与儿童、健康与身心、住房与食品、教育、就业与培训、年长者与看护、残障与交通、法律与安全，以及社区支持。"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "We don't have detailed information for this scheme yet. The agency website has the full picture, including eligibility and how to apply."
+msgstr "我们目前还没有这项援助计划的详细资料。请到机构网站查看完整信息，包括申请资格和申请方法。"
+
+#: src/components/landing/sections/agencies-section.tsx
+msgid "We index schemes from key government ministries, statutory boards, and community organisations."
+msgstr "我们收录来自主要政府部门、法定机构和社区组织的援助计划。"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "We share scheme data programmatically with a small number of partner organisations, on request. It is not a self-serve public API. Get in touch if your organisation wants to integrate."
+msgstr "我们会应要求，与少数合作机构以程序化方式共享援助计划数据。这不是面向所有人的自助应用程序接口。如果您的机构希望对接，欢迎与我们联系。"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "We update scheme details regularly. Always check the latest with the agency before you apply."
+msgstr "我们会定期更新援助计划资料。申请前，请务必向机构确认最新信息。"
+
+#. Chat status step: the web page was read
+#: src/lib/status-step-copy.ts
+msgid "Web page read"
+msgstr ""
+
+#. Chat status step: the web page could not be read
+#: src/lib/status-step-copy.ts
+msgid "Web page unavailable"
+msgstr ""
+
+#. Chat status step: the web search finished
+#: src/lib/status-step-copy.ts
+msgid "Web results found"
+msgstr ""
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Weighing what might help most"
+msgstr "正在权衡什么可能最有帮助"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "West Singapore"
+msgstr "新加坡西部"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Western Islands"
+msgstr "西部群岛"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Western Water Catchment"
+msgstr "西部集水区"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "What is Schemes.sg?"
+msgstr "什么是 Schemes.sg？"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "What types of schemes are covered?"
+msgstr "涵盖哪些类型的援助计划？"
+
+#. Section label: the benefits provided
+#: src/components/schemes/scheme-detail.tsx
+msgid "What you receive"
+msgstr "可获得的援助"
+
+#. Section heading: who can apply for this scheme
+#. Tab label: eligibility requirements section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Who qualifies"
+msgstr "谁符合资格"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Woodlands"
+msgstr "兀兰"
+
+#: src/components/chat/stream-status-steps.tsx
+msgid "Working on your answer"
+msgstr "正在为您准备回答"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Working out what matters here"
+msgstr "正在厘清这里的关键要点"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Working out where to start"
+msgstr "正在确定从哪里开始"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Yes. Schemes.sg is free and needs no sign-up. We want everyone to be able to find the help that’s available."
+msgstr "是的。Schemes.sg 免费使用，也无需注册。我们希望每个人都能找到可获得的援助。"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Yishun"
+msgstr "义顺"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "You describe your situation, and we search {schemeCount}+ schemes for the closest matches, using who qualifies, where you live, and more. You can then ask follow-up questions to narrow the results."
+msgstr "说说您的情况，我们会根据申请资格、您的居住地点等，从 {schemeCount}+ 项援助计划中寻找最合适的选择。您也可以继续提问，缩小结果范围。"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "You provide the scheme name and link"
+msgstr "您提供援助计划的名称和链接"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Your feedback"
+msgstr "您的反馈"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Your privacy is protected by design. We don't require any login or account and we never ask for your name or NRIC, which means there's no way for us to know who you are. Your searches are encrypted in transit, we don't sell your information, and the measurements we use to improve the site never include what you typed."
+msgstr "您的隐私从设计上就得到保护。我们不需要登录或注册账户，也绝不会询问您的姓名或身份证号码（NRIC），因此我们无法知道您的身份。您的搜索在传输过程中加密，我们不会出售您的信息，用于改进网站的使用数据也绝不包含您输入的内容。"

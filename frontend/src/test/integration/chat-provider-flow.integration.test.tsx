@@ -12,6 +12,7 @@ import {
 } from "@/test/fixtures/chat-stream";
 import { TEST_API_URL } from "@/test/mocks/handlers";
 import { server } from "@/test/mocks/server";
+import { I18nWrapper } from "@/test/i18n-wrapper";
 
 const analyticsMocks = vi.hoisted(() => ({ track: vi.fn() }));
 
@@ -91,9 +92,11 @@ describe("chat provider flow", () => {
     );
     const user = userEvent.setup();
     render(
-      <ChatProvider>
+      <I18nWrapper>
+        <ChatProvider>
         <ChatJourney />
-      </ChatProvider>,
+      </ChatProvider>
+      </I18nWrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "Start chat" }));
@@ -124,7 +127,7 @@ describe("chat provider flow", () => {
     );
 
     await user.click(
-      screen.getAllByRole("button", { name: "Good response" })[0],
+      screen.getAllByRole("button", { name: "Helpful" })[0],
     );
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
     expect(feedbackRequests[0]).toEqual({
@@ -144,12 +147,14 @@ describe("chat provider flow", () => {
     );
     const user = userEvent.setup();
     render(
-      <ChatProvider>
+      <I18nWrapper>
+        <ChatProvider>
         <ChatJourney
           message="I need urgent support"
           previousAnswer="Your earlier support answer"
         />
-      </ChatProvider>,
+      </ChatProvider>
+      </I18nWrapper>,
     );
 
     await user.click(screen.getByRole("button", { name: "Start chat" }));

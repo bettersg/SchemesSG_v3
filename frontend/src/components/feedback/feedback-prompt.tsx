@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { timeout as motionTimeout } from "@/lib/design-system/motion";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 type FeedbackPromptProps =
   | {
@@ -54,6 +55,7 @@ function RatingActions({
   onRate: (rating: "up" | "down") => void;
   className?: string;
 }) {
+  const { t } = useLingui();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -68,15 +70,15 @@ function RatingActions({
 
   return (
     <div
-      aria-label="Response actions"
+      aria-label={t`Response actions`}
       className={cn("flex w-fit items-center gap-0.5", className)}
     >
       <button
         type="button"
         onClick={() => onRate("up")}
-        aria-label="Good response"
+        aria-label={t({ message: "Helpful", comment: "Thumbs-up button tooltip and aria label" })}
         aria-pressed={rating === "up"}
-        title="Good response"
+        title={t({ message: "Helpful", comment: "Thumbs-up button tooltip and aria label" })}
         className={cn(
           actionButtonBase,
           rating === "up" &&
@@ -93,9 +95,9 @@ function RatingActions({
       <button
         type="button"
         onClick={() => onRate("down")}
-        aria-label="Bad response"
+        aria-label={t({ message: "Not helpful", comment: "Thumbs-down button tooltip and aria label" })}
         aria-pressed={rating === "down"}
-        title="Bad response"
+        title={t({ message: "Not helpful", comment: "Thumbs-down button tooltip and aria label" })}
         className={cn(
           actionButtonBase,
           rating === "down" &&
@@ -112,8 +114,8 @@ function RatingActions({
       <button
         type="button"
         onClick={handleCopy}
-        aria-label={copied ? "Copied" : "Copy response"}
-        title={copied ? "Copied" : "Copy"}
+        aria-label={copied ? t`Copied` : t`Copy response`}
+        title={copied ? t`Copied` : t`Copy`}
         className={actionButtonBase}
       >
         {copied ? (
@@ -129,7 +131,7 @@ function RatingActions({
       <Popover>
         <Button
           variant="ghost"
-          aria-label="More actions"
+          aria-label={t({ message: "More actions", comment: "Button to show additional feedback options" })}
           className={cn(
             actionButtonBase,
             "min-h-0 min-w-0 border-0 bg-transparent p-0 [&_svg]:size-[15px]",
@@ -166,7 +168,7 @@ function RatingActions({
                 strokeWidth={2}
                 className="shrink-0"
               />
-              Give feedback
+              <Trans comment="Menu item in the message actions popover">Give feedback</Trans>
             </Link>
           </Popover.Dialog>
         </Popover.Content>
@@ -206,7 +208,7 @@ export default function FeedbackPrompt(props: FeedbackPromptProps) {
         )}
       >
         <Pencil size={16} strokeWidth={2} className="shrink-0" />
-        Suggest a correction
+        <Trans comment="Link button to report a scheme correction">Suggest a correction</Trans>
       </Link>
     );
   }
@@ -223,7 +225,7 @@ export default function FeedbackPrompt(props: FeedbackPromptProps) {
         )}
       >
         <PlusCircle size={16} strokeWidth={2} className="shrink-0" />
-        Contribute a new scheme
+        <Trans comment="Link button to contribute a new scheme">Contribute a new scheme</Trans>
       </Link>
     );
   }
@@ -239,7 +241,7 @@ export default function FeedbackPrompt(props: FeedbackPromptProps) {
       )}
     >
       <MessageSquareText size={16} strokeWidth={2} className="shrink-0" />
-      Share general feedback
+      <Trans comment="Link button to open general feedback form">Share general feedback</Trans>
     </Link>
   );
 }

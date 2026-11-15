@@ -86,12 +86,10 @@ describe("feedback and contribution flows", () => {
       screen.getByRole("textbox", { name: "Email" }),
       "aisha@example.com",
     );
-    await user.click(
-      screen.getByRole("button", { name: "Submit Feedback" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Send feedback" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Thank you for your feedback!",
+      "Thanks for your feedback.",
     );
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
     expect(feedbackRequests[0]).toEqual({
@@ -120,18 +118,14 @@ describe("feedback and contribution flows", () => {
     const user = userEvent.setup();
     const feedback = screen.getByRole("textbox", { name: "Your feedback" });
 
-    expect(feedback).toHaveValue(
-      "Chat response feedback (not helpful):\n\n",
-    );
+    expect(feedback).toHaveValue("Chat response feedback (not helpful):\n\n");
     await user.type(feedback, "The response missed the relevant scheme.");
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Ben");
     await user.type(
       screen.getByRole("textbox", { name: "Email" }),
       "ben@example.com",
     );
-    await user.click(
-      screen.getByRole("button", { name: "Submit Feedback" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Send feedback" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Feedback service unavailable",
@@ -163,12 +157,10 @@ describe("feedback and contribution flows", () => {
       screen.getByRole("textbox", { name: "Email" }),
       "devi@example.com",
     );
-    await user.click(
-      screen.getByRole("button", { name: "Submit Feedback" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Send feedback" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Thank you for your feedback!",
+      "Thanks for your feedback.",
     );
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
     expect(feedbackRequests[0].body).toEqual({
@@ -187,7 +179,7 @@ describe("feedback and contribution flows", () => {
     const name = screen.getByRole("textbox", { name: "Name" });
     const email = screen.getByRole("textbox", { name: "Email" });
     const feedback = screen.getByRole("textbox", { name: "Your feedback" });
-    const submit = screen.getByRole("button", { name: "Submit Feedback" });
+    const submit = screen.getByRole("button", { name: "Send feedback" });
 
     expect(name).toBeRequired();
     expect(email).toBeRequired();
@@ -215,7 +207,7 @@ describe("feedback and contribution flows", () => {
 
     expect(schemeName).toBeRequired();
     expect(schemeLink).toBeRequired();
-    await user.click(screen.getByRole("button", { name: "Submit Scheme" }));
+    await user.click(screen.getByRole("button", { name: "Submit scheme" }));
 
     expect(schemeName).toBeInvalid();
     expect(schemeLink).toBeInvalid();
@@ -235,10 +227,10 @@ describe("feedback and contribution flows", () => {
       screen.getByRole("textbox", { name: "Scheme link" }),
       "javascript:alert(1)",
     );
-    await user.click(screen.getByRole("button", { name: "Submit Scheme" }));
+    await user.click(screen.getByRole("button", { name: "Submit scheme" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Please enter a valid URL (e.g., https://example.com).",
+      "Enter the full link, including http:// or https://",
     );
     expect(contributionRequests).toEqual([]);
   });
@@ -252,10 +244,10 @@ describe("feedback and contribution flows", () => {
     const schemeLink = screen.getByRole("textbox", { name: "Scheme link" });
     await user.type(schemeName, "Community Support Grant");
     await user.type(schemeLink, "https://support.example.test/grant");
-    await user.click(screen.getByRole("button", { name: "Submit Scheme" }));
+    await user.click(screen.getByRole("button", { name: "Submit scheme" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Thank you! Your submission has been received.",
+      "Thanks, we’ve received your suggestion.",
     );
     await waitFor(() => expect(contributionRequests).toHaveLength(1));
     expect(contributionRequests[0]).toEqual({
@@ -282,7 +274,7 @@ describe("feedback and contribution flows", () => {
     const schemeLink = screen.getByRole("textbox", { name: "Scheme link" });
     await user.type(schemeName, "Community Support Grant");
     await user.type(schemeLink, "https://support.example.test/grant");
-    await user.click(screen.getByRole("button", { name: "Submit Scheme" }));
+    await user.click(screen.getByRole("button", { name: "Submit scheme" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Contribution service unavailable",

@@ -5,46 +5,136 @@ import {
   ArrowRight,
   Building2,
   Check,
-  ChevronDown,
   ExternalLink,
   HeartPulse,
   Mail,
   MapPin,
-  MousePointer2,
   MousePointerClick,
   Phone,
   Search,
   Share2,
   Sparkles,
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import SchemeLogo from "@/components/schemes/scheme-logo";
 import BulletItem from "@/components/schemes/bullet-item";
 import SectionLabel from "@/components/schemes/section-label";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
 import { SectionWrapper } from "@/components/landing/shared/section-wrapper";
-import { useLanguage } from "@/lib/landing-i18n";
+import { plural } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useSchemeCount } from "@/lib/scheme-count";
 import {
-  productButtonDefault,
-  productButtonOutlineBlue,
   productButtonOutlineNeutral,
   productButtonProminent,
   productButtonSolidAmber,
   productCard,
 } from "@/lib/design-system/product-styles";
-import {
-  motionPreset,
-  transition,
-  viewport,
-} from "@/lib/design-system/motion";
+import { motionPreset, transition, viewport } from "@/lib/design-system/motion";
 import { getSchemeCategoryChipClassName } from "@/lib/design-system/categories";
 import { cn } from "@/lib/utils";
-import type { Translations } from "@/lib/landing-i18n/types";
 
-type TutorialCopy = Translations["features"]["tutorial"] & {
-  submitExampleQuery: string;
-};
+function useTutorialCopy() {
+  const { t } = useLingui();
+  return {
+    composerLabel: t({
+      message: "Describe your situation",
+      comment: "Search box label in the feature walkthrough demo",
+    }),
+    categoryPrompts: [
+      t({ message: "Financial Assistance" }),
+      t({ message: "Family & Children" }),
+      t({ message: "Health & Wellbeing" }),
+    ],
+    progress: [
+      t({ message: "Understanding what support may fit your situation" }),
+      t({ message: "Comparing schemes from trusted agencies" }),
+    ],
+    assistant: t({
+      message:
+        "I found schemes that may help with household expenses and childcare costs.",
+    }),
+    found: plural(10, {
+      one: "# scheme found",
+      other: "# schemes found",
+    }),
+    filterAll: t({
+      message: "All matches",
+      comment: "Filter chip in the demo results",
+    }),
+    filterAgency: "MSF",
+    filterHealthcare: t({ message: "Health & Wellbeing" }),
+    filters: t({ message: "Filter by agency or support type" }),
+    detailTabs: [
+      t({ message: "Overview" }),
+      t({ message: "Who qualifies" }),
+      t({ message: "How to apply" }),
+      t({ message: "Agency details" }),
+    ],
+    previewSchemes: [
+      {
+        agency: t({ message: "Ministry of Social and Family Development" }),
+        name: t({ message: "ComCare Short-to-Medium-Term Assistance" }),
+        summary: t({
+          message:
+            "Financial support for households facing temporary difficulty with essential expenses.",
+        }),
+        typeLabel: t({ message: "Financial Assistance" }),
+      },
+      {
+        agency: t({ message: "Ministry of Health" }),
+        name: t({ message: "Community Health Assist Scheme (CHAS)" }),
+        summary: t({
+          message:
+            "Subsidies for medical and dental care at participating clinics.",
+        }),
+        typeLabel: t({ message: "Health & Wellbeing" }),
+      },
+    ],
+    detailAgency: t({ message: "Ministry of Social and Family Development" }),
+    detailScheme: t({ message: "ComCare Short-to-Medium-Term Assistance" }),
+    detailCategoryLabel: t({ message: "Financial Assistance" }),
+    overview: t({
+      message:
+        "Short-term financial support for lower-income households facing temporary difficulty.",
+    }),
+    qualifies: [
+      t({ message: "Singapore Citizens and Permanent Residents" }),
+      t({ message: "Households needing help with essential expenses" }),
+    ],
+    apply: t({
+      message:
+        "Contact your nearest Social Service Office to discuss your circumstances and next steps.",
+    }),
+    serviceArea: t({
+      message: "Service area",
+      comment: "Field label on the demo scheme page",
+    }),
+    serviceAreaValue: t({
+      message: "Available islandwide through Social Service Offices.",
+    }),
+    contacts: t({
+      message: "Branches and contacts",
+      comment: "Section heading on the demo scheme page",
+    }),
+    branchCentral: t({ message: "Central Singapore" }),
+    branchWest: t({ message: "West Singapore" }),
+    centralAddress: t({ message: "512 Thomson Road, Singapore 298136" }),
+    westAddress: t({
+      message: "Block 135 Jurong Gateway Road, Singapore 600135",
+    }),
+    phone: "1800 222 0000",
+    email: "comcare@msf.gov.sg",
+    visit: t({
+      message: "Visit website",
+      comment: "Button on the demo scheme page",
+    }),
+    share: t({
+      message: "Share scheme",
+      comment: "Button on the demo scheme page",
+    }),
+  };
+}
 
 type PreviewScheme = {
   agency: string;
@@ -85,13 +175,9 @@ function TutorialFrame({
   );
 }
 
-function ComposerPreview({
-  copy,
-  placeholder,
-}: {
-  copy: TutorialCopy;
-  placeholder: string;
-}) {
+function ComposerPreview({ placeholder }: { placeholder: string }) {
+  const TUTORIAL_COPY = useTutorialCopy();
+  const { t } = useLingui();
   const [query, setQuery] = useState(placeholder);
 
   useEffect(() => {
@@ -102,7 +188,9 @@ function ComposerPreview({
     <TutorialFrame>
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-(--schemes-blue-900)">
         <Search size={15} />
-        {copy.composerLabel}
+        <Trans comment="Label above the demo search input in the features tutorial">
+          Describe your situation
+        </Trans>
       </div>
       <div className="rounded-2xl border border-(--schemes-blue-100) bg-white p-3 shadow-sm focus-within:ring-2 focus-within:ring-(--schemes-blue-100)">
         <textarea
@@ -114,7 +202,10 @@ function ComposerPreview({
         <div className="mt-2 flex justify-end">
           <button
             type="button"
-            aria-label={copy.submitExampleQuery}
+            aria-label={t({
+              comment: "Alt text for the submit button in the demo composer",
+              message: "Search for this example",
+            })}
             className="flex size-10 items-center justify-center rounded-full bg-(--schemes-amber-400) text-(--schemes-ink) transition-colors hover:bg-(--schemes-amber-500)"
           >
             <ArrowRight size={17} />
@@ -122,7 +213,7 @@ function ComposerPreview({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        {copy.categoryPrompts.map((category) => (
+        {TUTORIAL_COPY.categoryPrompts.map((category) => (
           <button
             type="button"
             key={category}
@@ -137,7 +228,8 @@ function ComposerPreview({
   );
 }
 
-function SearchProgressPreview({ copy }: { copy: TutorialCopy }) {
+function SearchProgressPreview() {
+  const TUTORIAL_COPY = useTutorialCopy();
   return (
     <TutorialFrame className="flex min-h-72 flex-col justify-center">
       <div className="mb-4 flex items-center gap-2">
@@ -151,19 +243,19 @@ function SearchProgressPreview({ copy }: { copy: TutorialCopy }) {
         ))}
       </div>
       <div className="space-y-2">
-        {copy.progress.map((message, index) => (
+        {TUTORIAL_COPY.progress.map((message, index) => (
           <div
             key={message}
             className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium text-(--schemes-ink-soft)"
           >
             <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-(--schemes-blue-50) text-(--schemes-blue-600)">
-              {index === copy.progress.length - 1 ? (
+              {index === TUTORIAL_COPY.progress.length - 1 ? (
                 <Sparkles size={12} />
               ) : (
                 <Check size={12} strokeWidth={3} />
               )}
             </span>
-            {index === copy.progress.length - 1 ? (
+            {index === TUTORIAL_COPY.progress.length - 1 ? (
               <StatusTextShimmer>{message}</StatusTextShimmer>
             ) : (
               <span>{message}</span>
@@ -172,14 +264,14 @@ function SearchProgressPreview({ copy }: { copy: TutorialCopy }) {
         ))}
       </div>
       <div className="mt-4 max-w-[92%] rounded-2xl rounded-bl-md border border-(--schemes-border) bg-white px-3.5 py-3 text-sm leading-relaxed text-(--schemes-ink-soft)">
-        {copy.assistant}
+        {TUTORIAL_COPY.assistant}
       </div>
       <button
         type="button"
         className="mt-2 inline-flex w-fit items-center gap-2 rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) px-3 py-1.5 text-xs font-semibold text-(--schemes-status-info-text)"
       >
         <span className="size-1.5 rounded-full bg-(--schemes-blue-400)" />
-        {copy.found}
+        {TUTORIAL_COPY.found}
       </button>
     </TutorialFrame>
   );
@@ -216,9 +308,10 @@ function MiniSchemeCard({ scheme }: { scheme: PreviewScheme }) {
   );
 }
 
-function ResultsPreview({ copy }: { copy: TutorialCopy }) {
+function ResultsPreview() {
+  const TUTORIAL_COPY = useTutorialCopy();
   const [filter, setFilter] = useState<"all" | "msf" | "health">("all");
-  const previewSchemes: PreviewScheme[] = copy.previewSchemes.map(
+  const previewSchemes: PreviewScheme[] = TUTORIAL_COPY.previewSchemes.map(
     (scheme, index) => ({
       ...scheme,
       ...PREVIEW_SCHEME_META[index],
@@ -232,18 +325,24 @@ function ResultsPreview({ copy }: { copy: TutorialCopy }) {
         : previewSchemes;
 
   const filters = [
-    { id: "all" as const, label: copy.filterAll, icon: Search },
-    { id: "msf" as const, label: copy.filterAgency, icon: Building2 },
-    { id: "health" as const, label: copy.filterHealthcare, icon: HeartPulse },
+    { id: "all" as const, label: TUTORIAL_COPY.filterAll, icon: Search },
+    { id: "msf" as const, label: TUTORIAL_COPY.filterAgency, icon: Building2 },
+    {
+      id: "health" as const,
+      label: TUTORIAL_COPY.filterHealthcare,
+      icon: HeartPulse,
+    },
   ];
 
   return (
     <TutorialFrame className="p-0">
       <div className="border-b border-(--schemes-border) bg-white px-3 py-3">
         <p className="text-sm font-semibold text-(--schemes-blue-600)">
-          {copy.found}
+          {TUTORIAL_COPY.found}
         </p>
-        <p className="mt-0.5 text-xs text-(--schemes-muted)">{copy.filters}</p>
+        <p className="mt-0.5 text-xs text-(--schemes-muted)">
+          {TUTORIAL_COPY.filters}
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {filters.map(({ id, label, icon: Icon }) => (
             <button
@@ -272,7 +371,8 @@ function ResultsPreview({ copy }: { copy: TutorialCopy }) {
   );
 }
 
-function DetailPreview({ copy }: { copy: TutorialCopy }) {
+function DetailPreview() {
+  const TUTORIAL_COPY = useTutorialCopy();
   const [activeTab, setActiveTab] = useState(0);
 
   return (
@@ -280,16 +380,16 @@ function DetailPreview({ copy }: { copy: TutorialCopy }) {
       <div className="border-b border-(--schemes-border-neutral) bg-white p-4">
         <div className="flex items-center gap-3">
           <SchemeLogo
-            agency={copy.detailAgency}
+            agency={TUTORIAL_COPY.detailAgency}
             image="/landing/logos/msf.jpg"
             size="md"
           />
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-(--schemes-muted)">
-              {copy.detailAgency}
+              {TUTORIAL_COPY.detailAgency}
             </p>
             <h4 className="mt-1 font-(--font-head) text-lg font-semibold leading-tight text-(--schemes-blue-900)">
-              {copy.detailScheme}
+              {TUTORIAL_COPY.detailScheme}
             </h4>
             <div className="mt-2">
               <span
@@ -298,13 +398,13 @@ function DetailPreview({ copy }: { copy: TutorialCopy }) {
                   "px-2 py-0.5 text-[10px] font-semibold",
                 )}
               >
-                {copy.detailCategoryLabel}
+                {TUTORIAL_COPY.detailCategoryLabel}
               </span>
             </div>
           </div>
         </div>
         <div className="no-scrollbar mt-4 flex gap-1 overflow-x-auto rounded-xl border border-(--schemes-border) bg-(--schemes-blue-50) p-1">
-          {copy.detailTabs.map((tab, index) => (
+          {TUTORIAL_COPY.detailTabs.map((tab, index) => (
             <button
               type="button"
               key={tab}
@@ -322,40 +422,40 @@ function DetailPreview({ copy }: { copy: TutorialCopy }) {
       <div className="min-h-36 bg-white p-4">
         {activeTab === 0 && (
           <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
-            {copy.overview}
+            {TUTORIAL_COPY.overview}
           </p>
         )}
         {activeTab === 1 && (
           <div className="space-y-2">
-            {copy.qualifies.map((item) => (
+            {TUTORIAL_COPY.qualifies.map((item) => (
               <BulletItem key={item}>{item}</BulletItem>
             ))}
           </div>
         )}
         {activeTab === 2 && (
           <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
-            {copy.apply}
+            {TUTORIAL_COPY.apply}
           </p>
         )}
         {activeTab === 3 && (
           <div className="space-y-5">
             <div>
-              <SectionLabel>{copy.serviceArea}</SectionLabel>
+              <SectionLabel>{TUTORIAL_COPY.serviceArea}</SectionLabel>
               <p className="text-sm leading-relaxed text-(--schemes-ink-soft)">
-                {copy.serviceAreaValue}
+                {TUTORIAL_COPY.serviceAreaValue}
               </p>
             </div>
             <div>
-              <SectionLabel>{copy.contacts}</SectionLabel>
+              <SectionLabel>{TUTORIAL_COPY.contacts}</SectionLabel>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   {
-                    area: copy.branchCentral,
-                    address: copy.centralAddress,
+                    area: TUTORIAL_COPY.branchCentral,
+                    address: TUTORIAL_COPY.centralAddress,
                   },
                   {
-                    area: copy.branchWest,
-                    address: copy.westAddress,
+                    area: TUTORIAL_COPY.branchWest,
+                    address: TUTORIAL_COPY.westAddress,
                   },
                 ].map((contact) => (
                   <div
@@ -375,11 +475,11 @@ function DetailPreview({ copy }: { copy: TutorialCopy }) {
                     </div>
                     <div className="flex items-center gap-2 text-(--schemes-blue-600)">
                       <Phone size={15} strokeWidth={2} className="shrink-0" />
-                      {copy.phone}
+                      {TUTORIAL_COPY.phone}
                     </div>
                     <div className="flex items-center gap-2 break-all text-(--schemes-blue-600)">
                       <Mail size={15} strokeWidth={2} className="shrink-0" />
-                      {copy.email}
+                      {TUTORIAL_COPY.email}
                     </div>
                   </div>
                 ))}
@@ -393,14 +493,14 @@ function DetailPreview({ copy }: { copy: TutorialCopy }) {
             className={`${productButtonOutlineNeutral} ${productButtonProminent} pointer-events-none w-full`}
           >
             <Share2 size={14} strokeWidth={2} className="shrink-0" />
-            {copy.share}
+            {TUTORIAL_COPY.share}
           </div>
           <div
             aria-hidden="true"
             className={`${productButtonSolidAmber} ${productButtonProminent} pointer-events-none relative w-full`}
           >
             <ExternalLink size={14} strokeWidth={2} className="shrink-0" />
-            {copy.visit}
+            {TUTORIAL_COPY.visit}
             <MousePointerClick
               size={32}
               strokeWidth={1.2}
@@ -419,15 +519,14 @@ function WalkthroughRow({
   description,
   preview,
   reverse = false,
-  stepLabel,
 }: {
   step: number;
   title: string;
   description: string;
   preview: React.ReactNode;
   reverse?: boolean;
-  stepLabel: string;
 }) {
+  const { t } = useLingui();
   const reduceMotion = useReducedMotion();
 
   return (
@@ -442,8 +541,14 @@ function WalkthroughRow({
     >
       <div className={cn(reverse && "md:order-2")}>
         <div className="mb-4 flex size-9 items-center justify-center rounded-full bg-(--schemes-blue-50) text-sm font-semibold text-(--schemes-blue-600)">
-          <span className="sr-only">{stepLabel} </span>
-          {step}
+          <span className="sr-only">
+            {t({
+              comment:
+                "Screen-reader label for a numbered step in the feature walkthrough",
+              message: `Step ${step}`,
+            })}
+          </span>
+          <span aria-hidden="true">{step}</span>
         </div>
         <h3 className="font-(--font-head) text-2xl font-semibold leading-tight text-(--schemes-blue-900)">
           {title}
@@ -458,11 +563,8 @@ function WalkthroughRow({
 }
 
 export function FeaturesSection() {
-  const { t } = useLanguage();
-  const copy = {
-    ...t.features.tutorial,
-    submitExampleQuery: t.a11y.submitExampleQuery,
-  };
+  const { t } = useLingui();
+  const schemeCount = useSchemeCount();
 
   return (
     <SectionWrapper id="features" className="overflow-hidden bg-neutral-50">
@@ -474,47 +576,44 @@ export function FeaturesSection() {
         transition={transition.entrance}
       >
         <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl lg:text-[2.75rem]">
-          {t.features.heading}
+          <Trans>Tools that do the searching for you</Trans>
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          {t.features.subtitle}
+          <Trans>
+            From your first question to how to apply, in one place.
+          </Trans>
         </p>
       </motion.div>
 
       <div className="mx-auto mt-12 max-w-5xl md:mt-16 flex flex-col gap-20 md:gap-24">
         <WalkthroughRow
           step={1}
-          stepLabel={copy.step}
-          title={t.features.cards.search.title}
-          description={t.features.cards.search.description}
+          title={t`Find schemes that fit you`}
+          description={t`Describe your situation in your own words. We find the schemes that fit best, without the jargon.`}
           preview={
             <ComposerPreview
-              copy={copy}
-              placeholder={t.hero.searchPlaceholder}
+              placeholder={t`I'm a single parent looking for financial assistance…`}
             />
           }
         />
         <WalkthroughRow
           step={2}
-          stepLabel={copy.step}
-          title={t.features.cards.database.title}
-          description={t.features.cards.database.description}
-          preview={<SearchProgressPreview copy={copy} />}
+          title={t`How we find your matches`}
+          description={t`Simply type your question, and Schemes.sg instantly scans more than ${schemeCount} government and community assistance programs to show you what help is available.`}
+          preview={<SearchProgressPreview />}
           reverse
         />
         <WalkthroughRow
           step={3}
-          stepLabel={copy.step}
-          title={t.features.cards.filter.title}
-          description={t.features.cards.filter.description}
-          preview={<ResultsPreview copy={copy} />}
+          title={t`Narrow down to the schemes that fit`}
+          description={t`Use filters to narrow down schemes by agency, category, eligibility criteria, and the type of support you need.`}
+          preview={<ResultsPreview />}
         />
         <WalkthroughRow
           step={4}
-          stepLabel={copy.step}
-          title={t.howItWorks.steps[2].title}
-          description={t.howItWorks.steps[2].description}
-          preview={<DetailPreview copy={copy} />}
+          title={t`Apply directly with the agency`}
+          description={t`See who qualifies, what you get, and where to apply for each scheme.`}
+          preview={<DetailPreview />}
           reverse
         />
       </div>

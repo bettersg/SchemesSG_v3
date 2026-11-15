@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useReducedMotion } from "framer-motion";
+import { Trans } from "@lingui/react/macro";
 
 type SchemesPanelPulseProps = {
   active: boolean;
@@ -28,7 +29,9 @@ export function SchemesPanelPulse({
             aria-hidden="true"
             className="absolute -right-2 -top-1 size-2 rounded-full bg-(--schemes-blue-400)"
           />
-          <span className="sr-only">New schemes available</span>
+          <span className="sr-only">
+            <Trans>New schemes available</Trans>
+          </span>
         </>
       )}
     </span>

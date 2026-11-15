@@ -19,12 +19,12 @@ test("user can search from the landing page and receive streamed results", async
 
   await expect(
     page.getByRole("heading", {
-      name: "Find the Right Schemes, All in One Place",
+      name: "Find the Right Assistance Schemes in Singapore",
     }),
   ).toBeVisible();
 
   const searchInput = page.getByPlaceholder(
-    "I'm a single parent looking for financial assistance...",
+    "I'm a single parent looking for financial assistance…",
   );
   await waitForHydration(searchInput);
   await searchInput.fill(LANDING_QUERY);
