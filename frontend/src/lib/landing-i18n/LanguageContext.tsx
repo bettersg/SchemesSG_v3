@@ -62,6 +62,12 @@ function subscribe(onChange: () => void) {
   }
 }
 
+// Switches the language on screen in this tab only, without saving it.
+function show(locale: Locale) {
+  cached = locale
+  listeners.forEach((notify) => notify())
+}
+
 // The Chinese face's 90 @font-face rules stay out of the bundle: Next inlines
 // bundled CSS into every prerendered page, so English visitors would pay for
 // them. The stylesheet is linked the first time a visitor picks Chinese.
@@ -79,13 +85,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const setLocale = useCallback((newLocale: Locale) => {
-    cached = newLocale
     try {
       localStorage.setItem(STORAGE_KEY, newLocale)
     } catch {
       // ignore
     }
-    listeners.forEach((notify) => notify())
+    show(newLocale)
   }, [])
 
   // Mirrors the locale onto <html lang> on every change, including a preference
@@ -103,10 +108,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     activateLocale(locale).catch((error: unknown) => {
       console.error(`Could not load the ${locale} translations`, error)
       // Fall back to the language still on screen, unless a newer choice
-      // has replaced this one.
-      if (getSnapshot() === locale) setLocale(i18n.locale as Locale)
+      // has replaced this one. The saved choice stays, so the next page load
+      // tries this language again.
+      if (getSnapshot() === locale) show(i18n.locale as Locale)
     })
-  }, [locale, setLocale])
+  }, [locale])
 
   const value = useMemo(
     () => ({ locale, setLocale }),

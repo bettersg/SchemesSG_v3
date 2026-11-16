@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LanguageProvider, useLanguage } from "@/lib/landing-i18n";
 import { activateLocale, i18n } from "./lingui";
@@ -13,8 +13,13 @@ vi.mock("@/locales/ms/messages", () => {
 });
 
 function Probe() {
-  const { setLocale } = useLanguage();
-  return <button onClick={() => setLocale("ms")}>ms</button>;
+  const { locale, setLocale } = useLanguage();
+  return (
+    <>
+      <p>Showing {locale}</p>
+      <button onClick={() => setLocale("ms")}>ms</button>
+    </>
+  );
 }
 
 describe("activateLocale", () => {
@@ -46,7 +51,7 @@ describe("activateLocale", () => {
     expect(i18n.locale).toBe("en");
   });
 
-  it("puts the saved choice and page language back when a catalog fails", async () => {
+  it("shows the language still on screen but keeps the saved choice when a catalog fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     render(
       <LanguageProvider>
@@ -56,8 +61,10 @@ describe("activateLocale", () => {
 
     act(() => screen.getByRole("button", { name: "ms" }).click());
 
-    await waitFor(() => expect(localStorage.getItem("schemes-lang")).toBe("en"));
+    expect(await screen.findByText("Showing en")).toBeVisible();
     expect(document.documentElement.lang).toBe("en");
     expect(i18n.locale).toBe("en");
+    // A failed download is usually transient, so the next visit tries again.
+    expect(localStorage.getItem("schemes-lang")).toBe("ms");
   });
 });
