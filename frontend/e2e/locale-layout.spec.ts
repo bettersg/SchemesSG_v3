@@ -9,11 +9,12 @@ import {
 // twice the width), so every language is checked at phone and desktop widths
 // rather than trusting a layout tuned in English.
 //
-// The PR lane shares a 120s budget across all e2e specs, so it checks one
-// phone and one desktop width on the densest pages. The nightly Chromium run
-// sets LOCALE_LAYOUT_FULL=1 for every width and page.
+// The PR lane shares a 120s budget across all e2e specs, so it checks only
+// Tamil, the widest language, at one phone and one desktop width on the
+// densest pages. The nightly Chromium run sets LOCALE_LAYOUT_FULL=1 for every
+// language, width and page.
 const FULL = process.env.LOCALE_LAYOUT_FULL === "1";
-const LOCALES = ["en", "zh", "ta", "ms"] as const;
+const LOCALES = FULL ? (["en", "zh", "ta", "ms"] as const) : (["ta"] as const);
 const WIDTHS = FULL ? [320, 390, 1024, 1280] : [390, 1280];
 const PAGES = FULL
   ? [
@@ -112,10 +113,9 @@ for (const locale of LOCALES) {
 
 // A started chat has its own phone toolbar (chat and schemes tabs, New chat)
 // and a results header, neither of which exists before the first search.
-const CHAT_LOCALES = FULL ? LOCALES : (["zh", "ta"] as const);
 const CHAT_WIDTHS = FULL ? [320, 390] : [320];
 
-for (const locale of CHAT_LOCALES) {
+for (const locale of LOCALES) {
   test(`${locale}: the phone chat toolbar and results header fit the screen`, async ({
     page,
   }) => {
@@ -150,7 +150,7 @@ for (const locale of CHAT_LOCALES) {
           .map((list) => list.parentElement);
         const rows = [
           ...toolbars,
-          ...document.querySelectorAll('[role="status"]'),
+          ...document.querySelectorAll<HTMLElement>('[role="status"]'),
         ].filter((el): el is HTMLElement => !!el && el.offsetParent !== null);
         if (rows.length === 0) return ["no chat toolbar or results header found"];
         return rows
