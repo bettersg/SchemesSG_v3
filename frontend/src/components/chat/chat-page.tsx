@@ -258,10 +258,16 @@ export default function ChatPage({ onReset }: ChatPageProps) {
         if (lastMilestoneRef.current === "sent") {
           lastMilestoneRef.current = "status";
         }
-        appendStatusStep("action_message", data.label, data.message, requestId, {
-          code: data.code,
-          params: data.params,
-        });
+        appendStatusStep(
+          "action_message",
+          data.label,
+          data.message,
+          requestId,
+          {
+            code: data.code,
+            params: data.params,
+          },
+        );
         break;
       }
       case "text": {
@@ -635,14 +641,25 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           }
         >
           <Tabs.ListContainer className="p-4 flex flex-wrap gap-2 items-center">
-            <Tabs.List aria-label={t({ message: "Options", comment: "Aria label for the mobile tab list switching between chat and schemes views" })} className={productSegmentedList}>
+            <Tabs.List
+              aria-label={t({
+                message: "Options",
+                comment:
+                  "Aria label for the mobile tab list switching between chat and schemes views",
+              })}
+              className={`${productSegmentedList} w-auto grow`}
+            >
               <Tabs.Tab id="chat" className={productSegmentedTab}>
-                <Trans comment="Mobile tab label for the conversation view">Chat</Trans>
+                <Trans comment="Mobile tab label for the conversation view">
+                  Chat
+                </Trans>
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
               <Tabs.Tab id="schemes" className={productSegmentedTab}>
                 <SchemesPanelPulse active={pulseSchemesTab}>
-                  <Trans comment="Mobile tab label for the results list">Schemes</Trans>
+                  <Trans comment="Mobile tab label for the results list">
+                    Schemes
+                  </Trans>
                 </SchemesPanelPulse>
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
