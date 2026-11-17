@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout the code
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Step 1.5:  Environment variables
       - name: create env file
@@ -25,13 +25,13 @@ jobs:
 
       # Step 2: Set up Python environment
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version-file: 'backend/.python-version'
 
       # Step 3: Set up Node.js environment
       - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
 
