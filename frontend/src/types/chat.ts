@@ -8,6 +8,9 @@ export type StatusStep = {
   label: string;
   message: string;
   phase?: string;
+  /** Stable step id from the backend tool, for translated wording. */
+  code?: string;
+  params?: Record<string, string | number>;
 };
 
 export type BotMessage = {

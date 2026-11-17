@@ -52,7 +52,7 @@ test("user can stop a streaming response with the question ready to retry", asyn
   // failed first send.
   await expect(page.getByRole("button", { name: "Send message" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Search" })).toHaveCount(0);
-  await expect(page.getByText("Unable to finish response")).toHaveCount(0);
+  await expect(page.getByText("The answer stopped partway")).toHaveCount(0);
 });
 
 test("user can recover from a failed stream without losing prior results", async ({
@@ -98,7 +98,7 @@ test("user can recover from a failed stream without losing prior results", async
   await streams.failActive();
 
   await expect(
-    page.getByRole("alert").filter({ hasText: "Unable to finish response" }),
+    page.getByRole("alert").filter({ hasText: "The answer stopped partway" }),
   ).toContainText("Send it again when ready");
   await expect(failedPartialAnswer).toBeHidden();
   await expect(
@@ -140,7 +140,7 @@ test("user can recover from a failed stream without losing prior results", async
   await expect(
     page.getByText(RECOVERY_ANSWER, { exact: true }).filter({ visible: true }),
   ).toBeVisible();
-  await expect(page.getByText("Unable to finish response")).toHaveCount(0);
+  await expect(page.getByText("The answer stopped partway")).toHaveCount(0);
   await expect(
     page.getByText(LANDING_ANSWER, { exact: true }).filter({ visible: true }),
   ).toBeVisible();

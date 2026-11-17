@@ -5,6 +5,7 @@ import { motionPreset, transition } from "@/lib/design-system/motion";
 import { Button } from "../landing/ui/button";
 import { PressEvent } from "@heroui/react";
 import { clsx } from "clsx";
+import { Plural } from "@lingui/react/macro";
 
 type SchemeUpdateNoticeProps = {
   count: number;
@@ -28,7 +29,7 @@ export function SchemeUpdateNotice({
   const label = (
     <>
       <span className="h-1.5 w-1.5 rounded-full bg-(--schemes-blue-400)" />
-      {count} {count === 1 ? "scheme" : "schemes"} found
+      <Plural value={count} one="# scheme found" other="# schemes found" />
     </>
   );
 

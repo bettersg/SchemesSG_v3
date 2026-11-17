@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ChatLanding from "@/components/chat/chat-landing";
 import { LanguageToggle } from "@/components/landing/shared/language-toggle";
-import { LanguageProvider, useLanguage } from "@/lib/landing-i18n";
+import { Trans } from "@lingui/react/macro";
+import { LanguageProvider } from "@/lib/landing-i18n";
 import { ChatProvider, useChat } from "@/providers";
 
 function ChatStateProbe() {
@@ -12,8 +13,11 @@ function ChatStateProbe() {
 }
 
 function LanguageStateProbe() {
-  const { t } = useLanguage();
-  return <output aria-label="Catalog label">{t.nav.catalog}</output>;
+  return (
+    <output aria-label="Catalog label">
+      <Trans>Catalogue</Trans>
+    </output>
+  );
 }
 
 afterEach(() => {
@@ -56,16 +60,69 @@ describe("landing state", () => {
       </LanguageProvider>,
     );
 
-    await user.click(screen.getByRole("radio", { name: "中文" }));
+    await user.click(screen.getByRole("button", { name: /English|中文|தமிழ்|Melayu/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: "中文" }));
+    await user.click(screen.getByRole("button", { name: /English|中文|தமிழ்|Melayu/ }));
 
-    expect(screen.getByRole("radio", { name: "中文" })).toHaveAttribute(
+    expect(
+      await screen.findByRole("menuitemradio", { name: "中文" }),
+    ).toHaveAttribute(
       "aria-checked",
       "true",
     );
+    await user.keyboard("{Escape}");
     expect(localStorage.getItem("schemes-lang")).toBe("zh");
     expect(document.documentElement.lang).toBe("zh-Hans");
+    await waitFor(() =>
+      expect(
+        screen.getByRole("status", { name: "Catalog label" }),
+      ).toHaveTextContent("目录"),
+    );
+  });
+
+  it("switches to Tamil and persists the choice", async () => {
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <LanguageToggle />
+        <LanguageStateProbe />
+      </LanguageProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /English|中文|தமிழ்|Melayu/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: "தமிழ்" }));
+    await user.click(screen.getByRole("button", { name: /English|中文|தமிழ்|Melayu/ }));
+
     expect(
-      screen.getByRole("status", { name: "Catalog label" }),
-    ).not.toHaveTextContent("Catalog");
+      await screen.findByRole("menuitemradio", { name: "தமிழ்" }),
+    ).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(localStorage.getItem("schemes-lang")).toBe("ta");
+    expect(document.documentElement.lang).toBe("ta");
+  });
+
+  it("switches to Malay and persists the choice", async () => {
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <LanguageToggle />
+        <LanguageStateProbe />
+      </LanguageProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /English|中文|தமிழ்|Melayu/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Melayu" }));
+    await user.click(screen.getByRole("button", { name: /English|中文|தமிழ்|Melayu/ }));
+
+    expect(
+      await screen.findByRole("menuitemradio", { name: "Melayu" }),
+    ).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(localStorage.getItem("schemes-lang")).toBe("ms");
+    expect(document.documentElement.lang).toBe("ms");
   });
 });

@@ -18,8 +18,12 @@ export default function CategoryTag({
   size = "sm",
   className,
 }: CategoryTagProps) {
+  // Category names come from the scheme data, which is English, so the pill
+  // keeps English pronunciation and is not enlarged by the Chinese and Tamil
+  // size floors in globals.css.
   return (
     <span
+      lang="en"
       className={getSchemeCategoryChipClassName(
         label,
         `${SIZE_CLASSES[size]} ${className ?? ""}`,

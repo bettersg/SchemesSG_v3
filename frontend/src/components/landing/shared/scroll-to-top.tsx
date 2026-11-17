@@ -3,6 +3,7 @@
 import { ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { REVEAL_CHROME_EVENT } from "@/hooks/use-hide-on-scroll";
+import { useLingui } from "@lingui/react/macro";
 
 /**
  * Back-to-top button for the long reference pages (/developers, /privacy,
@@ -11,6 +12,7 @@ import { REVEAL_CHROME_EVENT } from "@/hooks/use-hide-on-scroll";
  * match the chat's jump-to-latest control.
  */
 export function ScrollToTop() {
+  const { t } = useLingui();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function ScrollToTop() {
         window.dispatchEvent(new Event(REVEAL_CHROME_EVENT));
         window.scrollTo({ top: 0, behavior: reduce ? "instant" : "smooth" });
       }}
-      aria-label="Scroll to top"
+      aria-label={t({ message: "Scroll to top", comment: "Button that scrolls the page back to the top" })}
       className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 inline-flex size-11 items-center justify-center rounded-full border border-(--schemes-border) bg-white/85 text-(--schemes-blue-600) shadow-[0_4px_14px_rgba(24,95,165,0.10)] backdrop-blur-md transition-[background-color,color,box-shadow] hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-900) lg:hidden"
     >
       <ArrowUp size={16} strokeWidth={2} />

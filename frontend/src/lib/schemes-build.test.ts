@@ -8,8 +8,10 @@ import {
   getAllCatalogSchemes,
   getCatalogData,
   getSchemeById,
+  getSchemeCount,
   getSchemesForSitemap,
 } from "./schemes.server";
+import { FALLBACK_SCHEME_COUNT } from "./seo";
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -138,5 +140,23 @@ describe("public build-time scheme loading", () => {
     const schemes = await getSchemesForSitemap();
 
     expect(schemes.map((scheme) => scheme.schemeId)).toEqual(["listed-scheme"]);
+  });
+});
+
+describe("scheme count for landing copy", () => {
+  it("rounds the catalogue size down to the hundred", async () => {
+    vi.mocked(fetch).mockResolvedValue(catalogPage([], { total: 759 }));
+    await expect(getSchemeCount()).resolves.toBe(700);
+  });
+
+  it("falls back when the API fails or the catalogue is fixture-sized", async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error("network down"));
+    await expect(getSchemeCount()).resolves.toBe(FALLBACK_SCHEME_COUNT);
+
+    vi.mocked(fetch).mockResolvedValueOnce(catalogPage([], { total: 4 }));
+    await expect(getSchemeCount()).resolves.toBe(FALLBACK_SCHEME_COUNT);
+
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    await expect(getSchemeCount()).resolves.toBe(FALLBACK_SCHEME_COUNT);
   });
 });

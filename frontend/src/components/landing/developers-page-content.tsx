@@ -15,7 +15,6 @@ import Link from "next/link";
 import { useEffect } from "react";
 import StatusBanner from "@/components/feedback/status-banner";
 import { Body, Headline, Title } from "@/components/ui/typography";
-import { useLanguage } from "@/lib/landing-i18n";
 import { track } from "@/lib/analytics";
 import {
   API_ERRORS,
@@ -47,29 +46,44 @@ import { ScrollToTop } from "./shared/scroll-to-top";
 const PROSE = "max-w-[62ch]";
 const BODY = "text-[15px] leading-[1.65]";
 
+const ERROR_MEANINGS: Record<string, string> = {
+  invalid_request: "The parameters are wrong. The message names which one.",
+  missing_key: "No X-API-Key header was sent.",
+  invalid_key: "The key is not one we issued.",
+  revoked_key: "The key was valid and has been turned off. Talk to us.",
+  not_found: "No such scheme, or it is no longer published.",
+  scheme_retired: "The scheme was retired and merged. The body carries merged_into.",
+  unsupported_version: "The version segment is missing or unknown.",
+  method_not_allowed: "Right path, wrong HTTP method.",
+  rate_limited: "Your per-minute budget is spent. Retry-After says when.",
+  internal_error: "Something broke on our side. Safe to retry.",
+};
+
+const RATE_LIMIT_HEADER_NOTES: Record<string, string> = {
+  "X-RateLimit-Limit": "Your budget, in requests per minute.",
+  "X-RateLimit-Remaining": "What is left in the current minute.",
+  "Retry-After": "Seconds to wait. Only sent with a 429.",
+};
+
 export default function DevelopersPageContent() {
-  const { t } = useLanguage();
-  const d = t.developers;
-  const s = d.sections;
-  const l = d.labels;
 
   const navItems: NavItem[] = [
-    { id: "access", label: s.access.heading },
-    { id: "quick-start", label: s.quickStart.heading },
-    { id: "authentication", label: s.auth.heading },
-    { id: "base-url", label: s.baseUrl.heading },
-    { id: "operations", label: s.operations.heading },
+    { id: "access", label: `Getting access` },
+    { id: "quick-start", label: `Quick start` },
+    { id: "authentication", label: `Authentication` },
+    { id: "base-url", label: `Base URL and versioning` },
+    { id: "operations", label: `Operations` },
     ...OPERATIONS.map((operation) => ({
       id: operation.id,
       label: operation.name,
       method: operation.method,
       nested: true,
     })),
-    { id: "fields", label: s.fields.heading },
-    { id: "errors", label: s.errors.heading },
-    { id: "rate-limits", label: s.rateLimits.heading },
-    { id: "sync", label: s.sync.heading },
-    { id: "retired", label: s.retired.heading },
+    { id: "fields", label: `Scheme fields` },
+    { id: "errors", label: `Errors` },
+    { id: "rate-limits", label: `Rate limits` },
+    { id: "sync", label: `Keeping in sync` },
+    { id: "retired", label: `When a scheme goes away` },
   ];
 
   const quickStart = `curl "${PARTNER_API_BASE}/${PARTNER_API_VERSION}/schemes?limit=1" \\
@@ -104,9 +118,10 @@ export default function DevelopersPageContent() {
   }, []);
 
   return (
-    <div className="bg-(--schemes-bg)">
+    // The docs stay English in every site language, for technical readers.
+    <div lang="en" className="bg-(--schemes-bg)">
       <div className="mx-auto w-full max-w-7xl lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:px-6">
-        <DocsSidebar heading={d.contentsHeading} items={navItems} />
+        <DocsSidebar heading={`Contents`} items={navItems} />
 
         <div className="min-w-0 px-4 sm:px-8 lg:pr-0 lg:pl-10">
           {/* Header. No hero image and no orbs: the reader came for the endpoint.
@@ -116,14 +131,16 @@ export default function DevelopersPageContent() {
             <div className="pt-10 pb-8">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Headline as="h1" className="text-3xl sm:text-[2.25rem]">
-                  {d.heading}
+                  {`Partner API`}
                 </Headline>
                 <span className="rounded-full border border-(--schemes-status-alert-border) bg-(--schemes-status-alert-bg) px-2.5 py-1 text-[11px] font-semibold text-(--schemes-status-alert-text)">
-                  {d.accessBadge}
+                  {"By request"}
                 </span>
               </div>
 
-              <Body className={cn("mt-3", BODY, PROSE)}>{d.subtitle}</Body>
+              <Body className={cn("mt-3", BODY, PROSE)}>
+                {`Read access to the Schemes.sg catalogue, so partner organisations can surface the right scheme inside their own product.`}
+              </Body>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link
@@ -137,7 +154,7 @@ export default function DevelopersPageContent() {
                     "w-fit",
                   )}
                 >
-                  {d.requestAccess}
+                  {`Request access`}
                 </Link>
                 <code className="w-fit rounded-md border border-(--schemes-border) bg-(--schemes-surface) px-3 py-2 font-mono text-[12.5px] break-all text-(--schemes-ink-soft)">
                   {PARTNER_API_BASE}
@@ -146,90 +163,101 @@ export default function DevelopersPageContent() {
             </div>
           </header>
 
-          <Row id="access" heading={s.access.heading}>
-            <Body className={cn(BODY, PROSE)}>{s.access.body}</Body>
+          <Row id="access" heading={`Getting access`}>
+            <Body className={cn(BODY, PROSE)}>
+              {`This is not a self-serve API. We work with a small number of partner organisations, and each key is issued by hand so we know who is using the data and can reach them if something changes.`}
+            </Body>
             <StatusBanner variant="info" className="mt-4 max-w-[62ch]">
-              {s.access.gate}
+              {`Before a key is issued, we confirm our terms of use and privacy policy cover sharing scheme data with your organisation. You will get a sandbox key first, pointed at our development data, so you can build and test before touching anything live.`}
             </StatusBanner>
           </Row>
 
           <Row
             id="quick-start"
-            heading={s.quickStart.heading}
+            heading={`Quick start`}
             code={
               <CodeBlock
                 operation="quick-start"
                 language="cURL"
-                caption={l.exampleRequest}
+                caption={`Request`}
                 code={quickStart}
-                copyLabel={l.copy}
-                copiedLabel={l.copied}
-              />
-            }
-          >
-            <Body className={cn(BODY, PROSE)}>{s.quickStart.body}</Body>
-          </Row>
-
-          <Row
-            id="authentication"
-            heading={s.auth.heading}
-            code={
-              <CodeBlock
-                operation="authentication"
-                language="HTTP"
-                caption={l.header}
-                code={`${API_KEY_HEADER}: sk_schemes_xxxxxxxxxxxxxxxxxxxxxxxx`}
-                copyLabel={l.copy}
-                copiedLabel={l.copied}
+                copyLabel={"Copy"}
+                copiedLabel={"Copied"}
               />
             }
           >
             <Body className={cn(BODY, PROSE)}>
-              {s.auth.body} Send it as{" "}
+              {`One request, to check your key works and see the shape of a scheme.`}
+            </Body>
+          </Row>
+
+          <Row
+            id="authentication"
+            heading={`Authentication`}
+            code={
+              <CodeBlock
+                operation="authentication"
+                language="HTTP"
+                caption={`Header`}
+                code={`${API_KEY_HEADER}: sk_schemes_xxxxxxxxxxxxxxxxxxxxxxxx`}
+                copyLabel={"Copy"}
+                copiedLabel={"Copied"}
+              />
+            }
+          >
+            <Body className={cn(BODY, PROSE)}>
+              Every request carries your key in a header. There is no token
+              exchange, no OAuth flow, and no expiry. Send it as{" "}
               <InlineCode>{API_KEY_HEADER}</InlineCode>.
             </Body>
             <StatusBanner variant="alert" className="mt-4 max-w-[62ch]">
-              {s.auth.warning}
+              {`Keep the key on your server. It is not safe in a browser, a mobile app, or anything a user can read, because it grants your whole quota to whoever holds it.`}
             </StatusBanner>
           </Row>
 
           <Row
             id="base-url"
-            heading={s.baseUrl.heading}
+            heading={`Base URL and versioning`}
             code={
               <CodeBlock
                 operation="base-url"
                 language="HTTP"
                 caption="base"
                 code={`${PARTNER_API_BASE}/${PARTNER_API_VERSION}`}
-                copyLabel={l.copy}
-                copiedLabel={l.copied}
+                copyLabel={"Copy"}
+                copiedLabel={"Copied"}
               />
             }
           >
-            <Body className={cn(BODY, PROSE)}>{s.baseUrl.body}</Body>
+            <Body className={cn(BODY, PROSE)}>
+              {`The version is a path segment, so a future version can ship alongside this one without changing any URL you have already built against.`}
+            </Body>
             <Body className={cn("mt-3 text-[14px] leading-[1.6]", PROSE)}>
-              {s.baseUrl.versionNote}
+              {`There is one version today. A request with no version, or an unknown one, returns 404 rather than quietly falling back to v1.`}
             </Body>
           </Row>
 
-          <Row id="operations" heading={s.operations.heading}>
-            <Body className={cn(BODY, PROSE)}>{s.operations.body}</Body>
+          <Row id="operations" heading={`Operations`}>
+            <Body className={cn(BODY, PROSE)}>
+              {`Three read operations. One key covers all of them.`}
+            </Body>
           </Row>
 
           {OPERATIONS.map((operation) => (
-            <OperationRow key={operation.id} operation={operation} labels={l} />
+            <OperationRow key={operation.id} operation={operation} />
           ))}
 
-          <Row id="fields" heading={s.fields.heading} wide>
-            <Body className={cn(BODY, PROSE)}>{s.fields.body}</Body>
+          <Row id="fields" heading={`Scheme fields`} wide>
+            <Body className={cn(BODY, PROSE)}>
+              {`Every scheme we return carries exactly these fields, whether it came from list, retrieve, or search. A field with no value is null rather than absent, so the set of keys never changes. A few fields hold either a single string or an array of strings, depending on the scheme — check the type column and handle both.`}
+            </Body>
             <div className="mt-5 max-w-3xl overflow-hidden rounded-md border border-(--schemes-border)">
               <table className="w-full border-collapse text-left">
-                <caption className="sr-only">{s.fields.heading}</caption>
+                <caption className="sr-only">{`Scheme fields`}</caption>
                 <thead className="bg-(--schemes-surface)">
                   <tr>
-                    <Th>{l.field}</Th>
-                    <Th>{l.type}</Th>
+                    <Th>{`Field`}</Th>
+                    <Th>{`Type`}</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -254,34 +282,36 @@ export default function DevelopersPageContent() {
               </table>
             </div>
             <Body className={cn("mt-4 text-[14px] leading-[1.6]", PROSE)}>
-              {s.fields.omitted}
+              {`We hold other fields internally, for review workflow and ranking. Those are deliberately not part of this contract, so our internal changes cannot break your integration.`}
             </Body>
           </Row>
 
           <Row
             id="errors"
-            heading={s.errors.heading}
+            heading={`Errors`}
             wide
             code={
               <CodeBlock
                 operation="errors"
                 language="JSON"
-                caption={l.exampleResponse}
+                caption={`Response`}
                 code={ERROR_ENVELOPE}
-                copyLabel={l.copy}
-                copiedLabel={l.copied}
+                copyLabel={"Copy"}
+                copiedLabel={"Copied"}
               />
             }
           >
-            <Body className={cn(BODY, PROSE)}>{s.errors.body}</Body>
+            <Body className={cn(BODY, PROSE)}>
+              {`Every failure returns the same envelope, so you can branch on error.code and never parse a message.`}
+            </Body>
             <div className="mt-5 overflow-hidden rounded-md border border-(--schemes-border)">
               <table className="w-full border-collapse text-left">
-                <caption className="sr-only">{s.errors.heading}</caption>
+                <caption className="sr-only">{`Errors`}</caption>
                 <thead className="bg-(--schemes-surface)">
                   <tr>
-                    <Th>{l.status}</Th>
-                    <Th>{l.code}</Th>
-                    <Th>{l.meaning}</Th>
+                    <Th>{`Status`}</Th>
+                    <Th>{`Code`}</Th>
+                    <Th>{`What it means`}</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -301,7 +331,8 @@ export default function DevelopersPageContent() {
                         </code>
                       </Td>
                       <Td className="text-[14px] text-(--schemes-ink-soft)">
-                        {d.errorMeanings[error.code]}
+                        {ERROR_MEANINGS[error.code] &&
+                          ERROR_MEANINGS[error.code]}
                       </Td>
                     </tr>
                   ))}
@@ -310,8 +341,10 @@ export default function DevelopersPageContent() {
             </div>
           </Row>
 
-          <Row id="rate-limits" heading={s.rateLimits.heading}>
-            <Body className={cn(BODY, PROSE)}>{s.rateLimits.body}</Body>
+          <Row id="rate-limits" heading={`Rate limits`}>
+            <Body className={cn(BODY, PROSE)}>
+              {`Each partner gets a per-minute budget, shared across all three operations: spending it on list also spends it for search. Every response tells you where you stand, so you never have to discover the limit by hitting it.`}
+            </Body>
             <dl className="mt-5 divide-y divide-(--schemes-border-neutral)">
               {RATE_LIMIT_HEADERS.map((header) => (
                 <div key={header} className="py-3 first:pt-0 last:pb-0">
@@ -321,7 +354,8 @@ export default function DevelopersPageContent() {
                     </code>
                   </dt>
                   <dd className="mt-1 text-[14px] leading-[1.6] text-(--schemes-ink-soft)">
-                    {d.rateLimitHeaderNotes[header]}
+                    {RATE_LIMIT_HEADER_NOTES[header] &&
+                      RATE_LIMIT_HEADER_NOTES[header]}
                   </dd>
                 </div>
               ))}
@@ -330,35 +364,46 @@ export default function DevelopersPageContent() {
 
           <Row
             id="sync"
-            heading={s.sync.heading}
+            heading={`Keeping in sync`}
             code={
               <CodeBlock
                 operation="sync"
                 language="cURL"
                 code={SYNC_REQUEST}
-                copyLabel={l.copy}
-                copiedLabel={l.copied}
+                copyLabel={"Copy"}
+                copiedLabel={"Copied"}
               />
             }
           >
-            <Body className={cn(BODY, PROSE)}>{s.sync.body}</Body>
+            <Body className={cn(BODY, PROSE)}>
+              Scheme ids are stable and the same in the development and
+              production APIs, so use scheme_id as your key. Every scheme
+              carries updated_at: the latest of its last scrape, its last status
+              change and its last bulk re-tag. Do one full sync, then ask only
+              for what changed with updated_since. Those results also include
+              schemes that were retired or went inactive, with their status, so
+              you know what to drop. A bulk re-tagging run moves updated_at too,
+              so updated_since picks up the new tags.
+            </Body>
           </Row>
 
           <Row
             id="retired"
-            heading={s.retired.heading}
+            heading={`When a scheme goes away`}
             code={
               <CodeBlock
                 operation="retired"
                 language="JSON"
                 caption="404"
                 code={RETIRED_RESPONSE}
-                copyLabel={l.copy}
-                copiedLabel={l.copied}
+                copyLabel={"Copy"}
+                copiedLabel={"Copied"}
               />
             }
           >
-            <Body className={cn(BODY, PROSE)}>{s.retired.body}</Body>
+            <Body className={cn(BODY, PROSE)}>
+              {`Schemes close, and some are folded into a replacement. If you store scheme ids, handle this case: a retired scheme that was merged returns 404 with the id that replaced it, so you can follow the change instead of silently dropping the record.`}
+            </Body>
           </Row>
 
           <div className="h-16" />
@@ -412,17 +457,11 @@ function Row({
   );
 }
 
-function OperationRow({
-  operation,
-  labels,
-}: {
-  operation: ApiOperation;
-  labels: ReturnType<typeof useLanguage>["t"]["developers"]["labels"];
-}) {
+function OperationRow({ operation }: { operation: ApiOperation }) {
   const paramsHeading = {
-    query: labels.queryParams,
-    path: labels.pathParams,
-    body: labels.bodyParams,
+    query: `Query parameters`,
+    path: `Path parameters`,
+    body: `Body parameters`,
   }[operation.paramsLabel];
 
   return (
@@ -448,9 +487,9 @@ function OperationRow({
           </h3>
           <ParamList
             params={operation.params}
-            requiredLabel={labels.required}
-            optionalLabel={labels.optional}
-            exampleLabel={labels.example}
+            requiredLabel={"required"}
+            optionalLabel={"optional"}
+            exampleLabel={`For example`}
           />
         </div>
 
@@ -458,18 +497,18 @@ function OperationRow({
           <CodeBlock
             operation={operation.id}
             language="cURL"
-            caption={labels.exampleRequest}
+            caption={`Request`}
             code={operation.request}
-            copyLabel={labels.copy}
-            copiedLabel={labels.copied}
+            copyLabel={"Copy"}
+            copiedLabel={"Copied"}
           />
           <CodeBlock
             operation={operation.id}
             language="JSON"
-            caption={labels.exampleResponse}
+            caption={`Response`}
             code={operation.response}
-            copyLabel={labels.copy}
-            copiedLabel={labels.copied}
+            copyLabel={"Copy"}
+            copiedLabel={"Copied"}
           />
         </div>
       </div>

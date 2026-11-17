@@ -12,9 +12,12 @@ import {
   X,
 } from "lucide-react";
 import clsx from "clsx";
-import { capitalize, parseArrayString } from "@/lib/utils";
+import { parseArrayString } from "@/lib/utils";
+import { planningAreaLabel } from "@/lib/planning-area-labels";
 import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { track } from "@/lib/analytics";
+import { plural } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface SchemesFilterProps {
   schemes: Scheme[];
@@ -30,7 +33,7 @@ interface SchemesFilterProps {
 type FilterChipProps = {
   icon: LucideIcon;
   label: string;
-  unit: string; // plural noun for the active count, e.g. "areas", "agencies"
+  countLabel: (count: number) => string; // active label, e.g. "2 areas"
   options: string[];
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
@@ -55,6 +58,7 @@ function FilterPanel({
   formatOption: (value: string) => string;
   size: "sm" | "lg";
 }) {
+  const { t } = useLingui();
   const [query, setQuery] = useState("");
   const active = selected.size > 0;
   const lg = size === "lg";
@@ -62,8 +66,12 @@ function FilterPanel({
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return options;
-    return options.filter((o) => o.toLowerCase().includes(q));
-  }, [options, query]);
+    return options.filter(
+      (o) =>
+        o.toLowerCase().includes(q) ||
+        formatOption(o).toLowerCase().includes(q),
+    );
+  }, [options, query, formatOption]);
 
   const toggle = (value: string) => {
     const next = new Set(selected);
@@ -89,7 +97,10 @@ function FilterPanel({
           autoFocus={!lg}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={`Search ${label.toLowerCase()}…`}
+          placeholder={t({
+            message: `Search ${label.toLowerCase()}…`,
+            comment: "Filter search placeholder: search within the filter options",
+          })}
           className={clsx(
             "w-full bg-transparent text-(--schemes-ink) placeholder:text-(--schemes-muted) focus:outline-none",
             lg ? "text-base" : "text-xs",
@@ -104,7 +115,9 @@ function FilterPanel({
               lg ? "text-sm" : "text-[11px]",
             )}
           >
-            Clear
+            <Trans comment="Button: clear the active filter selections">
+              Clear
+            </Trans>
           </button>
         )}
       </div>
@@ -121,7 +134,9 @@ function FilterPanel({
               lg ? "px-2 py-6 text-sm" : "px-2 py-3 text-xs",
             )}
           >
-            No matches
+            <Trans comment="Empty state: no options match the search">
+              No matches
+            </Trans>
           </p>
         ) : (
           visible.map((option) => {
@@ -167,19 +182,23 @@ function FilterPanel({
 function FilterChip({
   icon: Icon,
   label,
-  unit,
+  countLabel,
   options,
   selected,
   onChange,
   formatOption = (v) => v,
 }: FilterChipProps) {
+  const { t } = useLingui();
   const isDesktop = useIsDesktop();
   const drawerState = useOverlayState();
   const active = selected.size > 0;
 
   const trigger = (
     <Button
-      aria-label={`Filter by ${label}`}
+      aria-label={t({
+        message: `Filter by ${label}`,
+        comment: "Button aria-label: open a filter menu",
+      })}
       className={clsx(
         "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-[background-color,border-color,color]",
         active
@@ -188,7 +207,9 @@ function FilterChip({
       )}
     >
       <Icon size={14} strokeWidth={2} className="shrink-0" />
-      <span>{active ? `${selected.size} ${unit}` : label}</span>
+      <span>
+        {active ? countLabel(selected.size) : label}
+      </span>
       {!active && (
         <ChevronDown
           size={13}
@@ -204,7 +225,10 @@ function FilterChip({
   const clearButton = active && (
     <button
       type="button"
-      aria-label={`Clear ${label} filter`}
+      aria-label={t({
+        message: `Clear ${label} filter`,
+        comment: "Button aria-label: remove all selections from this filter",
+      })}
       onClick={() => onChange(new Set())}
       className="absolute right-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center rounded-full text-(--schemes-blue-600) transition-colors hover:bg-(--schemes-blue-100)"
     >
@@ -263,7 +287,7 @@ function FilterChip({
                     onClick={() => drawerState.close()}
                     className="inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-(--schemes-blue-600) text-sm font-semibold text-white transition-colors hover:bg-(--schemes-blue-800)"
                   >
-                    Done
+                    <Trans comment="Button: close the filter panel">Done</Trans>
                   </button>
                 </div>
               </Drawer.Dialog>
@@ -286,6 +310,7 @@ function SchemesFilter({
   resetFilters,
   className,
 }: SchemesFilterProps) {
+  const { t, i18n } = useLingui();
   const allLocations: string[] = useMemo(() => {
     const locationSet = new Set<string>();
     schemes.forEach((scheme) => {
@@ -363,17 +388,34 @@ function SchemesFilter({
     <div className={clsx("flex shrink-0 items-center gap-2", className)}>
       <FilterChip
         icon={MapPin}
-        label="Location"
-        unit="areas"
+        label={t({
+          message: "Location",
+          comment: "Filter label: filter schemes by location",
+        })}
+        countLabel={(count) =>
+          plural(count, { one: "# area", other: "# areas" })
+        }
         options={locationOptions}
         selected={selectedLocations}
         onChange={applyLocations}
-        formatOption={capitalize}
+        formatOption={(value) =>
+          value === "No Location"
+            ? t({
+                message: "No location",
+                comment: "Location filter option for schemes not tied to a planning area",
+              })
+            : planningAreaLabel(i18n, value)
+        }
       />
       <FilterChip
         icon={Building2}
-        label="Agency"
-        unit="agencies"
+        label={t({
+          message: "Agency",
+          comment: "Filter label: filter schemes by agency",
+        })}
+        countLabel={(count) =>
+          plural(count, { one: "# agency", other: "# agencies" })
+        }
         options={agencyOptions}
         selected={selectedAgencies}
         onChange={applyAgencies}

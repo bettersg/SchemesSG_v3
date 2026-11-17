@@ -2,7 +2,7 @@
 import { useChat } from "@/providers";
 import type { BotMessage, QuickReplySuggestion, StatusStep } from "@/providers";
 import { RawSchemeData, Scheme } from "@/types/types";
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SchemesList from "@/components/chat/schemes-list";
 import ChatMessageList from "@/components/chat/chat-message-list";
 import ChatInputBar from "@/components/chat/chat-input-bar";
@@ -12,6 +12,7 @@ import { mapToScheme } from "@/lib/scheme-mappers";
 import { ChatStreamEvent, streamChat } from "@/lib/schemes";
 import { fetchWithAuth } from "@/lib/api";
 import { track } from "@/lib/analytics";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 // Module scope so the React Compiler purity lint does not flag Date.now(): it
 // cannot tell a handler declared in the component body from render code.
@@ -37,6 +38,7 @@ type ChatPageProps = {
 };
 
 export default function ChatPage({ onReset }: ChatPageProps) {
+  const { t } = useLingui();
   const {
     messages,
     setMessages,
@@ -250,11 +252,22 @@ export default function ChatPage({ onReset }: ChatPageProps) {
           phase?: string;
           label?: string;
           message?: string;
+          code?: string;
+          params?: Record<string, string | number>;
         };
         if (lastMilestoneRef.current === "sent") {
           lastMilestoneRef.current = "status";
         }
-        appendStatusStep("action_message", data.label, data.message, requestId);
+        appendStatusStep(
+          "action_message",
+          data.label,
+          data.message,
+          requestId,
+          {
+            code: data.code,
+            params: data.params,
+          },
+        );
         break;
       }
       case "text": {
@@ -355,6 +368,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
     label: string | undefined,
     message: string | undefined,
     requestId: number,
+    copy?: Pick<StatusStep, "code" | "params">,
   ) => {
     if (!label || !message) return;
     if (streamingBlocksRef.current.some(Boolean)) return;
@@ -364,6 +378,8 @@ export default function ChatPage({ onReset }: ChatPageProps) {
       label,
       message,
       phase,
+      code: copy?.code,
+      params: copy?.params,
     };
     setStatusSteps((prev) => {
       if (prev.at(-1)?.label === step.label) {
@@ -445,7 +461,7 @@ export default function ChatPage({ onReset }: ChatPageProps) {
       sendAtRef.current = null;
     }
     rollbackActiveRequest(
-      "The connection dropped before the response finished. Send it again when ready.",
+      t`The connection dropped before the response finished. Send it again when ready.`,
     );
   };
 
@@ -624,15 +640,26 @@ export default function ChatPage({ onReset }: ChatPageProps) {
             setSelectedTab(key === "schemes" ? "schemes" : "chat")
           }
         >
-          <Tabs.ListContainer className="p-4 flex gap-2 items-center">
-            <Tabs.List aria-label="Options" className={productSegmentedList}>
+          <Tabs.ListContainer className="p-4 flex flex-wrap gap-2 items-center">
+            <Tabs.List
+              aria-label={t({
+                message: "Options",
+                comment:
+                  "Aria label for the mobile tab list switching between chat and schemes views",
+              })}
+              className={`${productSegmentedList} w-auto grow`}
+            >
               <Tabs.Tab id="chat" className={productSegmentedTab}>
-                Chat
+                <Trans comment="Mobile tab label for the conversation view">
+                  Chat
+                </Trans>
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>
               <Tabs.Tab id="schemes" className={productSegmentedTab}>
                 <SchemesPanelPulse active={pulseSchemesTab}>
-                  Schemes
+                  <Trans comment="Mobile tab label for the results list">
+                    Schemes
+                  </Trans>
                 </SchemesPanelPulse>
                 <Tabs.Indicator className={productSegmentedIndicator} />
               </Tabs.Tab>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Modal } from "@heroui/react";
+import { Trans } from "@lingui/react/macro";
 import {
   productButtonDefault,
   productButtonOutlineNeutral,
@@ -24,13 +25,17 @@ export default function NewChatModal({
         <Modal.Dialog className="bg-white text-(--schemes-ink)">
           <Modal.Header>
             <Modal.Heading className="text-lg font-semibold text-(--schemes-blue-900)">
-              New Chat
+              <Trans comment="Heading of the dialog that confirms starting a new chat">
+                New Chat
+              </Trans>
             </Modal.Heading>
           </Modal.Header>
           <Modal.Body>
             <p className="text-(--schemes-muted)">
-              Are you sure you want to start a new chat? Your chat history and
-              search results will be reset.
+              <Trans>
+                Are you sure you want to start a new chat? Your chat history and
+                search results will be reset.
+              </Trans>
             </p>
           </Modal.Body>
           <Modal.Footer>
@@ -39,14 +44,16 @@ export default function NewChatModal({
               className={`${productButtonOutlineNeutral} ${productButtonDefault}`}
               onPress={() => onOpenChange(false)}
             >
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               variant="primary"
               className={`${productButtonSolidAmber} ${productButtonDefault}`}
               onPress={handleReset}
             >
-              Confirm
+              <Trans comment="Confirms starting a new chat, which clears the current one">
+                Confirm
+              </Trans>
             </Button>
           </Modal.Footer>
         </Modal.Dialog>

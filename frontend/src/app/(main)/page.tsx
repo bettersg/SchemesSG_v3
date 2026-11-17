@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import ChatHome from "@/components/chat/chat-home";
+import { SchemeCountProvider } from "@/lib/scheme-count";
+import { getSchemeCount } from "@/lib/schemes.server";
 import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -41,7 +43,8 @@ const jsonLd = {
   description: SEO_COPY.homeDescription,
 };
 
-export default function Home() {
+export default async function Home() {
+  const schemeCount = await getSchemeCount();
   return (
     <>
       <script
@@ -50,7 +53,9 @@ export default function Home() {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <ChatHome />
+      <SchemeCountProvider count={schemeCount}>
+        <ChatHome />
+      </SchemeCountProvider>
     </>
   );
 }

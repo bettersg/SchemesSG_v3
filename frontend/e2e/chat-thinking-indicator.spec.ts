@@ -1,7 +1,19 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { interceptChatStreamScenarios } from "./fixtures/chat-resilience";
 import { LANDING_QUERY, waitForHydration } from "./fixtures/landing-results";
-import { THINKING_PHRASES } from "../src/components/chat/thinking-phrases";
+
+// thinking-phrases.ts uses Lingui macros, which only Next and Vitest compile,
+// so the phrases come from the English catalog.
+const THINKING_PHRASES = readFileSync(
+  path.join(__dirname, "../src/locales/en/messages.po"),
+  "utf8",
+)
+  .split(/\r?\n\r?\n/)
+  .filter((entry) => entry.includes("#: src/components/chat/thinking-phrases.ts"))
+  .map((entry) => JSON.parse(entry.match(/^msgid (".*")$/m)?.[1] ?? '""') as string)
+  .filter(Boolean);
 
 // Any of the 20 can open the rotation, so match the set rather than an index.
 // See thinkingPhraseOrder: pinning an opener meant every send showed the same

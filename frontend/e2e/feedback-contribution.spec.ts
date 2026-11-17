@@ -31,16 +31,16 @@ test("user can submit contextual feedback and recover from an API failure", asyn
   const feedback = page.getByRole("textbox", { name: "Your feedback" });
   await expect(feedback).toHaveValue(SCHEME_FEEDBACK.draft);
 
-  await page.getByRole("button", { name: "Submit Feedback" }).click();
+  await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(name).toBeFocused();
   expect(network.submissions).toEqual([]);
 
   await name.fill("Aisha");
   await email.fill("aisha@example.com");
   await feedback.fill(`${SCHEME_FEEDBACK.draft}${SCHEME_FEEDBACK.detail}`);
-  await page.getByRole("button", { name: "Submit Feedback" }).click();
+  await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(page.getByRole("status")).toHaveText(
-    "Thank you for your feedback!",
+    "Thanks for your feedback.",
   );
   await expect.poll(() => network.submissions.length).toBe(1);
 
@@ -53,7 +53,7 @@ test("user can submit contextual feedback and recover from an API failure", asyn
   const chatFeedback = page.getByRole("textbox", { name: "Your feedback" });
   await expect(chatFeedback).toHaveValue(CHAT_FEEDBACK.draft);
   await chatFeedback.fill(`${CHAT_FEEDBACK.draft}${CHAT_FEEDBACK.detail}`);
-  await page.getByRole("button", { name: "Submit Feedback" }).click();
+  await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(
     page
       .getByRole("alert")
@@ -104,7 +104,7 @@ test("user can validate and submit a new scheme contribution", async ({
   await page.goto("/contribute");
   const schemeName = page.getByRole("textbox", { name: "Scheme name" });
   const schemeLink = page.getByRole("textbox", { name: "Scheme link" });
-  const submit = page.getByRole("button", { name: "Submit Scheme" });
+  const submit = page.getByRole("button", { name: "Submit scheme" });
 
   await submit.click();
   await expect(schemeName).toBeFocused();
@@ -116,14 +116,14 @@ test("user can validate and submit a new scheme contribution", async ({
   await expect(
     page
       .getByRole("alert")
-      .filter({ hasText: "Please enter a valid URL" }),
-  ).toHaveText("Please enter a valid URL (e.g., https://example.com).");
+      .filter({ hasText: "Enter the full link" }),
+  ).toHaveText("Enter the full link, including http:// or https://");
   expect(network.submissions).toEqual([]);
 
   await schemeLink.fill(CONTRIBUTION.link);
   await submit.click();
   await expect(page.getByRole("status")).toContainText(
-    "Thank you! Your submission has been received.",
+    "Thanks, we’ve received your suggestion.",
   );
   await expect.poll(() => network.submissions.length).toBe(1);
   expect(network.submissions[0]).toEqual({

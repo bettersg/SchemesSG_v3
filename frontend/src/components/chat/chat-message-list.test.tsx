@@ -2,6 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ChatMessageList from "./chat-message-list";
 import { THINKING_PHRASES } from "./thinking-phrases";
+import { I18nWrapper } from "@/test/i18n-wrapper";
+import { i18n } from "@lingui/core";
 
 // The spinner is a canvas/wasm Lottie player with nothing to assert on, and
 // letting it fetch its animation would trip the suite's unhandled-request guard.
@@ -28,7 +30,7 @@ const politeLiveRegion = () =>
  */
 const ANY_PHRASE = new RegExp(
   `^(${THINKING_PHRASES.map((phrase) =>
-    phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    i18n._(phrase).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
   ).join("|")})$`,
 );
 
@@ -37,12 +39,14 @@ describe("ChatMessageList", () => {
     // This is the regression guard for the original bug: the indicator used to
     // wait for the first status step or text chunk to arrive over the network.
     render(
-      <ChatMessageList
+      <I18nWrapper>
+        <ChatMessageList
         messages={userTurn}
         streamingBlocks={[]}
         statusSteps={[]}
         isGenerating
-      />,
+      />
+      </I18nWrapper>,
     );
 
     expect(politeLiveRegion()).toHaveTextContent("Working on your answer");
@@ -52,14 +56,16 @@ describe("ChatMessageList", () => {
 
   it("announces a real status step instead of the placeholder once one arrives", () => {
     render(
-      <ChatMessageList
+      <I18nWrapper>
+        <ChatMessageList
         messages={userTurn}
         streamingBlocks={[]}
         statusSteps={[
           { id: "1", label: "Searching schemes", message: "Searched for preschool fees" },
         ]}
         isGenerating
-      />,
+      />
+      </I18nWrapper>,
     );
 
     expect(politeLiveRegion()).toHaveTextContent("Searching schemes");
@@ -73,12 +79,14 @@ describe("ChatMessageList", () => {
     // showed up. This is that exact state — text on screen, no steps, still
     // generating.
     render(
-      <ChatMessageList
+      <I18nWrapper>
+        <ChatMessageList
         messages={userTurn}
         streamingBlocks={["Here are some schemes that may help."]}
         statusSteps={[]}
         isGenerating
-      />,
+      />
+      </I18nWrapper>,
     );
 
     expect(screen.queryByText(ANY_PHRASE)).not.toBeInTheDocument();
@@ -90,11 +98,13 @@ describe("ChatMessageList", () => {
 
   it("hides the indicator when nothing is generating", () => {
     render(
-      <ChatMessageList
+      <I18nWrapper>
+        <ChatMessageList
         messages={[...userTurn, { type: "bot", text: "Here is what I found." }]}
         streamingBlocks={[]}
         statusSteps={[]}
-      />,
+      />
+      </I18nWrapper>,
     );
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();

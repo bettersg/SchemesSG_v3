@@ -48,6 +48,8 @@ jobs:
         shell: bash
         env:
           BROWSER: ${{ matrix.browser }}
+          # Every width and page of e2e/locale-layout.spec.ts, in Chromium only.
+          LOCALE_LAYOUT_FULL: ${{ matrix.browser == 'chromium' && '1' || '' }}
         run: |
           lane_started_at=$(date +%s)
           set +e

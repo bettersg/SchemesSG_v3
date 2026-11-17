@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+
 /**
  * Placeholder copy for the window between a message being sent and the agent
  * emitting its first real status step.
@@ -19,28 +22,28 @@
  *   the end so it cannot fire early. It answers "did this break?", which is not
  *   yet the user's question two seconds in.
  */
-export const THINKING_PHRASES = [
-  "Reading your question",
-  "Getting my bearings",
-  "Thinking about what you need",
-  "Making sure I've understood you",
-  "Turning this over",
-  "Working out where to start",
-  "Picturing your situation",
-  "Thinking this through",
-  "Considering your options",
-  "Weighing what might help most",
-  "Looking for the right fit for you",
-  "Thinking about who could help",
-  "Piecing this together",
-  "Keeping your situation in mind",
-  "Working out what matters here",
-  "Sorting through the possibilities",
-  "Finding the best place to start",
-  "Checking what's out there for you",
-  "Giving this the thought it needs",
-  "Still with you",
-] as const;
+export const THINKING_PHRASES: MessageDescriptor[] = [
+  msg`Reading your question`,
+  msg`Getting my bearings`,
+  msg`Thinking about what you need`,
+  msg`Making sure I've understood you`,
+  msg`Turning this over`,
+  msg`Working out where to start`,
+  msg`Picturing your situation`,
+  msg`Thinking this through`,
+  msg`Considering your options`,
+  msg`Weighing what might help most`,
+  msg`Looking for the right fit for you`,
+  msg`Thinking about who could help`,
+  msg`Piecing this together`,
+  msg`Keeping your situation in mind`,
+  msg`Working out what matters here`,
+  msg`Sorting through the possibilities`,
+  msg`Finding the best place to start`,
+  msg`Checking what's out there for you`,
+  msg`Giving this the thought it needs`,
+  msg`Still with you`,
+];
 
 /**
  * Shuffles the whole list so any phrase can open, because the opener is usually
@@ -54,7 +57,7 @@ export const THINKING_PHRASES = [
  */
 export function thinkingPhraseOrder(
   random: () => number = Math.random,
-): string[] {
+): MessageDescriptor[] {
   const closerIndex = THINKING_PHRASES.length - 1;
   const pool = THINKING_PHRASES.slice(0, closerIndex);
 

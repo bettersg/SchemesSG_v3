@@ -13,6 +13,9 @@ from utils.logging_setup import setup_logging
 
 
 logger = setup_logging(level=os.getenv("AGENT_DEBUG_LOG_LEVEL", "DEBUG"))
+# The chat UI shows its own translatable wording for each action_message
+# `code` (frontend/src/lib/status-step-copy.ts); these strings are the fallback.
+# A new code needs an entry there.
 ACTION_MESSAGE_ON_START = 'Searching the web for "{query}"'
 ACTION_MESSAGE_ON_END = 'Found {result_count} results for "{query}".'
 SHORT_ACTION_MESSAGE_ON_START = "Searching web"
@@ -59,6 +62,8 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
                     "phase": "action_message",
                     "label": SHORT_ACTION_MESSAGE_ON_START,
                     "message": ACTION_MESSAGE_ON_START.format(query=query),
+                    "code": "websearch.start",
+                    "params": {"query": query},
                 },
             },
         )
@@ -95,6 +100,8 @@ def _duckduckgo_web_search_sync(query: str, max_results: int = 5) -> dict[str, A
                         "phase": "action_message",
                         "label": SHORT_ACTION_MESSAGE_ON_END,
                         "message": ACTION_MESSAGE_ON_END.format(result_count=len(results), query=query),
+                        "code": "websearch.end",
+                        "params": {"count": len(results), "query": query},
                     }
                 }
             )

@@ -22,7 +22,10 @@ export type ChatStreamEvent =
   | {
       type: "action_message";
       data: {
+        label?: string;
         message?: string;
+        code?: string;
+        params?: Record<string, string | number>;
       };
     }
   | {

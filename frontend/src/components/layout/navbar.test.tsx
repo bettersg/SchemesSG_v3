@@ -65,7 +65,7 @@ describe("Navbar", () => {
     await user.click(screen.getByRole("button", { name: "Open menu" }));
     expect(screen.getByRole("button", { name: "Close menu" })).toBeVisible();
     expect(
-      screen.getAllByRole("link", { name: "Catalog" }).length,
+      screen.getAllByRole("link", { name: "Catalogue" }).length,
     ).toBeGreaterThan(1);
     expect(
       screen.getAllByRole("link", { name: "Contribute" }).length,
@@ -96,7 +96,7 @@ describe("Navbar", () => {
   it("offers a reset from the Search tab during a chat", async () => {
     const { probe } = await renderNavbar({ pathname: "/", activeChat: true });
 
-    const searchTab = screen.getByRole("link", { name: /Search Schemes/ });
+    const searchTab = screen.getByRole("link", { name: /Search schemes/ });
     expect(fireEvent.click(searchTab)).toBe(false);
     expect(probe.dataset.confirm).toBe("true");
   });

@@ -12,6 +12,25 @@ Agent-agnostic instructions. `CLAUDE.md` at root, `backend/`, and
 - For required checks, test impact, and evidence, read `docs/verification.md`
   before choosing checks. Load other references when relevant.
 
+## Skills
+
+Copy and translation playbooks live in `skills/`: English copy style in
+`skills/sgds-writing/SKILL.md`, translation in
+`skills/translation/<name>/SKILL.md`. Read one, and the references it links,
+only when the task is writing, reviewing, or translating user-facing copy; leave
+them out of unrelated work. Don't link them into an agent's own skill folder;
+see `skills/README.md`.
+
+- `sgds-writing`: writing or reviewing user-facing English copy (UI labels,
+  errors, FAQ, page text). Vetted copy and the legal markdown, which mirrors the
+  team's Google Docs, win over the guide: flag conflicts instead of rewriting.
+- `translation/lingui-best-practices`: adding, changing, or moving translatable
+  strings. Catalogs live in `frontend/src/locales/<locale>/messages.po`.
+- `translation/enhanced-message-context`: with the above, for any new or
+  ambiguous Lingui string, so translators get context.
+- `translation/find-unwrapped-strings`: auditing translation coverage before a
+  release.
+
 ## Task isolation and delivery
 
 Repository changes require a dedicated worktree and branch; read-only research

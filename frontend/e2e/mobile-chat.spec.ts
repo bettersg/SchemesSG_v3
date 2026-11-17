@@ -16,7 +16,7 @@ test("mobile navigation and chat result tabs remain usable", async ({ page }) =>
 
   const header = page.getByRole("banner");
   await header.getByRole("button", { name: "Open menu" }).click();
-  for (const linkName of ["Catalog", "Contribute", "About"]) {
+  for (const linkName of ["Catalogue", "Contribute", "About"]) {
     await expect(header.getByRole("link", { name: linkName })).toBeVisible();
   }
   await header.getByRole("button", { name: "Close menu" }).click();

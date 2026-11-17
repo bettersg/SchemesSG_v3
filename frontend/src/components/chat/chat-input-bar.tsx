@@ -14,6 +14,7 @@ import {
   productComposerTextareaSingleLine,
 } from "@/lib/design-system/product-styles";
 import { cn } from "@/lib/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface ChatInputBarProps {
   onSend: (message: string) => void;
@@ -30,6 +31,7 @@ export default function ChatInputBar({
   value,
   onValueChange,
 }: ChatInputBarProps) {
+  const { t } = useLingui();
   const ref = useRef<HTMLTextAreaElement>(null);
   const { expanded, setExpanded, canExpand, multiline, reset } =
     useAutoGrowTextarea(ref, value, {
@@ -71,7 +73,7 @@ export default function ChatInputBar({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            aria-label={expanded ? "Collapse input" : "Expand input"}
+            aria-label={expanded ? t`Collapse search box` : t`Expand search box`}
             className={cn(
               productComposerExpandButton,
               "right-2 top-2 text-(--schemes-muted) hover:bg-(--schemes-blue-50) hover:text-(--schemes-blue-600)",
@@ -91,7 +93,7 @@ export default function ChatInputBar({
           onKeyDown={handleKey}
           disabled={isGenerating}
           aria-disabled={isGenerating}
-          placeholder="Ask a follow-up question…"
+          placeholder={t({ message: "Ask a follow-up question…", comment: "Placeholder for the chat input after the first message" })}
           rows={1}
           className={cn(
             productComposerTextarea,
@@ -121,7 +123,7 @@ export default function ChatInputBar({
       </div>
       <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-(--schemes-muted)">
         <ShieldCheck size={9} strokeWidth={2} />
-        Anonymous · No personal data stored
+        <Trans comment="Privacy notice below the chat input">Anonymous · No personal data stored</Trans>
       </p>
     </div>
   );

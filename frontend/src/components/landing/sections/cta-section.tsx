@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/landing/ui/button";
-import { useLanguage } from "@/lib/landing-i18n";
+import { Trans } from "@lingui/react/macro";
 import Link from "next/link";
 import {
   cssTransition,
@@ -13,7 +13,6 @@ import {
 } from "@/lib/design-system/motion";
 
 export function CTASection() {
-  const { t } = useLanguage();
 
   return (
     <section className="relative bg-neutral-950 py-24 px-6 overflow-hidden">
@@ -29,21 +28,25 @@ export function CTASection() {
         transition={transition.entrance}
       >
         <h2 className="font-serif text-3xl font-bold text-white tracking-tight md:text-4xl lg:text-5xl">
-          {t.cta.headline}
+          <Trans>Find the Support You Deserve</Trans>
         </h2>
         <p className="mt-5 text-neutral-400 text-lg leading-relaxed max-w-xl mx-auto">
-          {t.cta.subtitle}
+          <Trans>
+            Skip hours of searching across agency websites. Describe your situation, and we’ll find schemes that match.
+          </Trans>
         </p>
         <Link href="/">
           <Button
             size="lg"
             className={`${cssTransition.allState} mt-9 rounded-full bg-amber-400 text-neutral-900 hover:bg-amber-500 px-10 py-6 text-base font-semibold gap-2 shadow-none cursor-pointer border-0`}
           >
-            {t.cta.button}
+            <Trans comment="Button: go to the search page">Search schemes</Trans>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
-        <p className="mt-4 text-sm text-neutral-500">{t.cta.note}</p>
+        <p className="mt-4 text-sm text-neutral-500">
+          <Trans>Free to use. No sign-up required.</Trans>
+        </p>
       </motion.div>
     </section>
   );

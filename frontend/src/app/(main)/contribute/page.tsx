@@ -4,6 +4,7 @@ import { Button, Card, Input, Label, TextField } from "@heroui/react";
 import { useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   productButtonProminent,
   productButtonSolidAmber,
@@ -25,6 +26,7 @@ export type SubmitSchemeParams = {
 };
 
 export default function ContributePage() {
+  const { t } = useLingui();
   const [formData, setFormData] = useState<Partial<SubmitSchemeParams>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{
@@ -41,14 +43,14 @@ export default function ContributePage() {
     if (!formData.Scheme?.trim()) {
       setSubmitStatus({
         type: "error",
-        message: "Please enter the scheme name.",
+        message: t`Enter the scheme name.`,
       });
       return false;
     }
     if (!formData.Link?.trim()) {
       setSubmitStatus({
         type: "error",
-        message: "Please enter the scheme link.",
+        message: t`Enter the link to the scheme's page.`,
       });
       return false;
     }
@@ -63,7 +65,7 @@ export default function ContributePage() {
     } catch {
       setSubmitStatus({
         type: "error",
-        message: "Please enter a valid URL (e.g., https://example.com).",
+        message: t`Enter the full link, including http:// or https://`,
       });
       return false;
     }
@@ -89,20 +91,19 @@ export default function ContributePage() {
       if (response.ok) {
         setSubmitStatus({
           type: "success",
-          message:
-            "Thank you! Your submission has been received. We'll review it within a week.",
+          message: t`Thanks, we’ve received your suggestion. A volunteer will review it.`,
         });
         setFormData({});
       } else {
         setSubmitStatus({
           type: "error",
-          message: data.message || "Failed to submit. Please try again.",
+          message: data.message || t`We couldn’t send your suggestion. Check your connection and try again.`,
         });
       }
     } catch {
       setSubmitStatus({
         type: "error",
-        message: "An error occurred. Please try again later.",
+        message: t`We couldn’t send your suggestion. Try again in a few minutes.`,
       });
     } finally {
       setIsSubmitting(false);
@@ -112,9 +113,13 @@ export default function ContributePage() {
   return (
     <PageShell width="form">
       <div className="mb-6 flex flex-col gap-2 text-left">
-        <h1 className={productHeading}>Suggest a new scheme</h1>
+        <h1 className={productHeading}>
+          <Trans>Suggest a new scheme</Trans>
+        </h1>
         <p className={productSubheading}>
-          Know a scheme that&apos;s missing from our database? Share it with us!
+          <Trans>
+            Know a scheme that&apos;s missing from our database? Share it with us!
+          </Trans>
         </p>
       </div>
 
@@ -123,25 +128,29 @@ export default function ContributePage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="rounded-lg border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-4 text-sm">
               <p className="mb-2 font-semibold text-(--schemes-status-info-text)">
-                How it works:
+                <Trans>How it works:</Trans>
               </p>
               <ol className="list-inside list-decimal space-y-1 text-(--schemes-muted)">
-                <li>You provide the scheme name and link</li>
                 <li>
-                  AI agents responsibly gather publicly available details from
-                  the webpage
+                  <Trans>You provide the scheme name and link</Trans>
                 </li>
-                <li>A volunteer reviews and approves the listing</li>
+                <li>
+                  <Trans>
+                    An AI tool collects the public details from the page
+                  </Trans>
+                </li>
+                <li>
+                  <Trans>A volunteer reviews and approves the listing</Trans>
+                </li>
               </ol>
-              <p className="mt-3 text-(--schemes-muted)">
-                Expected turnaround: ~1 week
-              </p>
             </div>
 
             <TextField isRequired>
-              <Label className={productFormLabel}>Scheme name</Label>
+              <Label className={productFormLabel}>
+                <Trans>Scheme name</Trans>
+              </Label>
               <Input
-                placeholder="e.g., ComCare Short-to-Medium Term Assistance"
+                placeholder={t`e.g., ComCare Short-to-Medium Term Assistance`}
                 value={formData.Scheme || ""}
                 onChange={(e) => handleInputChange("Scheme", e.target.value)}
                 variant="primary"
@@ -150,9 +159,11 @@ export default function ContributePage() {
             </TextField>
 
             <TextField isRequired>
-              <Label className={productFormLabel}>Scheme link</Label>
+              <Label className={productFormLabel}>
+                <Trans>Scheme link</Trans>
+              </Label>
               <Input
-                placeholder="e.g., https://www.msf.gov.sg/comcare"
+                placeholder={t`e.g., https://www.msf.gov.sg/comcare`}
                 type="url"
                 value={formData.Link || ""}
                 onChange={(e) => handleInputChange("Link", e.target.value)}
@@ -160,8 +171,10 @@ export default function ContributePage() {
                 className={`${productInputSurface} ${productInputText}`}
               />
               <p className="mt-1 text-xs text-(--schemes-muted)">
-                The official webpage where details about this scheme can be
-                found
+                <Trans>
+                  The official webpage where details about this scheme can be
+                  found
+                </Trans>
               </p>
             </TextField>
 
@@ -183,9 +196,9 @@ export default function ContributePage() {
               type="submit"
               variant="primary"
               isPending={isSubmitting}
-              className={`${productButtonSolidAmber} ${productButtonProminent} w-full sm:w-fit sm:self-end`}
+              className={`${productButtonSolidAmber} ${productButtonProminent} h-auto w-full whitespace-normal text-center sm:w-fit sm:self-end`}
             >
-              {isSubmitting ? "Submitting..." : "Submit Scheme"}
+              {isSubmitting ? t`Submitting…` : t`Submit scheme`}
             </Button>
           </form>
         </Card.Content>

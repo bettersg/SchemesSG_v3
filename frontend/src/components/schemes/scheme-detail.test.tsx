@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeScheme } from "@/test/fixtures/scheme";
 import SchemeDetail from "./scheme-detail";
 import { AppProviders } from "@/providers";
+import { LanguageProvider, useLanguage } from "@/lib/landing-i18n";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(
   navigator,
@@ -51,9 +52,11 @@ describe("SchemeDetail", () => {
     });
 
     render(
-      <AppProviders>
-        <SchemeDetail scheme={scheme} />
-      </AppProviders>,
+      <LanguageProvider>
+        <AppProviders>
+          <SchemeDetail scheme={scheme} />
+        </AppProviders>
+      </LanguageProvider>,
     );
 
     expect(
@@ -111,15 +114,17 @@ describe("SchemeDetail", () => {
 
   it("guides users to the agency when structured details are unavailable", () => {
     render(
-      <AppProviders>
-        <SchemeDetail
-          scheme={makeScheme({
-            schemeId: "sparse",
-            schemeName: "Sparse Scheme",
-            link: "https://example.test/sparse",
-          })}
-        />
-      </AppProviders>,
+      <LanguageProvider>
+        <AppProviders>
+          <SchemeDetail
+            scheme={makeScheme({
+              schemeId: "sparse",
+              schemeName: "Sparse Scheme",
+              link: "https://example.test/sparse",
+            })}
+          />
+        </AppProviders>
+      </LanguageProvider>,
     );
 
     expect(
@@ -135,16 +140,18 @@ describe("SchemeDetail", () => {
 
   it("warns when the scheme's official website failed our last check", () => {
     render(
-      <AppProviders>
-        <SchemeDetail
-          scheme={makeScheme({
-            schemeName: "Dead Link Scheme",
-            status: "inactive",
-            link: "https://example.test/gone",
-            contact: [{ phones: ["6123 4567"] }],
-          })}
-        />
-      </AppProviders>,
+      <LanguageProvider>
+        <AppProviders>
+          <SchemeDetail
+            scheme={makeScheme({
+              schemeName: "Dead Link Scheme",
+              status: "inactive",
+              link: "https://example.test/gone",
+              contact: [{ phones: ["6123 4567"] }],
+            })}
+          />
+        </AppProviders>
+      </LanguageProvider>,
     );
 
     expect(
@@ -158,13 +165,64 @@ describe("SchemeDetail", () => {
     expect(screen.getByText("6123 4567")).toBeVisible();
   });
 
+  it("translates the section tabs and breadcrumb", async () => {
+    function LocaleButtons() {
+      const { setLocale } = useLanguage();
+      return (
+        <>
+          <button onClick={() => setLocale("zh")}>zh</button>
+          <button onClick={() => setLocale("en")}>en</button>
+        </>
+      );
+    }
+    render(
+      <LanguageProvider>
+        <AppProviders>
+          <LocaleButtons />
+          <SchemeDetail
+            scheme={makeScheme({
+              schemeType: ["Financial Assistance"],
+              description: "Cash support.",
+              eligibilityText: "Household income is assessed.",
+              howToApply: "Apply online.",
+            })}
+          />
+        </AppProviders>
+      </LanguageProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "zh" }));
+    try {
+      expect(
+        // The Chinese catalog loads asynchronously, slower under coverage.
+        await screen.findByRole(
+          "link",
+          { name: "谁符合资格" },
+          { timeout: 5000 },
+        ),
+      ).toHaveAttribute("href", "#qualifies");
+      expect(screen.getByRole("link", { name: "如何申请" })).toBeVisible();
+      expect(
+        screen.getAllByRole("link", { name: "经济援助" }).length,
+      ).toBeGreaterThan(0);
+      // Category pills stay as the scheme data names them until the scheme
+      // content itself is translated.
+      expect(screen.getByText("Financial Assistance")).toBeVisible();
+    } finally {
+      // The saved locale is module state; leave English for other tests.
+      fireEvent.click(screen.getByRole("button", { name: "en" }));
+    }
+  });
+
   it.each([{ status: "active" as const }, { status: undefined }])(
     "shows no website warning for a listed scheme (status $status)",
     ({ status }) => {
       render(
-        <AppProviders>
-          <SchemeDetail scheme={makeScheme({ status })} />
-        </AppProviders>,
+        <LanguageProvider>
+          <AppProviders>
+            <SchemeDetail scheme={makeScheme({ status })} />
+          </AppProviders>
+        </LanguageProvider>,
       );
 
       expect(

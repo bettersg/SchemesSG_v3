@@ -4,6 +4,8 @@ import { Button, Card, Input, Label, TextArea, TextField } from "@heroui/react";
 import { Suspense, useState } from "react";
 import { fetchWithAuth } from "@/lib/api";
 import clsx from "clsx";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
 import {
   productButtonProminent,
   productButtonSolidAmber,
@@ -28,7 +30,7 @@ function getFeedbackContext(searchParams: URLSearchParams) {
     if (sentiment === "positive") sentimentContext = " (helpful)";
     if (sentiment === "negative") sentimentContext = " (not helpful)";
     return {
-      label: "Feedback about a chat response",
+      label: msg`Feedback about a chat response`,
       draft: `Chat response feedback${sentimentContext}:\n\n`,
     };
   }
@@ -43,8 +45,8 @@ function getFeedbackContext(searchParams: URLSearchParams) {
 
     return {
       label: schemeName
-        ? `Suggest a correction for ${schemeName}`
-        : "Suggest a scheme correction",
+        ? msg`Suggest a correction for ${schemeName}`
+        : msg`Suggest a scheme correction`,
       draft: `Scheme correction${details.length ? `\n${details.join("\n")}` : ""}\n\n`,
     };
   }
@@ -53,6 +55,7 @@ function getFeedbackContext(searchParams: URLSearchParams) {
 }
 
 function FeedbackForm() {
+  const { t, i18n } = useLingui();
   const searchParams = useSearchParams();
   const feedbackContext = getFeedbackContext(searchParams);
   const [feedbackText, setFeedbackText] = useState(
@@ -70,7 +73,7 @@ function FeedbackForm() {
     if (!userName.trim() || !userEmail.trim() || !feedbackText.trim()) {
       setSubmitStatus({
         type: "error",
-        message: "Please fill in all required fields",
+        message: t`Fill in all the required fields.`,
       });
       return false;
     }
@@ -78,7 +81,7 @@ function FeedbackForm() {
     if (!emailRegex.test(userEmail)) {
       setSubmitStatus({
         type: "error",
-        message: "Please enter a valid email address",
+        message: t`Please enter a valid email address`,
       });
       return false;
     }
@@ -101,7 +104,7 @@ function FeedbackForm() {
       if (response.ok) {
         setSubmitStatus({
           type: "success",
-          message: "Thank you for your feedback!",
+          message: t`Thanks for your feedback.`,
         });
         setFeedbackText("");
         setUserName("");
@@ -109,13 +112,13 @@ function FeedbackForm() {
       } else {
         setSubmitStatus({
           type: "error",
-          message: data.message || "Failed to submit feedback",
+          message: data.message || t`We couldn’t send your feedback. Check your connection and try again.`,
         });
       }
     } catch {
       setSubmitStatus({
         type: "error",
-        message: "An error occurred while submitting feedback",
+        message: t`We couldn’t send your feedback. Check your connection and try again.`,
       });
     } finally {
       setIsSubmitting(false);
@@ -125,13 +128,15 @@ function FeedbackForm() {
   return (
     <PageShell width="form">
       <div className="mb-6 flex flex-col gap-2 text-left">
-        <h1 className={productHeading}>Share feedback</h1>
+        <h1 className={productHeading}>
+          <Trans>Share feedback</Trans>
+        </h1>
         <p className={productSubheading}>
-          Help us improve Schemes.sg with your valuable input
+          <Trans>Help us improve Schemes.sg with your valuable input</Trans>
         </p>
         {feedbackContext && (
           <p className="mt-1 text-sm font-semibold text-(--schemes-blue-600)">
-            {feedbackContext.label}
+            {i18n._(feedbackContext.label)}
           </p>
         )}
       </div>
@@ -140,9 +145,11 @@ function FeedbackForm() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <TextField isRequired>
-                <Label className={productFormLabel}>Name</Label>
+                <Label className={productFormLabel}>
+                  <Trans>Name</Trans>
+                </Label>
                 <Input
-                  placeholder="Enter your name"
+                  placeholder={t`Enter your name`}
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   variant="primary"
@@ -150,9 +157,11 @@ function FeedbackForm() {
                 />
               </TextField>
               <TextField isRequired>
-                <Label className={productFormLabel}>Email</Label>
+                <Label className={productFormLabel}>
+                  <Trans>Email</Trans>
+                </Label>
                 <Input
-                  placeholder="Enter your email"
+                  placeholder={t`Enter your email`}
                   type="email"
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
@@ -162,9 +171,11 @@ function FeedbackForm() {
               </TextField>
             </div>
             <TextField isRequired>
-              <Label className={productFormLabel}>Your feedback</Label>
+              <Label className={productFormLabel}>
+                <Trans>Your feedback</Trans>
+              </Label>
               <TextArea
-                placeholder="Please share your thoughts, suggestions, or concerns"
+                placeholder={t`Share your thoughts, suggestions, or concerns`}
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 variant="primary"
@@ -191,7 +202,7 @@ function FeedbackForm() {
               isPending={isSubmitting}
               className={`${productButtonSolidAmber} ${productButtonProminent} w-full sm:w-fit sm:self-end`}
             >
-              {isSubmitting ? "Submitting..." : "Submit Feedback"}
+              {isSubmitting ? t`Submitting…` : t`Send feedback`}
             </Button>
           </form>
         </Card.Content>
@@ -204,9 +215,11 @@ function FeedbackFallback() {
   return (
     <PageShell width="form">
       <div className="mb-6 flex flex-col gap-2 text-left">
-        <h1 className={productHeading}>Share feedback</h1>
+        <h1 className={productHeading}>
+          <Trans>Share feedback</Trans>
+        </h1>
         <p className={productSubheading}>
-          Help us improve Schemes.sg with your valuable input
+          <Trans>Help us improve Schemes.sg with your valuable input</Trans>
         </p>
       </div>
     </PageShell>

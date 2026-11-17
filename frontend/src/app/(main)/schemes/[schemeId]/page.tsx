@@ -15,6 +15,7 @@ import {
   getSchemeBreadcrumbListJsonLd,
 } from "@/lib/catalog-seo";
 import { hasIndexableContent } from "@/lib/scheme-indexing";
+import { RetiredSchemeNotice } from "@/components/schemes/retired-scheme-notice";
 
 type SchemePageProps = {
   params: Promise<{ schemeId: string }>;
@@ -146,15 +147,7 @@ export default async function SchemePage({ params }: SchemePageProps) {
   if (scheme.status === "retired") {
     return (
       <section className="mx-auto flex min-h-full max-w-3xl items-center px-6 py-16">
-        <div className="w-full rounded-2xl border border-(--schemes-status-info-border) bg-(--schemes-status-info-bg) p-8 text-center">
-          <h1 className="mb-3 text-2xl font-semibold text-(--schemes-status-info-text)">
-            This scheme is no longer listed
-          </h1>
-          <p className="text-sm leading-relaxed text-(--schemes-status-info-text)">
-            This page has been kept so existing links do not break. Browse the
-            catalog to find currently listed support schemes.
-          </p>
-        </div>
+        <RetiredSchemeNotice />
       </section>
     );
   }

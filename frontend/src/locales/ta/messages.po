@@ -1,0 +1,1685 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-11-09 17:46+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ta\n"
+
+#. Screen-reader suffix on the selected catalogue filter option
+#: src/components/catalog/catalog-category-select.tsx
+msgid ", selected"
+msgstr ", தேர்ந்தெடுக்கப்பட்டது"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "({shownCount} of {totalCount})"
+msgstr "({totalCount}-இல் {shownCount})"
+
+#. Chat status step: the scheme search finished
+#. placeholder {0}: 10
+#. placeholder {0}: count(p)
+#. placeholder {0}: filteredSchemes.length
+#: src/components/chat/schemes-list.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {# scheme found} other {# schemes found}}"
+msgstr "{0, plural, one {# திட்டம் கிடைத்தது} other {# திட்டங்கள் கிடைத்தன}}"
+
+#. Chat status step detail
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Filtered and re-ranked the list to # scheme.} other {Filtered and re-ranked the list to # schemes.}}"
+msgstr "{0, plural, one {பட்டியலை # திட்டத்திற்கு வடிகட்டி மீண்டும் தரவரிசைப்படுத்தியது.} other {பட்டியலை # திட்டங்களுக்கு வடிகட்டி மீண்டும் தரவரிசைப்படுத்தியது.}}"
+
+#. Chat status step detail; query is the web search the assistant ran
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Found # result for \"{query}\".} other {Found # results for \"{query}\".}}"
+msgstr "{0, plural, one {\"{query}\" என்பதற்கு # இணைய முடிவு கண்டறியப்பட்டது.} other {\"{query}\" என்பதற்கு # இணைய முடிவுகள் கண்டறியப்பட்டன.}}"
+
+#. Chat status step detail; query is the search the assistant ran
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Found # scheme matching \"{query}\".} other {Found # schemes matching \"{query}\".}}"
+msgstr "{0, plural, one {\"{query}\" என்பதற்குப் பொருந்தும் # திட்டம் கண்டறியப்பட்டது.} other {\"{query}\" என்பதற்குப் பொருந்தும் # திட்டங்கள் கண்டறியப்பட்டன.}}"
+
+#. placeholder {0}: steps.length
+#: src/components/chat/status-steps-accordion.tsx
+msgid "{0, plural, one {How I found these (# step)} other {How I found these (# steps)}}"
+msgstr "{0, plural, one {இவற்றை நான் எவ்வாறு கண்டறிந்தேன் (# படி)} other {இவற்றை நான் எவ்வாறு கண்டறிந்தேன் (# படிகள்)}}"
+
+#. Chat status step detail
+#. placeholder {0}: count(p)
+#: src/lib/status-step-copy.ts
+msgid "{0, plural, one {Retrieved detailed information for # scheme.} other {Retrieved detailed information for # schemes.}}"
+msgstr "{0, plural, one {# திட்டத்திற்கான விரிவான தகவல்கள் பெறப்பட்டன.} other {# திட்டங்களுக்கான விரிவான தகவல்கள் பெறப்பட்டன.}}"
+
+#. Catalogue heading: selected categories (or All schemes), then the planning areas they are filtered to
+#: src/components/catalog/catalog-detail.tsx
+msgid "{categoriesLabel} in {areasLabel}"
+msgstr "{areasLabel}-இல் உள்ள {categoriesLabel}"
+
+#: src/components/schemes/schemes-filter.tsx
+msgid "{count, plural, one {# agency} other {# agencies}}"
+msgstr "{count, plural, one {# அமைப்பு} other {# அமைப்புகள்}}"
+
+#: src/components/schemes/schemes-filter.tsx
+msgid "{count, plural, one {# area} other {# areas}}"
+msgstr "{count, plural, one {# பகுதி} other {# பகுதிகள்}}"
+
+#: src/components/chat/scheme-update-notice.tsx
+msgid "{count, plural, one {# scheme found} other {# schemes found}}"
+msgstr "{count, plural, one {# திட்டம் கண்டறியப்பட்டது} other {# திட்டங்கள் கண்டறியப்பட்டன}}"
+
+#. Screen-reader label for the catalogue category button; label is the first selected category
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label} and {extraCount} more: browse by category"
+msgstr "{label} மற்றும் மேலும் {extraCount}: பிரிவு வாரியாகப் பார்க்கவும்"
+
+#. Screen-reader label for the catalogue area button; label is the first selected area
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label} and {extraCount} more: filter by planning area"
+msgstr "{label} மற்றும் மேலும் {extraCount}: திட்டமிடல் பகுதி வாரியாக வடிகட்டவும்"
+
+#. Screen-reader label for the catalogue category button; label is the selected category
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label}: browse by category"
+msgstr "{label}: பிரிவு வாரியாகப் பார்க்கவும்"
+
+#. Screen-reader label for the catalogue area button; label is the selected area
+#: src/components/catalog/catalog-category-select.tsx
+msgid "{label}: filter by planning area"
+msgstr "{label}: திட்டமிடல் பகுதி வாரியாக வடிகட்டவும்"
+
+#. Card link aria-label: scheme name and agency, opens externally
+#: src/components/schemes/scheme-card.tsx
+msgid "{schemeName}, {agency} (opens in new tab)"
+msgstr "{schemeName}, {agency} (புதிய தாவலில் திறக்கும்)"
+
+#. Footer copyright notice with year placeholder
+#: src/components/layout/footer.tsx
+msgid "© {year} Schemes.sg. All rights reserved."
+msgstr "© {year} Schemes.sg. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை."
+
+#: src/components/landing/sections/features-section.tsx
+msgid "512 Thomson Road, Singapore 298136"
+msgstr "512 Thomson Road, Singapore 298136"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "A volunteer reviews and approves the listing"
+msgstr "ஒரு தொண்டூழியர் விவரங்களைச் சரிபார்த்து, வெளியிட ஒப்புதல் அளிப்பார்"
+
+#. Footer link
+#. Navbar tab
+#: src/components/layout/footer.tsx
+#: src/components/layout/navbar.tsx
+msgid "About"
+msgstr "எங்களைப் பற்றி"
+
+#. Filter label: filter schemes by agency
+#: src/components/schemes/schemes-filter.tsx
+msgid "Agency"
+msgstr "அமைப்பு"
+
+#. Section heading: agency contact and location
+#. Tab label: agency contact and location section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Agency details"
+msgstr "அமைப்பின் விவரங்கள்"
+
+#. Catalogue filter option: no planning area filter
+#. Catalogue filter option: no planning area filter
+#: src/components/catalog/catalog-category-select.tsx
+msgid "All areas"
+msgstr "அனைத்துப் பகுதிகளும்"
+
+#. Catalogue category: no filter
+#: src/lib/design-system/category-labels.ts
+msgid "All categories"
+msgstr "அனைத்துப் பிரிவுகளும்"
+
+#. Filter chip in the demo results
+#: src/components/landing/sections/features-section.tsx
+msgid "All matches"
+msgstr "அனைத்துப் பொருத்தங்களும்"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "All schemes"
+msgstr "அனைத்துத் திட்டங்களும்"
+
+#: src/components/catalog/catalog-category-select.tsx
+msgid "All Schemes"
+msgstr "அனைத்துத் திட்டங்களும்"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "An AI tool collects the public details from the page"
+msgstr "AI கருவி வலைப்பக்கத்திலிருந்து பொதுவாகக் கிடைக்கும் விவரங்களைச் சேகரிக்கும்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Ang Mo Kio"
+msgstr "ஆங் மோ கியோ"
+
+#. Privacy notice below the chat input
+#: src/components/chat/chat-input-bar.tsx
+msgid "Anonymous · No personal data stored"
+msgstr "பெயர் தேவையில்லை · தனிப்பட்ட தரவு சேமிக்கப்படாது"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Apply directly with the agency"
+msgstr "அமைப்பிடம் நேரடியாக விண்ணப்பிக்கவும்"
+
+#: src/components/chat/new-chat-modal.tsx
+msgid "Are you sure you want to start a new chat? Your chat history and search results will be reset."
+msgstr "புதிய உரையாடலைத் தொடங்க விரும்புகிறீர்களா? உங்கள் உரையாடல் வரலாறும் பொருந்தும் திட்டங்களும் அழிக்கப்படும்."
+
+#. Placeholder for the chat input after the first message
+#: src/components/chat/chat-input-bar.tsx
+msgid "Ask a follow-up question…"
+msgstr "மேலும் கேட்கவும்…"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Available islandwide through Social Service Offices."
+msgstr "தீவு முழுவதும் உள்ள சமூகச் சேவை அலுவலகங்கள் வழியாக உதவி கிடைக்கும்."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bedok"
+msgstr "பிடோக்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bishan"
+msgstr "பீஷான்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Block 135 Jurong Gateway Road, Singapore 600135"
+msgstr "Block 135 Jurong Gateway Road, Singapore 600135"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Boon Lay"
+msgstr "பூன் லே"
+
+#. Section heading on the demo scheme page
+#: src/components/landing/sections/features-section.tsx
+msgid "Branches and contacts"
+msgstr "கிளைகளும் தொடர்பு விவரங்களும்"
+
+#. Aria label for the breadcrumb navigation at the top of the scheme page
+#: src/components/schemes/scheme-detail.tsx
+msgid "Breadcrumb"
+msgstr "பக்க இருப்பிட வழிகாட்டி"
+
+#. Footer banner, followed by the better.sg logo image: the sentence must end where the logo starts
+#: src/components/layout/footer.tsx
+msgid "Built by volunteers at"
+msgstr "தொண்டூழியர்களால் உருவாக்கப்பட்டது:"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Batok"
+msgstr "புக்கிட் பாத்தோக்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Merah"
+msgstr "புக்கிட் மேரா"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Panjang"
+msgstr "புக்கிட் பாஞ்சாங்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Bukit Timah"
+msgstr "புக்கிட் திமா"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Can I access Schemes.sg data through an API?"
+msgstr "API வழியாக Schemes.sg தரவுகளைப் பெற முடியுமா?"
+
+#: src/components/chat/new-chat-modal.tsx
+msgid "Cancel"
+msgstr "ரத்து செய்யவும்"
+
+#. Breadcrumb: link to the main catalog page
+#. Navbar tab: browse every scheme by category
+#: src/components/layout/navbar.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Catalogue"
+msgstr "திட்டப் பட்டியல்"
+
+#. Catalogue filter panel heading when choosing categories
+#: src/components/catalog/catalog-category-select.tsx
+msgid "Categories"
+msgstr "பிரிவுகள்"
+
+#. Label beside the catalogue filter button
+#: src/components/catalog/catalog-detail.tsx
+msgid "Category"
+msgstr "பிரிவு"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Central Singapore"
+msgstr "மத்திய சிங்கப்பூர்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Central Water Catchment"
+msgstr "மத்திய நீர்ப்பிடிப்புப் பகுதி"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Changi"
+msgstr "சாங்கி"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Changi Bay"
+msgstr "சாங்கி பே"
+
+#. Mobile tab label for the conversation view
+#: src/components/chat/chat-page.tsx
+msgid "Chat"
+msgstr "உரையாடல்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Checking what's out there for you"
+msgstr "உங்களுக்கான திட்டங்களைச் சரிபார்க்கிறது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Choa Chu Kang"
+msgstr "சுவா சூ காங்"
+
+#. Button: clear the active filter selections
+#: src/components/schemes/schemes-filter.tsx
+msgid "Clear"
+msgstr "நீக்கவும்"
+
+#. Button aria-label: remove all selections from this filter
+#: src/components/schemes/schemes-filter.tsx
+msgid "Clear {label} filter"
+msgstr "{label} வடிகட்டிகளை நீக்கவும்"
+
+#. Empty state hint when filters are active
+#: src/components/chat/schemes-list.tsx
+msgid "Clear one or more filters to see the schemes from this chat."
+msgstr "இந்த உரையாடலில் கிடைத்த திட்டங்களைக் காண, ஒன்று அல்லது அதற்கு மேற்பட்ட வடிகட்டிகளை நீக்கவும்."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Clementi"
+msgstr "கிளிமெண்டி"
+
+#: src/components/layout/navbar.tsx
+msgid "Close menu"
+msgstr "மெனுவை மூடவும்"
+
+#: src/components/chat/chat-input-bar.tsx
+#: src/components/chat/chat-landing-input.tsx
+msgid "Collapse search box"
+msgstr "தேடல் பெட்டியைச் சுருக்கவும்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "ComCare Short-to-Medium-Term Assistance"
+msgstr "ComCare குறுகிய மற்றும் நடுத்தரகால உதவித் திட்டம்"
+
+#. Badge shown on footer links that are not yet available
+#: src/components/layout/footer.tsx
+msgid "Coming soon"
+msgstr "விரைவில்"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Common questions"
+msgstr "பொதுவான கேள்விகள்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Community Health Assist Scheme (CHAS)"
+msgstr "சமூகச் சுகாதார உதவித் திட்டம் (CHAS)"
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "Community Partner"
+msgstr "சமூகக் கூட்டாளர்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Community Support"
+msgstr "சமூக ஆதரவு"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Comparing schemes from trusted agencies"
+msgstr "நம்பகமான அமைப்புகளின் திட்டங்களை ஒப்பிடுகிறோம்"
+
+#. Confirms starting a new chat, which clears the current one
+#: src/components/chat/new-chat-modal.tsx
+msgid "Confirm"
+msgstr "உறுதிசெய்யவும்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Considering your options"
+msgstr "உங்கள் விருப்பங்களைக் கருத்தில் கொள்கிறது"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Contact"
+msgstr "தொடர்புகொள்ள"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Contact your nearest Social Service Office to discuss your circumstances and next steps."
+msgstr "உங்கள் நிலைமையையும் அடுத்த படிகளையும் பற்றிப் பேச, அருகிலுள்ள சமூகச் சேவை அலுவலகத்தைத் தொடர்புகொள்ளவும்."
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Contribute"
+msgstr "திட்டத்தைப் பரிந்துரைக்கவும்"
+
+#. Navbar tab: suggest a scheme that is missing. Keep it short: it shares one row with three other tabs
+#: src/components/layout/navbar.tsx
+msgctxt "navbar tab"
+msgid "Contribute"
+msgstr "பரிந்துரை"
+
+#. Link button to contribute a new scheme
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Contribute a new scheme"
+msgstr "புதிய திட்டத்தைப் பரிந்துரைக்கவும்"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Copied"
+msgstr "நகலெடுக்கப்பட்டது"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Copy"
+msgstr "நகலெடுக்கவும்"
+
+#. Share button: the clipboard copy failed
+#: src/components/schemes/scheme-detail.tsx
+msgid "Copy failed, try again"
+msgstr "நகலெடுக்க முடியவில்லை, மீண்டும் முயலவும்"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Copy response"
+msgstr "பதிலை நகலெடுக்கவும்"
+
+#. Chat status step detail; url is the page address
+#: src/lib/status-step-copy.ts
+msgid "Couldn’t read \"{url}\"."
+msgstr "\"{url}\" இணையப்பக்கத்தைப் படிக்க முடியவில்லை."
+
+#. Label above the demo search input in the features tutorial
+#. Search box label in the feature walkthrough demo
+#: src/components/landing/sections/features-section.tsx
+msgid "Describe your situation"
+msgstr "உங்கள் நிலைமையை விவரிக்கவும்"
+
+#. Landing page hero subtitle
+#: src/components/chat/chat-landing-input.tsx
+msgid "Describe your situation and find schemes you may qualify for. Over {schemeCount} schemes from 200+ agencies and community organisations."
+msgstr "உங்கள் நிலைமையை விவரித்து, நீங்கள் தகுதி பெறக்கூடிய திட்டங்களைக் கண்டறியவும். 200-க்கும் மேற்பட்ட அமைப்புகள் மற்றும் சமூக அமைப்புகளிலிருந்து {schemeCount}-க்கும் மேற்பட்ட திட்டங்கள்."
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Describe your situation in your own words. We find the schemes that fit best, without the jargon."
+msgstr "உங்கள் நிலைமையை உங்கள் சொந்த வார்த்தைகளில் விவரிக்கவும். கடினமான சொற்கள் இல்லாமல், உங்களுக்குச் சிறப்பாகப் பொருந்தக்கூடிய திட்டங்களை நாங்கள் கண்டறிகிறோம்."
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Developers"
+msgstr "உருவாக்குநர்கள்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Disability & Transport"
+msgstr "மாற்றுத்திறன் மற்றும் போக்குவரத்து"
+
+#: src/components/landing/sections/agencies-section.tsx
+msgid "Discover schemes from <0/>200+ agencies"
+msgstr "<0/>200-க்கும் மேற்பட்ட அமைப்புகளின் திட்டங்களைக் கண்டறியவும்"
+
+#. Button: close the filter panel
+#: src/components/schemes/schemes-filter.tsx
+msgid "Done"
+msgstr "முடிந்தது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Downtown Core"
+msgstr "டவுன்டவுன் கோர்"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "e.g., ComCare Short-to-Medium Term Assistance"
+msgstr "எ.கா., ComCare குறுகிய மற்றும் நடுத்தரகால உதவித் திட்டம்"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "e.g., https://www.msf.gov.sg/comcare"
+msgstr "எ.கா., https://www.msf.gov.sg/comcare"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Education"
+msgstr "கல்வி"
+
+#. Section label: detailed eligibility criteria
+#: src/components/schemes/scheme-detail.tsx
+msgid "Eligibility details"
+msgstr "தகுதி நிபந்தனை விவரங்கள்"
+
+#. Section label: the groups who are eligible
+#: src/components/schemes/scheme-detail.tsx
+msgid "Eligibility groups"
+msgstr "தகுதி நிபந்தனைகளுக்கு உட்பட்ட பிரிவினர்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Email"
+msgstr "மின்னஞ்சல்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Employment & Training"
+msgstr "வேலைவாய்ப்பு மற்றும் பயிற்சி"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Enter the full link, including http:// or https://"
+msgstr "http:// அல்லது https:// உட்பட முழு இணைப்பையும் உள்ளிடவும்"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Enter the link to the scheme's page."
+msgstr "திட்டத்தின் பக்கத்திற்கான இணைப்பை உள்ளிடவும்."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Enter the scheme name."
+msgstr "திட்டத்தின் பெயரை உள்ளிடவும்."
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Enter your email"
+msgstr "உங்கள் மின்னஞ்சல் முகவரியை உள்ளிடவும்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Enter your name"
+msgstr "உங்கள் பெயரை உள்ளிடவும்"
+
+#: src/components/chat/chat-input-bar.tsx
+#: src/components/chat/chat-landing-input.tsx
+msgid "Expand search box"
+msgstr "தேடல் பெட்டியை விரிவாக்கவும்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Family & Children"
+msgstr "குடும்பம் மற்றும் பிள்ளைகள்"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "FAQ"
+msgstr "அடிக்கடி கேட்கப்படும் கேள்விகள்"
+
+#. Section header above logos of media outlets
+#: src/components/landing/sections/featured-section.tsx
+msgid "Featured on"
+msgstr "ஊடகங்களில் வெளியானது"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Features"
+msgstr "அம்சங்கள்"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Feedback"
+msgstr "கருத்துத் தெரிவிப்பு"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Feedback about a chat response"
+msgstr "உரையாடல் பதில் குறித்த கருத்துத் தெரிவிப்பு"
+
+#. Chat status step: the assistant is loading full scheme details
+#: src/lib/status-step-copy.ts
+msgid "Fetching scheme details"
+msgstr "திட்ட விவரங்களைப் பெறுகிறது"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Fill in all the required fields."
+msgstr "கட்டாயமான எல்லாப் புலங்களையும் நிரப்பவும்."
+
+#. Button aria-label: open a filter menu
+#: src/components/schemes/schemes-filter.tsx
+msgid "Filter by {label}"
+msgstr "{label} வடிகட்டிகள்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Filter by agency or support type"
+msgstr "அமைப்பு அல்லது ஆதரவு வகைக்கான வடிகட்டிகள்"
+
+#. Chat status step detail; directive is the assistant's own filtering instruction, in English
+#: src/lib/status-step-copy.ts
+msgid "Filtering and re-ranking the schemes. Instructions: {directive}"
+msgstr "திட்டங்களை வடிகட்டி வரிசைப்படுத்துகிறது. வழிமுறைகள்: {directive}"
+
+#. Chat status step: the assistant is narrowing the current results
+#: src/lib/status-step-copy.ts
+msgid "Filtering schemes"
+msgstr "திட்டங்களை வடிகட்டுகிறது"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Financial Assistance"
+msgstr "நிதி உதவி"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Financial support for households facing temporary difficulty with essential expenses."
+msgstr "அத்தியாவசியச் செலவுகளைச் சமாளிக்கத் தற்காலிகமாகச் சிரமப்படும் வீட்டில் வசிப்பவர்களுக்கு நிதி உதவி."
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Find schemes that fit you"
+msgstr "உங்களுக்குப் பொருத்தமான திட்டங்களைக் கண்டறியவும்"
+
+#. Landing page hero headline
+#: src/components/chat/chat-landing-input.tsx
+msgid "Find the Right<0/>Assistance Schemes<1/>in Singapore"
+msgstr "சிங்கப்பூரில் சரியான<0/>உதவித் திட்டங்களைக்<1/>கண்டறியவும்"
+
+#: src/components/landing/sections/cta-section.tsx
+msgid "Find the Support You Deserve"
+msgstr "உங்களுக்குரிய ஆதரவைக் கண்டறியவும்"
+
+#. Catalogue loading status; heading is the selected categories and areas
+#: src/components/catalog/catalog-detail.tsx
+msgid "Finding {heading} schemes…"
+msgstr "{heading} தொடர்பான திட்டங்களைத் தேடுகிறோம்…"
+
+#. Loading state aria label while searching for schemes
+#: src/components/chat/schemes-list.tsx
+msgid "Finding schemes"
+msgstr "திட்டங்களைத் தேடுகிறோம்"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "Finding schemes across all categories…"
+msgstr "அனைத்துப் பிரிவுகளிலும் திட்டங்களைத் தேடுகிறோம்…"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Finding the best place to start"
+msgstr "தொடங்குவதற்கான சிறந்த இடத்தைக் கண்டறிகிறது"
+
+#. Status text while the AI searches for schemes
+#: src/components/chat/schemes-list.tsx
+msgid "Finding the best schemes..."
+msgstr "மிகவும் பொருத்தமான திட்டங்களைத் தேடுகிறோம்..."
+
+#. Chat status step detail; query is the search the assistant ran
+#: src/lib/status-step-copy.ts
+msgid "Finding the schemes that best match \"{query}\""
+msgstr "\"{query}\" என்பதற்கு மிகவும் பொருந்தும் திட்டங்களைக் கண்டறிகிறது"
+
+#: src/components/landing/sections/cta-section.tsx
+msgid "Free to use. No sign-up required."
+msgstr "இலவசமாகப் பயன்படுத்தலாம். பதிவு தேவையில்லை."
+
+#: src/components/landing/sections/features-section.tsx
+msgid "From your first question to how to apply, in one place."
+msgstr "முதல் கேள்வி முதல் விண்ணப்பிக்கும் முறை வரை, அனைத்தும் ஒரே இடத்தில்."
+
+#. Footer link to better.sg
+#: src/components/layout/footer.tsx
+msgid "Get involved"
+msgstr "பங்கேற்கவும்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Getting my bearings"
+msgstr "நிலவரத்தைப் புரிந்துகொள்கிறது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Geylang"
+msgstr "கேலாங்"
+
+#. Menu item in the message actions popover
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Give feedback"
+msgstr "கருத்துத் தெரிவிக்கவும்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Giving this the thought it needs"
+msgstr "இதற்குத் தேவையான கவனத்தைச் செலுத்துகிறது"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Health & Wellbeing"
+msgstr "சுகாதாரம் மற்றும் நல்வாழ்வு"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Help keep Schemes.sg accurate by correcting this listing or contributing a new scheme."
+msgstr "இந்தப் பதிவைத் திருத்தியோ, புதிய திட்டத்தைப் பரிந்துரைத்தோ Schemes.sg தகவல்கள் சரியாக இருக்க உதவவும்."
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Help us improve Schemes.sg with your valuable input"
+msgstr "உங்கள் மதிப்புமிக்க கருத்துகளால் Schemes.sg-ஐ மேம்படுத்த உதவவும்"
+
+#. Thumbs-up button tooltip and aria label
+#. Thumbs-up button tooltip and aria label
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Helpful"
+msgstr "பயனுள்ளது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Hougang"
+msgstr "ஹவ்காங்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Households needing help with essential expenses"
+msgstr "அத்தியாவசியச் செலவுகளுக்கு உதவி தேவைப்படும் வீட்டில் வசிப்பவர்கள்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Housing & Food"
+msgstr "வீடமைப்பு மற்றும் உணவு"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "How does the AI matching work?"
+msgstr "பொருத்தமான திட்டங்களை AI எப்படித் தேர்ந்தெடுக்கிறது?"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "How it works:"
+msgstr "இது செயல்படும் விதம்:"
+
+#. Section heading: instructions for applying
+#. Tab label: application steps section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "How to apply"
+msgstr "விண்ணப்பிக்கும் முறை"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "How up-to-date is the information?"
+msgstr "தகவல்கள் எவ்வளவு அண்மையானவை?"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "How we find your matches"
+msgstr "உங்களுக்கான பொருத்தங்களை நாங்கள் எப்படிக் கண்டறிகிறோம்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "I found schemes that may help with household expenses and childcare costs."
+msgstr "வீட்டில் வசிப்பவர்களின் செலவுகள் மற்றும் பிள்ளைப் பராமரிப்புச் செலவுகளுக்கு உதவக்கூடிய திட்டங்களை நான் கண்டறிந்துள்ளேன்."
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "I had no idea there were schemes for my situation until I tried Schemes.sg. It matched me with three programmes I actually qualified for, and one of them covered my kids' school fees. I wish I'd found this sooner."
+msgstr "Schemes.sg-ஐ முயன்ற பிறகுதான் என் நிலைமைக்கேற்ற திட்டங்கள் இருப்பது தெரிந்தது. நான் தகுதி பெற்ற மூன்று திட்டங்களை அது கண்டறிந்தது. அவற்றில் ஒன்று என் பிள்ளைகளின் பள்ளிக் கட்டணத்தைச் செலுத்தியது. இதை முன்பே கண்டறிந்திருந்தால் நன்றாக இருந்திருக்கும்."
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need community support"
+msgstr "எனக்குச் சமூக ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need disability or transport support"
+msgstr "எனக்கு மாற்றுத்திறன் அல்லது போக்குவரத்து ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need education support"
+msgstr "எனக்குக் கல்வி ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need employment or training support"
+msgstr "எனக்கு வேலைவாய்ப்பு அல்லது பயிற்சி ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need financial assistance"
+msgstr "எனக்கு நிதி உதவி தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need health and wellbeing support"
+msgstr "எனக்குச் சுகாதாரம் மற்றும் நல்வாழ்வு ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need housing or food support"
+msgstr "எனக்கு வீடமைப்பு அல்லது உணவு ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need legal or safety support"
+msgstr "எனக்குச் சட்ட அல்லது பாதுகாப்பு ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need support for my family or children"
+msgstr "என் குடும்பத்திற்கு அல்லது பிள்ளைகளுக்கு ஆதரவு தேவை"
+
+#. Category chip prompt
+#: src/components/chat/chat-landing-input.tsx
+msgid "I need support for seniors or caregivers"
+msgstr "எனக்கு மூத்தோர் அல்லது பராமரிப்பாளர்களுக்கான ஆதரவு தேவை"
+
+#. Placeholder text for the landing page search input
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/features-section.tsx
+msgid "I'm a single parent looking for financial assistance…"
+msgstr "நான் தனிப் பெற்றோர். நிதி உதவியைத் தேடுகிறேன்…"
+
+#. Info banner heading: disclaimer about scheme accuracy
+#: src/components/schemes/scheme-detail.tsx
+msgid "Important Information"
+msgstr "முக்கியத் தகவல்"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Is my personal information safe?"
+msgstr "என் தனிப்பட்ட தகவல்கள் பாதுகாப்பாக உள்ளனவா?"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Is Schemes.sg free to use?"
+msgstr "Schemes.sg-ஐ இலவசமாகப் பயன்படுத்தலாமா?"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Its official link failed our last check, so the details below may be out of date. Contact the agency to confirm before you apply."
+msgstr "கடைசியாகச் சரிபார்த்தபோது அதிகாரப்பூர்வ இணைப்பு வேலை செய்யவில்லை. அதனால் கீழே உள்ள விவரங்கள் பழையதாக இருக்கலாம். விண்ணப்பிக்கும் முன் அமைப்பிடம் உறுதிசெய்யவும்."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Jurong East"
+msgstr "ஜூரோங் கிழக்கு"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Jurong West"
+msgstr "ஜூரோங் மேற்கு"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Kallang"
+msgstr "காலாங்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Keeping your situation in mind"
+msgstr "உங்கள் சூழ்நிலையை மனதில் கொள்கிறது"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Know a scheme that's missing from our database? Share it with us!"
+msgstr "எங்கள் தரவுத்தளத்தில் இல்லாத திட்டம் உங்களுக்குத் தெரியுமா? எங்களுடன் பகிரவும்!"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Know a scheme we’re missing? Suggest it and help others find it."
+msgstr "நாங்கள் சேர்க்காத திட்டம் ஏதேனும் உங்களுக்குத் தெரியுமா? அதைப் பரிந்துரைத்து, மற்றவர்களும் அதைக் கண்டறிய உதவவும்."
+
+#. Aria label for the navbar language menu button; the value is the current language name
+#: src/components/landing/shared/language-toggle.tsx
+msgid "Language: {currentLanguage}"
+msgstr "மொழி: {currentLanguage}"
+
+#. Footer column heading
+#: src/components/layout/footer.tsx
+msgid "Legal"
+msgstr "சட்டத் தகவல்கள்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Legal & Safety"
+msgstr "சட்டம் மற்றும் பாதுகாப்பு"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Lim Chu Kang"
+msgstr "லிம் சூ காங்"
+
+#. Share button: the link was copied to clipboard
+#: src/components/schemes/scheme-detail.tsx
+msgid "Link copied"
+msgstr "இணைப்பு நகலெடுக்கப்பட்டது"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "Loading schemes"
+msgstr "திட்டங்கள் ஏற்றப்படுகின்றன"
+
+#. Filter label: filter schemes by location
+#: src/components/schemes/schemes-filter.tsx
+msgid "Location"
+msgstr "இடம்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Looking for the right fit for you"
+msgstr "உங்களுக்குப் பொருத்தமானதைத் தேடுகிறது"
+
+#. Footer location text
+#: src/components/layout/footer.tsx
+msgid "Made with care in Singapore"
+msgstr "சிங்கப்பூரில் அக்கறையுடன் உருவாக்கப்பட்டது"
+
+#. Footer tagline
+#: src/components/layout/footer.tsx
+msgid "Making social assistance accessible for everyone."
+msgstr "சமூக உதவிகளை அனைவருக்கும் எளிதில் கிடைக்கச் செய்தல்."
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Making sure I've understood you"
+msgstr "நான் உங்களைப் புரிந்துகொண்டேன் என்பதை உறுதிப்படுத்துகிறது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Mandai"
+msgstr "மண்டாய்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Marina East"
+msgstr "மெரினா கிழக்கு"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Marina South"
+msgstr "மெரினா தென்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Marine Parade"
+msgstr "மரின் பரேட்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Ministry of Health"
+msgstr "சுகாதார அமைச்சு"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Ministry of Social and Family Development"
+msgstr "சமுதாய, குடும்ப மேம்பாட்டு அமைச்சு"
+
+#. Button to show additional feedback options
+#: src/components/feedback/feedback-prompt.tsx
+msgid "More actions"
+msgstr "மேலும் செயல்கள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Museum"
+msgstr "அருங்காட்சியகம்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Name"
+msgstr "பெயர்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Narrow down to the schemes that fit"
+msgstr "வடிகட்டிகள் மூலம் பொருந்தும் திட்டங்களை மட்டும் காணவும்"
+
+#. Aria label for the main navigation tabs
+#: src/components/layout/navbar.tsx
+msgid "Navigation"
+msgstr "வழிசெலுத்தல்"
+
+#: src/components/layout/navbar.tsx
+msgid "Navigation tabs"
+msgstr "வழிசெலுத்தல் தாவல்கள்"
+
+#: src/components/chat/new-chat-button.tsx
+msgid "New chat"
+msgstr "புதிய உரையாடல்"
+
+#. Heading of the dialog that confirms starting a new chat
+#: src/components/chat/new-chat-modal.tsx
+msgid "New Chat"
+msgstr "புதிய உரையாடல்"
+
+#: src/components/chat/schemes-panel-pulse.tsx
+msgid "New schemes available"
+msgstr "புதிய திட்டங்கள் உள்ளன"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Newton"
+msgstr "நியூட்டன்"
+
+#. Location filter option for schemes not tied to a planning area
+#: src/components/schemes/schemes-filter.tsx
+msgid "No location"
+msgstr "குறிப்பிட்ட இடம் இல்லை"
+
+#. Empty state: no options match the search
+#: src/components/schemes/schemes-filter.tsx
+msgid "No matches"
+msgstr "பொருத்தங்கள் இல்லை"
+
+#. Empty state heading when search returns no results
+#: src/components/catalog/catalog-detail.tsx
+#: src/components/chat/schemes-list.tsx
+msgid "No schemes found"
+msgstr "திட்டங்கள் எதுவும் கிடைக்கவில்லை"
+
+#. Empty state heading when active filters hide all results
+#: src/components/chat/schemes-list.tsx
+msgid "No schemes match the selected filters"
+msgstr "தேர்ந்தெடுக்கப்பட்ட வடிகட்டிகளுக்கு எந்தத் திட்டமும் பொருந்தவில்லை"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "North-Eastern Islands"
+msgstr "வடகிழக்குத் தீவுகள்"
+
+#. Thumbs-down button tooltip and aria label
+#. Thumbs-down button tooltip and aria label
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Not helpful"
+msgstr "பயனுள்ளதாக இல்லை"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Novena"
+msgstr "நொவீனா"
+
+#. Aria label for the section navigation tabs on a scheme page
+#: src/components/schemes/scheme-detail.tsx
+msgid "On this page"
+msgstr "இந்தப் பக்கத்தில்"
+
+#: src/components/layout/navbar.tsx
+msgid "Open menu"
+msgstr "மெனுவைத் திறக்கவும்"
+
+#. Aria label for the mobile tab list switching between chat and schemes views
+#: src/components/chat/chat-page.tsx
+msgid "Options"
+msgstr "காட்சி விருப்பங்கள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Orchard"
+msgstr "ஆர்ச்சர்ட்"
+
+#. Section header above partner organization logos
+#: src/components/landing/sections/featured-section.tsx
+msgid "Our partners"
+msgstr "எங்கள் கூட்டாளர்கள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Outram"
+msgstr "ஊட்ரம்"
+
+#. Section heading: summary and category
+#. Tab label: summary and category section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Overview"
+msgstr "கண்ணோட்டம்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Pasir Ris"
+msgstr "பாசிர் ரிஸ்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Paya Lebar"
+msgstr "பாய லேபார்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Picturing your situation"
+msgstr "உங்கள் சூழ்நிலையைக் கற்பனை செய்கிறது"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Piecing this together"
+msgstr "தகவல்களை ஒன்றிணைக்கிறது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Pioneer"
+msgstr "பயனியர்"
+
+#. Catalogue filter panel heading when choosing a planning area
+#: src/components/catalog/catalog-category-select.tsx
+msgid "Planning area"
+msgstr "திட்டமிடல் பகுதி"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Please enter a valid email address"
+msgstr "சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Privacy Policy"
+msgstr "தனியுரிமைக் கொள்கை"
+
+#. Footer column heading
+#: src/components/layout/footer.tsx
+msgid "Product"
+msgstr "தயாரிப்பு"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Punggol"
+msgstr "பொங்கோல்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Queenstown"
+msgstr "குவீன்ஸ்டவுன்"
+
+#. Chat status step detail; url is the page address
+#: src/lib/status-step-copy.ts
+msgid "Read \"{url}\"."
+msgstr "\"{url}\" இணையப்பக்கம் படிக்கப்பட்டது."
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Read our Privacy Policy"
+msgstr "எங்கள் தனியுரிமைக் கொள்கையைப் படிக்கவும்"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Read the developer docs"
+msgstr "உருவாக்குநர் ஆவணங்களைப் படிக்கவும்"
+
+#. Chat status step: the assistant is opening a web page
+#: src/lib/status-step-copy.ts
+msgid "Reading a web page"
+msgstr "இணையப்பக்கத்தைப் படிக்கிறது"
+
+#. Chat status step detail; url is the page address
+#: src/lib/status-step-copy.ts
+msgid "Reading the page \"{url}\""
+msgstr "\"{url}\" இணையப்பக்கத்தைப் படிக்கிறது"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Reading your question"
+msgstr "உங்கள் கேள்வியைப் படிக்கிறது"
+
+#. Footer column heading
+#: src/components/layout/footer.tsx
+msgid "Resources"
+msgstr "வளங்கள்"
+
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Response actions"
+msgstr "பதில் நடவடிக்கைகள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "River Valley"
+msgstr "ரிவர் வேலி"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Rochor"
+msgstr "ரோச்சோர்"
+
+#. Chat status step: full scheme details loaded
+#: src/lib/status-step-copy.ts
+msgid "Scheme details found"
+msgstr "திட்ட விவரங்கள் கண்டறியப்பட்டன"
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Scheme details may change. Check the official agency website for the latest eligibility, benefits, and application information."
+msgstr "திட்ட விவரங்கள் மாறலாம். அண்மைய தகுதி நிபந்தனைகள், கிடைக்கும் உதவிகள், விண்ணப்ப விவரங்களுக்கு அமைப்பின் அதிகாரப்பூர்வ இணையத்தளத்தைப் பார்க்கவும்."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Scheme link"
+msgstr "திட்ட இணைப்பு"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Scheme name"
+msgstr "திட்டத்தின் பெயர்"
+
+#. Section label: the category tags for a scheme
+#: src/components/schemes/scheme-detail.tsx
+msgid "Scheme type"
+msgstr "திட்ட வகை"
+
+#. Footer column heading
+#. Mobile tab label for the results list
+#: src/components/chat/chat-page.tsx
+#: src/components/layout/footer.tsx
+msgid "Schemes"
+msgstr "திட்டங்கள்"
+
+#. Chat status step: narrowing the results finished
+#: src/lib/status-step-copy.ts
+msgid "Schemes filtered"
+msgstr "திட்டங்கள் வடிகட்டப்பட்டன"
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "Schemes.sg helps our staff quickly find relevant support options for service users. We're excited to see how this tool can strengthen our work with the community."
+msgstr "சேவை பெறுபவர்களுக்குப் பொருத்தமான ஆதரவை எங்கள் ஊழியர்கள் விரைவாகக் கண்டறிய Schemes.sg உதவுகிறது. சமூகத்துடன் நாங்கள் செய்யும் பணியை இந்தக் கருவி மேலும் வலுப்படுத்தும் என்று ஆவலுடன் எதிர்பார்க்கிறோம்."
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Schemes.sg is a free, AI-powered search tool that helps you find social assistance schemes you may qualify for. It brings together schemes from over 200 government agencies and community organisations."
+msgstr "Schemes.sg என்பது AI உதவியுடன் இயங்கும் இலவசத் தேடல் கருவி. நீங்கள் தகுதி பெறக்கூடிய சமூக உதவித் திட்டங்களைக் கண்டறிய இது உதவுகிறது. 200-க்கும் மேற்பட்ட அரசாங்க அமைப்புகள் மற்றும் சமூக அமைப்புகளின் திட்டங்களை இது ஒருங்கிணைக்கிறது."
+
+#: src/components/chat/chat-message-list.tsx
+msgid "Schemes.sg logo"
+msgstr "Schemes.sg சின்னம்"
+
+#: src/components/chat/chat-scroll-anchor.tsx
+msgid "Scroll to latest"
+msgstr "சமீபத்திய பகுதிக்குச் செல்லவும்"
+
+#. Button that scrolls the page back to the top
+#: src/components/landing/shared/scroll-to-top.tsx
+msgid "Scroll to top"
+msgstr "மேலே செல்லவும்"
+
+#. Button to submit the search query
+#. Button to submit the search query
+#. Footer link
+#: src/components/catalog/catalog-detail.tsx
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/layout/footer.tsx
+msgid "Search"
+msgstr "தேடல்"
+
+#. Filter search placeholder: search within the filter options
+#. placeholder {0}: label.toLowerCase()
+#: src/components/schemes/schemes-filter.tsx
+msgid "Search {0}…"
+msgstr "{0} தேடவும்…"
+
+#. Alt text for the submit button in the demo composer
+#: src/components/landing/sections/features-section.tsx
+msgid "Search for this example"
+msgstr "இந்த எடுத்துக்காட்டைத் தேடவும்"
+
+#. Button: go to the search page
+#. Navbar tab and button: open the search page
+#: src/components/catalog/catalog-detail.tsx
+#: src/components/landing/sections/cta-section.tsx
+#: src/components/layout/navbar.tsx
+msgid "Search schemes"
+msgstr "திட்டங்களைத் தேடவும்"
+
+#. Chat status step detail
+#: src/lib/status-step-copy.ts
+msgid "Searching our database for more information about selected schemes."
+msgstr "தேர்ந்தெடுக்கப்பட்ட திட்டங்கள் குறித்த கூடுதல் தகவல்களுக்கு எங்கள் தரவுத்தளத்தில் தேடுகிறது."
+
+#. Chat status step: the assistant is searching the scheme list
+#: src/lib/status-step-copy.ts
+msgid "Searching schemes database"
+msgstr "திட்டங்களின் தரவுத்தளத்தில் தேடுகிறது"
+
+#. Chat status step detail; query is the web search the assistant ran
+#: src/lib/status-step-copy.ts
+msgid "Searching the web for \"{query}\""
+msgstr "\"{query}\" என்பதற்காக இணையத்தில் தேடுகிறது"
+
+#. Chat status step: the assistant is searching the web
+#: src/lib/status-step-copy.ts
+msgid "Searching web"
+msgstr "இணையத்தில் தேடுகிறது"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "See who qualifies, what you get, and where to apply for each scheme."
+msgstr "ஒவ்வொரு திட்டத்திற்கும் யார் தகுதி பெறுவார்கள், என்ன உதவி கிடைக்கும், எங்கு விண்ணப்பிக்கலாம் என்பதை அறியவும்."
+
+#. Aria label for the language selector toggle
+#: src/components/landing/shared/language-toggle.tsx
+msgid "Select language"
+msgstr "மொழியைத் தேர்ந்தெடுக்கவும்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Seletar"
+msgstr "சிலேத்தார்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Sembawang"
+msgstr "செம்பவாங்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Send feedback"
+msgstr "கருத்துத் தெரிவிப்பை அனுப்பவும்"
+
+#. Button to submit the chat message
+#: src/components/chat/stop-generating-button.tsx
+msgid "Send message"
+msgstr "செய்தியை அனுப்பவும்"
+
+#. Default error message when the chat stream fails
+#: src/components/chat/streaming-error-card.tsx
+msgid "Send your question again."
+msgstr "உங்கள் கேள்வியை மீண்டும் அனுப்பவும்."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Sengkang"
+msgstr "செங்காங்"
+
+#. Category chip label
+#. Scheme category
+#. Scheme type shown in the scrolling list beside the home page search
+#: src/components/chat/chat-landing-input.tsx
+#: src/components/landing/sections/hero-section.tsx
+#: src/lib/design-system/category-labels.ts
+msgid "Seniors & Caregiving"
+msgstr "மூத்தோர் மற்றும் பராமரிப்பு"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Serangoon"
+msgstr "சிராங்கூன்"
+
+#. Field label on the demo scheme page
+#. Section label: geographic coverage
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Service area"
+msgstr "சேவைப் பகுதி"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Share feedback"
+msgstr "கருத்துத் தெரிவிப்பைப் பகிரவும்"
+
+#. Link button to open general feedback form
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Share general feedback"
+msgstr "பொதுவான கருத்துத் தெரிவிப்பைப் பகிரவும்"
+
+#. Button on the demo scheme page
+#. Button: share this scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Share scheme"
+msgstr "திட்டத்தைப் பகிரவும்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Share your thoughts, suggestions, or concerns"
+msgstr "உங்கள் கருத்துகள், பரிந்துரைகள் அல்லது கவலைகளைப் பகிரவும்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Short-term financial support for lower-income households facing temporary difficulty."
+msgstr "தற்காலிகச் சிரமங்களை எதிர்கொள்ளும் குறைந்த வருமானம் உள்ள வீடுகளில் வசிப்பவர்களுக்குக் குறுகியகால நிதி உதவி."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Simpang"
+msgstr "சிம்பாங்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Simply type your question, and Schemes.sg instantly scans more than {schemeCount} government and community assistance programs to show you what help is available."
+msgstr "உங்கள் கேள்வியைத் தட்டச்சு செய்தால் போதும்; {schemeCount}-க்கும் மேற்பட்ட அரசாங்க மற்றும் சமூக உதவித் திட்டங்களை உடனே ஆராய்ந்து, Schemes.sg என்ன உதவி கிடைக்கிறது என்பதை உங்களுக்குக் காட்டும்."
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Singapore Citizens and Permanent Residents"
+msgstr "சிங்கப்பூர்க் குடிமக்கள் மற்றும் நிரந்தரவாசிகள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Singapore River"
+msgstr "சிங்கப்பூர் நதி"
+
+#: src/components/landing/sections/testimonial-section.tsx
+msgid "Single mother, Jurong West"
+msgstr "தனித்தாய், ஜூரோங் வெஸ்ட்"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Sitemap"
+msgstr "தள வரைபடம்"
+
+#: src/components/landing/sections/cta-section.tsx
+msgid "Skip hours of searching across agency websites. Describe your situation, and we’ll find schemes that match."
+msgstr "அமைப்புகளின் இணையத்தளங்களில் மணிக்கணக்கில் தேட வேண்டாம். உங்கள் நிலைமையை விவரிக்கவும். பொருத்தமான திட்டங்களை நாங்கள் கண்டறிவோம்."
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Sorting through the possibilities"
+msgstr "சாத்தியக்கூறுகளை வரிசைப்படுத்துகிறது"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Southern Islands"
+msgstr "தெற்குத் தீவுகள்"
+
+#. Button in the error card to start a new conversation
+#: src/components/chat/streaming-error-card.tsx
+msgid "Start new chat"
+msgstr "புதிய உரையாடலைத் தொடங்கவும்"
+
+#. Button: go to the search page
+#: src/components/landing/sections/agencies-section.tsx
+msgid "Start searching"
+msgstr "தேடத் தொடங்கவும்"
+
+#. Screen-reader label for a numbered step in the feature walkthrough
+#: src/components/landing/sections/features-section.tsx
+msgid "Step {step}"
+msgstr "படி {step}"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Still with you"
+msgstr "இன்னும் உங்களுடன்"
+
+#. Button to cancel the AI response while it is streaming
+#: src/components/chat/stop-generating-button.tsx
+msgid "Stop generating"
+msgstr "பதில் உருவாக்கத்தை நிறுத்தவும்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Straits View"
+msgstr "ஸ்ட்ரெய்ட்ஸ் வியூ"
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Submit scheme"
+msgstr "திட்டத்தைச் சமர்ப்பிக்கவும்"
+
+#: src/app/(main)/contribute/page.tsx
+#: src/app/(main)/feedback/page.tsx
+msgid "Submitting…"
+msgstr "சமர்ப்பிக்கப்படுகிறது…"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Subsidies for medical and dental care at participating clinics."
+msgstr "பங்கேற்கும் மருந்தகங்களில் மருத்துவ மற்றும் பல் சிகிச்சைக்கான அரசாங்க மானியங்கள்."
+
+#. Link button to report a scheme correction
+#: src/components/feedback/feedback-prompt.tsx
+msgid "Suggest a correction"
+msgstr "திருத்தத்தைப் பரிந்துரைக்கவும்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Suggest a correction for {schemeName}"
+msgstr "{schemeName} திட்டத்திற்கான திருத்தத்தைப் பரிந்துரைக்கவும்"
+
+#: src/app/(main)/contribute/page.tsx
+#: src/components/landing/sections/faq-section.tsx
+msgid "Suggest a new scheme"
+msgstr "புதிய திட்டத்தைப் பரிந்துரைக்கவும்"
+
+#. Button: go to the contribute page
+#: src/components/landing/sections/faq-section.tsx
+msgid "Suggest a scheme"
+msgstr "திட்டத்தைப் பரிந்துரைக்கவும்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Suggest a scheme correction"
+msgstr "திட்டத் திருத்தத்தைப் பரிந்துரைக்கவும்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Sungei Kadut"
+msgstr "சுங்கை காடுட்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tampines"
+msgstr "தெம்பனிஸ்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tanglin"
+msgstr "டங்லின்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tengah"
+msgstr "தெங்கா"
+
+#. Footer link
+#: src/components/layout/footer.tsx
+msgid "Terms of Service"
+msgstr "சேவை விதிமுறைகள்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Thanks for your feedback."
+msgstr "உங்கள் கருத்துத் தெரிவிப்புக்கு நன்றி."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "Thanks, we’ve received your suggestion. A volunteer will review it."
+msgstr "நன்றி, உங்கள் பரிந்துரை கிடைத்தது. ஒரு தொண்டூழியர் அதைச் சரிபார்ப்பார்."
+
+#. Error card heading when the chat response fails
+#: src/components/chat/streaming-error-card.tsx
+msgid "The answer stopped partway"
+msgstr "பதில் இடையில் நின்றுவிட்டது"
+
+#: src/components/chat/chat-page.tsx
+msgid "The connection dropped before the response finished. Send it again when ready."
+msgstr "பதில் முடிவதற்குள் இணைப்பு துண்டிக்கப்பட்டது. தயாரானதும் மீண்டும் அனுப்பவும்."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "The official webpage where details about this scheme can be found"
+msgstr "இந்தத் திட்டத்தைப் பற்றிய விவரங்களைக் காணக்கூடிய அதிகாரப்பூர்வ இணையப்பக்கம்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Thinking about what you need"
+msgstr "உங்களுக்கு என்ன தேவை என்று சிந்திக்கிறது"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Thinking about who could help"
+msgstr "யார் உதவ முடியும் என்று சிந்திக்கிறது"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Thinking this through"
+msgstr "இதை ஆழமாகச் சிந்திக்கிறது"
+
+#: src/components/schemes/retired-scheme-notice.tsx
+msgid "This page has been kept so existing links do not break. Browse the catalog to find currently listed support schemes."
+msgstr "தற்போதுள்ள இணைப்புகள் துண்டிக்கப்படாமல் இருக்க இந்தப் பக்கம் வைக்கப்பட்டுள்ளது. தற்போது பட்டியலிடப்பட்டுள்ள ஆதரவுத் திட்டங்களைக் கண்டறிய திட்டப் பட்டியலை உலாவவும்."
+
+#: src/components/schemes/retired-scheme-notice.tsx
+msgid "This scheme is no longer listed"
+msgstr "இந்தத் திட்டம் இனி பட்டியலிடப்படவில்லை"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Toa Payoh"
+msgstr "தோ பாயோ"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Tools that do the searching for you"
+msgstr "உங்களுக்காகத் தேடும் கருவிகள்"
+
+#: src/components/catalog/catalog-detail.tsx
+msgid "Try a different search or category"
+msgstr "வேறு தேடல் சொல் அல்லது பிரிவை முயலவும்"
+
+#. Empty state hint when filters hide all results
+#: src/components/chat/schemes-list.tsx
+msgid "Try adjusting the filter options to broaden the list."
+msgstr "பட்டியலை விரிவாக்க வடிகட்டிகளை மாற்றி முயலவும்."
+
+#. Empty state hint when search returns no results
+#: src/components/chat/schemes-list.tsx
+msgid "Try asking with a broader need, fewer conditions, or a different support area."
+msgstr "விரிவான தேவை, குறைவான நிபந்தனைகள் அல்லது வேறு ஆதரவுப் பகுதியைக் கொண்டு கேட்டுப் பார்க்கவும்."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Tuas"
+msgstr "துவாஸ்"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Turning this over"
+msgstr "இதை ஆராய்கிறது"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Understanding what support may fit your situation"
+msgstr "உங்கள் நிலைமைக்கு எந்த ஆதரவு பொருந்தலாம் என்பதைப் புரிந்துகொள்கிறோம்"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "Use filters to narrow down schemes by agency, category, eligibility criteria, and the type of support you need."
+msgstr "அமைப்பு, பிரிவு, தகுதி நிபந்தனைகள் மற்றும் உங்களுக்குத் தேவையான ஆதரவின் வகை ஆகியவற்றின் அடிப்படையில் திட்டங்களைச் சுருக்க வடிகட்டிகளைப் பயன்படுத்தவும்."
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "Visit the agency website →"
+msgstr "அமைப்பின் இணையத்தளத்திற்குச் செல்லவும் →"
+
+#. Button on the demo scheme page
+#. Button: open the scheme's official website in a new tab
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Visit website"
+msgstr "தளத்தைப் பார்க்கவும்"
+
+#. Alert banner title: the scheme's URL failed health check
+#: src/components/schemes/scheme-detail.tsx
+msgid "We couldn't reach this scheme's website"
+msgstr "இந்தத் திட்டத்தின் இணையத்தளத்தை அணுக முடியவில்லை"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "We couldn’t send your feedback. Check your connection and try again."
+msgstr "உங்கள் கருத்துத் தெரிவிப்பை அனுப்ப முடியவில்லை. உங்கள் இணைய இணைப்பைச் சரிபார்த்துவிட்டு மீண்டும் முயலவும்."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "We couldn’t send your suggestion. Check your connection and try again."
+msgstr "உங்கள் பரிந்துரையை அனுப்ப முடியவில்லை. உங்கள் இணைய இணைப்பைச் சரிபார்த்துவிட்டு மீண்டும் முயலவும்."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "We couldn’t send your suggestion. Try again in a few minutes."
+msgstr "உங்கள் பரிந்துரையை அனுப்ப முடியவில்லை. சில நிமிடங்கள் கழித்து மீண்டும் முயலவும்."
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "We cover 10 areas: financial assistance, family and children, health and wellbeing, housing and food, education, employment and training, seniors and caregiving, disability and transport, legal and safety, and community support."
+msgstr "நாங்கள் 10 பிரிவுகளை உள்ளடக்குகிறோம்: நிதி உதவி, குடும்பம் மற்றும் பிள்ளைகள், சுகாதாரம் மற்றும் நல்வாழ்வு, வீடமைப்பு மற்றும் உணவு, கல்வி, வேலைவாய்ப்பு மற்றும் பயிற்சி, மூத்தோர் மற்றும் பராமரிப்பு, மாற்றுத்திறன் மற்றும் போக்குவரத்து, சட்டம் மற்றும் பாதுகாப்பு, சமூக ஆதரவு."
+
+#: src/components/schemes/scheme-detail.tsx
+msgid "We don't have detailed information for this scheme yet. The agency website has the full picture, including eligibility and how to apply."
+msgstr "இந்தத் திட்டத்தின் விரிவான தகவல்கள் எங்களிடம் இன்னும் இல்லை. தகுதி நிபந்தனைகள், விண்ணப்பிக்கும் முறை உள்ளிட்ட முழு விவரங்களும் அமைப்பின் இணையத்தளத்தில் உள்ளன."
+
+#: src/components/landing/sections/agencies-section.tsx
+msgid "We index schemes from key government ministries, statutory boards, and community organisations."
+msgstr "முக்கிய அரசாங்க அமைச்சுகள், சட்டப்பூர்வ வாரியங்கள் மற்றும் சமூக அமைப்புகளின் திட்டங்களைப் பட்டியலிடுகிறோம்."
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "We share scheme data programmatically with a small number of partner organisations, on request. It is not a self-serve public API. Get in touch if your organisation wants to integrate."
+msgstr "கோரிக்கையின் பேரில், சில சமூகக் கூட்டாளர்களுக்கு மென்பொருள் வழியாகத் திட்டத் தரவுகளைப் பகிர்கிறோம். இது பொதுமக்கள் தாங்களாகவே பயன்படுத்தக்கூடிய API அல்ல. உங்கள் அமைப்பின் மென்பொருளுடன் இணைக்க விரும்பினால் எங்களைத் தொடர்புகொள்ளவும்."
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "We update scheme details regularly. Always check the latest with the agency before you apply."
+msgstr "திட்ட விவரங்களை நாங்கள் வழக்கமாகப் புதுப்பிக்கிறோம். விண்ணப்பிக்கும் முன் எப்போதும் அமைப்பிடம் அண்மைய விவரங்களைச் சரிபார்க்கவும்."
+
+#. Chat status step: the web page was read
+#: src/lib/status-step-copy.ts
+msgid "Web page read"
+msgstr "இணையப்பக்கம் படிக்கப்பட்டது"
+
+#. Chat status step: the web page could not be read
+#: src/lib/status-step-copy.ts
+msgid "Web page unavailable"
+msgstr "இணையப்பக்கம் கிடைக்கவில்லை"
+
+#. Chat status step: the web search finished
+#: src/lib/status-step-copy.ts
+msgid "Web results found"
+msgstr "இணைய முடிவுகள் கண்டறியப்பட்டன"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Weighing what might help most"
+msgstr "எது மிகவும் உதவும் என்று எடைபோடுகிறது"
+
+#: src/components/landing/sections/features-section.tsx
+msgid "West Singapore"
+msgstr "மேற்கு சிங்கப்பூர்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Western Islands"
+msgstr "மேற்குத் தீவுகள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Western Water Catchment"
+msgstr "மேற்கு நீர்ப்பிடிப்புப் பகுதி"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "What is Schemes.sg?"
+msgstr "Schemes.sg என்றால் என்ன?"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "What types of schemes are covered?"
+msgstr "என்ன வகையான திட்டங்கள் உள்ளன?"
+
+#. Section label: the benefits provided
+#: src/components/schemes/scheme-detail.tsx
+msgid "What you receive"
+msgstr "உங்களுக்கு என்ன கிடைக்கும்"
+
+#. Section heading: who can apply for this scheme
+#. Tab label: eligibility requirements section on a scheme page
+#: src/components/landing/sections/features-section.tsx
+#: src/components/schemes/scheme-detail.tsx
+msgid "Who qualifies"
+msgstr "யார் தகுதி பெறுவார்கள்"
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Woodlands"
+msgstr "ஊட்லண்ட்ஸ்"
+
+#: src/components/chat/stream-status-steps.tsx
+msgid "Working on your answer"
+msgstr "உங்கள் பதிலைத் தயாரிக்கிறது"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Working out what matters here"
+msgstr "இங்கு எது முக்கியம் என்று தீர்மானிக்கிறது"
+
+#: src/components/chat/thinking-phrases.ts
+msgid "Working out where to start"
+msgstr "எங்கு தொடங்குவது என்று யோசிக்கிறது"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Yes. Schemes.sg is free and needs no sign-up. We want everyone to be able to find the help that’s available."
+msgstr "ஆம். Schemes.sg இலவசம்; பதிவு தேவையில்லை. கிடைக்கும் உதவியை அனைவரும் கண்டறிய வேண்டும் என்பதே எங்கள் விருப்பம்."
+
+#. Singapore URA planning area name; use its official local name
+#: src/lib/planning-area-labels.ts
+msgid "Yishun"
+msgstr "யீஷூன்"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "You describe your situation, and we search {schemeCount}+ schemes for the closest matches, using who qualifies, where you live, and more. You can then ask follow-up questions to narrow the results."
+msgstr "நீங்கள் உங்கள் நிலைமையை விவரித்தால், தகுதி நிபந்தனைகள், நீங்கள் வசிக்கும் இடம் போன்றவற்றின் அடிப்படையில் {schemeCount}+ திட்டங்களில் மிகவும் பொருத்தமானவற்றைத் தேடுகிறோம். பொருந்தும் திட்டங்களின் பட்டியலைக் குறுக்க, நீங்கள் தொடர்ந்து கேள்விகள் கேட்கலாம்."
+
+#: src/app/(main)/contribute/page.tsx
+msgid "You provide the scheme name and link"
+msgstr "திட்டத்தின் பெயரையும் இணைப்பையும் நீங்கள் வழங்குகிறீர்கள்"
+
+#: src/app/(main)/feedback/page.tsx
+msgid "Your feedback"
+msgstr "உங்கள் கருத்துத் தெரிவிப்பு"
+
+#: src/components/landing/sections/faq-section.tsx
+msgid "Your privacy is protected by design. We don't require any login or account and we never ask for your name or NRIC, which means there's no way for us to know who you are. Your searches are encrypted in transit, we don't sell your information, and the measurements we use to improve the site never include what you typed."
+msgstr "உங்கள் தனியுரிமையைப் பாதுகாக்கும் வகையில் இந்தத் தளத்தை வடிவமைத்துள்ளோம். உள்நுழையவோ கணக்கு உருவாக்கவோ தேவையில்லை. உங்கள் பெயரையோ NRIC எண்ணையோ நாங்கள் ஒருபோதும் கேட்பதில்லை. அதனால் நீங்கள் யார் என்பதை எங்களால் அறிய முடியாது. உங்கள் தேடல்கள் அனுப்பப்படும்போது மறையாக்கம் செய்யப்படுகின்றன. உங்கள் தகவல்களை நாங்கள் விற்பதில்லை. தளத்தை மேம்படுத்த நாங்கள் பயன்படுத்தும் அளவீடுகளில், நீங்கள் தட்டச்சு செய்தவை ஒருபோதும் இடம்பெறாது."

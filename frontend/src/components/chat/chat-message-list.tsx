@@ -12,18 +12,22 @@ import { StatusStepsAccordion } from "@/components/chat/status-steps-accordion";
 import { StatusStep } from "@/providers/chat-provider";
 import FeedbackPrompt from "@/components/feedback/feedback-prompt";
 import { PressEvent, ScrollShadow } from "@heroui/react";
+import { useLingui } from "@lingui/react/macro";
 
-const SchemesSGAvatar = () => (
-  <div className="flex h-7 w-7 items-center justify-center">
-    <Image
-      src="/logo.svg"
-      alt="Schemes.sg logo"
-      width={24}
-      height={24}
-      className="h-6 w-6"
-    />
-  </div>
-);
+const SchemesSGAvatar = () => {
+  const { t } = useLingui();
+  return (
+    <div className="flex h-7 w-7 items-center justify-center">
+      <Image
+        src="/logo.svg"
+        alt={t`Schemes.sg logo`}
+        width={24}
+        height={24}
+        className="h-6 w-6"
+      />
+    </div>
+  );
+};
 
 interface ChatMessageListProps {
   messages: Message[];

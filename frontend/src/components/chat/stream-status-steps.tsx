@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
 import { WordRotate } from "@/components/animations/word-rotate";
 import ChatSpinner from "@/components/chat/chat-spinner";
 import { StatusTextShimmer } from "@/components/chat/status-text-shimmer";
@@ -10,6 +11,7 @@ import {
   statusStepSummaryClass,
 } from "@/components/chat/status-step-styles";
 import { thinkingPhraseOrder } from "@/components/chat/thinking-phrases";
+import { statusStepCopy } from "@/lib/status-step-copy";
 import { StatusStep } from "@/providers/chat-provider";
 
 type StreamStatusStepsProps = {
@@ -36,8 +38,14 @@ export function StreamStatusSteps({
   // every render — a re-rolled array identity would reset the rotation timer
   // before it could ever fire. Also keeps Math.random() out of the render body,
   // where it would mismatch between server and client markup.
-  const [phrases] = useState(() => thinkingPhraseOrder());
+  const [phraseOrder] = useState(() => thinkingPhraseOrder());
+  const { t, i18n } = useLingui();
+  const phrases = useMemo(
+    () => phraseOrder.map((phrase) => i18n._(phrase)),
+    [phraseOrder, i18n],
+  );
   const latestStep = steps.at(-1);
+  const latestLabel = latestStep ? statusStepCopy(i18n, latestStep).label : null;
 
   // Deliberately not gated on having a step: the whole point is to fill the
   // window before the agent's first status event arrives over the network.
@@ -51,7 +59,7 @@ export function StreamStatusSteps({
   // screen.
   if (!latestStep && hasStreamedContent) return null;
 
-  const words = latestStep ? [latestStep.label] : phrases;
+  const words = latestLabel ? [latestLabel] : phrases;
 
   return (
     <div className={statusStepContainerClass}>
@@ -63,7 +71,7 @@ export function StreamStatusSteps({
           for the same pair: the schemes panel already owns a role="status", and a
           second one makes every bare getByRole("status") in the suite ambiguous. */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {latestStep ? latestStep.label : "Working on your answer"}
+        {latestLabel ?? t`Working on your answer`}
       </span>
       <div className={statusStepSummaryClass} aria-hidden="true">
         <span className={`${statusStepIndicatorClass} relative`}>

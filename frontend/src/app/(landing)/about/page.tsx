@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import AboutPageContent from "@/components/landing/about-page-content";
+import { SchemeCountProvider } from "@/lib/scheme-count";
+import { getSchemeCount } from "@/lib/schemes.server";
 import { SCHEMES_SG_OG_IMAGE_URL, SEO_COPY, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -44,7 +46,8 @@ const jsonLd = {
   },
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const schemeCount = await getSchemeCount();
   return (
     <>
       <script
@@ -53,7 +56,9 @@ export default function AboutPage() {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <AboutPageContent />
+      <SchemeCountProvider count={schemeCount}>
+        <AboutPageContent />
+      </SchemeCountProvider>
     </>
   );
 }

@@ -12,6 +12,7 @@ const nextConfig = {
     // Three first-party stylesheets blocked first paint (~1.3s of the 4.8s
     // mobile LCP on a scheme page). Inlining removes the round trip.
     inlineCss: true,
+    swcPlugins: [["@lingui/swc-plugin", {}]],
   },
 
   // CSP is deliberately omitted: it needs a nonce strategy for Next's inline

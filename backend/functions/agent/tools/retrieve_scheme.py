@@ -13,6 +13,9 @@ from utils.logging_setup import setup_logging
 
 logger = setup_logging()
 
+# The chat UI shows its own translatable wording for each action_message
+# `code` (frontend/src/lib/status-step-copy.ts); these strings are the fallback.
+# A new code needs an entry there.
 ACTION_MESSAGE_ON_START = "Searching our database for more information about selected schemes."
 ACTION_MESSAGE_ON_END = "Retrieved detailed information for {result_count} schemes."
 ACTION_MESSAGE_LABEL_ON_START = "Fetching scheme details"
@@ -28,7 +31,7 @@ class RetrieveSchemesByIdsInput(BaseModel):
     )
 
 
-def _emit_action_message(label: str, message: str) -> None:
+def _emit_action_message(label: str, message: str, code: str, count: int | None = None) -> None:
     try:
         writer = get_stream_writer()
         writer(
@@ -38,6 +41,8 @@ def _emit_action_message(label: str, message: str) -> None:
                     "phase": "action_message",
                     "label": label,
                     "message": message,
+                    "code": code,
+                    "params": {} if count is None else {"count": count},
                 },
             }
         )
@@ -49,10 +54,10 @@ def retrieve_schemes_by_ids(scheme_ids: list[str]) -> dict[str, Any]:
     logger.info("retrieve_schemes_by_ids tool invoked")
     normalized_scheme_ids = list(dict.fromkeys([scheme_id.strip() for scheme_id in scheme_ids if scheme_id.strip()]))
 
-    _emit_action_message(ACTION_MESSAGE_LABEL_ON_START, ACTION_MESSAGE_ON_START)
+    _emit_action_message(ACTION_MESSAGE_LABEL_ON_START, ACTION_MESSAGE_ON_START, "retrieve.start")
 
     if not normalized_scheme_ids:
-        _emit_action_message(ACTION_MESSAGE_LABEL_ON_END, ACTION_MESSAGE_ON_END.format(result_count=0))
+        _emit_action_message(ACTION_MESSAGE_LABEL_ON_END, ACTION_MESSAGE_ON_END.format(result_count=0), "retrieve.end", 0)
         return {
             "schemes": [],
             "missing_scheme_ids": [],
@@ -61,7 +66,12 @@ def retrieve_schemes_by_ids(scheme_ids: list[str]) -> dict[str, Any]:
 
     schemes, missing_scheme_ids = fetch_schemes_by_ids(FirebaseManager(), normalized_scheme_ids)
 
-    _emit_action_message(ACTION_MESSAGE_LABEL_ON_END, ACTION_MESSAGE_ON_END.format(result_count=len(schemes)))
+    _emit_action_message(
+        ACTION_MESSAGE_LABEL_ON_END,
+        ACTION_MESSAGE_ON_END.format(result_count=len(schemes)),
+        "retrieve.end",
+        len(schemes),
+    )
 
     return {
         "schemes": schemes,

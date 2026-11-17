@@ -18,6 +18,7 @@ import {
   staggerLimit,
   transition,
 } from "@/lib/design-system/motion";
+import { useLingui, Plural } from "@lingui/react/macro";
 
 // Reveal cards progressively so a large result set (e.g. 193 schemes) doesn't
 // mount every card at once. All schemes are already client-side; this is purely
@@ -52,9 +53,10 @@ function EmptySchemesState({
 // grid and anatomy (logo + title/agency, two description lines, a chip). Reads
 // as a faithful preview of the incoming list rather than a generic spinner.
 function SchemesListSkeleton() {
+  const { t } = useLingui();
   return (
     <div
-      aria-label="Finding schemes"
+      aria-label={t({ message: "Finding schemes", comment: "Loading state aria label while searching for schemes" })}
       className="flex-1 overflow-hidden p-3"
     >
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -94,6 +96,7 @@ export default function SchemesList({
   className,
 }: SchemesListProps) {
   const { schemes } = useChat();
+  const { t } = useLingui();
   const reduceMotion = useReducedMotion();
   const previousSchemeSignatureRef = useRef("");
   const [cardAnimationVersion, setCardAnimationVersion] = useState(0);
@@ -190,20 +193,25 @@ export default function SchemesList({
         className,
       )}
     >
-      {/* Header — a single row: the count sits beside the filter chips. */}
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-(--schemes-border) px-4 py-2">
+      {/* Header: the count sits beside the filter chips, which wrap onto a
+          second line when the language needs the room. */}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-(--schemes-border) px-4 py-2">
         <div
           role="status"
           aria-live="polite"
-          className="shrink-0 whitespace-nowrap text-sm font-semibold text-(--schemes-blue-600)"
+          className="min-w-0 text-sm font-semibold text-(--schemes-blue-600)"
         >
           {isGenerating ? (
-            <StatusTextShimmer>Finding the best schemes...</StatusTextShimmer>
+            <StatusTextShimmer>{t({ message: "Finding the best schemes...", comment: "Status text while the AI searches for schemes" })}</StatusTextShimmer>
           ) : (
-            `${filteredSchemes.length} ${filteredSchemes.length === 1 ? "scheme" : "schemes"} found`
+            <Plural
+              value={filteredSchemes.length}
+              one="# scheme found"
+              other="# schemes found"
+            />
           )}
         </div>
-        <div className="no-scrollbar flex min-w-0 shrink items-center gap-2 overflow-x-auto">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {!isGenerating && schemes.length > 0 && (
             <SchemesFilter
               schemes={schemes}
@@ -236,16 +244,16 @@ export default function SchemesList({
         <SchemesListSkeleton />
       ) : schemes.length === 0 ? (
         <EmptySchemesState
-          title="No schemes found"
-          description="Try asking with a broader need, fewer conditions, or a different support area."
+          title={t({ message: "No schemes found", comment: "Empty state heading when search returns no results" })}
+          description={t({ message: "Try asking with a broader need, fewer conditions, or a different support area.", comment: "Empty state hint when search returns no results" })}
         />
       ) : filteredSchemes.length === 0 ? (
         <EmptySchemesState
-          title="No schemes match the selected filters"
+          title={t({ message: "No schemes match the selected filters", comment: "Empty state heading when active filters hide all results" })}
           description={
             hasActiveFilters
-              ? "Clear one or more filters to see the schemes from this chat."
-              : "Try adjusting the filter options to broaden the list."
+              ? t({ message: "Clear one or more filters to see the schemes from this chat.", comment: "Empty state hint when filters are active" })
+              : t({ message: "Try adjusting the filter options to broaden the list.", comment: "Empty state hint when filters hide all results" })
           }
         />
       ) : (

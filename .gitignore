@@ -314,3 +314,7 @@ frontend/.pr-shots/
 
 # Vendored by frontend/scripts/copy-lottie-wasm.mjs on postinstall.
 frontend/public/dotlottie-player.wasm
+
+# Lingui compiled catalogs
+frontend/src/locales/**/messages.ts
+frontend/src/locales/**/messages.js

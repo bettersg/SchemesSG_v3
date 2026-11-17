@@ -10,6 +10,7 @@ import type {
 } from "../types/types";
 import { mapCatalogScheme, mapToFullScheme } from "./scheme-mappers";
 import { hasIndexableContent } from "./scheme-indexing";
+import { FALLBACK_SCHEME_COUNT } from "./seo";
 
 type CatalogResponse = {
   data?: RawSchemeData[] | RawSchemeData;
@@ -31,6 +32,22 @@ const getApiBaseUrl = () => {
  */
 export const isPublicApiConfigured = () =>
   Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
+
+/**
+ * Catalogue size for landing copy, rounded down to the hundred: the copy says
+ * "over N", so 751 must read 700, not 800. Reuses the catalog read (cached for a
+ * day). Falls back when the API is unset, down, or returns a fixture-sized
+ * catalogue under 100.
+ */
+export async function getSchemeCount(): Promise<number> {
+  if (!isPublicApiConfigured()) return FALLBACK_SCHEME_COUNT;
+  try {
+    const { total } = await getCatalogData();
+    return Math.floor(total / 100) * 100 || FALLBACK_SCHEME_COUNT;
+  } catch {
+    return FALLBACK_SCHEME_COUNT;
+  }
+}
 
 export async function getCatalogData(
   category?: CatalogCategory,

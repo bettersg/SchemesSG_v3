@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ScrollToTop } from "./scroll-to-top";
+import { I18nWrapper } from "@/test/i18n-wrapper";
 
 function scrollWindowTo(y: number) {
   Object.defineProperty(window, "scrollY", { value: y, configurable: true });
@@ -16,7 +17,11 @@ describe("ScrollToTop", () => {
   });
 
   it("appears only once the reader is more than a screen down", () => {
-    render(<ScrollToTop />);
+    render(
+      <I18nWrapper>
+        <ScrollToTop />
+      </I18nWrapper>,
+    );
     expect(screen.queryByRole("button", { name: "Scroll to top" })).toBeNull();
 
     scrollWindowTo(window.innerHeight + 1);
@@ -28,7 +33,11 @@ describe("ScrollToTop", () => {
 
   it("returns the page to the top", () => {
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
-    render(<ScrollToTop />);
+    render(
+      <I18nWrapper>
+        <ScrollToTop />
+      </I18nWrapper>,
+    );
     scrollWindowTo(window.innerHeight * 3);
 
     fireEvent.click(screen.getByRole("button", { name: "Scroll to top" }));
@@ -45,7 +54,11 @@ describe("ScrollToTop", () => {
       ...matchMedia(query),
       matches: query === "(prefers-reduced-motion: reduce)",
     }));
-    render(<ScrollToTop />);
+    render(
+      <I18nWrapper>
+        <ScrollToTop />
+      </I18nWrapper>,
+    );
     scrollWindowTo(window.innerHeight * 3);
 
     fireEvent.click(screen.getByRole("button", { name: "Scroll to top" }));

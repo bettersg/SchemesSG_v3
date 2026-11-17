@@ -33,6 +33,9 @@ _TRAFILATURA_CONFIG = use_config()
 _TRAFILATURA_CONFIG.set("DEFAULT", "user_agents", BROWSER_USER_AGENT)
 _TRAFILATURA_CONFIG.set("DEFAULT", "sleep_time", "0")
 
+# The chat UI shows its own translatable wording for each action_message
+# `code` (frontend/src/lib/status-step-copy.ts); these strings are the fallback.
+# A new code needs an entry there.
 ACTION_MESSAGE_ON_START = 'Reading the page "{url}"'
 ACTION_MESSAGE_ON_END = 'Read "{url}".'
 ACTION_MESSAGE_ON_FAIL = 'Couldn\'t read "{url}".'
@@ -41,7 +44,7 @@ SHORT_ACTION_MESSAGE_ON_END = "Web page read"
 SHORT_ACTION_MESSAGE_ON_FAIL = "Web page unavailable"
 
 
-def _emit_action_message(label: str, message: str) -> None:
+def _emit_action_message(label: str, message: str, code: str, url: str) -> None:
     """Best-effort stream event for the live status trace. Never raises."""
     try:
         writer = get_stream_writer()
@@ -52,6 +55,8 @@ def _emit_action_message(label: str, message: str) -> None:
                     "phase": "action_message",
                     "label": label,
                     "message": message,
+                    "code": code,
+                    "params": {"url": url},
                 },
             }
         )
@@ -132,7 +137,7 @@ def _download_html(url: str) -> str | None:
 def _fetch_webpage_sync(url: str) -> dict[str, Any]:
     logger.info(f"fetch_webpage tool invoked | url={url}")
     _emit_action_message(
-        SHORT_ACTION_MESSAGE_ON_START, ACTION_MESSAGE_ON_START.format(url=url)
+        SHORT_ACTION_MESSAGE_ON_START, ACTION_MESSAGE_ON_START.format(url=url), "fetch.start", url
     )
 
     try:
@@ -141,7 +146,7 @@ def _fetch_webpage_sync(url: str) -> dict[str, Any]:
             # Emit a closing status so the live trace doesn't strand on
             # "Reading the page …" forever when a site blocks or times us out.
             _emit_action_message(
-                SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url)
+                SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url), "fetch.fail", url
             )
             return {"url": url, "error": "fetch_webpage failed: could not download page"}
 
@@ -152,13 +157,13 @@ def _fetch_webpage_sync(url: str) -> dict[str, Any]:
         links = extract_links(raw, url)
 
         _emit_action_message(
-            SHORT_ACTION_MESSAGE_ON_END, ACTION_MESSAGE_ON_END.format(url=url)
+            SHORT_ACTION_MESSAGE_ON_END, ACTION_MESSAGE_ON_END.format(url=url), "fetch.end", url
         )
         return {"url": url, "text": text, "links": links}
     except Exception as e:
         logger.exception("fetch_webpage failed")
         _emit_action_message(
-            SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url)
+            SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url), "fetch.fail", url
         )
         return {"url": url, "error": f"fetch_webpage failed: {e}"}
 
@@ -172,7 +177,7 @@ async def _fetch_webpage_async(url: str) -> dict[str, Any]:
     except asyncio.TimeoutError:
         logger.warning("fetch_webpage timed out")
         _emit_action_message(
-            SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url)
+            SHORT_ACTION_MESSAGE_ON_FAIL, ACTION_MESSAGE_ON_FAIL.format(url=url), "fetch.fail", url
         )
         return {"url": url, "error": "fetch_webpage timed out"}
 

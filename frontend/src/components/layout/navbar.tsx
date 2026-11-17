@@ -1,10 +1,10 @@
 "use client";
 
-import { type MouseEvent, useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/landing/ui/button";
-import { useLanguage } from "@/lib/landing-i18n";
+import { useLingui } from "@lingui/react/macro";
 import { LanguageToggle } from "@/components/landing/shared/language-toggle";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -19,6 +19,47 @@ import {
   transition,
 } from "@/lib/design-system/motion";
 
+/**
+ * Whether the desktop tabs fit beside the logo and language menu. Measured
+ * rather than tied to a breakpoint because the tab labels run from about 440px
+ * (Malay) to over twice that (Tamil). The tabs stay rendered while collapsed so
+ * their width can still be measured.
+ */
+function useTabsFit() {
+  const navRef = useRef<HTMLElement>(null);
+  const logoRef = useRef<HTMLAnchorElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const languageRef = useRef<HTMLDivElement>(null);
+  const [fits, setFits] = useState(true);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const tabs = tabsRef.current;
+    if (!nav || !tabs) return;
+    const measure = () => {
+      const style = getComputedStyle(nav);
+      const inner =
+        nav.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight);
+      const taken =
+        (logoRef.current?.offsetWidth ?? 0) +
+        (languageRef.current?.offsetWidth ?? 0);
+      // 32px keeps the tabs from touching the logo or the language menu.
+      setFits(tabs.scrollWidth + taken + 32 <= inner);
+    };
+    // A ResizeObserver reports each element once on observe(), which covers
+    // the first measurement.
+    const observer = new ResizeObserver(measure);
+    for (const el of [nav, tabs, logoRef.current, languageRef.current]) {
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  return { navRef, logoRef, tabsRef, languageRef, fits };
+}
+
 type NavLink = {
   label: string;
   href: string;
@@ -26,20 +67,42 @@ type NavLink = {
 };
 
 export function Navbar() {
-  const { t } = useLanguage();
+  const { t } = useLingui();
   const pathname = usePathname();
   const { hasActiveChat, setResetModalIsOpen } = useChat();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { navRef, logoRef, tabsRef, languageRef, fits } = useTabsFit();
+  // Below md the menu always collapses; above it, only when the tabs do not fit.
+  const collapsed = !fits;
   const { isHidden: mobileHidden, isScrolled: scrolled } = useHideOnScroll({
     disabled: mobileOpen,
     resetKey: pathname,
   });
 
   const navLinks: NavLink[] = [
-    { label: t.nav.catalog, href: "/catalog" },
-    { label: t.nav.searchSchemes, href: "/" },
-    { label: t.nav.contribute, href: "/contribute" },
-    { label: t.nav.about, href: "/about" },
+    {
+      label: t({
+        message: "Catalogue",
+        comment: "Navbar tab: browse every scheme by category",
+      }),
+      href: "/catalog",
+    },
+    {
+      label: t({
+        message: "Search schemes",
+        comment: "Navbar tab and button: open the search page",
+      }),
+      href: "/",
+    },
+    {
+      label: t({
+        message: "Contribute",
+        context: "navbar tab",
+        comment: "Navbar tab: suggest a scheme that is missing. Keep it short: it shares one row with three other tabs",
+      }),
+      href: "/contribute",
+    },
+    { label: t({ message: "About", comment: "Navbar tab" }), href: "/about" },
   ];
 
   const selectedKey =
@@ -85,8 +148,12 @@ export function Navbar() {
           : "bg-transparent",
       )}
     >
-      <nav className="mx-auto h-full flex max-w-7xl items-center justify-between px-6">
+      <nav
+        ref={navRef}
+        className="relative mx-auto h-full flex max-w-7xl items-center justify-between px-6"
+      >
         <a
+          ref={logoRef}
           href="/"
           onClick={handleSearchEntryClick}
           className="flex items-center gap-2 font-serif text-xl tracking-tight cursor-pointer"
@@ -102,11 +169,19 @@ export function Navbar() {
           <span className="text-neutral-400 -ml-1">.sg</span>
         </a>
 
-        <div className="hidden md:flex">
-          <Tabs selectedKey={selectedKey} aria-label="Navigation">
+        <div
+          ref={tabsRef}
+          aria-hidden={collapsed || undefined}
+          className={cn(
+            "hidden md:flex",
+            collapsed &&
+              "md:pointer-events-none md:invisible md:absolute md:left-0 md:w-max",
+          )}
+        >
+          <Tabs selectedKey={selectedKey} aria-label={t({ message: "Navigation", comment: "Aria label for the main navigation tabs" })}>
             <Tabs.ListContainer>
               <Tabs.List
-                aria-label="Navigation tabs"
+                aria-label={t`Navigation tabs`}
                 className="rounded-full px-2 py-1.5 gap-1 bg-transparent"
               >
                 {navLinks.map((link) => (
@@ -142,14 +217,20 @@ export function Navbar() {
           </Tabs>
         </div>
 
-        <div className="hidden md:flex items-center">
+        <div
+          ref={languageRef}
+          className={cn("hidden md:flex items-center", collapsed && "md:ml-auto")}
+        >
           <LanguageToggle />
         </div>
 
         <button
-          className="inline-flex size-11 items-center justify-center rounded-lg md:hidden cursor-pointer"
+          className={cn(
+            "inline-flex size-11 items-center justify-center rounded-lg cursor-pointer",
+            !collapsed && "md:hidden",
+          )}
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? t.a11y.closeMenu : t.a11y.openMenu}
+          aria-label={mobileOpen ? t`Close menu` : t`Open menu`}
         >
           {mobileOpen ? (
             <X className="h-5 w-5" />
@@ -167,7 +248,10 @@ export function Navbar() {
             animate={motionPreset.mobileMenu.animate}
             exit={motionPreset.mobileMenu.exit}
             transition={transition.stateEmphasis}
-            className="z-50 border-b border-neutral-200 bg-background px-6 pb-6 backdrop-blur-xl md:hidden"
+            className={cn(
+              "z-50 border-b border-neutral-200 bg-background px-6 pb-6 backdrop-blur-xl",
+              !collapsed && "md:hidden",
+            )}
           >
             <div className="flex w-full flex-col items-center gap-1">
               {navLinks
@@ -181,7 +265,7 @@ export function Navbar() {
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "inline-flex min-h-11 items-center cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                        "inline-flex min-h-11 items-center justify-center text-center cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-(--schemes-amber-400) font-semibold text-neutral-900 hover:bg-(--schemes-amber-100)"
                           : "text-neutral-900 hover:bg-neutral-100",
@@ -192,7 +276,7 @@ export function Navbar() {
                   );
                 })}
             </div>
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex justify-center md:hidden">
               <LanguageToggle />
             </div>
             <div className="mt-3 flex justify-center">
@@ -207,7 +291,7 @@ export function Navbar() {
                       : "bg-transparent text-neutral-900 shadow-none hover:bg-neutral-100",
                   )}
                 >
-                  {t.nav.searchSchemes} <ArrowRight className="h-3.5 w-3.5" />
+                  {t`Search schemes`} <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
