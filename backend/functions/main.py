@@ -36,6 +36,8 @@ The following endpoints are available:
      schemes collection a copy of prod's, keeping dev's content check state
    - scheduled_notion_content_review: hourly job that applies Approved/Rejected Notion review rows
      to Firestore, then trashes the rows
+   - scheduled_review_leaderboard_sync: Prod only. Daily job that counts scheme reviews per
+     volunteer and refreshes the Better.sg Notion Review Leaderboard
 
 7. System:
    - health: Health check endpoint
@@ -60,6 +62,7 @@ import sys
 
 from agent.handler import agent_chat_message  # noqa: F401
 from batch_jobs.notion_content_review import scheduled_notion_content_review  # noqa: F401
+from batch_jobs.review_leaderboard import scheduled_review_leaderboard_sync  # noqa: F401
 from batch_jobs.run_link_check_and_reindex import scheduled_link_check_and_reindex  # noqa: F401
 from feedback.feedback import feedback  # noqa: F401
 from firebase_functions import https_fn, options

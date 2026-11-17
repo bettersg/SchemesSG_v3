@@ -69,19 +69,42 @@ class NotionClient:
                 return rows
             body["start_cursor"] = result["next_cursor"]
 
-    def create_page(self, data_source_id: str, properties: dict, children: Optional[List[dict]] = None) -> dict:
+    def create_page(
+        self,
+        data_source_id: str,
+        properties: dict,
+        children: Optional[List[dict]] = None,
+        icon: Optional[str] = None,
+    ) -> dict:
         parent = {"type": "data_source_id", "data_source_id": data_source_id}
         body: Dict[str, Any] = {"parent": parent, "properties": properties}
         if children:
             body["children"] = children
+        if icon:
+            body["icon"] = {"type": "emoji", "emoji": icon}
         return self._call("POST", "/pages", body)
 
     def update_data_source(self, data_source_id: str, properties: dict) -> dict:
         """Change column settings, e.g. a multi_select column's options."""
         return self._call("PATCH", f"/data_sources/{data_source_id}", {"properties": properties})
 
-    def update_page(self, page_id: str, properties: dict) -> dict:
-        return self._call("PATCH", f"/pages/{page_id}", {"properties": properties})
+    def update_page(self, page_id: str, properties: dict, icon: Optional[str] = None) -> dict:
+        body: Dict[str, Any] = {"properties": properties}
+        if icon:
+            body["icon"] = {"type": "emoji", "emoji": icon}
+        return self._call("PATCH", f"/pages/{page_id}", body)
+
+    def list_users(self) -> List[dict]:
+        """Workspace members. Emails need the integration's "Read user information including email" capability."""
+        users: List[dict] = []
+        cursor: Optional[str] = None
+        while True:
+            query = f"?page_size=100&start_cursor={cursor}" if cursor else "?page_size=100"
+            result = self._call("GET", f"/users{query}")
+            users.extend(result["results"])
+            if not result.get("has_more"):
+                return users
+            cursor = result["next_cursor"]
 
     def trash_page(self, page_id: str) -> dict:
         """Move a row to Notion's trash (restorable there for ~30 days)."""
