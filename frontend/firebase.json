@@ -9,7 +9,8 @@
         "**/node_modules/**"
       ],
       "frameworksBackend": {
-        "region": "asia-southeast1"
+        "region": "asia-southeast1",
+        "memory": "512MiB"
       },
       "rewrites": [
         {
@@ -42,7 +43,8 @@
         "**/node_modules/**"
       ],
       "frameworksBackend": {
-        "region": "asia-southeast1"
+        "region": "asia-southeast1",
+        "memory": "512MiB"
       },
       "rewrites": [
         {
